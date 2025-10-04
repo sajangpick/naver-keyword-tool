@@ -824,6 +824,84 @@ async function callClaude(prompt) {
     }
 }
 
+// ==================== ChatGPT 채팅 API ====================
+
+// ChatGPT 채팅 API
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message } = req.body;
+        
+        console.log('ChatGPT 채팅 요청:', { messageLength: message?.length });
+        
+        // 입력 데이터 검증
+        if (!message || message.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: '메시지가 필요합니다.'
+            });
+        }
+
+        if (message.length > 4000) {
+            return res.status(400).json({
+                success: false,
+                error: '메시지가 너무 깁니다. 4000자 이하로 입력해주세요.'
+            });
+        }
+
+        if (!OPENAI_API_KEY) {
+            return res.status(500).json({
+                success: false,
+                error: 'OpenAI API 키가 설정되지 않았습니다. 환경변수를 확인해주세요.'
+            });
+        }
+
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-3.5-turbo',
+            messages: [
+                {
+                    role: 'system',
+                    content: '당신은 도움이 되는 AI 어시스턴트입니다. 한국어로 친근하고 정확하게 답변해주세요. 사용자의 질문에 성실하게 대답하고, 필요한 경우 추가 설명이나 예시를 제공해주세요.'
+                },
+                {
+                    role: 'user',
+                    content: message
+                }
+            ],
+            max_tokens: 1500,
+            temperature: 0.7
+        }, {
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            timeout: 30000
+        });
+
+        console.log('ChatGPT 응답 성공');
+
+        res.json({
+            success: true,
+            reply: response.data.choices[0].message.content,
+            usage: response.data.usage,
+            metadata: {
+                model: 'gpt-3.5-turbo',
+                timestamp: new Date().toISOString(),
+                server: 'Integrated Server'
+            }
+        });
+
+    } catch (error) {
+        console.error('ChatGPT API 오류:', error.response?.data || error.message);
+        
+        res.status(500).json({
+            success: false,
+            error: 'ChatGPT API 호출 중 오류가 발생했습니다.',
+            details: error.response?.data?.error?.message || error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // ==================== 블로그 생성 API ====================
 
 // 프롬프트 생성 함수 (블로그용)
