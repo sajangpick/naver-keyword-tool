@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마이페이지 - 사장픽</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Noto Sans KR", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px 20px;
+        gap: 15px;
+      }
+
+      .top-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        position: relative;
+      }
+
+      .logo {
+        font-size: 32px;
+        font-weight: 800;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+      }
+
+      .logo:hover {
+        transform: scale(1.05);
+      }
+
+      .nav-menu {
+        display: flex;
+        list-style: none;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+        position: relative;
+      }
+
+      .nav-menu li {
+        position: relative;
+      }
+
+      .nav-menu a {
+        text-decoration: none;
+        color: #333;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        padding: 8px 12px;
+        display: block;
+        border-radius: 5px;
+        position: relative;
+      }
+
+      .nav-menu a:hover {
+        color: #6c5ce7;
+        background: #f8f9fa;
+      }
+
+      .nav-menu a.active {
+        color: white;
+        background: #6c5ce7;
+        font-weight: 600;
+      }
+
+      .dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        min-width: 200px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        padding: 10px 0;
+      }
+
+      .nav-menu li:hover .dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .dropdown a {
+        padding: 10px 20px;
+        color: #666;
+        font-size: 13px;
+        border-radius: 0;
+        background: transparent;
+      }
+
+      .dropdown a:hover {
+        background: #f8f9fa;
+        color: #6c5ce7;
+      }
+
+      .user-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        position: absolute;
+        right: 0;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .user-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #6c5ce7, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .user-name {
+        font-weight: 500;
+        color: #333;
+      }
+
+      .logout-btn {
+        background: transparent;
+        color: #666;
+        padding: 8px 15px;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .logout-btn:hover {
+        background: #f5f5f5;
+      }
+
+      .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+      }
+
+      .page-title {
+        font-size: 32px;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 10px;
+        text-align: center;
+        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .page-subtitle {
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 40px;
+        text-align: center;
+      }
+
+      .profile-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border-radius: 25px;
+        padding: 40px;
+        margin-bottom: 30px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #f0f4ff;
+      }
+
+      .profile-avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+      }
+
+      .profile-avatar-large:hover {
+        transform: scale(1.05);
+      }
+
+      .profile-info {
+        flex: 1;
+      }
+
+      .profile-name {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .profile-email {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 15px;
+      }
+
+      .profile-joined {
+        font-size: 14px;
+        color: #999;
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+      }
+
+      .section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .section:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+      }
+
+      .section:hover::before {
+        opacity: 1;
+      }
+
+      .section.large {
+        grid-column: 1 / -1;
+      }
+
+      .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .section-title i {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 16px;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+        font-size: 14px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e8ecff;
+        border-radius: 12px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: #f8f9ff;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .btn:hover::before {
+        left: 100%;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: #f8f9ff;
+        color: #667eea;
+        border: 2px solid #e8ecff;
+      }
+
+      .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        color: white;
+      }
+
+      .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(238, 90, 82, 0.4);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 20px 15px;
+        border-radius: 18px;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.1) 0%,
+          transparent 70%
+        );
+        transform: scale(0);
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover::before {
+        transform: scale(1);
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);
+      }
+
+      .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+      }
+
+      .place-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+      }
+
+      .place-card {
+        background: linear-gradient(135deg, #f8f9ff, #ffffff);
+        border-radius: 20px;
+        padding: 25px;
+        border: 2px solid #e8ecff;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .place-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+      }
+
+      .place-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(102, 126, 234, 0.15);
+        border-color: #667eea;
+      }
+
+      .place-card:hover::before {
+        transform: scaleX(1);
+      }
+
+      .place-image {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+      }
+
+      .place-card:hover .place-image {
+        transform: scale(1.1) rotate(5deg);
+      }
+
+      .place-name {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .place-address {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 15px;
+      }
+
+      .place-stats {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .place-rating {
+        color: #ffa500;
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      .place-reviews {
+        color: #888;
+        font-size: 14px;
+      }
+
+      .place-status {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .place-status.active {
+        background: linear-gradient(45deg, #4ade80, #22c55e);
+        color: white;
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+      }
+
+      /* 새로운 컴포넌트 스타일들 */
+      .metric-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .metric-card {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 18px 12px;
+        border-radius: 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metric-card::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+      }
+
+      .metric-card:hover::after {
+        width: 200px;
+        height: 200px;
+      }
+
+      .metric-card:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+      }
+
+      .metric-number {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .metric-label {
+        font-size: 11px;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+      }
+
+      .dashboard-chart {
+        background: linear-gradient(135deg, #f8f9ff, #e8ecff);
+        border-radius: 18px;
+        padding: 30px;
+        text-align: center;
+        color: #667eea;
+        font-weight: 500;
+        border: 2px dashed #d1d5ff;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .dashboard-chart:hover {
+        background: linear-gradient(135deg, #e8ecff, #d1d5ff);
+        border-color: #667eea;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 10px;
+        background: #f0f4ff;
+        border-radius: 5px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 5px;
+        transition: width 0.3s ease;
+        position: relative;
+      }
+
+      .progress-fill::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        animation: shimmer 2s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .keyword-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 15px;
+      }
+
+      .keyword-tag {
+        background: linear-gradient(45deg, #f0f4ff, #e8ecff);
+        color: #667eea;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #d1d5ff;
+        transition: all 0.3s ease;
+      }
+
+      .keyword-tag:hover {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .status-indicator.success {
+        background: linear-gradient(45deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border: 1px solid #b8e6c1;
+      }
+
+      .status-indicator.info {
+        background: linear-gradient(45deg, #d1ecf1, #bee5eb);
+        color: #0c5460;
+        border: 1px solid #a8dadc;
+      }
+
+      .status-indicator:hover {
+        transform: scale(1.05);
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 12px;
+      }
+
+      .quick-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 18px 12px;
+        background: linear-gradient(135deg, #f8f9ff, #ffffff);
+        border-radius: 15px;
+        text-decoration: none;
+        color: #667eea;
+        transition: all 0.3s ease;
+        border: 2px solid #e8ecff;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .quick-action::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(102, 126, 234, 0.1),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .quick-action:hover::before {
+        left: 100%;
+      }
+
+      .quick-action:hover {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        border-color: transparent;
+      }
+
+      .quick-action i {
+        font-size: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .quick-action:hover i {
+        transform: scale(1.2);
+      }
+
+      .quick-action-text {
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      .plan-badge {
+        display: inline-block;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+      }
+
+      .plan-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+      }
+
+      .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #f8f9ff, #ffffff);
+        margin-bottom: 12px;
+        border: 1px solid #e8ecff;
+        transition: all 0.3s ease;
+      }
+
+      .activity-item:hover {
+        transform: translateX(8px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+        border-color: #d1d5ff;
+      }
+
+      .activity-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        background: linear-gradient(45deg, #f0f4ff, #e8ecff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #667eea;
+        transition: all 0.3s ease;
+      }
+
+      .activity-item:hover .activity-icon {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        transform: scale(1.1);
+      }
+
+      .activity-content {
+        flex: 1;
+      }
+
+      .activity-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: #333;
+      }
+
+      .activity-time {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .resource-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .resource-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 18px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #f8f9ff, #ffffff);
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 1px solid #e8ecff;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .resource-item::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(102, 126, 234, 0.05),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .resource-item:hover::before {
+        left: 100%;
+      }
+
+      .resource-item:hover {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        transform: translateX(12px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.25);
+        border-color: transparent;
+      }
+
+      .resource-icon {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(
+          45deg,
+          rgba(102, 126, 234, 0.1),
+          rgba(118, 75, 162, 0.1)
+        );
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #667eea;
+        transition: all 0.3s ease;
+      }
+
+      .resource-item:hover .resource-icon {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        transform: scale(1.1);
+      }
+
+      .resource-content {
+        flex: 1;
+      }
+
+      .resource-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+        transition: color 0.3s ease;
+      }
+
+      .resource-desc {
+        font-size: 12px;
+        color: #666;
+        transition: color 0.3s ease;
+      }
+
+      .resource-item:hover .resource-desc {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      @media (max-width: 768px) {
+        .nav-menu {
+          display: none;
+        }
+
+        .content-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .profile-header {
+          flex-direction: column;
+          text-align: center;
+          gap: 20px;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
+        .place-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .metric-cards {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .quick-actions {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .section.large {
+          grid-column: 1;
+        }
+
+        .section {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="nav-container">
+        <div class="top-nav">
+          <div class="logo" onclick="location.href='index.html'">사장픽</div>
+          <div class="user-actions">
+            <div class="user-info">
+              <div
+                class="user-avatar"
+                id="userAvatar"
+                onclick="location.href='mypage.html'"
+              >
+                지
+              </div>
+              <span class="user-name" id="userName">지훈님! 안녕하세요!</span>
+              <button class="logout-btn" onclick="logout()">로그아웃</button>
+            </div>
+          </div>
+        </div>
+        <nav>
+          <ul class="nav-menu">
+            <li>
+              <a href="naver_search.html">키워드 검색</a>
+              <div class="dropdown">
+                <a href="#">순위 조회</a>
+                <a href="#">키워드 등록</a>
+                <a href="#">순위 추적</a>
+              </div>
+            </li>
+            <li>
+              <a href="place-check.html">플레이스점검</a>
+              <div class="dropdown">
+                <a href="#">경쟁사 분석</a>
+                <a href="#">평점 모니터링</a>
+                <a href="#">리뷰 분석</a>
+                <a href="#">방문자 추적</a>
+              </div>
+            </li>
+            <li>
+              <a href="Blog-Editor.html" class="active">AI 블로그작성</a>
+              <div class="dropdown">
+                <a href="#">블로그 포스팅</a>
+                <a href="#">SNS 연동</a>
+                <a href="#">콘텐츠 관리</a>
+              </div>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main-container">
+      <h1 class="page-title">마이페이지</h1>
+      <p class="page-subtitle">내 정보 및 서비스 이용 현황</p>
+
+      <!-- 프로필 헤더 -->
+      <section class="profile-section">
+        <div class="profile-header">
+          <div class="profile-avatar-large" id="profileAvatarLarge">지</div>
+          <div class="profile-info">
+            <h2 class="profile-name" id="profileName">지훈오</h2>
+            <p class="profile-email" id="profileEmail">tmdals@naver.com</p>
+            <p class="profile-joined">사장픽 가입일: 2024년 1월 15일</p>
+          </div>
+        </div>
+
+        <!-- 내 플레이스 통계 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">4.7</div>
+            <div class="stat-label">평균 평점</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">89</div>
+            <div class="stat-label">총 리뷰 수</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">1,254</div>
+            <div class="stat-label">이번 달 방문자</div>
+          </div>
+        </div>
+
+        <!-- 결제 관리 -->
+        <div
+          style="
+            border-top: 2px solid #f0f4ff;
+            padding-top: 30px;
+            margin-top: 30px;
+          "
+        >
+          <h3
+            style="
+              font-size: 18px;
+              font-weight: 700;
+              color: #333;
+              margin-bottom: 20px;
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            "
+          >
+            <i
+              class="fas fa-credit-card"
+              style="
+                width: 35px;
+                height: 35px;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 14px;
+              "
+            ></i>
+            결제 관리
+          </h3>
+
+          <div class="plan-badge">프리미엄 플랜</div>
+
+          <div style="margin-bottom: 20px">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+              "
+            >
+              <span style="font-size: 14px; color: #333; font-weight: 500"
+                >다음 결제일</span
+              >
+              <span style="font-size: 14px; font-weight: 600; color: #667eea"
+                >2024.02.15</span
+              >
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+              "
+            >
+              <span style="font-size: 14px; color: #333; font-weight: 500"
+                >월 이용료</span
+              >
+              <span style="font-size: 16px; font-weight: 700; color: #667eea"
+                >49,000원</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="quick-actions"
+            style="grid-template-columns: repeat(3, 1fr)"
+          >
+            <a href="#" class="quick-action">
+              <i class="fas fa-receipt"></i>
+              <div class="quick-action-text">결제 내역</div>
+            </a>
+            <a href="#" class="quick-action">
+              <i class="fas fa-arrow-up"></i>
+              <div class="quick-action-text">플랜 변경</div>
+            </a>
+            <a href="#" class="quick-action">
+              <i class="fas fa-cog"></i>
+              <div class="quick-action-text">결제 설정</div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 내 플레이스 목록 -->
+      <section class="profile-section">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+          "
+        >
+          <h3 class="section-title" style="margin-bottom: 0">
+            <i class="fas fa-store"></i>
+            내 플레이스
+          </h3>
+          <button
+            class="btn btn-primary"
+            onclick="location.href='place-register.html'"
+          >
+            <i class="fas fa-plus"></i> 등록하기
+          </button>
+        </div>
+
+        <div class="place-grid">
+          <div class="place-card">
+            <div class="place-image">
+              <i class="fas fa-utensils"></i>
+            </div>
+            <div class="place-info">
+              <h4 class="place-name">맛있는 김치찌개</h4>
+              <p class="place-address">부산 해운대구 센텀동로 99</p>
+              <div class="place-stats">
+                <span class="place-rating">
+                  <i class="fas fa-star"></i> 4.8
+                </span>
+                <span class="place-reviews">리뷰 45개</span>
+              </div>
+            </div>
+            <div class="place-status active">운영중</div>
+          </div>
+
+          <div class="place-card">
+            <div class="place-image">
+              <i class="fas fa-coffee"></i>
+            </div>
+            <div class="place-info">
+              <h4 class="place-name">지훈이네 커피숍</h4>
+              <p class="place-address">부산 중구 광복로 123</p>
+              <div class="place-stats">
+                <span class="place-rating">
+                  <i class="fas fa-star"></i> 4.6
+                </span>
+                <span class="place-reviews">리뷰 44개</span>
+              </div>
+            </div>
+            <div class="place-status active">운영중</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 콘텐츠 그리드 -->
+      <div class="content-grid">
+        <!-- 서비스 현황 대시보드 -->
+        <section class="section large">
+          <h3 class="section-title">
+            <i class="fas fa-chart-dashboard"></i>
+            서비스 현황 대시보드
+          </h3>
+
+          <div class="metric-cards">
+            <div class="metric-card">
+              <div class="metric-number">89</div>
+              <div class="metric-label">총 리뷰 수</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-number">47</div>
+              <div class="metric-label">답글 수</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-number">12.5K</div>
+              <div class="metric-label">누적 방문자</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-number">+23%</div>
+              <div class="metric-label">이번 달 증가율</div>
+            </div>
+          </div>
+
+          <div class="dashboard-chart">
+            <i
+              class="fas fa-chart-line"
+              style="font-size: 24px; margin-right: 10px"
+            ></i>
+            이번 달 방문자/리뷰 추이 그래프
+          </div>
+        </section>
+
+        <!-- 프로필·계정 정보 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-user-edit"></i>
+            프로필·계정 정보
+          </h3>
+
+          <div class="form-group">
+            <label class="form-label">프로필 이미지</label>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 15px;
+              "
+            >
+              <div
+                class="profile-avatar-large"
+                style="width: 60px; height: 60px; font-size: 24px"
+              >
+                지
+              </div>
+              <button
+                class="btn btn-secondary"
+                style="padding: 8px 16px; font-size: 12px"
+              >
+                이미지 변경
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">이름</label>
+            <input
+              type="text"
+              class="form-input"
+              id="editName"
+              value="지훈오"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">이메일</label>
+            <input
+              type="email"
+              class="form-input"
+              id="editEmail"
+              value="tmdals@naver.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">전화번호</label>
+            <input
+              type="tel"
+              class="form-input"
+              id="editPhone"
+              placeholder="010-0000-0000"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">소속 회사명</label>
+            <input
+              type="text"
+              class="form-input"
+              id="editCompany"
+              placeholder="회사명을 입력하세요"
+            />
+          </div>
+
+          <button class="btn btn-primary" onclick="saveProfile()">
+            정보 저장
+          </button>
+        </section>
+
+        <!-- 비밀번호 변경 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-lock"></i>
+            비밀번호 변경
+          </h3>
+
+          <div class="form-group">
+            <label class="form-label">현재 비밀번호</label>
+            <input
+              type="password"
+              class="form-input"
+              id="currentPassword"
+              placeholder="현재 비밀번호"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">새 비밀번호</label>
+            <input
+              type="password"
+              class="form-input"
+              id="newPassword"
+              placeholder="새 비밀번호"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">새 비밀번호 확인</label>
+            <input
+              type="password"
+              class="form-input"
+              id="confirmPassword"
+              placeholder="새 비밀번호 확인"
+            />
+          </div>
+
+          <button class="btn btn-primary" onclick="changePassword()">
+            비밀번호 변경
+          </button>
+          <button
+            class="btn btn-danger"
+            onclick="deleteAccount()"
+            style="margin-left: 10px"
+          >
+            계정 탈퇴
+          </button>
+        </section>
+
+        <!-- 리뷰 & 키워드 관리 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-star"></i>
+            리뷰 & 키워드 관리
+          </h3>
+
+          <div style="margin-bottom: 20px">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: #333">
+              최근 30일 리뷰 현황
+            </h4>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 10px;
+              "
+            >
+              <span style="font-size: 12px; color: #666">별점 분포</span>
+              <span style="font-size: 12px; color: #666">평균 4.7점</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 94%"></div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: #333">
+              자주 언급된 키워드 TOP 5
+            </h4>
+            <div class="keyword-tags">
+              <div class="keyword-tag">맛있다</div>
+              <div class="keyword-tag">친절</div>
+              <div class="keyword-tag">깨끗</div>
+              <div class="keyword-tag">분위기</div>
+              <div class="keyword-tag">가성비</div>
+            </div>
+          </div>
+
+          <div class="metric-cards">
+            <div class="metric-card">
+              <div class="metric-number">92%</div>
+              <div class="metric-label">답글 작성률</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-number">2.3h</div>
+              <div class="metric-label">평균 답글 시간</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 콘텐츠 관리 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-edit"></i>
+            콘텐츠 관리
+          </h3>
+
+          <div style="margin-bottom: 20px">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: #333">
+              블로그 글 업로드 현황
+            </h4>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              "
+            >
+              <span style="font-size: 12px; color: #666">이번 달 포스팅</span>
+              <span class="status-indicator success">
+                <i class="fas fa-check-circle"></i> 12개 완료
+              </span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: #333">
+              SNS 게시글 예약 관리
+            </h4>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+              "
+            >
+              <span style="font-size: 12px; color: #666">예약된 포스팅</span>
+              <span class="status-indicator info">
+                <i class="fas fa-clock"></i> 5개 대기중
+              </span>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <a href="#" class="quick-action">
+              <i class="fas fa-plus"></i>
+              <div class="quick-action-text">새 포스팅</div>
+            </a>
+            <a href="#" class="quick-action">
+              <i class="fas fa-calendar"></i>
+              <div class="quick-action-text">예약 관리</div>
+            </a>
+          </div>
+        </section>
+
+        <!-- 내 활동 관리 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-history"></i>
+            내 활동 관리
+          </h3>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-reply"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">리뷰 자동답글 발송</div>
+              <div class="activity-time">2시간 전</div>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-share"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">SNS 포스팅 업로드</div>
+              <div class="activity-time">3일 전</div>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-calendar"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">예약 및 문의 처리</div>
+              <div class="activity-time">5일 전</div>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-tools"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">시스템 점검 알림</div>
+              <div class="activity-time">1주 전</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 알림 설정 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-bell"></i>
+            알림 설정
+          </h3>
+
+          <div class="form-group">
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                margin-bottom: 15px;
+              "
+            >
+              <input type="checkbox" checked />
+              <span style="font-weight: 500">이메일 알림 받기</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                margin-bottom: 15px;
+              "
+            >
+              <input type="checkbox" checked />
+              <span style="font-weight: 500">새 리뷰 알림</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                margin-bottom: 15px;
+              "
+            >
+              <input type="checkbox" />
+              <span style="font-weight: 500">랭킹 변화 알림</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                margin-bottom: 20px;
+              "
+            >
+              <input type="checkbox" checked />
+              <span style="font-weight: 500">마케팅 정보 수신</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveNotificationSettings()">
+            설정 저장
+          </button>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      // 로그인 상태 확인 및 UI 업데이트
+      function checkLoginStatus() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+
+        if (!isLoggedIn || !userData.email) {
+          // 로그인하지 않은 경우 메인페이지로 리다이렉트
+          alert("로그인이 필요합니다.");
+          location.href = "index.html";
+          return;
+        }
+
+        // 사용자 정보 표시
+        const fullName = userData.displayName || userData.email.split("@")[0];
+        const avatarLetter = fullName.charAt(0).toUpperCase();
+        const displayName =
+          fullName.length > 1 ? fullName.substring(1) : fullName;
+
+        // 헤더 업데이트
+        document.getElementById("userAvatar").textContent = avatarLetter;
+        document.getElementById("userName").textContent =
+          displayName + "님! 안녕하세요!";
+
+        // 프로필 페이지 정보 업데이트
+        document.getElementById("profileAvatarLarge").textContent =
+          avatarLetter;
+        document.getElementById("profileName").textContent = fullName;
+        document.getElementById("profileEmail").textContent = userData.email;
+        document.getElementById("editName").value = fullName;
+        document.getElementById("editEmail").value = userData.email;
+      }
+
+      // 로그아웃 함수
+      function logout() {
+        const confirmed = confirm("로그아웃 하시겠습니까?");
+        if (confirmed) {
+          localStorage.removeItem("userData");
+          localStorage.removeItem("isLoggedIn");
+          alert("로그아웃 되었습니다.");
+          location.href = "index.html";
+        }
+      }
+
+      // 프로필 저장
+      function saveProfile() {
+        const name = document.getElementById("editName").value;
+        const email = document.getElementById("editEmail").value;
+        const phone = document.getElementById("editPhone").value;
+        const company = document.getElementById("editCompany").value;
+
+        if (!name || !email) {
+          alert("이름과 이메일은 필수 입력사항입니다.");
+          return;
+        }
+
+        // localStorage에 업데이트된 정보 저장
+        const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+        userData.displayName = name;
+        userData.email = email;
+        userData.phone = phone;
+        userData.company = company;
+
+        localStorage.setItem("userData", JSON.stringify(userData));
+
+        alert("프로필이 저장되었습니다.");
+        checkLoginStatus(); // UI 업데이트
+      }
+
+      // 비밀번호 변경
+      function changePassword() {
+        const currentPassword =
+          document.getElementById("currentPassword").value;
+        const newPassword = document.getElementById("newPassword").value;
+        const confirmPassword =
+          document.getElementById("confirmPassword").value;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          alert("모든 비밀번호 필드를 입력해주세요.");
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          alert("새 비밀번호가 일치하지 않습니다.");
+          return;
+        }
+
+        if (newPassword.length < 8) {
+          alert("새 비밀번호는 8자 이상이어야 합니다.");
+          return;
+        }
+
+        alert("비밀번호가 변경되었습니다.");
+
+        // 입력 필드 초기화
+        document.getElementById("currentPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("confirmPassword").value = "";
+      }
+
+      // 알림 설정 저장
+      function saveNotificationSettings() {
+        alert("알림 설정이 저장되었습니다.");
+      }
+
+      // 계정 탈퇴
+      function deleteAccount() {
+        const confirmed = confirm(
+          "정말로 계정을 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        );
+        if (confirmed) {
+          const doubleConfirmed = confirm(
+            "모든 데이터가 영구적으로 삭제됩니다. 정말 진행하시겠습니까?"
+          );
+          if (doubleConfirmed) {
+            localStorage.removeItem("userData");
+            localStorage.removeItem("isLoggedIn");
+            alert("계정이 탈퇴되었습니다.");
+            location.href = "index.html";
+          }
+        }
+      }
+
+      // 페이지 로드 시 초기화
+      window.addEventListener("load", function () {
+        checkLoginStatus();
+      });
+    </script>
+  </body>
+</html>
