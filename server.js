@@ -479,53 +479,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// 루트 경로
-app.get("/", (req, res) => {
-  res.json({
-    message: "통합 API 서버",
-    version: "2.2.0",
-    environment: process.env.NODE_ENV || "development",
-    featureFlags: {
-      apiReadNext: FEATURE_API_READ_NEXT,
-      apiChatNext: FEATURE_API_CHAT_NEXT,
-      authNext: FEATURE_AUTH_NEXT,
-    },
-    services: {
-      naverKeywordTool: {
-        endpoints: {
-          keywords: "POST /api/keywords - 키워드 검색",
-          keywordTrend: "POST /api/keyword-trend - 키워드 월별 트렌드",
-          relatedKeywords: "GET /api/related-keywords - 연관 키워드",
-        },
-      },
-      blogGenerator: {
-        endpoints: {
-          generateBlog: "POST /api/generate-blog - AI 블로그 생성",
-          testKeys: "GET /api/test-keys - API 키 테스트",
-        },
-      },
-      reviewAnalyzer: {
-        endpoints: {
-          analyzeReview: "POST /api/analyze-review - 리뷰 분석",
-          generateReply: "POST /api/generate-reply - 간단한 답글 생성",
-        },
-      },
-      placeSearch: {
-        endpoints: {
-          searchLocal: "GET /api/search/local - 네이버 로컬 검색",
-        },
-      },
-      auth: {
-        kakao: {
-          endpoints: {
-            login: "GET /auth/kakao/login",
-            callback: "GET /auth/kakao/callback",
-          },
-        },
-      },
-    },
-  });
-});
+// 루트 경로: 홈페이지 제공
+app.get("/", (req, res) => sendHtml(res, "index.html"));
 
 // ==================== 인증 (Kakao OAuth) ====================
 
