@@ -311,33 +311,15 @@
       </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-      // Import the functions you need from the SDKs you need
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import {
-        getAuth,
-        signInWithEmailAndPassword,
-        signInWithPopup,
-        GoogleAuthProvider,
-        sendPasswordResetEmail,
-      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyBb7s8plBL0370UiLtOx8wE_e6NWDLmlKU",
-        authDomain: "admin-reviewb.firebaseapp.com",
-        projectId: "admin-reviewb",
-        storageBucket: "admin-reviewb.firebasestorage.app",
-        messagingSenderId: "206964628822",
-        appId: "1:206964628822:web:38633eaec9229ee49e0af7",
-        measurementId: "G-M8WGJXGQKC",
-      };
-
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const googleProvider = new GoogleAuthProvider();
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      // Supabase 초기화
+      const SUPABASE_URL = "https://ptuzlubgggbgsophfcna.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQxOTY4NjYsImV4cCI6MjA0OTc3Mjg2Nn0.dYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQxOTY4NjYsImV4cCI6MjA0OTc3Mjg2Nn0";
+      
+      const { createClient } = supabase;
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // DOM elements (kakao-only)
       const kakaoLoginBtn = document.getElementById("kakaoLogin");
@@ -445,38 +427,71 @@
         }
       });
 
-      // Kakao login (improved placeholder)
-      kakaoLoginBtn.addEventListener("click", () => {
-        window.location.href = "/auth/kakao/login?state=login";
+      // Kakao 로그인 (Supabase Auth)
+      kakaoLoginBtn.addEventListener("click", async () => {
+        hideMessages();
+        showLoading();
+
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'kakao',
+            options: {
+              redirectTo: 'https://sajangpick.co.kr/login.html'
+            }
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          // OAuth는 자동으로 카카오 페이지로 리다이렉트됩니다
+        } catch (error) {
+          console.error("카카오 로그인 에러:", error);
+          showError("카카오 로그인에 실패했습니다. 다시 시도해주세요.");
+          hideLoading();
+        }
       });
 
-      // Handle callback UX messages
-      (function () {
+      // 로그인 성공 처리 (OAuth 리다이렉트 후)
+      (async function() {
         const params = new URLSearchParams(window.location.search);
-        if (params.get("login") === "ok") {
-          showSuccess("카카오 로그인에 성공했습니다.");
-        }
-        if (params.get("error") === "kakao") {
-          showError("카카오 로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+        
+        // Supabase OAuth 콜백 처리
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        
+        if (session && session.user) {
+          console.log("로그인 성공:", session.user);
+          
+          // 사용자 데이터 저장
+          const userData = {
+            uid: session.user.id,
+            email: session.user.email,
+            displayName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || "",
+            photoURL: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || "",
+            provider: session.user.app_metadata?.provider || "kakao",
+            loginTime: new Date().toISOString(),
+          };
+          localStorage.setItem("userData", JSON.stringify(userData));
+          localStorage.setItem("isLoggedIn", "true");
+          
+          showSuccess("카카오 로그인에 성공했습니다. 메인 페이지로 이동합니다.");
+          
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 1500);
+        } else if (error) {
+          console.error("세션 확인 에러:", error);
+          showError("로그인 확인 중 오류가 발생했습니다.");
         }
       })();
 
-      // Check if user is already logged in
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          console.log("이미 로그인된 사용자:", user);
-          // 이미 로그인된 경우 사용자 데이터 업데이트
-          saveUserData(user);
-          // 자동으로 홈페이지로 리다이렉트 (선택사항)
-          // location.href = 'home.html';
-        } else {
-          // 로그아웃 상태일 때 localStorage 정리
+      // 로그아웃 상태 확인
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
           localStorage.removeItem("userData");
           localStorage.removeItem("isLoggedIn");
         }
       });
-
-      // no auto-focus (kakao-only)
     </script>
   </body>
 </html>
