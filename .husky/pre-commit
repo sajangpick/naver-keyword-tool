@@ -1,0 +1,17 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# 코드 변경이 있을 때 docs/AI_LOG.md가 수정되었는지 확인
+CHANGED_FILES=$(git diff --name-only --cached)
+
+CODE_CHANGED=$(echo "$CHANGED_FILES" | grep -E "^(index.html|.*\.(html|js|css)|vercel.json|render.yaml|server.js|package.json|package-lock.json|pages/|layout/|js/|css/|images/|mypage/|naver-keyword-tool/)" || true)
+LOG_CHANGED=$(echo "$CHANGED_FILES" | grep -E "^docs/AI_LOG.md$" || true)
+
+if [ -n "$CODE_CHANGED" ] && [ -z "$LOG_CHANGED" ]; then
+  echo "\n❌ docs/AI_LOG.md를 업데이트하세요. 코드 변경이 감지되었습니다.\n"
+  echo "$CODE_CHANGED"
+  exit 1
+fi
+
+exit 0
+
