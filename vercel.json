@@ -8,7 +8,7 @@
     },
     {
       "source": "/auth/:path*",
-      "destination": "https://naver-keyword-tool.onrender.com/auth/:path*"
+      "destination": "/api/auth/:path*"
     }
   ]
 }

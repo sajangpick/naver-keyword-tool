@@ -4,6 +4,36 @@
 
 ---
 
+## 2025-10-14 - 카카오 로그인 이관 진행(환경변수/리라이트/검증)
+
+- 배경: KOE101 오류 해소 및 프록시 제거를 위해 `/auth/*`를 Vercel 함수로 처리하고, 콘솔/ENV 설정을 정합화
+- 적용 사항(코드/설정)
+  - Vercel 함수 추가: `api/auth/kakao/login.js`, `api/auth/kakao/callback.js`, `api/auth/me.js`, `api/auth/logout.js`
+  - 라우팅: `vercel.json`에 내부 리라이트 추가 → `/auth/:path*` → `/api/auth/:path*`
+  - 의존성: `package.json`에 `jsonwebtoken` 추가
+  - 환경변수(Vercel Project → Settings → Environment Variables, Production):
+    - `KAKAO_REST_API_KEY` = 카카오 콘솔 REST API 키
+    - `KAKAO_REDIRECT_URI` = `https://sajangpick.co.kr/auth/kakao/callback`
+    - `JWT_SECRET` = 긴 랜덤 문자열(예: 64 hex)
+    - `CORS_ORIGIN` = `https://sajangpick.co.kr,https://www.sajangpick.co.kr`
+    - `KAKAO_CLIENT_SECRET` (선택, 콘솔에서 사용 ON일 때만)
+  - 배포: 환경변수 저장 후 Redeploy(Production)
+- 카카오 콘솔(반드시 일치)
+  - 제품 설정 → 카카오 로그인 → 일반:
+    - 사용 ON
+    - 리다이렉트 URI = `https://sajangpick.co.kr/auth/kakao/callback`
+  - 앱 설정 → 일반 → 플랫폼(Web):
+    - 사이트 도메인: `https://sajangpick.co.kr`, `https://www.sajangpick.co.kr` (https, 슬래시 없음)
+- 확인 절차(스모크)
+  1. `https://sajangpick.co.kr/auth/kakao/login?state=login` → 카카오 로그인 화면
+  2. 로그인 후 `/login.html?login=ok` 리다이렉트
+  3. `https://sajangpick.co.kr/api/auth/me` → `{ authenticated: true }`
+- 트러블슈팅 메모
+  - KOE101 발생 시 점검 순서: (1) redirect_uri 정확도, (2) REST API 키(client_id) 일치, (3) 플랫폼 Web 도메인, (4) Client Secret 사용 여부
+- 상태
+  - ENV/리라이트/함수 배포 완료, 콘솔 설정 안내 중
+  - 다음: 각 페이지의 로그인/회원가입 버튼 링크를 `/auth/kakao/login?state=login|signup`으로 통일
+
 ## 2025-10-14 - 모바일 헤더 겹침 전면 수정 + 배포 플로우 정리
 
 - 배경: 모바일에서 상단 로고/로그인/탭이 겹치는 이슈 발생(여러 페이지). 작은 화면에서 클릭 시 겹침.
@@ -51,6 +81,45 @@
 
 ---
 
+## Next.js 통합 계획(백엔드까지 Vercel, 단계적 전환)
+
+- 배경: 현재는 정적 HTML + Express(Render). 유지보수/프록시 복잡도 감소를 위해 Next.js(App Router)로 통합 예정
+- 단기(현행 유지): `vercel.json` 프록시로 로그인/API 사용, Render ENV 정리
+- 중기(Phase 1~3): 인증 → 읽기 API → 쓰기/연산 API 순서로 Next Route Handlers로 이관, 기능 토글로 점진 전환
+- 최종: 전부 Vercel에서 구동, Render 프록시 제거
+- 필요한 ENV(Vercel Project Settings): `KAKAO_REST_API_KEY`, `KAKAO_REDIRECT_URI=https://sajangpick.co.kr/auth/kakao/callback`, `KAKAO_CLIENT_SECRET(옵션)`, `JWT_SECRET`, `CORS_ORIGIN`
+- 라우팅 정책: 기존 경로 유지(`/api/*`, `/auth/*`), 점진 이관 시 토글로 트래픽 분배(10%→50%→100%)
+
+### 단계 요약
+
+- Phase 1(인증): `/auth/kakao/login`, `/auth/kakao/callback` Next로 이전, `/login`, `/join` UX 이식. 성공 시 기존 도메인으로 리다이렉트. 롤백: 경로 스위치로 즉시 복귀
+- Phase 2(읽기 API): `/api/keywords`, `/api/search/local`, `/api/health` 이관, 캐시 전략(ISR/서버 캐시) 적용
+- Phase 3(쓰기/연산): `/api/chat`, `/api/generate-blog`, `/api/analyze-review`, `/api/generate-reply` 이관. 타임아웃/스트리밍 고려, 에러/재시도 표준화
+- Phase 4(페이지): 주요 HTML 페이지를 `app/` 페이지로 전환, 공통 레이아웃/성능 최적화
+- Phase 5(DB): 필요 시 SQLite → Supabase(Postgres) 전환
+
+### 검증/롤백
+
+- SLO: 오류율 <1%, P95 <800ms, 로그인 성공률 ±1%p 이내. 실패 시 플래그 OFF로 1분 내 복귀
+
+---
+
+## 점진 전환 실행계획 요약(`docs/점진전환_실행계획.md`)
+
+- 원칙: 작은 배포/빠른 관측/즉시 롤백, 기존 경로 유지, 관측 필수(오류율/P95/로그인 성공률)
+- 세이프가드: 사용량 90% 경고, 95% 직전 중지, 오류율/P95 급증 시 롤백
+- 환경/보안: Kakao OAuth state 쿠키, JWT 세션 쿠키, CORS Origin 고정, helmet + CSP Report-Only → Nonce 도입 후 Enforce 전환 계획
+- SLO 게이트: 1시간 관측치 충족 시 승급, 초과 시 롤백
+- Phase 0: 준비/관측/ENV 분리/기능 토글 설계, 롤백 스크립트 리허설
+- Phase 1: 인증만 Next로 분리(NextAuth 또는 자체 OAuth), `/login`·`/join` 이관
+- Phase 2: 읽기 API 이관(저위험), 캐시 전략 수립, 단계적 전환(5→20→50→100%)
+- Phase 3: 쓰기/연산 API 이관(중위험), 서버리스 한계 고려(타임아웃/스트리밍), 재시도 표준화
+- Phase 4: 페이지 전환(SEO/UX), 정적 자원 캐시/압축, 공통 레이아웃
+- Phase 5: 데이터 계층 전환(있을 경우) — 듀얼라이트 후 컷오버
+- 운영 체크리스트: 배포 전 테스트/알림/ 롤백 리허설/취약점 스캔, 스모크 테스트 항목 명시(`/auth/kakao/login` 302 등)
+
+---
+
 ## 커밋 직전 체크리스트(의무)
 
 - [ ] 이 파일에 이번 변경 항목을 추가했나요?
@@ -58,6 +127,24 @@
 - [ ] 배포 방식(깃 푸시 또는 Vercel CLI)을 기록했나요?
 
 ---
+
+## 2025-10-14 - Phase 1 착수: 카카오 OAuth를 Vercel 함수로 이관
+
+- 배경: 프록시/콜드스타트/404 감소 및 운영 단순화를 위해 인증 라우트를 Vercel로 이전
+- 변경 파일:
+  - `api/auth/kakao/login.js`: 카카오 authorize로 리다이렉트 + CSRF state 쿠키 발급
+  - `api/auth/kakao/callback.js`: 토큰 교환, JWT 세션 쿠키 발급, `/login.html?login=ok` 또는 `/join.html?signup=ok` 리다이렉트
+  - `api/auth/me.js`, `api/auth/logout.js`: 세션 조회/해제
+  - `vercel.json`: `/auth/*` 프록시 제거(내부 함수로 처리), `/api/*` 프록시 유지
+  - `package.json`: `jsonwebtoken` 추가
+- 필요한 환경변수(Vercel Project Settings):
+  - `KAKAO_REST_API_KEY`, `KAKAO_REDIRECT_URI=https://sajangpick.co.kr/auth/kakao/callback`
+  - `KAKAO_CLIENT_SECRET`(선택), `JWT_SECRET`, `CORS_ORIGIN=https://sajangpick.co.kr,https://www.sajangpick.co.kr`
+- 확인 방법:
+  1. 배포 후 `https://sajangpick.co.kr/auth/kakao/login?state=login` 접속 → 카카오 화면으로 이동
+  2. 로그인 후 `/login.html?login=ok`로 리다이렉트되는지 확인
+  3. `https://sajangpick.co.kr/api/auth/me` 응답에서 `authenticated:true` 확인
+- 롤백: `vercel.json`에서 `/auth/:path*` 프록시 항목 복원 후 재배포
 
 ## 새 항목 추가 템플릿 (복사해서 사용)
 
