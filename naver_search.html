@@ -949,6 +949,20 @@
       }
 
       @media (max-width: 768px) {
+        /* 헤더 겹침 방지: 로고/버튼 세로 스택 & 버튼 absolute 해제 */
+        .top-nav {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .user-actions {
+          position: static;
+          right: auto;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
         .nav-menu {
           justify-content: flex-start;
           overflow-x: auto;
