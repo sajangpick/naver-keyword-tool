@@ -634,14 +634,18 @@
                 <div class="app-label" style="font-size: 14px">플점검</div>
               </a>
             </div>
-            <div class="auth-buttons">
-              <a href="/login.html" class="login-link"
+            <div class="auth-buttons" id="authButtons">
+              <a href="/login.html" class="login-link" id="loginBtn"
                 ><span class="emph">사장님픽</span
                 ><span class="sub"> 로그인</span></a
               >
-              <a href="/join.html" class="kakao-signup"
+              <a href="/join.html" class="kakao-signup" id="signupBtn"
                 >카카오톡 아이디로 회원가입</a
               >
+              <button class="kakao-signup" id="logoutBtn" style="display:none; border:none; cursor:pointer;"
+                >로그아웃</button
+              >
+              <span id="userEmail" style="display:none; margin-right:10px; font-size:14px;"></span>
             </div>
           </div>
           <div
@@ -1237,6 +1241,32 @@
           });
           topApps.querySelectorAll(".app").forEach((el) => {
             el.style.flex = "0 0 auto";
+          });
+        }
+      })();
+
+      // 로그인 상태 확인 및 UI 업데이트
+      (function checkLoginStatus() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        const userData = localStorage.getItem("userData");
+
+        if (isLoggedIn === "true" && userData) {
+          const user = JSON.parse(userData);
+          
+          // 로그인 버튼 숨기기
+          document.getElementById("loginBtn").style.display = "none";
+          document.getElementById("signupBtn").style.display = "none";
+          
+          // 사용자 정보 및 로그아웃 버튼 표시
+          document.getElementById("userEmail").textContent = user.email;
+          document.getElementById("userEmail").style.display = "inline";
+          document.getElementById("logoutBtn").style.display = "inline-block";
+          
+          // 로그아웃 버튼 클릭 이벤트
+          document.getElementById("logoutBtn").addEventListener("click", function() {
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userData");
+            location.reload();
           });
         }
       })();
