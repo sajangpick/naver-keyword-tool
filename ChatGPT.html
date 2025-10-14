@@ -455,6 +455,37 @@
       }
 
       @media (max-width: 768px) {
+<<<<<<< HEAD
+=======
+        /* 헤더 겹침 방지: 로고와 버튼을 세로 배치, 버튼의 absolute 해제 */
+        .top-nav {
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+        .user-actions {
+          position: static;
+          right: auto;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .logo {
+          font-size: 26px;
+        }
+        .login-btn,
+        .signup-btn {
+          padding: 8px 14px;
+          font-size: 13px;
+          border-radius: 16px;
+        }
+        .nav-container {
+          padding: 14px;
+          gap: 12px;
+        }
+>>>>>>> 9d3bb4f (fix(mobile): ChatGPT 헤더 겹침 해결(모바일))
         .nav-menu {
           justify-content: flex-start;
           overflow-x: auto;
