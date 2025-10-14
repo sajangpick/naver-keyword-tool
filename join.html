@@ -412,16 +412,7 @@
       </div>
     </div>
 
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      // Supabase 초기화
-      const SUPABASE_URL = "https://ptuzlubgggbgsophfcna.supabase.co";
-      const SUPABASE_ANON_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQxOTY4NjYsImV4cCI6MjA0OTc3Mjg2Nn0.dYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQxOTY4NjYsImV4cCI6MjA0OTc3Mjg2Nn0";
-
-      const { createClient } = supabase;
-      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // DOM elements
       const emailSignupForm = document.getElementById("emailSignupForm");
@@ -455,8 +446,8 @@
         successMessage.style.display = "none";
       }
 
-      // 이메일 회원가입
-      emailSignupForm.addEventListener("submit", async (e) => {
+      // 간단한 회원가입 (localStorage 사용)
+      emailSignupForm.addEventListener("submit", (e) => {
         e.preventDefault();
         hideMessages();
 
@@ -475,151 +466,45 @@
           return;
         }
 
-        try {
-          // 회원가입 시도 (이메일 인증 자동 확인)
-          const { data: signUpData, error: signUpError } =
-            await supabaseClient.auth.signUp({
-              email: email,
-              password: password,
-              options: {
-                emailRedirectTo: "https://sajangpick.co.kr/login.html",
-                data: {
-                  email_confirm: true,
-                },
-              },
-            });
+        // localStorage에서 사용자 목록 가져오기
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
 
-          if (signUpError) throw signUpError;
-
-          console.log("회원가입 완료:", signUpData);
-
-          // 바로 로그인 시도
-          const { data: signInData, error: signInError } =
-            await supabaseClient.auth.signInWithPassword({
-              email: email,
-              password: password,
-            });
-
-          if (signInError) {
-            // 로그인 실패하면 이메일 인증 필요 메시지
-            showSuccess(
-              "회원가입이 완료되었습니다! 로그인 페이지로 이동합니다."
-            );
-            setTimeout(() => {
-              window.location.href = "login.html";
-            }, 2000);
-            return;
-          }
-
-          // 로그인 성공 - 사용자 데이터 저장
-          const userData = {
-            uid: signInData.user.id,
-            email: signInData.user.email,
-            displayName: signInData.user.user_metadata?.name || "",
-            photoURL: signInData.user.user_metadata?.avatar_url || "",
-            provider: "email",
-            loginTime: new Date().toISOString(),
-          };
-          localStorage.setItem("userData", JSON.stringify(userData));
-          localStorage.setItem("isLoggedIn", "true");
-
-          showSuccess("회원가입 완료! 자동 로그인되었습니다.");
-
+        // 이미 가입된 이메일 확인
+        if (users[email]) {
+          showError("이미 가입된 이메일입니다. 로그인 페이지로 이동합니다.");
           setTimeout(() => {
-            window.location.href = "index.html";
-          }, 1500);
-        } catch (error) {
-          console.error("회원가입 에러:", error);
-          let errorMsg = "회원가입에 실패했습니다.";
-
-          if (
-            error.message.includes("already registered") ||
-            error.message.includes("User already registered")
-          ) {
-            errorMsg = "이미 가입된 이메일입니다. 로그인 페이지로 이동합니다.";
-            showError(errorMsg);
-            setTimeout(() => {
-              window.location.href = "login.html";
-            }, 2000);
-            return;
-          }
-
-          showError(errorMsg + " (" + error.message + ")");
+            window.location.href = "login.html";
+          }, 2000);
+          return;
         }
+
+        // 새 사용자 등록
+        users[email] = {
+          password: password,
+          email: email,
+          createdAt: new Date().toISOString(),
+        };
+        localStorage.setItem("users", JSON.stringify(users));
+
+        // 자동 로그인
+        const userData = {
+          email: email,
+          displayName: email.split("@")[0],
+          loginTime: new Date().toISOString(),
+        };
+        localStorage.setItem("userData", JSON.stringify(userData));
+        localStorage.setItem("isLoggedIn", "true");
+
+        showSuccess("회원가입 완료! 자동 로그인되었습니다.");
+
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
       });
 
-
-      // Kakao 회원가입 (Supabase Auth)
-      kakaoSignupBtn.addEventListener("click", async () => {
-        hideMessages();
-
-        try {
-          const { data, error } = await supabaseClient.auth.signInWithOAuth({
-            provider: "kakao",
-            options: {
-              redirectTo: "https://sajangpick.co.kr/join.html",
-            },
-          });
-
-          if (error) {
-            throw error;
-          }
-
-          // OAuth는 자동으로 카카오 페이지로 리다이렉트됩니다
-        } catch (error) {
-          console.error("카카오 회원가입 에러:", error);
-          showError("카카오 회원가입에 실패했습니다. 다시 시도해주세요.");
-        }
-      });
-
-      // 회원가입 성공 처리 (OAuth 리다이렉트 후)
-      (async function () {
-        const params = new URLSearchParams(window.location.search);
-
-        // Supabase OAuth 콜백 처리
-        const {
-          data: { session },
-          error,
-        } = await supabaseClient.auth.getSession();
-
-        if (session && session.user) {
-          console.log("회원가입 성공:", session.user);
-
-          // 사용자 데이터 저장
-          const userData = {
-            uid: session.user.id,
-            email: session.user.email,
-            displayName:
-              session.user.user_metadata?.full_name ||
-              session.user.user_metadata?.name ||
-              "",
-            photoURL:
-              session.user.user_metadata?.avatar_url ||
-              session.user.user_metadata?.picture ||
-              "",
-            provider: session.user.app_metadata?.provider || "kakao",
-            loginTime: new Date().toISOString(),
-          };
-          localStorage.setItem("userData", JSON.stringify(userData));
-          localStorage.setItem("isLoggedIn", "true");
-
-          showSuccess(
-            "카카오 회원가입에 성공했습니다! 메인 페이지로 이동합니다."
-          );
-
-          setTimeout(() => {
-            window.location.href = "index.html";
-          }, 1500);
-        } else if (error) {
-          console.error("세션 확인 에러:", error);
-        }
-      })();
-
-      // 로그인 상태 확인
-      supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          console.log("이미 로그인된 사용자:", session.user);
-        }
+      // Kakao 회원가입 (비활성화)
+      kakaoSignupBtn.addEventListener("click", () => {
+        showError("카카오 로그인은 준비 중입니다. 이메일로 가입해주세요.");
       });
     </script>
   </body>
