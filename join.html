@@ -413,6 +413,13 @@
     </div>
 
     <script>
+      // 이미 로그인된 경우 메인 페이지로 리다이렉트
+      (function checkAlreadyLoggedIn() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        if (isLoggedIn === "true") {
+          window.location.href = "index.html";
+        }
+      })();
 
       // DOM elements
       const emailSignupForm = document.getElementById("emailSignupForm");
