@@ -3,12 +3,8 @@
   "framework": null,
   "rewrites": [
     {
-      "source": "/api/:path*",
+      "source": "/api/:path((?!auth).*)*",
       "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
-    },
-    {
-      "source": "/auth/:path*",
-      "destination": "/api/auth/:path*"
     }
   ]
 }
