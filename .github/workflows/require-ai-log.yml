@@ -14,6 +14,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
       - name: Verify docs/AI_LOG.md updated when code changes
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
@@ -34,3 +39,7 @@ jobs:
           fi
 
           echo "✅ AI 작업 로그 규칙 충족"
+
+      - name: Summarize and deduplicate AI_LOG
+        run: |
+          node .github/scripts/ai_log_clean.js || true
