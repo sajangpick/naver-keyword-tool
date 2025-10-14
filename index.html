@@ -533,22 +533,20 @@
 
       /* Mobile-only layout tweaks */
       @media (max-width: 768px) {
-        /* 1) 기능 아이콘(채팅/리뷰작성/블로그/키워드/플점검 …)을 항상 한 줄로 배치 */
+        /* 1) 기능 아이콘: 한 줄 고정 + 가로 스크롤 + 5개 노출 */
         .top-actions-row .top-apps {
-          display: grid !important; /* 강제 그리드 */
-          grid-auto-flow: column; /* 가로로 흐르게 */
-          grid-auto-columns: 20%; /* 1줄에 5개(20%) */
-          justify-content: flex-start !important;
-          overflow-x: auto !important; /* 가로 스크롤 */
-          -webkit-overflow-scrolling: touch;
-          padding-bottom: 10px;
-          scroll-snap-type: x mandatory;
+          display: flex !important;
+          flex-wrap: nowrap !important;
           gap: 12px;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+          padding: 8px 12px 10px 12px;
+          scroll-snap-type: x proximity;
+          justify-content: flex-start !important;
         }
         .top-actions-row .top-apps a.app {
-          width: 100% !important; /* 셀(20%) 가로폭 꽉 차게 */
-          max-width: none !important;
-          flex: initial !important; /* 기존 flex 무력화 */
+          /* 화면에 정확히 5개가 보이도록 고정 폭 계산(간격 4*12px 고려) */
+          flex: 0 0 calc((100% - 48px) / 5) !important;
           scroll-snap-align: start;
         }
         .top-actions-row .top-apps::-webkit-scrollbar {
