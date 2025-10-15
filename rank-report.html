@@ -10,6 +10,10 @@
       href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
       :root {
         /* Align with sajangpick.co.kr */
@@ -138,6 +142,69 @@
         border: 1px solid var(--border);
         color: #374151;
       }
+      /* top apps (same look as index) */
+      .top-actions-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .top-apps {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 12px 4px 6px 4px;
+      }
+      .top-apps a.app {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        min-width: 64px;
+        text-decoration: none;
+        color: #374151;
+      }
+      .app-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: #fff;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+        color: var(--accent);
+        font-size: 18px;
+      }
+      .app-label {
+        font-size: 14px;
+        color: #374151;
+      }
+      .top-apps a.app:hover .app-icon {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        transition: all 0.2s ease;
+      }
+      @media (max-width: 768px) {
+        .top-actions-row .top-apps {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scroll-snap-type: x proximity;
+          justify-content: flex-start;
+          padding: 8px 12px 10px 12px;
+        }
+        .top-actions-row .top-apps a.app {
+          flex: 0 0 calc((100% - 48px) / 5);
+          scroll-snap-align: start;
+        }
+        .top-actions-row .top-apps::-webkit-scrollbar {
+          display: none;
+        }
+      }
       .row {
         display: flex;
         gap: 10px;
@@ -222,10 +289,66 @@
   </head>
   <body>
     <header>
-      <div class="wrap row">
-        <h1>플레이스 순위 리포트</h1>
-        <span class="badge">엑셀/CSV 업로드 → 시각화</span>
+      <div
+        class="wrap row"
+        style="justify-content: space-between; align-items: center"
+      >
+        <div
+          class="logo"
+          style="
+            font-weight: 800;
+            font-size: 22px;
+            color: #111827;
+            cursor: pointer;
+          "
+          onclick="location.href='/'"
+        >
+          사장픽
+        </div>
+        <span class="badge">플레이스 분석</span>
       </div>
+      <section class="top-actions">
+        <div class="container top-actions-row">
+          <div class="top-apps" style="padding: 0">
+            <a class="app" href="/ChatGPT.html">
+              <div class="app-icon">
+                <i class="fa-solid fa-comments" style="font-size: 20px"></i>
+              </div>
+              <div class="app-label">채팅</div>
+            </a>
+            <a class="app" href="/index.html#review">
+              <div class="app-icon">
+                <i class="fa-solid fa-pen-nib" style="font-size: 20px"></i>
+              </div>
+              <div class="app-label">리뷰작성</div>
+            </a>
+            <a class="app" href="/Blog-Editor.html">
+              <div class="app-icon">
+                <i class="fa-solid fa-blog" style="font-size: 20px"></i>
+              </div>
+              <div class="app-label">블로그</div>
+            </a>
+            <a class="app" href="/naver_search.html">
+              <div class="app-icon">
+                <i class="fa-solid fa-key" style="font-size: 20px"></i>
+              </div>
+              <div class="app-label">키워드</div>
+            </a>
+            <a class="app" href="/rank-report.html">
+              <div class="app-icon">
+                <i class="fa-solid fa-chart-line" style="font-size: 20px"></i>
+              </div>
+              <div class="app-label">플 순위</div>
+            </a>
+            <a class="app" href="/place-check.html">
+              <div class="app-icon">
+                <i class="fa-solid fa-store" style="font-size: 20px"></i>
+              </div>
+              <div class="app-label">플점검</div>
+            </a>
+          </div>
+        </div>
+      </section>
     </header>
 
     <main class="container" id="app">
