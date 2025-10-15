@@ -627,6 +627,12 @@
                 </div>
                 <div class="app-label" style="font-size: 14px">키워드</div>
               </a>
+              <a class="app" href="/rank-report.html">
+                <div class="app-icon">
+                  <i class="fa-solid fa-chart-line" style="font-size: 20px"></i>
+                </div>
+                <div class="app-label" style="font-size: 14px">플 순위</div>
+              </a>
               <a class="app" href="/place-check.html">
                 <div class="app-icon">
                   <i class="fa-solid fa-store" style="font-size: 20px"></i>
@@ -642,10 +648,17 @@
               <a href="/join.html" class="kakao-signup" id="signupBtn"
                 >카카오톡 아이디로 회원가입</a
               >
-              <button class="kakao-signup" id="logoutBtn" style="display:none; border:none; cursor:pointer;"
-                >로그아웃</button
+              <button
+                class="kakao-signup"
+                id="logoutBtn"
+                style="display: none; border: none; cursor: pointer"
               >
-              <span id="userEmail" style="display:none; margin-right:10px; font-size:14px;"></span>
+                로그아웃
+              </button>
+              <span
+                id="userEmail"
+                style="display: none; margin-right: 10px; font-size: 14px"
+              ></span>
             </div>
           </div>
           <div
@@ -1245,29 +1258,53 @@
         }
       })();
 
-      // 로그인 상태 확인 및 UI 업데이트
+      // 로그인 상태 확인 및 UI 업데이트 (즉시 실행)
       (function checkLoginStatus() {
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         const userData = localStorage.getItem("userData");
 
+        const loginBtn = document.getElementById("loginBtn");
+        const signupBtn = document.getElementById("signupBtn");
+        const userEmailSpan = document.getElementById("userEmail");
+        const logoutBtn = document.getElementById("logoutBtn");
+
         if (isLoggedIn === "true" && userData) {
-          const user = JSON.parse(userData);
-          
-          // 로그인 버튼 숨기기
-          document.getElementById("loginBtn").style.display = "none";
-          document.getElementById("signupBtn").style.display = "none";
-          
-          // 사용자 정보 및 로그아웃 버튼 표시
-          document.getElementById("userEmail").textContent = user.email;
-          document.getElementById("userEmail").style.display = "inline";
-          document.getElementById("logoutBtn").style.display = "inline-block";
-          
-          // 로그아웃 버튼 클릭 이벤트
-          document.getElementById("logoutBtn").addEventListener("click", function() {
+          try {
+            const user = JSON.parse(userData);
+
+            // 로그인 버튼 숨기기
+            if (loginBtn) loginBtn.style.display = "none";
+            if (signupBtn) signupBtn.style.display = "none";
+
+            // 사용자 정보 및 로그아웃 버튼 표시
+            if (userEmailSpan) {
+              userEmailSpan.textContent = user.email || user.name || "사용자";
+              userEmailSpan.style.display = "inline";
+            }
+            if (logoutBtn) {
+              logoutBtn.style.display = "inline-block";
+
+              // 로그아웃 버튼 클릭 이벤트
+              logoutBtn.addEventListener("click", function () {
+                if (confirm("로그아웃 하시겠습니까?")) {
+                  localStorage.removeItem("isLoggedIn");
+                  localStorage.removeItem("userData");
+                  location.href = "index.html";
+                }
+              });
+            }
+          } catch (e) {
+            console.error("로그인 정보 파싱 오류:", e);
+            // 오류 발생 시 로그인 정보 초기화
             localStorage.removeItem("isLoggedIn");
             localStorage.removeItem("userData");
-            location.reload();
-          });
+          }
+        } else {
+          // 로그인하지 않은 상태 - 로그인/회원가입 버튼 표시
+          if (loginBtn) loginBtn.style.display = "inline-block";
+          if (signupBtn) signupBtn.style.display = "inline-block";
+          if (userEmailSpan) userEmailSpan.style.display = "none";
+          if (logoutBtn) logoutBtn.style.display = "none";
         }
       })();
     </script>

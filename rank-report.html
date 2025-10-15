@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>플레이스 순위 리포트</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Align with sajangpick.co.kr */
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --bg: #f7f9fb;
+        --panel: #ffffff;
+        --muted: #6b7280;
+        --text: #111827;
+        --accent: var(--naver-green);
+        --border: #e5e7eb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
+          Noto Sans KR, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--border);
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 8px 0;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 12px 0;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+      }
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+      input[type="text"],
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        background: #fff;
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 10px;
+      }
+      input[type="file"] {
+        width: 100%;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .tab {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #374151;
+        padding: 8px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .tab.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+        text-align: right;
+      }
+      th {
+        color: #374151;
+        font-weight: 700;
+        position: sticky;
+        top: 0;
+        background: #fafafa;
+      }
+      td:first-child,
+      th:first-child,
+      td:nth-child(2),
+      th:nth-child(2) {
+        text-align: left;
+      }
+      tr.highlight {
+        background: rgba(3, 199, 90, 0.08);
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        border: 1px solid var(--border);
+        color: #374151;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .footer {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 16px;
+      }
+      .sticky-note {
+        border-left: 3px solid var(--accent);
+        padding-left: 10px;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 18px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+      .card-header .title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .card-body {
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #111827;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="wrap row">
+        <h1>플레이스 순위 리포트</h1>
+        <span class="badge">엑셀/CSV 업로드 → 시각화</span>
+      </div>
+    </header>
+
+    <main class="container" id="app">
+      <div class="panel sticky-note">
+        <div class="hint">
+          1) 1번 데이터(엑셀 또는 CSV)를 업로드하세요. 2) 컬럼을 매핑하고 대상
+          업체/키워드를 입력하면 2번과 유사한 표와 그래프가 즉시 생성됩니다.
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="title">플레이스 분석 도구</div>
+          <div class="tabs">
+            <button class="tab active" data-tab="tab-rank">
+              플레이스 순위 리스트
+            </button>
+            <button class="tab" data-tab="tab-daily">내업장 일별순위</button>
+            <button class="tab" data-tab="tab-hidden">
+              플레이스 히든 키워드
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <section id="tab-rank" class="tool-tab" style="display: block">
+            <div class="panel">
+              <div class="row">
+                <div style="flex: 1">
+                  <label>키워드</label>
+                  <input
+                    id="keyword"
+                    type="text"
+                    placeholder="예: 부산고기맛집"
+                  />
+                </div>
+                <div style="flex: 1">
+                  <label>대상 업체명</label>
+                  <input
+                    id="target"
+                    type="text"
+                    placeholder="예: 스무고개 해운대점"
+                  />
+                </div>
+              </div>
+              <div
+                class="row"
+                style="margin-top: 10px; justify-content: flex-end"
+              >
+                <button
+                  id="loadDemo"
+                  type="button"
+                  style="
+                    background: #0e1016;
+                    border: 1px solid #2b3040;
+                    color: #cfe0ff;
+                    padding: 8px 10px;
+                    border-radius: 10px;
+                    cursor: pointer;
+                  "
+                >
+                  이미지 데모 데이터 불러오기
+                </button>
+              </div>
+              <div class="row" style="margin-top: 10px">
+                <div style="flex: 1">
+                  <label>정규화 가중치 (N1/N2/N3)</label>
+                  <input id="weights" type="text" value="0.4,0.35,0.25" />
+                  <div class="hint">형식: w1,w2,w3 (합계 1)</div>
+                </div>
+                <div style="width: 180px">
+                  <label>상위 노출 개수</label>
+                  <input id="topk" type="text" value="15" />
+                </div>
+              </div>
+            </div>
+
+            <section
+              class="panel"
+              id="mapping"
+              style="display: none; margin-top: 12px"
+            >
+              <div class="row">
+                <div style="flex: 1">
+                  <label>업체명 컬럼</label>
+                  <select id="colName"></select>
+                </div>
+                <div style="flex: 1">
+                  <label>URL 컬럼</label>
+                  <select id="colUrl"></select>
+                </div>
+                <div style="flex: 1">
+                  <label>방문자리뷰 컬럼</label>
+                  <select id="colVisit"></select>
+                </div>
+                <div style="flex: 1">
+                  <label>블로그리뷰 컬럼</label>
+                  <select id="colBlog"></select>
+                </div>
+                <div style="flex: 1">
+                  <label>저장수 컬럼</label>
+                  <select id="colSave"></select>
+                </div>
+                <div style="flex: 1">
+                  <label>날짜 컬럼 (선택)</label>
+                  <select id="colDate"></select>
+                </div>
+              </div>
+            </section>
+
+            <section class="grid" style="margin-top: 16px">
+              <div class="panel" style="max-height: 680px; overflow: auto">
+                <table id="rankTable">
+                  <thead>
+                    <tr>
+                      <th>순위</th>
+                      <th>업체명</th>
+                      <th>방문자</th>
+                      <th>블로그</th>
+                      <th>저장수</th>
+                      <th>N1</th>
+                      <th>N2</th>
+                      <th>N3</th>
+                      <th>종합</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+
+          <section id="tab-daily" class="tool-tab" style="display: none">
+            <div class="panel">
+              <div class="row">
+                <div style="flex: 1">
+                  <label>업체명</label>
+                  <input
+                    id="dailyTarget"
+                    type="text"
+                    placeholder="예: 스무고개 해운대점"
+                  />
+                </div>
+                <div class="hint">
+                  데모 데이터 로드 후 일별 순위를 표시합니다.
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="max-height: 680px; overflow: auto">
+              <table id="dailyTable">
+                <thead>
+                  <tr>
+                    <th>날짜</th>
+                    <th>순위</th>
+                    <th>N1</th>
+                    <th>N2</th>
+                    <th>N3</th>
+                    <th>종합</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="tab-hidden" class="tool-tab" style="display: none">
+            <div class="panel">
+              <div class="row">
+                <div style="flex: 1">
+                  <label>검색 키워드(실험)</label>
+                  <input
+                    id="hiddenKeyword"
+                    type="text"
+                    placeholder="예: 부산고기맛집"
+                  />
+                </div>
+                <div style="width: auto">
+                  <button class="btn primary" id="hiddenSearch">검색</button>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="max-height: 680px; overflow: auto">
+              <table id="hiddenTable">
+                <thead>
+                  <tr>
+                    <th>키워드(가설)</th>
+                    <th>근거(상관)</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <div class="footer">
+        데이터가 하루치만 있으면 표는 생성되고, 날짜 컬럼이 있거나 여러 날짜를
+        합치면 추이 그래프가 활성화됩니다.
+      </div>
+    </main>
+
+    <script>
+      const el = (id) => document.getElementById(id);
+      const state = {
+        rows: [],
+        headers: [],
+        mappingReady: false,
+        isDemo: false,
+      };
+
+      const guess = (headers, keys) =>
+        headers.find((h) => keys.some((k) => h.toLowerCase().includes(k))) ||
+        "";
+
+      const loadFile = async (file) => {
+        const ext = file.name.split(".").pop().toLowerCase();
+        if (ext === "csv") {
+          return new Promise((resolve, reject) => {
+            Papa.parse(file, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (res) => resolve(res.data),
+              error: reject,
+            });
+          });
+        }
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        return XLSX.utils.sheet_to_json(ws, { defval: "" });
+      };
+
+      const numberize = (v) => {
+        if (typeof v === "number") return v;
+        if (!v) return 0;
+        const s = String(v).replace(/[^0-9.-]/g, "");
+        const n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+      };
+
+      const minmax = (arr) => {
+        const min = Math.min(...arr);
+        const max = Math.max(...arr);
+        const span = max - min || 1;
+        return arr.map((v) => (v - min) / span);
+      };
+
+      const compute = () => {
+        const m = {
+          name: el("colName").value,
+          url: el("colUrl").value,
+          visit: el("colVisit").value,
+          blog: el("colBlog").value,
+          save: el("colSave").value,
+          date: el("colDate").value,
+        };
+        if (!m.name || !m.visit || !m.blog || !m.save) return;
+
+        const keyword = el("keyword").value.trim() || "-";
+        const target = el("target").value.trim();
+
+        const topk = Math.max(5, parseInt(el("topk").value || "15", 10));
+        const [w1, w2, w3] = (el("weights").value || "0.4,0.35,0.25")
+          .split(",")
+          .map(Number);
+        const ws = w1 + w2 + w3 || 1;
+        const W = [w1 / ws, w2 / ws, w3 / ws];
+
+        // group by date if exists
+        const byDate = {};
+        state.rows.forEach((r) => {
+          const row = {
+            name: r[m.name],
+            url: r[m.url],
+            visit: numberize(r[m.visit]),
+            blog: numberize(r[m.blog]),
+            save: numberize(r[m.save]),
+            date: m.date && r[m.date] ? String(r[m.date]) : "single",
+          };
+          if (!byDate[row.date]) byDate[row.date] = [];
+          byDate[row.date].push(row);
+        });
+
+        // KPIs removed in simplified layout
+
+        // prepare latest date slice for table
+        const dates = Object.keys(byDate).sort();
+        const latest = byDate[dates[dates.length - 1]] || [];
+        const nv = minmax(latest.map((r) => r.visit));
+        const nb = minmax(latest.map((r) => r.blog));
+        const ns = minmax(latest.map((r) => r.save));
+        const enriched = latest.map((r, i) => ({
+          ...r,
+          N1: nv[i],
+          N2: nb[i],
+          N3: ns[i],
+          score: W[0] * nv[i] + W[1] * nb[i] + W[2] * ns[i],
+        }));
+        enriched.sort((a, b) => b.score - a.score);
+
+        const tbody = document.querySelector("#rankTable tbody");
+        tbody.innerHTML = "";
+        enriched.slice(0, topk).forEach((r, idx) => {
+          const tr = document.createElement("tr");
+          if (target && String(r.name).includes(target))
+            tr.classList.add("highlight");
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td>${r.name || ""}</td>
+            <td>${r.visit.toLocaleString()}</td>
+            <td>${r.blog.toLocaleString()}</td>
+            <td>${r.save.toLocaleString()}</td>
+            <td>${r.N1.toFixed(6)}</td>
+            <td>${r.N2.toFixed(6)}</td>
+            <td>${r.N3.toFixed(6)}</td>
+            <td>${r.score.toFixed(6)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // fill daily table when requested
+        fillDailyTable(byDate, dates, target, W);
+      };
+
+      function fillDailyTable(byDate, dates, target, W) {
+        const dailyTbody = document.querySelector("#dailyTable tbody");
+        if (!dailyTbody) return;
+        const tname = target || "";
+        dailyTbody.innerHTML = "";
+        if (dates.length <= 1 || !tname) return;
+        dates.forEach((d) => {
+          const slice = byDate[d] || [];
+          const _nv = minmax(slice.map((r) => r.visit));
+          const _nb = minmax(slice.map((r) => r.blog));
+          const _ns = minmax(slice.map((r) => r.save));
+          const scored = slice.map((r, i) => ({
+            name: r.name,
+            N1: _nv[i],
+            N2: _nb[i],
+            N3: _ns[i],
+            s: W[0] * _nv[i] + W[1] * _nb[i] + W[2] * _ns[i],
+          }));
+          scored.sort((a, b) => b.s - a.s);
+          const idx = scored.findIndex((x) => String(x.name) === String(tname));
+          if (idx !== -1) {
+            const me = scored[idx];
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${d}</td><td>${idx + 1}</td><td>${me.N1.toFixed(
+              6
+            )}</td><td>${me.N2.toFixed(6)}</td><td>${me.N3.toFixed(
+              6
+            )}</td><td>${me.s.toFixed(6)}</td>`;
+            dailyTbody.appendChild(tr);
+          }
+        });
+      }
+
+      const populateMapping = (headers) => {
+        const ids = [
+          "colName",
+          "colUrl",
+          "colVisit",
+          "colBlog",
+          "colSave",
+          "colDate",
+        ];
+        ids.forEach((id) => {
+          el(id).innerHTML =
+            '<option value="">선택</option>' +
+            headers.map((h) => `<option>${h}</option>`).join("");
+        });
+        el("colName").value = guess(headers, [
+          "업체",
+          "상호",
+          "가게",
+          "점",
+          "상호명",
+          "매장",
+          "place",
+          "name",
+        ]);
+        el("colUrl").value = guess(headers, ["url", "링크"]);
+        el("colVisit").value = guess(headers, [
+          "방문",
+          "리뷰",
+          "네이버리뷰",
+          "vis",
+          "review_total",
+        ]);
+        el("colBlog").value = guess(headers, ["블로그", "blog"]);
+        el("colSave").value = guess(headers, ["저장", "즐겨", "찜", "save"]);
+        el("colDate").value = guess(headers, ["날짜", "date", "dt"]);
+        document.getElementById("mapping").style.display = "block";
+        state.mappingReady = true;
+        compute();
+      };
+
+      // 이미지에서 본 예시를 재현한 데모 데이터
+      const loadDemoData = () => {
+        const dates = [
+          "2025-09-30",
+          "2025-10-01",
+          "2025-10-02",
+          "2025-10-03",
+          "2025-10-04",
+          "2025-10-05",
+        ];
+        const shops = [
+          { name: "두찜", url: "/place/두찜", v: 2233, b: 245, s: 5000 },
+          {
+            name: "오겹살 명지본점",
+            url: "/place/오겹살명지본점",
+            v: 11458,
+            b: 4435,
+            s: 66000,
+          },
+          {
+            name: "맛고 연산시장점",
+            url: "/place/맛고연산시장점",
+            v: 10196,
+            b: 2914,
+            s: 54000,
+          },
+          {
+            name: "고기굽는남자",
+            url: "/place/고기굽는남자",
+            v: 2690,
+            b: 618,
+            s: 30000,
+          },
+          {
+            name: "수담삼 서면전포본점",
+            url: "/place/수담삼서면전포본점",
+            v: 979,
+            b: 25549,
+            s: 41000,
+          },
+          {
+            name: "해운대한상갈비",
+            url: "/place/해운대한상갈비",
+            v: 7237,
+            b: 6365,
+            s: 199000,
+          },
+          {
+            name: "고깃장 기장점",
+            url: "/place/고깃장기장점",
+            v: 5357,
+            b: 1532,
+            s: 59000,
+          },
+          {
+            name: "초필살돼지구이 광안직영점",
+            url: "/place/초필살돼지구이광안",
+            v: 3278,
+            b: 2879,
+            s: 114000,
+          },
+          {
+            name: "스무고개 해운대점",
+            url: "/place/스무고개해운대점",
+            v: 6560,
+            b: 2527,
+            s: 123000,
+          },
+          { name: "육정", url: "/place/육정", v: 5448, b: 1052, s: 34000 },
+          {
+            name: "돈베기 삼겹살",
+            url: "/place/돈베기삼겹살",
+            v: 4231,
+            b: 1808,
+            s: 71000,
+          },
+          {
+            name: "부산삼겹살 하단본점 숯불갈비",
+            url: "/place/부산삼겹살하단본점",
+            v: 4536,
+            b: 3207,
+            s: 87000,
+          },
+          {
+            name: "일식육고기집 명지본점",
+            url: "/place/일식육고기집명지",
+            v: 4977,
+            b: 1949,
+            s: 24000,
+          },
+          {
+            name: "해운대 하선정 흑돼지전문점",
+            url: "/place/해운대하선정",
+            v: 5707,
+            b: 3790,
+            s: 17000,
+          },
+          {
+            name: "구덕포짜글이 서면전포점",
+            url: "/place/구덕포짜글이서면",
+            v: 2483,
+            b: 1222,
+            s: 12000,
+          },
+        ];
+        // 날짜별 약한 변동을 주어 추이 생성
+        const rows = [];
+        dates.forEach((d, di) => {
+          shops.forEach((s) => {
+            const drift = 1 + (di - 2) * 0.02; // 중앙 날짜 기준 소폭 변동
+            const adj = (x) => Math.max(0, Math.round(x * drift));
+            let v = adj(s.v),
+              b = adj(s.b),
+              sa = adj(s.s);
+            // 09-30에는 스무고개를 조금 낮춰 13위 근처로
+            if (d === "2025-09-30" && s.name === "스무고개 해운대점") {
+              v = Math.round(s.v * 0.75);
+              b = Math.round(s.b * 0.7);
+              sa = Math.round(s.s * 0.8);
+            }
+            rows.push({
+              업체명: s.name,
+              URL: s.url,
+              방문자리뷰: v,
+              블로그리뷰: b,
+              저장수: sa,
+              날짜: d,
+            });
+          });
+        });
+        state.rows = rows;
+        state.headers = Object.keys(rows[0]);
+        state.isDemo = true;
+        el("keyword").value = "부산고기맛집";
+        el("target").value = "스무고개 해운대점";
+        populateMapping(state.headers);
+      };
+
+      // file upload removed in simplified layout
+
+      [
+        "keyword",
+        "target",
+        "weights",
+        "topk",
+        "colName",
+        "colUrl",
+        "colVisit",
+        "colBlog",
+        "colSave",
+        "colDate",
+      ].forEach((id) => {
+        el(id).addEventListener("input", () => {
+          if (state.mappingReady) compute();
+        });
+        el(id).addEventListener("change", () => {
+          if (state.mappingReady) compute();
+        });
+      });
+
+      // 데모 버튼
+      el("loadDemo").addEventListener("click", loadDemoData);
+
+      // Tabs
+      document.querySelectorAll(".tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const target = btn.getAttribute("data-tab");
+          document
+            .querySelectorAll(".tool-tab")
+            .forEach(
+              (sec) =>
+                (sec.style.display = sec.id === target ? "block" : "none")
+            );
+        });
+      });
+    </script>
+  </body>
+</html>

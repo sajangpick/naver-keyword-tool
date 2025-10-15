@@ -2760,7 +2760,47 @@
         searchQuery.focus();
         updateKeywordCount(); // 초기 키워드 카운트 설정
         await checkServerStatus();
+        checkLoginStatusNav(); // 로그인 상태 확인
       });
+
+      // 로그인 상태 확인 및 UI 업데이트
+      function checkLoginStatusNav() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        const userData = localStorage.getItem("userData");
+
+        const loginBtn = document.querySelector(".login-btn");
+        const signupBtns = document.querySelectorAll(".signup-btn");
+
+        if (isLoggedIn === "true" && userData) {
+          try {
+            const user = JSON.parse(userData);
+
+            // 로그인 버튼 숨기기
+            if (loginBtn) loginBtn.style.display = "none";
+
+            // 회원가입 버튼은 로그아웃 버튼으로 변경
+            if (signupBtns.length > 0) {
+              signupBtns[0].textContent = "로그아웃";
+              signupBtns[0].onclick = function (e) {
+                e.preventDefault();
+                if (confirm("로그아웃 하시겠습니까?")) {
+                  localStorage.removeItem("isLoggedIn");
+                  localStorage.removeItem("userData");
+                  location.href = "index.html";
+                }
+              };
+            }
+          } catch (e) {
+            console.error("로그인 정보 파싱 오류:", e);
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userData");
+          }
+        } else {
+          // 로그인하지 않은 상태
+          if (loginBtn) loginBtn.style.display = "inline-block";
+          signupBtns.forEach((btn) => (btn.style.display = "inline-block"));
+        }
+      }
     </script>
   </body>
 </html>
