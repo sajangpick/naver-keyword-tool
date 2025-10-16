@@ -8,16 +8,24 @@
 
 ### 📚 추가 문서 (필요시)
 
-1. 📋 **[docs/AI_LOG.md](docs/AI_LOG.md)**
+1. 🚀 **[docs/VERCEL_배포가이드.md](docs/VERCEL_배포가이드.md)** ⭐ **NEW!**
+   - Vercel 배포 완벽 가이드
+   - 환경변수 설정 방법
+   - 도메인 연결 및 문제 해결
+
+2. 📋 **[docs/AI_LOG.md](docs/AI_LOG.md)**
    - 상세한 작업 이력 (최신 TOP 3 요약 포함)
    - 모든 변경사항 기록
-2. 📝 **[docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)**
 
+3. 📝 **[docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)**
    - 전체 프로젝트 계획 및 향후 전환 계획
    - 단계별 실행 가이드 및 롤백 방법
 
-3. 📄 **[docs/env.example.md](docs/env.example.md)**
+4. 📄 **[docs/env.example.md](docs/env.example.md)**
    - 환경변수 설정 가이드
+   
+5. ⚙️ **[docs/환경변수_템플릿.env](docs/환경변수_템플릿.env)**
+   - Vercel 배포용 환경변수 템플릿
 
 ---
 
@@ -32,12 +40,42 @@
 
 > ⚡ **중요**: 모든 작업 후에는 반드시 `docs/AI_LOG.md`에 변경사항을 기록해주세요!
 
-## 빠른 시작
+## ⚡ 빠른 배포 가이드
 
-- 정적 배포: Vercel (Framework: Other, Build/Output 비움)
-- API: Render → 프록시(`vercel.json`)로 연결 (점진적으로 Vercel Functions로 이전 예정)
-- 로컬 변경 즉시 배포: `pnpm dlx vercel deploy --prod`
-- 깃 자동 배포: `git push` (깃 연동 시)
+### 🌐 Vercel 배포 (프로덕션)
+
+1. **GitHub 연동 배포** (추천 ⭐)
+   ```bash
+   git push origin main
+   # → Vercel이 자동으로 감지하고 배포!
+   ```
+
+2. **수동 배포** (CLI 사용)
+   ```bash
+   pnpm dlx vercel deploy --prod
+   ```
+
+3. **처음 배포하는 경우**
+   - 👉 **[docs/VERCEL_배포가이드.md](docs/VERCEL_배포가이드.md)** 참고
+   - Vercel 계정 연동
+   - 환경변수 설정 필수!
+
+### 📝 배포 체크리스트
+
+- ✅ GitHub에 코드 푸시 완료
+- ✅ Vercel 프로젝트 연결
+- ✅ 환경변수 설정 ([템플릿](docs/환경변수_템플릿.env) 참고)
+- ✅ 배포 후 "실시간 목록 수집" 기능 테스트
+
+---
+
+## 🏗️ 아키텍처
+
+- **정적 배포**: Vercel (Framework: Other, Build/Output 비움)
+- **API**: 
+  - 기본: Render → 프록시(`vercel.json`)로 연결
+  - 크롤링: Vercel Functions (`api/rank-list-crawl.js`)
+  - 점진적으로 Vercel Functions로 전체 이전 예정
 
 ## 반드시 지켜주세요
 
