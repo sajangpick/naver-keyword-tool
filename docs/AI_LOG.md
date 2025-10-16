@@ -31,6 +31,38 @@
 
 ---
 
+## 2025-10-16 - 카카오 로그인 활성화 (비개발자용)
+
+- 배경: 고객이 카카오톡으로 쉽게 회원가입할 수 있도록 활성화
+- 변경 파일:
+  - `login.html`: 카카오 로그인 버튼 활성화 (464~466줄)
+  - `join.html`: 카카오 회원가입 버튼 활성화 (513~515줄)
+  - `docs/KAKAO_LOGIN_SETUP.md`: 비개발자용 설정 가이드 신규 생성
+- 주요 변경점:
+  - 카카오 버튼 클릭 시 에러 메시지 대신 `/auth/kakao/login` 으로 리다이렉트
+  - 로그인과 회원가입을 state 파라미터로 구분 (login/signup)
+  - 카카오 API 코드는 이미 완성되어 있었음 (api/auth/kakao/\*)
+- 필요한 환경변수 (Vercel):
+  - `KAKAO_REST_API_KEY`: 카카오 개발자 콘솔에서 발급
+  - `KAKAO_REDIRECT_URI`: `https://sajangpick.co.kr/auth/kakao/callback`
+  - `JWT_SECRET`: 랜덤 문자열 (세션 암호화용)
+- 확인 방법:
+  1. 카카오 개발자 콘솔에서 앱 등록 (docs/KAKAO_LOGIN_SETUP.md 참고)
+  2. Vercel 환경변수 3개 설정
+  3. Git push 후 배포 대기
+  4. https://sajangpick.co.kr/login.html 에서 카카오 버튼 클릭 테스트
+  5. 카카오 로그인 화면이 나타나면 성공!
+- 배포: Git 푸시 → Vercel 자동 배포
+- 주의사항:
+  - 카카오 개발자 콘솔의 Redirect URI와 Vercel 환경변수가 정확히 일치해야 함
+  - 플랫폼(Web) 도메인도 https://sajangpick.co.kr 으로 등록 필수
+  - JWT_SECRET은 안전한 랜덤 문자열 사용 (최소 32자 이상 권장)
+- 후속 작업:
+  - 카카오 개발자 등록 및 환경변수 설정 (사용자가 직접)
+  - 로그인 성공 후 회원 정보 DB 저장 (향후 슈퍼베이스 연동 가능)
+
+---
+
 ## 2025-10-16 - 문서 체계 대폭 개선: 3단계 읽기 구조 완성 🎯
 
 - 배경: 새 AI가 빠르게 컨텍스트를 파악할 수 있도록 문서 구조 개선 필요

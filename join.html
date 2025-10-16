@@ -509,9 +509,10 @@
         }, 1500);
       });
 
-      // Kakao 회원가입 (비활성화)
+      // Kakao 회원가입
       kakaoSignupBtn.addEventListener("click", () => {
-        showError("카카오 로그인은 준비 중입니다. 이메일로 가입해주세요.");
+        // 카카오 로그인 페이지로 이동 (회원가입도 동일)
+        window.location.href = "/auth/kakao/login?state=signup";
       });
     </script>
   </body>

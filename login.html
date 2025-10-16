@@ -459,9 +459,10 @@
         showError("비밀번호 재설정은 준비 중입니다.");
       });
 
-      // Kakao 로그인 (비활성화)
+      // Kakao 로그인
       kakaoLoginBtn.addEventListener("click", () => {
-        showError("카카오 로그인은 준비 중입니다. 이메일로 로그인해주세요.");
+        // 카카오 로그인 페이지로 이동
+        window.location.href = "/auth/kakao/login?state=login";
       });
     </script>
   </body>
