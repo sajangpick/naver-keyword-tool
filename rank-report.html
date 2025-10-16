@@ -129,11 +129,40 @@
       }
       .badge {
         display: inline-block;
-        padding: 2px 8px;
+        padding: 4px 10px;
         border-radius: 999px;
         font-size: 11px;
-        border: 1px solid var(--border);
-        color: #374151;
+        font-weight: 600;
+      }
+      .badge.success {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .badge.warning {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge.info {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .rank-up {
+        color: #10b981;
+        font-weight: 700;
+      }
+      .rank-down {
+        color: #ef4444;
+        font-weight: 700;
+      }
+      .rank-same {
+        color: #6b7280;
+      }
+      td.number {
+        text-align: right;
       }
 
       .row {
@@ -235,9 +264,11 @@
             <button class="tab active" data-tab="tab-rank">
               플레이스 순위 리스트
             </button>
-            <button class="tab" data-tab="tab-daily">내업장 일별순위</button>
+            <button class="tab" data-tab="tab-daily">
+              <i class="fas fa-users"></i> 구독 회원 관리
+            </button>
             <button class="tab" data-tab="tab-hidden">
-              플레이스 히든 키워드
+              <i class="fas fa-chart-bar"></i> 키워드 모니터링
             </button>
           </div>
         </div>
@@ -387,63 +418,117 @@
           </section>
 
           <section id="tab-daily" class="tool-tab" style="display: none">
+            <!-- 구독 회원 관리 -->
             <div class="panel">
-              <div class="row">
-                <div style="flex: 1">
-                  <label>업체명</label>
-                  <input
-                    id="dailyTarget"
-                    type="text"
-                    placeholder="예: 스무고개 해운대점"
-                  />
-                </div>
-                <div class="hint">
-                  데모 데이터 로드 후 일별 순위를 표시합니다.
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                <h3 style="margin: 0">구독 회원 관리</h3>
+                <div style="display: flex; gap: 8px">
+                  <button class="btn primary" onclick="addSubscriber()">
+                    <i class="fas fa-user-plus"></i> 회원 추가
+                  </button>
+                  <button class="btn" onclick="trackAllSubscribers()">
+                    <i class="fas fa-sync"></i> 전체 순위 업데이트
+                  </button>
                 </div>
               </div>
+              <div class="hint" style="padding: 12px; background: #eff6ff; border-radius: 8px; margin-bottom: 16px">
+                <i class="fas fa-info-circle"></i> 구독 회원의 업장과 키워드를 등록하고 매일 순위를 추적합니다.
+              </div>
             </div>
+
             <div class="panel" style="max-height: 680px; overflow: auto">
-              <table id="dailyTable">
+              <table id="subscribersTable">
                 <thead>
                   <tr>
-                    <th>날짜</th>
-                    <th>순위</th>
-                    <th>N1</th>
-                    <th>N2</th>
-                    <th>N3</th>
-                    <th>종합</th>
+                    <th>회원명</th>
+                    <th>업장명</th>
+                    <th>관리 키워드</th>
+                    <th>평균 순위</th>
+                    <th>마지막 업데이트</th>
+                    <th>상태</th>
+                    <th>관리</th>
                   </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280">
+                      <i class="fas fa-users" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px"></i>
+                      등록된 구독 회원이 없습니다
+                    </td>
+                  </tr>
+                </tbody>
               </table>
+            </div>
+
+            <!-- 회원 상세 정보 -->
+            <div id="subscriberDetail" class="panel" style="display: none; margin-top: 16px">
+              <h3>회원 상세 정보</h3>
+              <div id="subscriberDetailContent"></div>
             </div>
           </section>
 
           <section id="tab-hidden" class="tool-tab" style="display: none">
+            <!-- 키워드 순위 모니터링 -->
             <div class="panel">
-              <div class="row">
-                <div style="flex: 1">
-                  <label>검색 키워드(실험)</label>
-                  <input
-                    id="hiddenKeyword"
-                    type="text"
-                    placeholder="예: 부산고기맛집"
-                  />
-                </div>
-                <div style="width: auto">
-                  <button class="btn primary" id="hiddenSearch">검색</button>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+                <h3 style="margin: 0">전체 키워드 순위 모니터링</h3>
+                <div style="display: flex; gap: 8px">
+                  <select id="filterMember" onchange="filterKeywordsByMember()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #e5e7eb">
+                    <option value="">전체 회원</option>
+                  </select>
+                  <button class="btn" onclick="refreshKeywordMonitoring()">
+                    <i class="fas fa-sync"></i> 새로고침
+                  </button>
                 </div>
               </div>
+              <div class="hint" style="padding: 12px; background: #fef3c7; border-radius: 8px; margin-bottom: 16px">
+                <i class="fas fa-exclamation-triangle"></i> 순위가 급락하거나 30위 밖으로 밀린 키워드를 확인하세요.
+              </div>
             </div>
+
+            <!-- 통계 카드 -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px">
+              <div class="panel" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px">전체 키워드</div>
+                <div id="stat-total-keywords" style="font-size: 32px; font-weight: 700">0</div>
+              </div>
+              <div class="panel" style="background: linear-gradient(135deg, #03c75a 0%, #02b14f 100%); color: white">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px">10위 이내</div>
+                <div id="stat-top10" style="font-size: 32px; font-weight: 700">0</div>
+              </div>
+              <div class="panel" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px">주의 필요</div>
+                <div id="stat-warning" style="font-size: 32px; font-weight: 700">0</div>
+              </div>
+              <div class="panel" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px">위험 (30위+)</div>
+                <div id="stat-danger" style="font-size: 32px; font-weight: 700">0</div>
+              </div>
+            </div>
+
             <div class="panel" style="max-height: 680px; overflow: auto">
-              <table id="hiddenTable">
+              <table id="keywordMonitoringTable">
                 <thead>
                   <tr>
-                    <th>키워드(가설)</th>
-                    <th>근거(상관)</th>
+                    <th>회원명</th>
+                    <th>업장명</th>
+                    <th>키워드</th>
+                    <th>현재 순위</th>
+                    <th>목표 순위</th>
+                    <th>전일 대비</th>
+                    <th>7일 변동</th>
+                    <th>마지막 업데이트</th>
+                    <th>상태</th>
                   </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                  <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280">
+                      <i class="fas fa-chart-line" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px"></i>
+                      추적 중인 키워드가 없습니다
+                    </td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           </section>
@@ -995,8 +1080,406 @@
               (sec) =>
                 (sec.style.display = sec.id === target ? "block" : "none")
             );
+          
+          // 탭 전환 시 데이터 로드
+          if (target === 'tab-daily') {
+            loadSubscribers();
+          } else if (target === 'tab-hidden') {
+            loadKeywordMonitoring();
+          }
         });
       });
+
+      // ==================== 구독 회원 관리 ====================
+      const DB_SUBSCRIBERS = 'sajangpick_subscribers';
+
+      function loadSubscribers() {
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        const tbody = document.querySelector('#subscribersTable tbody');
+        
+        if (subscribers.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280">
+                <i class="fas fa-users" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px"></i>
+                등록된 구독 회원이 없습니다
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = subscribers.map((sub, idx) => {
+          const avgRank = sub.keywords && sub.keywords.length > 0 
+            ? (sub.keywords.reduce((sum, kw) => sum + (kw.currentRank || 999), 0) / sub.keywords.length).toFixed(1)
+            : '-';
+          
+          const keywordCount = sub.keywords ? sub.keywords.length : 0;
+          const lastUpdate = sub.lastUpdate || '-';
+          const status = avgRank !== '-' && avgRank < 15 ? 'success' : avgRank < 25 ? 'warning' : 'danger';
+          const statusText = avgRank !== '-' && avgRank < 15 ? '양호' : avgRank < 25 ? '보통' : '주의';
+          
+          return `
+            <tr>
+              <td><strong>${sub.memberName || '회원' + (idx + 1)}</strong></td>
+              <td>${sub.storeName}</td>
+              <td>${keywordCount}개</td>
+              <td class="number">${avgRank !== '-' ? avgRank + '위' : '-'}</td>
+              <td>${lastUpdate}</td>
+              <td><span class="badge ${status}">${statusText}</span></td>
+              <td>
+                <button class="btn" onclick="viewSubscriber(${idx})" style="padding: 6px 12px; font-size: 12px">
+                  <i class="fas fa-eye"></i> 상세
+                </button>
+                <button class="btn danger" onclick="deleteSubscriber(${idx})" style="padding: 6px 12px; font-size: 12px">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function addSubscriber() {
+        const memberName = prompt('회원명을 입력하세요:');
+        if (!memberName) return;
+        
+        const storeName = prompt('업장명을 입력하세요:');
+        if (!storeName) return;
+        
+        const keywordsInput = prompt('추적할 키워드를 입력하세요 (쉼표로 구분):');
+        if (!keywordsInput) return;
+        
+        const keywords = keywordsInput.split(',').map(k => k.trim()).filter(k => k).map(kw => ({
+          keyword: kw,
+          targetRank: 10,
+          currentRank: null,
+          history: []
+        }));
+
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        subscribers.push({
+          memberName,
+          storeName,
+          keywords,
+          createdAt: new Date().toISOString(),
+          lastUpdate: null
+        });
+        
+        localStorage.setItem(DB_SUBSCRIBERS, JSON.stringify(subscribers));
+        loadSubscribers();
+        alert(`${memberName} 회원이 추가되었습니다!`);
+      }
+
+      function deleteSubscriber(idx) {
+        if (!confirm('이 회원을 삭제하시겠습니까?')) return;
+        
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        subscribers.splice(idx, 1);
+        localStorage.setItem(DB_SUBSCRIBERS, JSON.stringify(subscribers));
+        loadSubscribers();
+        alert('회원이 삭제되었습니다');
+      }
+
+      function viewSubscriber(idx) {
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        const sub = subscribers[idx];
+        
+        const detailDiv = document.getElementById('subscriberDetail');
+        const contentDiv = document.getElementById('subscriberDetailContent');
+        
+        const html = `
+          <div style="margin-bottom: 16px">
+            <h4 style="margin: 0 0 8px">${sub.memberName} - ${sub.storeName}</h4>
+            <div style="color: #6b7280; font-size: 13px">등록일: ${new Date(sub.createdAt).toLocaleDateString()}</div>
+          </div>
+          
+          <h4 style="margin: 16px 0 8px">관리 키워드 (${sub.keywords.length}개)</h4>
+          <table style="width: 100%; border-collapse: collapse">
+            <thead>
+              <tr style="background: #fafafa">
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb">키워드</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb">목표 순위</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb">현재 순위</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb">상태</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sub.keywords.map(kw => {
+                const status = kw.currentRank && kw.currentRank <= kw.targetRank ? 'success' : 
+                             kw.currentRank && kw.currentRank <= kw.targetRank + 5 ? 'warning' : 'danger';
+                const statusText = kw.currentRank && kw.currentRank <= kw.targetRank ? '목표 달성' :
+                                 kw.currentRank && kw.currentRank <= kw.targetRank + 5 ? '근접' : '개선 필요';
+                
+                return `
+                  <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #f3f4f6"><strong>${kw.keyword}</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #f3f4f6">${kw.targetRank}위</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #f3f4f6">${kw.currentRank || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #f3f4f6"><span class="badge ${status}">${statusText}</span></td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+          
+          <button class="btn primary" onclick="trackSubscriber(${idx})" style="margin-top: 16px">
+            <i class="fas fa-sync"></i> 이 회원 순위 업데이트
+          </button>
+        `;
+        
+        contentDiv.innerHTML = html;
+        detailDiv.style.display = 'block';
+        detailDiv.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      async function trackSubscriber(idx) {
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        const sub = subscribers[idx];
+        
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 추적 중...';
+        
+        for (const kw of sub.keywords) {
+          try {
+            const res = await fetch('/api/rank-list-crawl', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: kw.keyword, max_scrolls: 6 })
+            });
+            
+            const data = await res.json();
+            if (data.success && data.list) {
+              const rank = data.list.findIndex(item => 
+                item.place_name.includes(sub.storeName) || sub.storeName.includes(item.place_name)
+              ) + 1;
+              
+              kw.currentRank = rank || 999;
+              kw.history = kw.history || [];
+              kw.history.push({
+                date: new Date().toISOString().split('T')[0],
+                rank: kw.currentRank
+              });
+              
+              if (kw.history.length > 30) {
+                kw.history = kw.history.slice(-30);
+              }
+            }
+          } catch (e) {
+            console.error('추적 오류:', kw.keyword, e);
+          }
+        }
+        
+        sub.lastUpdate = new Date().toISOString().split('T')[0];
+        localStorage.setItem(DB_SUBSCRIBERS, JSON.stringify(subscribers));
+        
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> 이 회원 순위 업데이트';
+        
+        loadSubscribers();
+        viewSubscriber(idx);
+        alert('순위 업데이트가 완료되었습니다!');
+      }
+
+      async function trackAllSubscribers() {
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        
+        if (subscribers.length === 0) {
+          alert('등록된 회원이 없습니다');
+          return;
+        }
+        
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 전체 추적 중...';
+        
+        for (let i = 0; i < subscribers.length; i++) {
+          const sub = subscribers[i];
+          
+          for (const kw of sub.keywords) {
+            try {
+              const res = await fetch('/api/rank-list-crawl', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyword: kw.keyword, max_scrolls: 6 })
+              });
+              
+              const data = await res.json();
+              if (data.success && data.list) {
+                const rank = data.list.findIndex(item => 
+                  item.place_name.includes(sub.storeName) || sub.storeName.includes(item.place_name)
+                ) + 1;
+                
+                kw.currentRank = rank || 999;
+                kw.history = kw.history || [];
+                kw.history.push({
+                  date: new Date().toISOString().split('T')[0],
+                  rank: kw.currentRank
+                });
+                
+                if (kw.history.length > 30) {
+                  kw.history = kw.history.slice(-30);
+                }
+              }
+            } catch (e) {
+              console.error('추적 오류:', sub.memberName, kw.keyword, e);
+            }
+          }
+          
+          sub.lastUpdate = new Date().toISOString().split('T')[0];
+        }
+        
+        localStorage.setItem(DB_SUBSCRIBERS, JSON.stringify(subscribers));
+        
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> 전체 순위 업데이트';
+        
+        loadSubscribers();
+        alert('전체 회원 순위 업데이트가 완료되었습니다!');
+      }
+
+      // ==================== 키워드 모니터링 ====================
+      function loadKeywordMonitoring() {
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        const tbody = document.querySelector('#keywordMonitoringTable tbody');
+        const filterSelect = document.getElementById('filterMember');
+        
+        // 필터 업데이트
+        filterSelect.innerHTML = '<option value="">전체 회원</option>' +
+          subscribers.map((sub, idx) => `<option value="${idx}">${sub.memberName}</option>`).join('');
+        
+        const allKeywords = [];
+        subscribers.forEach((sub, idx) => {
+          sub.keywords.forEach(kw => {
+            allKeywords.push({
+              subscriberIdx: idx,
+              memberName: sub.memberName,
+              storeName: sub.storeName,
+              ...kw
+            });
+          });
+        });
+        
+        if (allKeywords.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280">
+                <i class="fas fa-chart-line" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px"></i>
+                추적 중인 키워드가 없습니다
+              </td>
+            </tr>
+          `;
+          updateKeywordStats(0, 0, 0, 0);
+          return;
+        }
+        
+        // 통계 계산
+        const totalKeywords = allKeywords.length;
+        const top10 = allKeywords.filter(kw => kw.currentRank && kw.currentRank <= 10).length;
+        const warning = allKeywords.filter(kw => kw.currentRank && kw.currentRank > 10 && kw.currentRank <= 30).length;
+        const danger = allKeywords.filter(kw => !kw.currentRank || kw.currentRank > 30).length;
+        
+        updateKeywordStats(totalKeywords, top10, warning, danger);
+        
+        // 테이블 렌더링
+        tbody.innerHTML = allKeywords.map(kw => {
+          const prevRank = kw.history && kw.history.length > 1 ? kw.history[kw.history.length - 2].rank : null;
+          const change = prevRank && kw.currentRank ? prevRank - kw.currentRank : 0;
+          
+          const sevenDaysAgo = kw.history && kw.history.length >= 7 ? kw.history[kw.history.length - 7].rank : null;
+          const weekChange = sevenDaysAgo && kw.currentRank ? sevenDaysAgo - kw.currentRank : 0;
+          
+          const lastUpdate = kw.history && kw.history.length > 0 ? kw.history[kw.history.length - 1].date : '-';
+          
+          const status = kw.currentRank && kw.currentRank <= kw.targetRank ? 'success' :
+                        kw.currentRank && kw.currentRank <= kw.targetRank + 5 ? 'warning' : 'danger';
+          const statusText = kw.currentRank && kw.currentRank <= kw.targetRank ? '목표 달성' :
+                           kw.currentRank && kw.currentRank <= kw.targetRank + 5 ? '근접' : '개선 필요';
+          
+          return `
+            <tr>
+              <td>${kw.memberName}</td>
+              <td>${kw.storeName}</td>
+              <td><strong>${kw.keyword}</strong></td>
+              <td class="number">${kw.currentRank || '-'}</td>
+              <td class="number">${kw.targetRank}위</td>
+              <td class="number ${change === 0 ? 'rank-same' : change > 0 ? 'rank-up' : 'rank-down'}">
+                ${change === 0 ? '-' : change > 0 ? '▲ ' + change : '▼ ' + Math.abs(change)}
+              </td>
+              <td class="number ${weekChange === 0 ? 'rank-same' : weekChange > 0 ? 'rank-up' : 'rank-down'}">
+                ${weekChange === 0 ? '-' : weekChange > 0 ? '▲ ' + weekChange : '▼ ' + Math.abs(weekChange)}
+              </td>
+              <td>${lastUpdate}</td>
+              <td><span class="badge ${status}">${statusText}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function updateKeywordStats(total, top10, warning, danger) {
+        document.getElementById('stat-total-keywords').textContent = total;
+        document.getElementById('stat-top10').textContent = top10;
+        document.getElementById('stat-warning').textContent = warning;
+        document.getElementById('stat-danger').textContent = danger;
+      }
+
+      function filterKeywordsByMember() {
+        const selectedIdx = document.getElementById('filterMember').value;
+        const subscribers = JSON.parse(localStorage.getItem(DB_SUBSCRIBERS) || '[]');
+        
+        if (selectedIdx === '') {
+          loadKeywordMonitoring();
+          return;
+        }
+        
+        const sub = subscribers[parseInt(selectedIdx)];
+        const tbody = document.querySelector('#keywordMonitoringTable tbody');
+        
+        const allKeywords = sub.keywords.map(kw => ({
+          memberName: sub.memberName,
+          storeName: sub.storeName,
+          ...kw
+        }));
+        
+        tbody.innerHTML = allKeywords.map(kw => {
+          const prevRank = kw.history && kw.history.length > 1 ? kw.history[kw.history.length - 2].rank : null;
+          const change = prevRank && kw.currentRank ? prevRank - kw.currentRank : 0;
+          
+          const sevenDaysAgo = kw.history && kw.history.length >= 7 ? kw.history[kw.history.length - 7].rank : null;
+          const weekChange = sevenDaysAgo && kw.currentRank ? sevenDaysAgo - kw.currentRank : 0;
+          
+          const lastUpdate = kw.history && kw.history.length > 0 ? kw.history[kw.history.length - 1].date : '-';
+          
+          const status = kw.currentRank && kw.currentRank <= kw.targetRank ? 'success' :
+                        kw.currentRank && kw.currentRank <= kw.targetRank + 5 ? 'warning' : 'danger';
+          const statusText = kw.currentRank && kw.currentRank <= kw.targetRank ? '목표 달성' :
+                           kw.currentRank && kw.currentRank <= kw.targetRank + 5 ? '근접' : '개선 필요';
+          
+          return `
+            <tr>
+              <td>${kw.memberName}</td>
+              <td>${kw.storeName}</td>
+              <td><strong>${kw.keyword}</strong></td>
+              <td class="number">${kw.currentRank || '-'}</td>
+              <td class="number">${kw.targetRank}위</td>
+              <td class="number ${change === 0 ? 'rank-same' : change > 0 ? 'rank-up' : 'rank-down'}">
+                ${change === 0 ? '-' : change > 0 ? '▲ ' + change : '▼ ' + Math.abs(change)}
+              </td>
+              <td class="number ${weekChange === 0 ? 'rank-same' : weekChange > 0 ? 'rank-up' : 'rank-down'}">
+                ${weekChange === 0 ? '-' : weekChange > 0 ? '▲ ' + weekChange : '▼ ' + Math.abs(weekChange)}
+              </td>
+              <td>${lastUpdate}</td>
+              <td><span class="badge ${status}">${statusText}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function refreshKeywordMonitoring() {
+        loadKeywordMonitoring();
+        alert('새로고침 완료!');
+      }
     </script>
   </body>
 </html>
