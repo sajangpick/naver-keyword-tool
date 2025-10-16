@@ -14,8 +14,8 @@
     "express": "^4.21.2",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "@sparticuz/chromium": "^123.0.1",
-    "puppeteer-core": "^23.4.1"
+    "@sparticuz/chromium": "^132.0.0",
+    "puppeteer-core": "^23.7.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
