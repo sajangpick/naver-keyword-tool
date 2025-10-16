@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>사장픽(sajang pick) - 메인 허브</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E"
+    />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
@@ -531,26 +534,18 @@
 
       /* Mobile-only layout tweaks */
       @media (max-width: 768px) {
-        /* 1) 기능 아이콘: 한 줄 고정 + 가로 스크롤 + 5개 노출 */
+        /* 1) 기능 아이콘: 5개 고정 노출(스크롤 없음, 2줄로 자동 줄바꿈) */
         .top-actions-row .top-apps {
-          display: flex !important;
-          flex-wrap: nowrap !important;
+          display: grid !important;
+          grid-template-columns: repeat(5, 1fr);
           gap: 12px;
-          overflow-x: auto !important;
-          -webkit-overflow-scrolling: touch;
           padding: 8px 12px 10px 12px;
-          scroll-snap-type: x proximity;
-          justify-content: flex-start !important;
+          overflow: hidden;
         }
         .top-actions-row .top-apps a.app {
-          /* 화면에 정확히 5개가 보이도록 고정 폭 계산(간격 4*12px 고려) */
-          flex: 0 0 calc((100% - 48px) / 5) !important;
-          scroll-snap-align: start;
+          min-width: 0 !important; /* 5등분을 막는 최소폭 제약 제거 */
+          width: 100% !important;
         }
-        .top-actions-row .top-apps::-webkit-scrollbar {
-          display: none;
-        }
-
         /* 2) 스마트 비즈니스 툴 허브 배너는 모바일에서 숨김 */
         .hero {
           display: none !important;
@@ -568,7 +563,10 @@
         <div class="container top-row">
           <form id="topNaverChatForm" class="ns-box">
             <div class="ns-logo" aria-label="GPT-5">
-              <i class="fa-brands fa-openai" style="font-size: 22px; color: var(--chatgpt-green);"></i>
+              <i
+                class="fa-solid fa-comments"
+                style="font-size: 22px; color: var(--chatgpt-green)"
+              ></i>
               <span class="ns-logo-text">GPT-5</span>
             </div>
             <input
@@ -592,10 +590,13 @@
 
           <!-- 상단 추천 단축 버튼(추천메뉴/응대/주제) 제거 -->
           <div class="top-actions-row top-actions">
-            <div class="top-apps" style="padding: 0">
+            <div class="top-apps">
               <a class="app" href="/ChatGPT.html">
                 <div class="app-icon">
-                  <i class="fa-brands fa-openai" style="font-size: 20px; color: var(--chatgpt-green);"></i>
+                  <i
+                    class="fa-solid fa-comments"
+                    style="font-size: 20px; color: var(--chatgpt-green)"
+                  ></i>
                 </div>
                 <div class="app-label" style="font-size: 14px">채팅</div>
               </a>
@@ -687,7 +688,7 @@
             <div class="naver-search">
               <form id="naverChatForm" class="ns-box">
                 <div class="ns-logo" aria-label="ChatGPT">
-                  <i class="fa-brands fa-openai"></i>
+                  <i class="fa-solid fa-comments"></i>
                 </div>
                 <input
                   id="naverChatInput"
@@ -883,8 +884,7 @@
     </main>
 
     <script>
-      // 백엔드 베이스 URL (동일 도메인에서 백엔드가 없을 때 원격 API 사용)
-      const BACKEND_URL = "https://naver-keyword-tool.onrender.com";
+      // 백엔드 베이스 URL 제거: 현재 도메인의 /api 상대경로 사용
 
       // 공통 유틸
       function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
@@ -954,7 +954,7 @@
         setLoading(chatSendBtn, true, "전송 중...");
         showOutput(out, "");
         try {
-          const res = await fetch(`${BACKEND_URL}/api/chat`, {
+          const res = await fetch(`/api/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message }),
@@ -990,7 +990,7 @@
         setLoading(analyzeBtn, true, "분석 중...");
         showOutput(out, "");
         try {
-          const res = await fetch(`${BACKEND_URL}/api/analyze-review`, {
+          const res = await fetch(`/api/analyze-review`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1020,7 +1020,7 @@
         setLoading(replyBtn, true, "생성 중...");
         showOutput(out, "");
         try {
-          const res = await fetch(`${BACKEND_URL}/api/generate-reply`, {
+          const res = await fetch(`/api/generate-reply`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ reviewText }),
@@ -1059,7 +1059,7 @@
         setLoading(blogBtn, true, "생성 중...");
         showOutput(out, "");
         try {
-          const res = await fetch(`${BACKEND_URL}/api/generate-blog`, {
+          const res = await fetch(`/api/generate-blog`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ storeName, category, blogStyle, wordCount }),
@@ -1125,7 +1125,7 @@
         table.style.display = "none";
         if (tbody) tbody.innerHTML = "";
         try {
-          const res = await fetch(`${BACKEND_URL}/api/keywords`, {
+          const res = await fetch(`/api/keywords`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ DataQ }),
@@ -1183,7 +1183,7 @@
           out.style.display = "block";
           showOutput(out, "");
           try {
-            const res = await fetch(`${BACKEND_URL}/api/chat`, {
+            const res = await fetch(`/api/chat`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ message }),
@@ -1233,18 +1233,13 @@
         // 1) 히어로 배너 숨김
         const hero = document.querySelector(".hero");
         if (hero) hero.classList.add("is-hidden");
-        // 2) 기능 아이콘을 한 줄 고정 + 가로 스크롤
+        // 2) 기능 아이콘 5등분 그리드 강제(일부 브라우저 캐시 이슈 대응)
         const topApps = document.querySelector(".top-actions-row .top-apps");
         if (topApps) {
-          Object.assign(topApps.style, {
-            justifyContent: "flex-start",
-            flexWrap: "nowrap",
-            overflowX: "auto",
-            WebkitOverflowScrolling: "touch",
-          });
-          topApps.querySelectorAll(".app").forEach((el) => {
-            el.style.flex = "0 0 auto";
-          });
+          topApps.style.display = "grid";
+          topApps.style.gridTemplateColumns = "repeat(5, 1fr)";
+          topApps.style.gap = "12px";
+          topApps.style.overflow = "hidden";
         }
       })();
 

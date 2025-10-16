@@ -8,6 +8,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
+    <script src="/assets/common-header.js" defer></script>
     <style>
       :root {
         --naver-green: #03c75a;
@@ -455,9 +456,7 @@
       }
 
       @media (max-width: 768px) {
-        <<<<<<< HEAD
-=======
-        /* 헤더 겹침 방지: 로고와 버튼을 세로 배치, 버튼의 absolute 해제 */
+        /* 헤더 겹침 방지 및 내비게이션 스크롤 */
         .top-nav {
           flex-direction: column;
           align-items: center;
@@ -485,51 +484,42 @@
           padding: 14px;
           gap: 12px;
         }
-        >>>>>>>9d3bb4f (fix(mobile): ChatGPT 헤더 겹침 해결(모바일)) .nav-menu {
+        .nav-menu {
           justify-content: flex-start;
           overflow-x: auto;
           white-space: nowrap;
           padding: 5px 0;
-          scrollbar-width: none; /* Firefox */
-          -ms-overflow-style: none; /* IE and Edge */
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
-
         .nav-menu::-webkit-scrollbar {
-          display: none; /* Chrome, Safari and Opera */
+          display: none;
         }
-
         .nav-menu li {
           flex-shrink: 0;
         }
-
         .nav-menu a {
           font-size: 12px;
           padding: 8px 12px;
           white-space: nowrap;
         }
-
         .page-header h1 {
           font-size: 2.2rem;
         }
-
         .container {
           padding: 20px 15px;
         }
-
         .chat-container {
           height: 60vh;
           min-height: 500px;
         }
-
         .message {
           max-width: 85%;
         }
-
         .input-container {
           flex-direction: column;
           gap: 10px;
         }
-
         .send-button {
           align-self: stretch;
           justify-content: center;
@@ -538,38 +528,7 @@
     </style>
   </head>
   <body>
-    <header class="header">
-      <div class="nav-container">
-        <div class="top-nav">
-          <div class="logo" onclick="location.href='index.html'">사장픽</div>
-          <div class="user-actions" id="userActions">
-            <a href="login.html" class="login-btn" id="loginBtn">로그인</a>
-            <a href="join.html" class="signup-btn" id="signupBtn">회원가입</a>
-            <span
-              id="userEmail"
-              style="display: none; margin-right: 10px; font-size: 14px"
-            ></span>
-            <button
-              class="signup-btn"
-              id="logoutBtn"
-              style="display: none; border: none; cursor: pointer"
-            >
-              로그아웃
-            </button>
-            <a href="mypage.html" class="signup-btn">마이페이지</a>
-          </div>
-        </div>
-        <nav>
-          <ul class="nav-menu">
-            <li><a href="naver_search.html">키워드 검색</a></li>
-            <li><a href="ChatGPT.html" class="active">ChatGPT 채팅</a></li>
-            <li><a href="Blog-Editor.html">AI 블로그작성</a></li>
-            <li><a href="index.html#review">AI 리뷰작성</a></li>
-            <li><a href="place-check.html">플레이스점검</a></li>
-          </ul>
-        </nav>
-      </div>
-    </header>
+    <!-- 공통 헤더는 /assets/common-header.js 가 자동 주입합니다 -->
 
     <div class="container">
       <div class="page-header">
@@ -661,8 +620,7 @@
     </footer>
 
     <script>
-      // 전역 설정
-      const BACKEND_URL = "https://naver-keyword-tool.onrender.com"; // 실제 백엔드 URL로 변경
+      // 전역 설정: 상대 경로(`/api`) 사용
       let totalTokens = 0;
       let isConnected = false;
 
@@ -700,7 +658,7 @@
         const loadingId = showLoading();
 
         try {
-          const response = await fetch(`${BACKEND_URL}/api/chat`, {
+          const response = await fetch(`/api/chat`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -826,7 +784,7 @@
       // 연결 상태 확인
       async function checkConnection() {
         try {
-          const response = await fetch(`${BACKEND_URL}/health`);
+          const response = await fetch(`/api/health`);
           if (response.ok) {
             isConnected = true;
             statusDot.classList.remove("disconnected");

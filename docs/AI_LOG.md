@@ -1,6 +1,113 @@
 # AI 작업 로그 (반드시 먼저 읽기)
 
+> 💡 **새 AI는 먼저 `docs/QUICK_START.md`를 읽으세요!** (3분 안에 핵심 파악)  
+> 이 문서는 상세한 변경 이력입니다.
+
 이 문서는 이 저장소에서 작업하는 모든 사람/AI가 반드시 먼저 읽고 업데이트해야 하는 변경 이력입니다. 작은 수정이라도 여기 항목을 추가하세요. (커밋 직전 체크리스트는 아래에 있습니다.)
+
+---
+
+## 🔥 최신 중요 사항 TOP 3 (바쁘면 여기만!)
+
+### 1. naver-keyword-tool 폴더 삭제됨 (2025-10-16)
+
+- 서브모듈 정리 완료
+- ⚠️ vercel.json에 Render 프록시 유지 중 (`https://naver-keyword-tool.onrender.com`)
+- 현재 코드는 정상 작동 (Render 서버 계속 운영 중)
+
+### 2. Kakao 로그인 Vercel 이전 완료 (2025-10-14)
+
+- `/auth/*` 경로는 이제 Vercel Functions 사용
+- 환경변수 필수: KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI, JWT_SECRET
+
+### 3. 로그인 상태 확인 로직 개선 (2025-10-14)
+
+- 모든 HTML 페이지 수정 완료
+- localStorage 에러 처리 강화
+
+---
+
+## 📋 전체 작업 이력 (상세)
+
+---
+
+## 2025-10-16 - 문서 체계 대폭 개선: 3단계 읽기 구조 완성 🎯
+
+- 배경: 새 AI가 빠르게 컨텍스트를 파악할 수 있도록 문서 구조 개선 필요
+- 변경 파일: `README.md`, `docs/AI_LOG.md`, `docs/QUICK_START.md` (신규)
+
+### 핵심 개선사항
+
+#### 1. **QUICK_START.md 신규 생성** (가장 중요!)
+
+- 3분 안에 읽을 수 있는 핵심 요약본
+- 현재 프로젝트 상태 (아키텍처, 최근 작업)
+- 작업 시 주의사항 (Do/Don't)
+- 진행 중인 계획 요약
+- 주요 파일 구조 다이어그램
+- FAQ 포함
+
+#### 2. **AI_LOG.md 상단에 "최신 TOP 3" 섹션 추가**
+
+- 바쁜 AI를 위한 최신 중요 사항만 요약
+- QUICK_START.md 링크 안내 추가
+- 전체 이력과 최신 요약 분리
+
+#### 3. **README.md 읽기 흐름 개선**
+
+- "🚀 처음이라면 여기서 시작!" 섹션 강조
+- QUICK_START.md를 최우선 안내
+- 읽는 순서를 트리 구조로 시각화
+- 예상 소요 시간 명시 (3분, 1분 등)
+
+### 새로운 읽기 흐름
+
+```
+새 AI 투입 → README.md 확인
+              ↓
+         QUICK_START.md (3분) ← 핵심!
+              ↓
+         AI_LOG.md 최신 TOP 3 (1분)
+              ↓
+         (필요시) AI_LOG.md 전체
+              ↓
+         (필요시) PROJECT_PLAN.md
+```
+
+### 효과
+
+- ✅ **토큰 절약**: 272줄 전부 읽지 않고 핵심만 파악
+- ✅ **시간 절약**: 3분 + 1분 = 4분 안에 작업 시작 가능
+- ✅ **명확한 우선순위**: 무엇을 먼저 읽어야 하는지 명확
+- ✅ **오작업 방지**: 주의사항과 Do/Don't 명시
+- ✅ **유지보수 용이**: QUICK_START.md만 업데이트하면 됨
+
+### 유지보수 방법
+
+- **중요 변경 시**: QUICK_START.md + AI_LOG.md TOP 3 업데이트
+- **일반 작업**: AI_LOG.md에만 추가
+- **계획 변경**: PROJECT_PLAN.md 업데이트
+
+- 후속 작업: 주요 변경마다 QUICK_START.md 동기화 필요
+
+---
+
+## 2025-10-16 - naver-keyword-tool 폴더 삭제 후 영향도 점검 완료
+
+- 배경: `naver-keyword-tool` 폴더가 삭제되어 프로젝트 내 참조 문제 확인 필요
+- 점검 결과:
+  - ✅ 모든 HTML 파일: 참조 없음
+  - ✅ server.js: 참조 없음
+  - ✅ package.json: 참조 없음
+  - ⚠️ vercel.json (23번째 줄): Render 프록시 URL 유지 중
+    - `https://naver-keyword-tool.onrender.com/api/:path*`
+    - 현재 Render 서버 작동 중이면 문제 없음
+  - ⚠️ docs/AI_LOG.md (113번째 줄): 문서 내용에 URL 언급 (정보성, 문제 없음)
+  - ⚠️ docs/PROJECT_PLAN.md: 향후 제거 계획 기록 (계획 문서, 문제 없음)
+- 확인 방법: `grep -R "naver-keyword-tool" .` 명령으로 전체 검색
+- 결론: **현재 코드는 정상 작동**. Render 서버가 계속 운영 중이면 API 프록시도 정상
+- 주의사항: 향후 Render 서버 중단 시 vercel.json 프록시 수정 필요
+- 후속 작업: Render → Vercel Functions 완전 이관 계획 진행 중 (PROJECT_PLAN.md 참고)
 
 ---
 
@@ -179,6 +286,41 @@
   2. 로그인 후 `/login.html?login=ok`로 리다이렉트되는지 확인
   3. `https://sajangpick.co.kr/api/auth/me` 응답에서 `authenticated:true` 확인
 - 롤백: `vercel.json`에서 `/auth/:path*` 프록시 항목 복원 후 재배포
+
+## 2025-10-16 - 문서 폴더 통합(루트 `docs` 기준)
+
+- 배경: `docs` 폴더가 루트와 `naver-keyword-tool/docs`에 이중 존재하여 중복/혼선을 유발
+- 변경 파일/경로:
+  - `naver-keyword-tool/index.html`: 이미지 경로를 `../docs/chatgpt.png`로 수정
+  - `naver-keyword-tool/docs/` 내 중복 문서 제거: `env.example.md`, `새로운방식.md`, `점진전환_실행계획.md`, `chatgpt.png`(삭제 시도)
+- 주요 변경점:
+  - 기준 폴더를 루트 `docs`로 확정, 모든 참조를 루트 기준으로 통일
+  - 코드 전반에서 `naver-keyword-tool/docs` 참조 제거(검색 기준, 남은 참조 없음)
+- 확인 방법:
+  1. `grep -R "naver-keyword-tool/docs" -n .` 결과가 없어야 함
+  2. `naver-keyword-tool/index.html`에서 OpenAI 아이콘 경로가 `../docs/chatgpt.png`인지 확인
+  3. `naver-keyword-tool/docs` 폴더가 비어있는지 확인(서브모듈 특성상 잔여 파일이 있을 수 있음)
+- 배포: Git 푸시 → Vercel 자동 배포 (정적 파일 변경)
+- 주의/추가 조치(서브모듈일 경우):
+  - 하위 레포(`naver-keyword-tool`)가 서브모듈이면 해당 레포 안에서 별도 커밋이 필요할 수 있음
+  - 예: `git -C naver-keyword-tool rm -f docs/chatgpt.png && (cd naver-keyword-tool && git commit -m "chore(docs): remove duplicate docs")`
+
+## 2025-10-16 - 중복 서브앱 정리: `naver-keyword-tool/` 제거
+
+- 배경: 루트와 `naver-keyword-tool/`에 동일 이름의 페이지/서버 파일이 공존하여 혼선 발생. 목표는 루트(`sajangpick_osm`)만 유지
+- 영향 분석(해시 비교): SAME=`mypage.html` 1건, DIFF=`index.html`, `AI-Review.html`, `Blog-Editor.html`, `ChatGPT.html`, `join.html`, `login.html`, `naver_search.html`, `place-check.html`, `server.js`
+- 조치:
+  - `naver-keyword-tool/index.html` 삭제(루트 `index.html` 유지)
+  - 중복 페이지/서버 파일 삭제: 위 DIFF/SAME 항목 모두 `naver-keyword-tool/` 측 제거
+  - 패키지/배포 파일 삭제: `naver-keyword-tool/package.json`, `package-lock.json`, `render.yaml`
+  - 정적 리소스 하위 폴더 비움(`css/css`, `js/js`) — 폴더 삭제는 수동 필요할 수 있음
+- 참조 점검:
+  - 전역 검색 결과 `naver-keyword-tool/` 경로 링크/참조 없음(페이지 링크는 루트 기준 유지)
+- 확인 방법:
+  1. `grep -R "naver-keyword-tool/" -n .` 결과 없음
+  2. 루트 `index.html` 정상 표시 및 상단 앱 링크 동작 확인
+  3. 빌드/배포 후 404 경로 없음(`naver-keyword-tool/index.html` 직접 접근은 제거됨)
+- 배포: Git 푸시 → Vercel 자동 배포
 
 ## 새 항목 추가 템플릿 (복사해서 사용)
 

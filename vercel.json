@@ -1,9 +1,25 @@
 {
   "version": 2,
   "framework": null,
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "functions": {
+    "api/rank-list-crawl.js": {
+      "maxDuration": 60,
+      "memory": 1536
+    },
+    "api/compute-rank.js": {
+      "maxDuration": 30,
+      "memory": 512
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/:path((?!auth).*)*",
+      "source": "/api/rank-list-crawl",
+      "destination": "/api/rank-list-crawl.js"
+    },
+    { "source": "/api/compute-rank", "destination": "/api/compute-rank.js" },
+    {
+      "source": "/api/:path((?!auth|compute-rank).*)*",
       "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
     }
   ]

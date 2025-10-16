@@ -36,14 +36,7 @@
         background: var(--bg);
         color: var(--text);
       }
-      header {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border-bottom: 1px solid var(--border);
-      }
+
       .wrap {
         max-width: 1200px;
         margin: 0 auto;
@@ -142,69 +135,7 @@
         border: 1px solid var(--border);
         color: #374151;
       }
-      /* top apps (same look as index) */
-      .top-actions-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .top-apps {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding: 12px 4px 6px 4px;
-      }
-      .top-apps a.app {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        min-width: 64px;
-        text-decoration: none;
-        color: #374151;
-      }
-      .app-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: #fff;
-        border: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
-        color: var(--accent);
-        font-size: 18px;
-      }
-      .app-label {
-        font-size: 14px;
-        color: #374151;
-      }
-      .top-apps a.app:hover .app-icon {
-        border-color: var(--accent);
-        transform: translateY(-2px);
-        transition: all 0.2s ease;
-      }
-      @media (max-width: 768px) {
-        .top-actions-row .top-apps {
-          flex-wrap: nowrap;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          scroll-snap-type: x proximity;
-          justify-content: flex-start;
-          padding: 8px 12px 10px 12px;
-        }
-        .top-actions-row .top-apps a.app {
-          flex: 0 0 calc((100% - 48px) / 5);
-          scroll-snap-align: start;
-        }
-        .top-actions-row .top-apps::-webkit-scrollbar {
-          display: none;
-        }
-      }
+
       .row {
         display: flex;
         gap: 10px;
@@ -289,69 +220,6 @@
     <script src="/assets/common-header.js" defer></script>
   </head>
   <body>
-    <header>
-      <div
-        class="wrap row"
-        style="justify-content: space-between; align-items: center"
-      >
-        <div
-          class="logo"
-          style="
-            font-weight: 800;
-            font-size: 22px;
-            color: #111827;
-            cursor: pointer;
-          "
-          onclick="location.href='/'"
-        >
-          사장픽
-        </div>
-        <span class="badge">플레이스 분석</span>
-      </div>
-      <section class="top-actions">
-        <div class="container top-actions-row">
-          <div class="top-apps" style="padding: 0">
-            <a class="app" href="/ChatGPT.html">
-              <div class="app-icon">
-                <i class="fa-solid fa-comments" style="font-size: 20px"></i>
-              </div>
-              <div class="app-label">채팅</div>
-            </a>
-            <a class="app" href="/index.html#review">
-              <div class="app-icon">
-                <i class="fa-solid fa-pen-nib" style="font-size: 20px"></i>
-              </div>
-              <div class="app-label">리뷰작성</div>
-            </a>
-            <a class="app" href="/Blog-Editor.html">
-              <div class="app-icon">
-                <i class="fa-solid fa-blog" style="font-size: 20px"></i>
-              </div>
-              <div class="app-label">블로그</div>
-            </a>
-            <a class="app" href="/naver_search.html">
-              <div class="app-icon">
-                <i class="fa-solid fa-key" style="font-size: 20px"></i>
-              </div>
-              <div class="app-label">키워드</div>
-            </a>
-            <a class="app" href="/rank-report.html">
-              <div class="app-icon">
-                <i class="fa-solid fa-chart-line" style="font-size: 20px"></i>
-              </div>
-              <div class="app-label">플 순위</div>
-            </a>
-            <a class="app" href="/place-check.html">
-              <div class="app-icon">
-                <i class="fa-solid fa-store" style="font-size: 20px"></i>
-              </div>
-              <div class="app-label">플점검</div>
-            </a>
-          </div>
-        </div>
-      </section>
-    </header>
-
     <main class="container" id="app">
       <div class="panel sticky-note">
         <div class="hint">
@@ -362,7 +230,7 @@
 
       <section class="card">
         <div class="card-header">
-          <div class="title">플레이스 분석 도구</div>
+          <div class="title">네이버 실시간 목록 수집</div>
           <div class="tabs">
             <button class="tab active" data-tab="tab-rank">
               플레이스 순위 리스트
@@ -385,14 +253,6 @@
                     placeholder="예: 부산고기맛집"
                   />
                 </div>
-                <div style="flex: 1">
-                  <label>대상 업체명</label>
-                  <input
-                    id="target"
-                    type="text"
-                    placeholder="예: 스무고개 해운대점"
-                  />
-                </div>
               </div>
               <div
                 class="row"
@@ -408,6 +268,7 @@
                     padding: 8px 10px;
                     border-radius: 10px;
                     cursor: pointer;
+                    display: none;
                   "
                 >
                   이미지 데모 데이터 불러오기
@@ -422,6 +283,29 @@
                 <div style="width: 180px">
                   <label>상위 노출 개수</label>
                   <input id="topk" type="text" value="15" />
+                </div>
+                <div style="width: auto; align-self: end">
+                  <button
+                    class="btn primary"
+                    id="serverCompute"
+                    style="display: none"
+                  >
+                    서버 계산
+                  </button>
+                  <button
+                    class="btn primary"
+                    id="crawlFetch"
+                    title="네이버에서 직접 목록 수집"
+                  >
+                    실시간 목록 수집
+                  </button>
+                  <button
+                    class="btn"
+                    id="crawlCsv"
+                    title="수집 결과 CSV로 저장"
+                  >
+                    CSV 다운로드
+                  </button>
                 </div>
               </div>
             </div>
@@ -460,7 +344,10 @@
             </section>
 
             <section class="grid" style="margin-top: 16px">
-              <div class="panel" style="max-height: 680px; overflow: auto">
+              <div
+                class="panel"
+                style="display: none; max-height: 680px; overflow: auto"
+              >
                 <table id="rankTable">
                   <thead>
                     <tr>
@@ -473,6 +360,24 @@
                       <th>N2</th>
                       <th>N3</th>
                       <th>종합</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div
+                class="panel"
+                id="crawlPanel"
+                style="display: block; max-height: 680px; overflow: auto"
+              >
+                <div class="hint">네이버 실시간 크롤링 결과</div>
+                <table id="crawlTable">
+                  <thead>
+                    <tr>
+                      <th>순위</th>
+                      <th>업체명</th>
+                      <th>place_id</th>
+                      <th>URL</th>
                     </tr>
                   </thead>
                   <tbody></tbody>
@@ -558,6 +463,7 @@
         headers: [],
         mappingReady: false,
         isDemo: false,
+        crawl: [],
       };
 
       const guess = (headers, keys) =>
@@ -609,7 +515,7 @@
         if (!m.name || !m.visit || !m.blog || !m.save) return;
 
         const keyword = el("keyword").value.trim() || "-";
-        const target = el("target").value.trim();
+        const target = ""; // 대상 업체명 필드 제거됨
 
         const topk = Math.max(5, parseInt(el("topk").value || "15", 10));
         const [w1, w2, w3] = (el("weights").value || "0.4,0.35,0.25")
@@ -673,6 +579,81 @@
         // fill daily table when requested
         fillDailyTable(byDate, dates, target, W);
       };
+
+      async function computeOnServer() {
+        // 매핑 수집
+        const mapping = {
+          name: el("colName").value,
+          url: el("colUrl").value,
+          visit: el("colVisit").value,
+          blog: el("colBlog").value,
+          save: el("colSave").value,
+          date: el("colDate").value,
+        };
+        if (!mapping.name || !mapping.visit || !mapping.blog || !mapping.save) {
+          alert("매핑을 먼저 설정하세요 (업체명/방문자/블로그/저장수)");
+          return;
+        }
+        const [w1, w2, w3] = (el("weights").value || "0.4,0.35,0.25")
+          .split(",")
+          .map(Number);
+        const topk = Math.max(5, parseInt(el("topk").value || "15", 10));
+        const target = ""; // 대상 업체명 사용 안함
+
+        try {
+          const res = await fetch("/api/compute-rank", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              rows: state.rows,
+              mapping,
+              weights: [w1, w2, w3],
+              topk,
+              target,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            alert(data.error || "서버 계산 오류");
+            return;
+          }
+          // 표 렌더
+          const tbody = document.querySelector("#rankTable tbody");
+          tbody.innerHTML = "";
+          (data.top || []).forEach((r) => {
+            const tr = document.createElement("tr");
+            if (target && String(r.name).includes(target))
+              tr.classList.add("highlight");
+            tr.innerHTML = `
+              <td>${r.rank}</td>
+              <td>${r.name || ""}</td>
+              <td>${Number(r.visit).toLocaleString()}</td>
+              <td>${Number(r.blog).toLocaleString()}</td>
+              <td>${Number(r.save).toLocaleString()}</td>
+              <td>${Number(r.N1).toFixed(6)}</td>
+              <td>${Number(r.N2).toFixed(6)}</td>
+              <td>${Number(r.N3).toFixed(6)}</td>
+              <td>${Number(r.score).toFixed(6)}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+          // 일별 표
+          const dailyTbody = document.querySelector("#dailyTable tbody");
+          dailyTbody.innerHTML = "";
+          (data.daily || []).forEach((d) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${d.date}</td><td>${d.rank}</td><td>${Number(
+              d.N1
+            ).toFixed(6)}</td><td>${Number(d.N2).toFixed(6)}</td><td>${Number(
+              d.N3
+            ).toFixed(6)}</td><td>${Number(d.score).toFixed(6)}</td>`;
+            dailyTbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.error(e);
+          alert("네트워크 오류");
+        }
+      }
 
       function fillDailyTable(byDate, dates, target, W) {
         const dailyTbody = document.querySelector("#dailyTable tbody");
@@ -881,7 +862,7 @@
         state.headers = Object.keys(rows[0]);
         state.isDemo = true;
         el("keyword").value = "부산고기맛집";
-        el("target").value = "스무고개 해운대점";
+        // 대상 업체명 필드 제거됨
         populateMapping(state.headers);
       };
 
@@ -909,6 +890,97 @@
 
       // 데모 버튼
       el("loadDemo").addEventListener("click", loadDemoData);
+      // 서버 계산 버튼
+      el("serverCompute").addEventListener("click", computeOnServer);
+
+      // 네이버 크롤링 호출
+      el("crawlFetch").addEventListener("click", async () => {
+        const keyword = el("keyword").value.trim();
+        if (!keyword) {
+          alert("키워드를 입력하세요");
+          return;
+        }
+        const btn = el("crawlFetch");
+        const originalText = btn.textContent;
+        btn.textContent = "수집 중...";
+        btn.disabled = true;
+        try {
+          const res = await fetch("/api/rank-list-crawl", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ keyword, max_scrolls: 6 }),
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            alert(data.error || "크롤링 오류");
+            return;
+          }
+          state.crawl = data.list || [];
+          try {
+            localStorage.setItem("rank_keyword", keyword);
+          } catch (_) {}
+          const panel = document.getElementById("crawlPanel");
+          const tbody = document.querySelector("#crawlTable tbody");
+          tbody.innerHTML = "";
+          state.crawl.forEach((r) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${r.rank}</td><td>${r.place_name}</td><td>${r.place_id}</td><td><a href="${r.place_url}" target="_blank">링크</a></td>`;
+            tbody.appendChild(tr);
+          });
+          panel.style.display = "block";
+          panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (e) {
+          console.error(e);
+          alert("네트워크 오류");
+        } finally {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }
+      });
+
+      // CSV 다운로드
+      el("crawlCsv").addEventListener("click", () => {
+        const list = state.crawl || [];
+        if (!list.length) {
+          alert("먼저 실시간 목록을 수집하세요");
+          return;
+        }
+        const header = ["rank", "place_name", "place_id", "place_url"];
+        const rows = list.map((r) => [
+          r.rank,
+          r.place_name,
+          r.place_id,
+          r.place_url,
+        ]);
+        const csv = [
+          header.join(","),
+          ...rows.map((row) =>
+            row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+          ),
+        ].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const kw = (() => {
+          try {
+            return localStorage.getItem("rank_keyword") || "";
+          } catch (_) {
+            return "";
+          }
+        })();
+        a.href = url;
+        a.download = kw ? `naver_place_list_${kw}.csv` : "naver_place_list.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      // 저장된 키워드 복원
+      try {
+        const savedKw = localStorage.getItem("rank_keyword");
+        if (savedKw) el("keyword").value = savedKw;
+      } catch (_) {}
 
       // Tabs
       document.querySelectorAll(".tab").forEach((btn) => {

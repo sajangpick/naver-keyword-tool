@@ -1,11 +1,34 @@
 // Common Header Injector - makes header consistent across all pages
 (function () {
+  // global guard to prevent double injection even if script is loaded twice
+  if (window.__COMMON_HEADER_INJECTED__) return;
   if (document.querySelector(".header")) return; // already present
+  window.__COMMON_HEADER_INJECTED__ = true;
+
+  // ensure Font Awesome is loaded (icons fallback)
+  (function ensureFA() {
+    const href =
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css";
+    const hasFA = Array.from(document.styleSheets || []).some((s) => {
+      try {
+        return s.href && s.href.includes("font-awesome");
+      } catch (_) {
+        return false;
+      }
+    });
+    if (!hasFA && !document.getElementById("fa-cdn")) {
+      const link = document.createElement("link");
+      link.id = "fa-cdn";
+      link.rel = "stylesheet";
+      link.href = href;
+      document.head.appendChild(link);
+    }
+  })();
 
   const css = `
   :root{--naver-green:#03c75a;--naver-green-dark:#02b14f;--bg:#f7f9fb}
   .header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.8);backdrop-filter:blur(8px);border-bottom:1px solid #e5e7eb}
-  .header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;max-width:1200px;margin:0 auto}
+  .header-inner{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 24px;max-width:1200px;margin:0 auto}
   .logo{font-weight:800;font-size:24px;color:#111827;cursor:pointer}
   .top-search{background:#fff;border-bottom:1px solid #e5e7eb}
   .top-search .container{max-width:1200px;margin:0 auto;padding:6px 24px 12px 24px}
@@ -27,9 +50,14 @@
   @media (max-width:768px){.auth-buttons{position:static;width:100%;align-items:center}.top-actions-row{flex-direction:column}.top-actions-row .top-apps{display:flex !important;flex-wrap:nowrap !important;gap:12px;overflow-x:auto !important;-webkit-overflow-scrolling:touch;padding:8px 12px 10px 12px;scroll-snap-type:x proximity;justify-content:flex-start !important}.top-actions-row .top-apps a.app{flex:0 0 calc((100% - 48px)/5) !important;scroll-snap-align:start}.top-actions-row .top-apps::-webkit-scrollbar{display:none}}
   `;
 
-  const style = document.createElement("style");
-  style.textContent = css;
-  document.head.appendChild(style);
+  // inject style only once
+  let style = document.getElementById("common-header-style");
+  if (!style) {
+    style = document.createElement("style");
+    style.id = "common-header-style";
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
 
   const headerHtml = `
   <header class="header">
@@ -58,6 +86,13 @@
   </header>`;
 
   document.body.insertAdjacentHTML("afterbegin", headerHtml);
+  // if any duplicate headers exist for any reason, keep only the first
+  const injectedHeaders = document.querySelectorAll("header.header");
+  if (injectedHeaders.length > 1) {
+    for (let i = 1; i < injectedHeaders.length; i++) {
+      injectedHeaders[i].remove();
+    }
+  }
 
   // Utilities
   function setLoading(el, isLoading, textWhenLoading = "검색 중...") {
@@ -106,8 +141,7 @@
   const input = document.getElementById("topNaverChatInput");
   const submit = document.getElementById("topNaverChatSubmit");
   const out = document.getElementById("topChatSearchOutput");
-  const BACKEND_URL =
-    window.BACKEND_URL || "https://naver-keyword-tool.onrender.com";
+  const BACKEND_URL = window.BACKEND_URL || ""; // 현재 도메인 기준 상대경로 사용
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const message = (input?.value || "").trim();
@@ -118,7 +152,7 @@
     setLoading(submit, true);
     showOutput(out, "");
     try {
-      const res = await fetch(`${BACKEND_URL}/api/chat`, {
+      const res = await fetch(`/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),

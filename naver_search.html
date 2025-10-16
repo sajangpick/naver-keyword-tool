@@ -9,6 +9,7 @@
       rel="stylesheet"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/assets/common-header.js" defer></script>
     <style>
       * {
         margin: 0;
@@ -1035,27 +1036,7 @@
     </style>
   </head>
   <body>
-    <header class="header">
-      <div class="nav-container">
-        <div class="top-nav">
-          <div class="logo" onclick="location.href='index.html'">사장픽</div>
-          <div class="user-actions">
-            <a href="login.html" class="login-btn">로그인</a>
-            <a href="join.html" class="signup-btn">회원가입</a>
-            <a href="mypage.html" class="signup-btn">마이페이지</a>
-          </div>
-        </div>
-        <nav>
-          <ul class="nav-menu">
-            <li><a href="naver_search.html" class="active">키워드 검색</a></li>
-            <li><a href="ChatGPT.html">ChatGPT 채팅</a></li>
-            <li><a href="Blog-Editor.html">AI 블로그작성</a></li>
-            <li><a href="index.html#review">AI 리뷰작성</a></li>
-            <li><a href="place-check.html">플레이스점검</a></li>
-          </ul>
-        </nav>
-      </div>
-    </header>
+    <!-- 공통 헤더는 /assets/common-header.js 가 자동 주입됩니다 -->
 
     <div class="container">
       <div class="page-header">
@@ -1418,8 +1399,7 @@
     </div>
 
     <script>
-      // 백엔드 서버 설정
-      const BACKEND_URL = "https://naver-keyword-tool.onrender.com";
+      // 백엔드 서버 설정: 상대 경로(`/api`) 사용
 
       // DOM 요소
       const searchQuery = document.getElementById("searchQuery");
@@ -1951,7 +1931,7 @@
           const trendSection = document.querySelector(".chart-section h3");
           trendSection.textContent = "월별 트렌드 데이터 로딩 중...";
 
-          const response = await fetch(`${BACKEND_URL}/api/keyword-trend`, {
+          const response = await fetch(`/api/keyword-trend`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1991,9 +1971,7 @@
           console.log(`네이버 플레이스 검색: ${keyword}`);
 
           const response = await fetch(
-            `${BACKEND_URL}/api/search/local?query=${encodeURIComponent(
-              keyword
-            )}`
+            `/api/search/local?query=${encodeURIComponent(keyword)}`
           );
 
           if (response.ok) {
@@ -2419,7 +2397,7 @@
       // 서버 상태 확인
       async function checkServerStatus() {
         try {
-          const response = await fetch(`${BACKEND_URL}/health`);
+          const response = await fetch(`/api/health`);
           if (response.ok) {
             serverStatus.className = "server-status";
             statusText.textContent =
@@ -2440,7 +2418,7 @@
       // 검색 함수 (키워드 검색만 사용)
       async function performSearch(query) {
         try {
-          const response = await fetch(`${BACKEND_URL}/api/keywords`, {
+          const response = await fetch(`/api/keywords`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
