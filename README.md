@@ -8,23 +8,27 @@
 
 ### 📚 추가 문서 (필요시)
 
-1. 🚀 **[docs/VERCEL_배포가이드.md](docs/VERCEL_배포가이드.md)** ⭐ **NEW!**
+1. 🎯 **[docs/BEGINNER_DEPLOY_GUIDE.md](docs/BEGINNER_DEPLOY_GUIDE.md)** ⭐ **비개발자용!**
+   - 클릭만으로 배포하는 완전 초보 가이드
+   - 코딩 몰라도 따라할 수 있어요!
+   
+2. 🚀 **[docs/VERCEL_배포가이드.md](docs/VERCEL_배포가이드.md)**
    - Vercel 배포 완벽 가이드
    - 환경변수 설정 방법
    - 도메인 연결 및 문제 해결
 
-2. 📋 **[docs/AI_LOG.md](docs/AI_LOG.md)**
+3. 📋 **[docs/AI_LOG.md](docs/AI_LOG.md)**
    - 상세한 작업 이력 (최신 TOP 3 요약 포함)
    - 모든 변경사항 기록
 
-3. 📝 **[docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)**
+4. 📝 **[docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)**
    - 전체 프로젝트 계획 및 향후 전환 계획
    - 단계별 실행 가이드 및 롤백 방법
 
-4. 📄 **[docs/env.example.md](docs/env.example.md)**
+5. 📄 **[docs/env.example.md](docs/env.example.md)**
    - 환경변수 설정 가이드
    
-5. ⚙️ **[docs/환경변수_템플릿.env](docs/환경변수_템플릿.env)**
+6. ⚙️ **[docs/환경변수_템플릿.env](docs/환경변수_템플릿.env)**
    - Vercel 배포용 환경변수 템플릿
 
 ---
