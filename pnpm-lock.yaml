@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@sparticuz/chromium':
-        specifier: ^132.0.0
-        version: 132.0.0
+        specifier: ^141.0.0
+        version: 141.0.0
       axios:
         specifier: ^1.12.2
         version: 1.12.2
@@ -30,7 +30,7 @@ importers:
         specifier: ^9.0.2
         version: 9.0.2
       puppeteer-core:
-        specifier: ^23.7.1
+        specifier: ^23.11.1
         version: 23.11.1
     devDependencies:
       nodemon:
@@ -44,9 +44,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@sparticuz/chromium@132.0.0':
-    resolution: {integrity: sha512-7SAhVa4nHAP7bxEhnMFuwV7KNDqAF4RVGZNwRhvyss8lJNT7Syi9nPwIPYvsHtjJ1S7Nx8OL8uqe9V3a/ED/Mg==}
-    engines: {node: '>= 16'}
+  '@sparticuz/chromium@141.0.0':
+    resolution: {integrity: sha512-JsTp4AqgStkqKki4dUpEM0GoisAjQhsqZ1lQTNMSKK5A9pw6BbIuIvv2HVYMYzSZGyDdQNJYBPPDg2eggCkezA==}
+    engines: {node: '>=20.11.0'}
 
   '@tootallnate/quickjs-emscripten@0.23.0':
     resolution: {integrity: sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==}
@@ -858,7 +858,7 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@sparticuz/chromium@132.0.0':
+  '@sparticuz/chromium@141.0.0':
     dependencies:
       follow-redirects: 1.15.11
       tar-fs: 3.1.1
