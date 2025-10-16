@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>사장픽(sajang pick) - 메인 허브</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
@@ -63,7 +64,7 @@
       .header-inner {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 16px;
         padding: 14px 24px;
         max-width: 1200px;
@@ -81,10 +82,7 @@
         -webkit-text-fill-color: inherit;
         color: #111827;
       }
-      /* Hide header-left logo (we'll show logo on the right of the search row) */
-      .header-inner .logo {
-        display: none;
-      }
+
       .nav {
         display: flex;
         align-items: center;
@@ -570,11 +568,7 @@
         <div class="container top-row">
           <form id="topNaverChatForm" class="ns-box">
             <div class="ns-logo" aria-label="GPT-5">
-              <img
-                src="images/openai-logo.svg"
-                alt="OpenAI"
-                class="openai-icon"
-              />
+              <i class="fa-brands fa-openai" style="font-size: 22px; color: var(--chatgpt-green);"></i>
               <span class="ns-logo-text">GPT-5</span>
             </div>
             <input
@@ -601,11 +595,7 @@
             <div class="top-apps" style="padding: 0">
               <a class="app" href="/ChatGPT.html">
                 <div class="app-icon">
-                  <img
-                    src="images/openai-mark.svg"
-                    alt="OpenAI"
-                    style="width: 20px; height: 20px"
-                  />
+                  <i class="fa-brands fa-openai" style="font-size: 20px; color: var(--chatgpt-green);"></i>
                 </div>
                 <div class="app-label" style="font-size: 14px">채팅</div>
               </a>
