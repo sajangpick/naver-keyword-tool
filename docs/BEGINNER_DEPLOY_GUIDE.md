@@ -26,11 +26,13 @@
 ### 📍 1단계: Vercel 사이트 접속
 
 1. **브라우저를 열고** 다음 주소로 이동하세요:
+
    ```
    https://vercel.com
    ```
 
 2. **우측 상단**에 "Sign Up" 또는 "Log In" 버튼이 보일 거예요
+
    - 클릭하세요!
 
 3. **"Continue with GitHub"** 버튼 클릭
@@ -44,10 +46,12 @@
 ### 📍 2단계: 프로젝트 가져오기
 
 1. **대시보드**에서 찾아보세요:
+
    - 우측 상단에 **"Add New..."** 버튼 (큰 + 모양)
    - 클릭!
 
 2. 나타나는 메뉴에서:
+
    - **"Project"** 선택
 
 3. **"Import Git Repository"** 화면이 나타납니다
@@ -56,6 +60,7 @@
    - 옆에 **"Import"** 버튼 클릭!
 
 💡 **Tip:** 레포지토리가 안 보인다면?
+
 - "Adjust GitHub App Permissions →" 링크 클릭
 - 레포지토리 접근 권한 추가
 
@@ -70,6 +75,7 @@
 #### 기본 설정 (건드리지 마세요!)
 
 다음 항목들은 **그냥 두면 됩니다**:
+
 - ✅ Project Name: (자동으로 설정됨)
 - ✅ Framework Preset: Other (자동 감지)
 - ✅ Root Directory: ./
@@ -88,6 +94,7 @@
 #### 📝 환경변수 입력 가이드
 
 각 환경변수를 추가할 때:
+
 1. **Name (이름)**: 아래 표의 "이름" 열 복사
 2. **Value (값)**: 본인의 실제 API 키 입력
 3. **Environments**: Production, Preview, Development **모두 체크** ✅
@@ -98,15 +105,16 @@
 
 #### 🔑 필수 환경변수 (반드시 입력!)
 
-| 이름 | 설명 | 예시 값 |
-|------|------|---------|
-| `NODE_ENV` | 서버 환경 | `production` |
-| `NAVER_CUSTOMER_ID` | 네이버 고객 ID | `cust123456` |
-| `NAVER_API_KEY` | 네이버 API 키 | `01234567890abcdef` |
-| `NAVER_SECRET_KEY` | 네이버 시크릿 키 | `abcdefg1234567` |
-| `JWT_SECRET` | 인증 시크릿 (32자 이상) | `my-super-secret-key-12345678901234567890` |
+| 이름                | 설명                    | 예시 값                                    |
+| ------------------- | ----------------------- | ------------------------------------------ |
+| `NODE_ENV`          | 서버 환경               | `production`                               |
+| `NAVER_CUSTOMER_ID` | 네이버 고객 ID          | `cust123456`                               |
+| `NAVER_API_KEY`     | 네이버 API 키           | `01234567890abcdef`                        |
+| `NAVER_SECRET_KEY`  | 네이버 시크릿 키        | `abcdefg1234567`                           |
+| `JWT_SECRET`        | 인증 시크릿 (32자 이상) | `my-super-secret-key-12345678901234567890` |
 
 💡 **JWT_SECRET 만드는 법:**
+
 - 아무 긴 문자열이나 입력하세요 (32자 이상)
 - 예: `sajangpick-secret-key-2025-very-long-string`
 
@@ -116,24 +124,24 @@
 
 AI 기능을 사용하려면:
 
-| 이름 | 설명 | 어디서 발급? |
-|------|------|-------------|
-| `OPENAI_API_KEY` | ChatGPT 사용 | https://platform.openai.com/api-keys |
+| 이름             | 설명          | 어디서 발급?                           |
+| ---------------- | ------------- | -------------------------------------- |
+| `OPENAI_API_KEY` | ChatGPT 사용  | https://platform.openai.com/api-keys   |
 | `GEMINI_API_KEY` | Google Gemini | https://aistudio.google.com/app/apikey |
-| `CLAUDE_API_KEY` | Claude AI | https://console.anthropic.com/ |
+| `CLAUDE_API_KEY` | Claude AI     | https://console.anthropic.com/         |
 
 네이버 검색 API (추가 기능):
 
-| 이름 | 설명 | 어디서 발급? |
-|------|------|-------------|
-| `NAVER_SEARCH_CLIENT_ID` | 네이버 검색 ID | https://developers.naver.com/apps/ |
+| 이름                         | 설명               | 어디서 발급?                       |
+| ---------------------------- | ------------------ | ---------------------------------- |
+| `NAVER_SEARCH_CLIENT_ID`     | 네이버 검색 ID     | https://developers.naver.com/apps/ |
 | `NAVER_SEARCH_CLIENT_SECRET` | 네이버 검색 시크릿 | https://developers.naver.com/apps/ |
 
 카카오 로그인 (나중에 추가 가능):
 
-| 이름 | 설명 |
-|------|------|
-| `KAKAO_REST_API_KEY` | 카카오 REST API 키 |
+| 이름                 | 설명                       |
+| -------------------- | -------------------------- |
+| `KAKAO_REST_API_KEY` | 카카오 REST API 키         |
 | `KAKAO_REDIRECT_URI` | 나중에 배포 후 도메인 추가 |
 
 ---
@@ -154,9 +162,11 @@ AI 기능을 사용하려면:
 1. **맨 아래로 스크롤**하세요
 
 2. **큰 파란색 "Deploy"** 버튼이 보일 거예요
+
    - 클릭!
 
 3. **배포가 시작됩니다!**
+
    - 화면에 로딩 애니메이션과 로그가 표시됩니다
    - **2-3분 정도 기다리세요** ☕
    - 절대 창을 닫지 마세요!
@@ -173,9 +183,11 @@ AI 기능을 사용하려면:
 배포가 완료되면:
 
 1. **"Visit"** 버튼이 보일 거예요
+
    - 클릭하면 배포된 사이트로 이동!
 
 2. **도메인 주소 확인**
+
    - 자동으로 생성된 주소: `https://naver-keyword-tool-xxx.vercel.app`
    - 이 주소를 복사해서 저장해두세요!
 
@@ -212,6 +224,7 @@ AI 기능을 사용하려면:
 **원인:** 환경변수가 잘못 입력되었을 가능성이 높아요.
 
 **해결 방법:**
+
 1. Vercel 대시보드로 돌아가기
 2. 프로젝트 선택
 3. **"Settings"** 탭 클릭
@@ -226,6 +239,7 @@ AI 기능을 사용하려면:
 ### Q2. 배포가 실패했어요! (빨간색 X 표시)
 
 **해결 방법:**
+
 1. **"Deployments"** 탭 클릭
 2. 실패한 배포 클릭
 3. **로그(Log)** 확인
@@ -236,6 +250,7 @@ AI 기능을 사용하려면:
 ### Q3. GitHub 레포지토리가 안 보여요!
 
 **해결 방법:**
+
 1. Import 화면에서 **"Adjust GitHub App Permissions"** 링크 클릭
 2. Vercel 앱에 레포지토리 접근 권한 추가
 3. 다시 Import 화면으로 돌아오기
@@ -245,6 +260,7 @@ AI 기능을 사용하려면:
 ### Q4. 환경변수를 나중에 추가/수정하고 싶어요!
 
 **추가/수정 방법:**
+
 1. Vercel 대시보드 → 프로젝트 선택
 2. **"Settings"** → **"Environment Variables"**
 3. 수정: 기존 변수 옆 **"Edit"** 클릭
@@ -256,6 +272,7 @@ AI 기능을 사용하려면:
 ### Q5. 도메인을 내가 가진 것으로 바꾸고 싶어요!
 
 **커스텀 도메인 연결:**
+
 1. 도메인이 있어야 해요 (예: `myshop.com`)
 2. Vercel 대시보드 → 프로젝트 선택
 3. **"Settings"** → **"Domains"**
@@ -279,8 +296,8 @@ AI 기능을 사용하려면:
 **배포된 사이트**: https://your-domain.vercel.app
 
 **앞으로 할 일:**
+
 1. ✅ 실시간 목록 수집 기능 테스트
 2. ✅ 다른 기능들도 확인해보기
 3. ✅ 코드 수정하면 자동 재배포 확인
 4. ✅ 친구들에게 사이트 공유! 🎊
-
