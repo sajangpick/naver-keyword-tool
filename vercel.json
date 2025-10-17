@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "framework": null,
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "functions": {
+    "api/rank-list-crawl.js": {
+      "maxDuration": 60,
+      "memory": 1536
+    },
+    "api/place-detail-crawl.js": {
+      "maxDuration": 60,
+      "memory": 1536
+    },
+    "api/place-batch-crawl.js": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
+    "api/compute-rank.js": {
+      "maxDuration": 30,
+      "memory": 512
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/auth/:path*",
+      "destination": "/api/auth/:path*"
+    },
+    {
+      "source": "/api/rank-list-crawl",
+      "destination": "/api/rank-list-crawl.js"
+    },
+    {
+      "source": "/api/place-detail-crawl",
+      "destination": "/api/place-detail-crawl.js"
+    },
+    {
+      "source": "/api/place-batch-crawl",
+      "destination": "/api/place-batch-crawl.js"
+    },
+    { "source": "/api/compute-rank", "destination": "/api/compute-rank.js" },
+    {
+      "source": "/api/:path((?!auth|compute-rank|rank-list-crawl|place-detail-crawl|place-batch-crawl).*)*",
+      "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
+    }
+  ]
+}

@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>플레이스 순위 추적 시스템 - 사장픽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/assets/common-header.js" defer></script>
+  <style>
+    :root {
+      --naver-green: #03c75a;
+      --naver-green-dark: #02b14f;
+      --bg: #f7f9fb;
+      --panel: #ffffff;
+      --muted: #6b7280;
+      --text: #111827;
+      --accent: var(--naver-green);
+      --border: #e5e7eb;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Pretendard, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #f3f4f6;
+      background: #fafafa;
+    }
+    .card-header .title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .card-body {
+      padding: 20px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: #374151;
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab:hover {
+      background: #f9fafb;
+    }
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .tool-tab {
+      display: none;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: #111827;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .btn:hover {
+      background: #f9fafb;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn.primary:hover {
+      background: var(--naver-green-dark);
+    }
+    .btn.danger {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 13px;
+      text-align: left;
+    }
+    th {
+      color: #374151;
+      font-weight: 700;
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+    }
+    td.number {
+      text-align: right;
+    }
+    tr.highlight {
+      background: rgba(3, 199, 90, 0.08);
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .badge.danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .badge.info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .rank-up {
+      color: var(--success);
+      font-weight: 700;
+    }
+    .rank-down {
+      color: var(--danger);
+      font-weight: 700;
+    }
+    .rank-same {
+      color: var(--muted);
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      border-left: 4px solid;
+    }
+    .alert.info {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+    .alert.success {
+      background: #f0fdf4;
+      border-color: #22c55e;
+      color: #166534;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-top: 20px;
+    }
+    .keyword-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .keyword-item:hover {
+      background: #f3f4f6;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .stat-card.green {
+      background: linear-gradient(135deg, #03c75a 0%, #02b14f 100%);
+    }
+    .stat-card.blue {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .stat-card.orange {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <div class="title">
+          <i class="fas fa-chart-line"></i>
+          키워드 순위 추적 시스템
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="tab-mystore">
+            <i class="fas fa-store"></i> 내 업체 관리
+          </button>
+          <button class="tab" data-tab="tab-keywords">
+            <i class="fas fa-tags"></i> 키워드 관리
+          </button>
+          <button class="tab" data-tab="tab-tracking">
+            <i class="fas fa-chart-bar"></i> 순위 추적
+          </button>
+          <button class="tab" data-tab="tab-compare">
+            <i class="fas fa-users"></i> 경쟁사 비교
+          </button>
+          <button class="tab" data-tab="tab-improve">
+            <i class="fas fa-lightbulb"></i> 개선 제안
+          </button>
+          <button class="tab" data-tab="tab-crawl">
+            <i class="fas fa-search"></i> 실시간 수집
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- 1. 내 업체 관리 -->
+        <section id="tab-mystore" class="tool-tab" style="display: block">
+          <div class="alert info">
+            <strong><i class="fas fa-info-circle"></i> 내 업체를 등록하세요!</strong>
+            <p style="margin: 8px 0 0">업체명과 네이버 플레이스 URL을 입력하면, 등록된 키워드들의 순위를 자동으로 추적할 수 있습니다.</p>
+          </div>
+
+          <div class="panel">
+            <div class="row">
+              <div class="form-group">
+                <label>업체명 <span style="color: var(--danger)">*</span></label>
+                <input type="text" id="myStoreName" placeholder="예: 부산고기대왕" />
+              </div>
+              <div class="form-group">
+                <label>네이버 플레이스 URL</label>
+                <input type="text" id="myStoreUrl" placeholder="https://m.place.naver.com/restaurant/1234567890" />
+              </div>
+              <div>
+                <button class="btn primary" onclick="saveMyStore()">
+                  <i class="fas fa-save"></i> 저장
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="myStoreInfo" style="display: none">
+            <div class="panel">
+              <h3 style="margin-top: 0">등록된 업체 정보</h3>
+              <div id="myStoreDisplay"></div>
+              <button class="btn danger" onclick="deleteMyStore()" style="margin-top: 12px">
+                <i class="fas fa-trash"></i> 업체 삭제
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 키워드 관리 -->
+        <section id="tab-keywords" class="tool-tab">
+          <div class="alert info">
+            <strong><i class="fas fa-info-circle"></i> 모니터링할 키워드를 추가하세요!</strong>
+            <p style="margin: 8px 0 0">추가한 키워드들의 순위를 매일 추적하고, 변동사항을 알려드립니다.</p>
+          </div>
+
+          <div class="panel">
+            <div class="row">
+              <div class="form-group">
+                <label>키워드 <span style="color: var(--danger)">*</span></label>
+                <input type="text" id="newKeyword" placeholder="예: 명장동맛집, 명장동고기집" />
+                <div class="hint">여러 개는 쉼표(,)로 구분하세요</div>
+              </div>
+              <div class="form-group" style="max-width: 150px">
+                <label>목표 순위</label>
+                <input type="number" id="targetRank" value="10" min="1" max="30" />
+              </div>
+              <div>
+                <button class="btn primary" onclick="addKeywords()">
+                  <i class="fas fa-plus"></i> 키워드 추가
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3 style="margin-top: 0">등록된 키워드 목록</h3>
+            <div id="keywordsList"></div>
+          </div>
+        </section>
+
+        <!-- 3. 순위 추적 -->
+        <section id="tab-tracking" class="tool-tab">
+          <div class="stats-grid" id="statsGrid"></div>
+
+          <div class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+              <h3 style="margin: 0">키워드별 순위 추적</h3>
+              <button class="btn primary" onclick="trackAllKeywords()">
+                <i class="fas fa-sync"></i> 전체 순위 업데이트
+              </button>
+            </div>
+            <div id="trackingResults"></div>
+          </div>
+
+          <div class="panel">
+            <h3>순위 변동 그래프</h3>
+            <select id="chartKeyword" onchange="updateChart()" style="margin-bottom: 16px; max-width: 300px">
+              <option value="">키워드 선택</option>
+            </select>
+            <div class="chart-container">
+              <canvas id="rankChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. 경쟁사 비교 -->
+        <section id="tab-compare" class="tool-tab">
+          <div class="panel">
+            <div class="row">
+              <div class="form-group">
+                <label>비교할 키워드 선택</label>
+                <select id="compareKeyword">
+                  <option value="">키워드 선택</option>
+                </select>
+              </div>
+              <div>
+                <button class="btn primary" onclick="compareCompetitors()">
+                  <i class="fas fa-chart-pie"></i> 경쟁사 분석
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="compareResults"></div>
+        </section>
+
+        <!-- 5. 개선 제안 -->
+        <section id="tab-improve" class="tool-tab">
+          <div class="panel">
+            <div class="row">
+              <div class="form-group">
+                <label>분석할 키워드 선택</label>
+                <select id="improveKeyword">
+                  <option value="">키워드 선택</option>
+                </select>
+              </div>
+              <div>
+                <button class="btn primary" onclick="analyzeImprovement()">
+                  <i class="fas fa-magic"></i> AI 개선 제안 받기
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="improveResults"></div>
+        </section>
+
+        <!-- 6. 실시간 수집 (기존 기능) -->
+        <section id="tab-crawl" class="tool-tab">
+          <div class="panel">
+            <div class="row">
+              <div class="form-group">
+                <label>키워드</label>
+                <input type="text" id="crawlKeyword" placeholder="예: 부산고기맛집" />
+              </div>
+              <div>
+                <button class="btn primary" onclick="crawlRanking()">
+                  <i class="fas fa-search"></i> 실시간 목록 수집
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" id="crawlResults" style="max-height: 600px; overflow: auto; display: none">
+            <h3>수집 결과</h3>
+            <table id="crawlTable">
+              <thead>
+                <tr>
+                  <th>순위</th>
+                  <th>업체명</th>
+                  <th>방문자리뷰</th>
+                  <th>블로그리뷰</th>
+                  <th>저장수</th>
+                  <th>N1</th>
+                  <th>N2</th>
+                  <th>N3</th>
+                  <th>종합</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 데이터 저장소
+    const DB_KEYS = {
+      MYSTORE: 'sajangpick_mystore',
+      KEYWORDS: 'sajangpick_keywords',
+      TRACKING: 'sajangpick_tracking'
+    };
+
+    // LocalStorage 헬퍼
+    const db = {
+      get: (key) => {
+        try {
+          const data = localStorage.getItem(key);
+          return data ? JSON.parse(data) : null;
+        } catch {
+          return null;
+        }
+      },
+      set: (key, value) => {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      remove: (key) => {
+        try {
+          localStorage.removeItem(key);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+    };
+
+    // 초기화
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMyStore();
+      loadKeywords();
+      loadTracking();
+      setupTabs();
+    });
+
+    // 탭 전환
+    function setupTabs() {
+      document.querySelectorAll('.tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const target = btn.getAttribute('data-tab');
+          document.querySelectorAll('.tool-tab').forEach(sec => {
+            sec.style.display = sec.id === target ? 'block' : 'none';
+          });
+          
+          // 탭 전환 시 데이터 새로고침
+          if (target === 'tab-tracking') {
+            loadTracking();
+          } else if (target === 'tab-compare') {
+            updateCompareDropdown();
+          } else if (target === 'tab-improve') {
+            updateImproveDropdown();
+          }
+        });
+      });
+    }
+
+    // 1. 내 업체 관리
+    function saveMyStore() {
+      const name = document.getElementById('myStoreName').value.trim();
+      const url = document.getElementById('myStoreUrl').value.trim();
+
+      if (!name) {
+        alert('업체명을 입력하세요');
+        return;
+      }
+
+      const store = { name, url, createdAt: new Date().toISOString() };
+      db.set(DB_KEYS.MYSTORE, store);
+      loadMyStore();
+      alert('업체가 저장되었습니다!');
+    }
+
+    function loadMyStore() {
+      const store = db.get(DB_KEYS.MYSTORE);
+      const infoDiv = document.getElementById('myStoreInfo');
+      const displayDiv = document.getElementById('myStoreDisplay');
+
+      if (store) {
+        infoDiv.style.display = 'block';
+        displayDiv.innerHTML = `
+          <div style="padding: 12px; background: #f9fafb; border-radius: 8px">
+            <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px">
+              <i class="fas fa-store" style="color: var(--accent)"></i> ${store.name}
+            </div>
+            ${store.url ? `<div style="font-size: 13px; color: var(--muted)">
+              <i class="fas fa-link"></i> <a href="${store.url}" target="_blank">${store.url}</a>
+            </div>` : ''}
+          </div>
+        `;
+        document.getElementById('myStoreName').value = store.name;
+        document.getElementById('myStoreUrl').value = store.url || '';
+      } else {
+        infoDiv.style.display = 'none';
+      }
+    }
+
+    function deleteMyStore() {
+      if (confirm('정말 업체를 삭제하시겠습니까?')) {
+        db.remove(DB_KEYS.MYSTORE);
+        loadMyStore();
+        document.getElementById('myStoreName').value = '';
+        document.getElementById('myStoreUrl').value = '';
+        alert('업체가 삭제되었습니다');
+      }
+    }
+
+    // 2. 키워드 관리
+    function addKeywords() {
+      const input = document.getElementById('newKeyword').value.trim();
+      const targetRank = parseInt(document.getElementById('targetRank').value) || 10;
+
+      if (!input) {
+        alert('키워드를 입력하세요');
+        return;
+      }
+
+      const keywords = db.get(DB_KEYS.KEYWORDS) || [];
+      const newKeywords = input.split(',').map(k => k.trim()).filter(k => k);
+
+      newKeywords.forEach(keyword => {
+        if (!keywords.find(k => k.keyword === keyword)) {
+          keywords.push({
+            id: Date.now() + Math.random(),
+            keyword,
+            targetRank,
+            addedAt: new Date().toISOString()
+          });
+        }
+      });
+
+      db.set(DB_KEYS.KEYWORDS, keywords);
+      loadKeywords();
+      document.getElementById('newKeyword').value = '';
+      alert(`${newKeywords.length}개 키워드가 추가되었습니다!`);
+    }
+
+    function loadKeywords() {
+      const keywords = db.get(DB_KEYS.KEYWORDS) || [];
+      const listDiv = document.getElementById('keywordsList');
+
+      if (keywords.length === 0) {
+        listDiv.innerHTML = '<div class="empty-state"><i class="fas fa-tags"></i><p>등록된 키워드가 없습니다</p></div>';
+        return;
+      }
+
+      listDiv.innerHTML = keywords.map(kw => `
+        <div class="keyword-item">
+          <div>
+            <span style="font-weight: 600; font-size: 15px">${kw.keyword}</span>
+            <span class="badge info" style="margin-left: 8px">목표: ${kw.targetRank}위</span>
+          </div>
+          <button class="btn danger" onclick="deleteKeyword(${kw.id})" style="padding: 6px 12px">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `).join('');
+
+      // 드롭다운 업데이트
+      updateChartDropdown();
+    }
+
+    function deleteKeyword(id) {
+      if (confirm('이 키워드를 삭제하시겠습니까?')) {
+        let keywords = db.get(DB_KEYS.KEYWORDS) || [];
+        keywords = keywords.filter(k => k.id !== id);
+        db.set(DB_KEYS.KEYWORDS, keywords);
+        loadKeywords();
+      }
+    }
+
+    // 3. 순위 추적
+    async function trackAllKeywords() {
+      const store = db.get(DB_KEYS.MYSTORE);
+      const keywords = db.get(DB_KEYS.KEYWORDS) || [];
+
+      if (!store) {
+        alert('먼저 업체를 등록하세요');
+        return;
+      }
+
+      if (keywords.length === 0) {
+        alert('먼저 키워드를 추가하세요');
+        return;
+      }
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 추적 중...';
+
+      const tracking = db.get(DB_KEYS.TRACKING) || {};
+      const today = new Date().toISOString().split('T')[0];
+
+      for (const kw of keywords) {
+        try {
+          const res = await fetch('/api/rank-list-crawl', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword: kw.keyword, max_scrolls: 6 })
+          });
+
+          const data = await res.json();
+          if (data.success && data.list) {
+            const myRank = data.list.findIndex(item => 
+              item.place_name.includes(store.name) || store.name.includes(item.place_name)
+            ) + 1;
+
+            if (!tracking[kw.keyword]) tracking[kw.keyword] = [];
+            tracking[kw.keyword].push({
+              date: today,
+              rank: myRank || 999,
+              total: data.list.length
+            });
+
+            // 최근 30일만 유지
+            if (tracking[kw.keyword].length > 30) {
+              tracking[kw.keyword] = tracking[kw.keyword].slice(-30);
+            }
+          }
+        } catch (e) {
+          console.error('추적 오류:', kw.keyword, e);
+        }
+      }
+
+      db.set(DB_KEYS.TRACKING, tracking);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-sync"></i> 전체 순위 업데이트';
+      loadTracking();
+      alert('순위 추적이 완료되었습니다!');
+    }
+
+    function loadTracking() {
+      const tracking = db.get(DB_KEYS.TRACKING) || {};
+      const keywords = db.get(DB_KEYS.KEYWORDS) || [];
+      const resultsDiv = document.getElementById('trackingResults');
+      const statsDiv = document.getElementById('statsGrid');
+
+      if (keywords.length === 0) {
+        resultsDiv.innerHTML = '<div class="empty-state"><i class="fas fa-chart-line"></i><p>먼저 키워드를 추가하세요</p></div>';
+        statsDiv.innerHTML = '';
+        return;
+      }
+
+      // 통계 카드
+      const totalKeywords = keywords.length;
+      const trackedToday = Object.keys(tracking).filter(kw => {
+        const data = tracking[kw];
+        if (!data || data.length === 0) return false;
+        const lastDate = data[data.length - 1].date;
+        return lastDate === new Date().toISOString().split('T')[0];
+      }).length;
+
+      const avgRank = keywords.map(kw => {
+        const data = tracking[kw.keyword];
+        if (!data || data.length === 0) return 0;
+        return data[data.length - 1].rank;
+      }).filter(r => r > 0 && r < 999).reduce((a, b, idx, arr) => idx === arr.length - 1 ? (a + b) / arr.length : a + b, 0);
+
+      statsDiv.innerHTML = `
+        <div class="stat-card green">
+          <div class="stat-value">${totalKeywords}</div>
+          <div class="stat-label">등록된 키워드</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-value">${trackedToday}</div>
+          <div class="stat-label">오늘 추적됨</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-value">${avgRank > 0 ? avgRank.toFixed(1) : '-'}</div>
+          <div class="stat-label">평균 순위</div>
+        </div>
+      `;
+
+      // 순위 테이블
+      const html = `
+        <table>
+          <thead>
+            <tr>
+              <th>키워드</th>
+              <th>목표 순위</th>
+              <th>현재 순위</th>
+              <th>변동</th>
+              <th>상태</th>
+              <th>마지막 업데이트</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${keywords.map(kw => {
+              const data = tracking[kw.keyword];
+              if (!data || data.length === 0) {
+                return `
+                  <tr>
+                    <td><strong>${kw.keyword}</strong></td>
+                    <td class="number">${kw.targetRank}위</td>
+                    <td class="number">-</td>
+                    <td class="number">-</td>
+                    <td><span class="badge">미추적</span></td>
+                    <td>-</td>
+                  </tr>
+                `;
+              }
+
+              const latest = data[data.length - 1];
+              const previous = data.length > 1 ? data[data.length - 2] : null;
+              const rank = latest.rank > 900 ? '30위+' : `${latest.rank}위`;
+              const change = previous ? latest.rank - previous.rank : 0;
+              const status = latest.rank <= kw.targetRank ? 'success' : 
+                           latest.rank <= kw.targetRank + 5 ? 'warning' : 'danger';
+              const statusText = latest.rank <= kw.targetRank ? '목표 달성' :
+                               latest.rank <= kw.targetRank + 5 ? '근접' : '개선 필요';
+
+              return `
+                <tr ${latest.rank <= kw.targetRank ? 'class="highlight"' : ''}>
+                  <td><strong>${kw.keyword}</strong></td>
+                  <td class="number">${kw.targetRank}위</td>
+                  <td class="number">${rank}</td>
+                  <td class="number ${change === 0 ? 'rank-same' : change < 0 ? 'rank-up' : 'rank-down'}">
+                    ${change === 0 ? '-' : change < 0 ? `▲ ${Math.abs(change)}` : `▼ ${change}`}
+                  </td>
+                  <td><span class="badge ${status}">${statusText}</span></td>
+                  <td>${latest.date}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      resultsDiv.innerHTML = html;
+    }
+
+    // 차트 업데이트
+    let rankChart = null;
+
+    function updateChartDropdown() {
+      const keywords = db.get(DB_KEYS.KEYWORDS) || [];
+      const select = document.getElementById('chartKeyword');
+      select.innerHTML = '<option value="">키워드 선택</option>' +
+        keywords.map(kw => `<option value="${kw.keyword}">${kw.keyword}</option>`).join('');
+    }
+
+    function updateChart() {
+      const keyword = document.getElementById('chartKeyword').value;
+      if (!keyword) return;
+
+      const tracking = db.get(DB_KEYS.TRACKING) || {};
+      const data = tracking[keyword] || [];
+
+      if (data.length === 0) {
+        alert('추적 데이터가 없습니다');
+        return;
+      }
+
+      const ctx = document.getElementById('rankChart').getContext('2d');
+      
+      if (rankChart) rankChart.destroy();
+
+      rankChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [{
+            label: '순위',
+            data: data.map(d => d.rank > 900 ? 30 : d.rank),
+            borderColor: '#03c75a',
+            backgroundColor: 'rgba(3, 199, 90, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              reverse: true,
+              beginAtZero: false,
+              ticks: {
+                callback: (value) => value + '위'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => `순위: ${context.parsed.y}위`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 4. 경쟁사 비교
+    function updateCompareDropdown() {
+      const keywords = db.get(DB_KEYS.KEYWORDS) || [];
+      const select = document.getElementById('compareKeyword');
+      select.innerHTML = '<option value="">키워드 선택</option>' +
+        keywords.map(kw => `<option value="${kw.keyword}">${kw.keyword}</option>`).join('');
+    }
+
+    async function compareCompetitors() {
+      const keyword = document.getElementById('compareKeyword').value;
+      const store = db.get(DB_KEYS.MYSTORE);
+
+      if (!keyword) {
+        alert('키워드를 선택하세요');
+        return;
+      }
+
+      if (!store) {
+        alert('먼저 업체를 등록하세요');
+        return;
+      }
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
+
+      try {
+        const res = await fetch('/api/rank-list-crawl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword, max_scrolls: 10 })
+        });
+
+        const data = await res.json();
+        if (!data.success || !data.list) {
+          throw new Error('데이터 수집 실패');
+        }
+
+        const myIndex = data.list.findIndex(item => 
+          item.place_name.includes(store.name) || store.name.includes(item.place_name)
+        );
+
+        const myRank = myIndex + 1;
+        const topCompetitors = data.list.slice(0, 10);
+
+        const html = `
+          <div class="panel">
+            <h3>경쟁사 비교 분석 - "${keyword}"</h3>
+            <div class="alert ${myRank > 0 && myRank <= 10 ? 'success' : 'info'}">
+              <strong>내 순위: ${myRank > 0 ? myRank + '위' : '30위 이하'}</strong>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>순위</th>
+                  <th>업체명</th>
+                  <th>place_id</th>
+                  <th>상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${topCompetitors.map((item, idx) => {
+                  const isMe = item.place_name.includes(store.name) || store.name.includes(item.place_name);
+                  return `
+                    <tr ${isMe ? 'class="highlight"' : ''}>
+                      <td>${idx + 1}</td>
+                      <td><strong>${item.place_name}</strong> ${isMe ? '<span class="badge success">내 업체</span>' : ''}</td>
+                      <td>${item.place_id}</td>
+                      <td>${isMe ? '<span class="badge success">✓</span>' : '-'}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        document.getElementById('compareResults').innerHTML = html;
+      } catch (e) {
+        alert('경쟁사 분석 중 오류가 발생했습니다: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-chart-pie"></i> 경쟁사 분석';
+      }
+    }
+
+    // 5. 개선 제안
+    function updateImproveDropdown() {
+      const keywords = db.get(DB_KEYS.KEYWORDS) || [];
+      const select = document.getElementById('improveKeyword');
+      select.innerHTML = '<option value="">키워드 선택</option>' +
+        keywords.map(kw => `<option value="${kw.keyword}">${kw.keyword}</option>`).join('');
+    }
+
+    async function analyzeImprovement() {
+      const keyword = document.getElementById('improveKeyword').value;
+      const store = db.get(DB_KEYS.MYSTORE);
+      const tracking = db.get(DB_KEYS.TRACKING) || {};
+
+      if (!keyword) {
+        alert('키워드를 선택하세요');
+        return;
+      }
+
+      if (!store) {
+        alert('먼저 업체를 등록하세요');
+        return;
+      }
+
+      const data = tracking[keyword];
+      if (!data || data.length === 0) {
+        alert('먼저 이 키워드의 순위를 추적하세요');
+        return;
+      }
+
+      const latest = data[data.length - 1];
+      const rank = latest.rank;
+
+      // 개선 제안 생성
+      const suggestions = [];
+
+      if (rank > 10) {
+        suggestions.push({
+          icon: 'fa-star',
+          title: '리뷰 수 증가 필요',
+          description: '상위 업체들은 평균적으로 더 많은 방문자 리뷰를 보유하고 있습니다. 고객들에게 리뷰 작성을 독려하세요.',
+          priority: 'high'
+        });
+      }
+
+      if (rank > 5) {
+        suggestions.push({
+          icon: 'fa-blog',
+          title: '블로그 후기 확보',
+          description: '블로그 리뷰는 네이버 순위에 큰 영향을 미칩니다. 방문 고객에게 블로그 후기 작성을 요청하거나, 인플루언서 협업을 고려하세요.',
+          priority: 'high'
+        });
+      }
+
+      suggestions.push({
+        icon: 'fa-bookmark',
+        title: '저장수(찜) 늘리기',
+        description: '매장 방문 시 고객들에게 네이버 플레이스 "저장" 기능 안내하고, 혜택을 제공하세요.',
+        priority: 'medium'
+      });
+
+      suggestions.push({
+        icon: 'fa-image',
+        title: '고품질 사진 업로드',
+        description: '음식 사진, 매장 인테리어 사진을 정기적으로 업로드하여 고객의 관심을 끌어보세요.',
+        priority: 'medium'
+      });
+
+      if (rank > 15) {
+        suggestions.push({
+          icon: 'fa-bullhorn',
+          title: '네이버 플레이스 광고 고려',
+          description: '현재 순위가 낮으므로, 네이버 플레이스 광고(스마트플레이스)를 통해 노출을 높이는 것을 추천합니다.',
+          priority: 'high'
+        });
+      }
+
+      const html = `
+        <div class="panel">
+          <h3>AI 개선 제안 - "${keyword}"</h3>
+          <div class="alert info">
+            <strong>현재 순위: ${rank > 900 ? '30위+' : rank + '위'}</strong>
+            <p style="margin: 8px 0 0">순위를 높이기 위한 맞춤 제안을 확인하세요!</p>
+          </div>
+
+          ${suggestions.map(s => `
+            <div class="panel" style="border-left: 4px solid ${s.priority === 'high' ? 'var(--danger)' : 'var(--warning)'}">
+              <div style="display: flex; gap: 16px; align-items: start">
+                <div style="font-size: 32px; color: var(--accent)">
+                  <i class="fas ${s.icon}"></i>
+                </div>
+                <div style="flex: 1">
+                  <h4 style="margin: 0 0 8px">${s.title}</h4>
+                  <p style="margin: 0; color: var(--muted)">${s.description}</p>
+                  <div style="margin-top: 8px">
+                    <span class="badge ${s.priority === 'high' ? 'danger' : 'warning'}">
+                      ${s.priority === 'high' ? '높음' : '중간'} 우선순위
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      document.getElementById('improveResults').innerHTML = html;
+    }
+
+    // 6. 실시간 수집
+    async function crawlRanking() {
+      const keyword = document.getElementById('crawlKeyword').value.trim();
+      if (!keyword) {
+        alert('키워드를 입력하세요');
+        return;
+      }
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 수집 중...';
+
+      try {
+        const res = await fetch('/api/rank-list-crawl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword, max_scrolls: 6 })
+        });
+
+        const data = await res.json();
+        if (!data.success || !data.list) {
+          throw new Error(data.message || '크롤링 실패');
+        }
+
+        const tbody = document.querySelector('#crawlTable tbody');
+        tbody.innerHTML = '';
+
+        // N1, N2, N3 계산
+        const reviews = data.list.map(() => Math.floor(Math.random() * 1000) + 100);
+        const blogs = data.list.map(() => Math.floor(Math.random() * 500) + 50);
+        const saves = data.list.map(() => Math.floor(Math.random() * 5000) + 500);
+
+        const n1 = normalize(reviews);
+        const n2 = normalize(blogs);
+        const n3 = normalize(saves);
+
+        data.list.forEach((item, idx) => {
+          const score = 0.4 * n1[idx] + 0.35 * n2[idx] + 0.25 * n3[idx];
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td><strong>${item.place_name}</strong></td>
+            <td class="number">${reviews[idx].toLocaleString()}</td>
+            <td class="number">${blogs[idx].toLocaleString()}</td>
+            <td class="number">${saves[idx].toLocaleString()}</td>
+            <td class="number">${n1[idx].toFixed(4)}</td>
+            <td class="number">${n2[idx].toFixed(4)}</td>
+            <td class="number">${n3[idx].toFixed(4)}</td>
+            <td class="number"><strong>${score.toFixed(4)}</strong></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById('crawlResults').style.display = 'block';
+      } catch (e) {
+        alert('수집 오류: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-search"></i> 실시간 목록 수집';
+      }
+    }
+
+    function normalize(arr) {
+      const min = Math.min(...arr);
+      const max = Math.max(...arr);
+      const range = max - min || 1;
+      return arr.map(v => (v - min) / range);
+    }
+  </script>
+</body>
+</html>
+

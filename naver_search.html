@@ -1,0 +1,2784 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>사장픽(sajang pick) - 네이버 키워드 도구</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/assets/common-header.js" defer></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Noto Sans KR", Arial, sans-serif;
+        background: #f8f9fa;
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .header {
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 20px;
+        gap: 20px;
+      }
+
+      .top-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        position: relative;
+      }
+
+      .logo {
+        font-size: 32px;
+        font-weight: 800;
+        color: #111827; /* plain text logo */
+        cursor: pointer;
+        transition: all 0.3s ease;
+        letter-spacing: -1px;
+      }
+
+      .logo:hover {
+        transform: scale(1.05);
+        color: #03c75a;
+      }
+
+      .nav-menu {
+        display: flex;
+        list-style: none;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+        position: relative;
+      }
+
+      .nav-menu li {
+        position: relative;
+      }
+
+      .nav-menu a {
+        text-decoration: none;
+        color: #333;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        padding: 12px 18px;
+        display: block;
+        border-radius: 8px;
+        position: relative;
+      }
+
+      .nav-menu a:hover {
+        color: #03c75a;
+        background: #e6f9f0;
+        transform: translateY(-1px);
+      }
+
+      .nav-menu a.active {
+        color: white;
+        background: #03c75a;
+        font-weight: 700;
+        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
+      }
+
+      .dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        min-width: 220px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-15px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        padding: 15px 0;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .nav-menu li:hover .dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .dropdown a {
+        padding: 12px 25px;
+        color: #666;
+        font-size: 14px;
+        border-radius: 0;
+        background: transparent;
+        font-weight: 500;
+      }
+
+      .dropdown a:hover {
+        background: #f1f2f6;
+        color: #3498db;
+        transform: none;
+      }
+
+      .user-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        position: absolute;
+        right: 0;
+      }
+
+      .login-btn,
+      .signup-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .login-btn {
+        background: #03c75a;
+        color: white;
+        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
+      }
+
+      .signup-btn {
+        background: transparent;
+        color: #03c75a;
+        border: 2px solid #03c75a;
+      }
+
+      .login-btn:hover,
+      .signup-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(3, 199, 90, 0.35);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 50px 20px;
+      }
+
+      .page-header {
+        text-align: center;
+        margin-bottom: 50px;
+        color: #2c3e50;
+      }
+
+      .page-header h1 {
+        font-size: 2.8rem;
+        margin-bottom: 15px;
+        font-weight: 700;
+        letter-spacing: -1px;
+      }
+
+      .page-header p {
+        font-size: 1.1rem;
+        color: #7f8c8d;
+        font-weight: 400;
+      }
+
+      .tab-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e9ecef;
+        margin-bottom: 40px;
+        overflow: hidden;
+      }
+
+      .tab-buttons {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .tab-button {
+        flex: 1;
+        padding: 15px 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+        color: #666;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .tab-button.active {
+        background: #03c75a;
+        color: white;
+      }
+
+      .tab-button:hover:not(.active) {
+        background: #e6f9f0;
+        color: #03c75a;
+      }
+
+      .tab-content {
+        padding: 40px;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .keyword-inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .keyword-input-group {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+      }
+
+      .keyword-input-group h4 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .keyword-input-group textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        resize: none;
+        font-size: 14px;
+        font-family: inherit;
+        background: white;
+      }
+
+      .keyword-input-group textarea:focus {
+        border-color: #03c75a;
+        outline: none;
+      }
+
+      .combination-options {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #e9ecef;
+      }
+
+      .combination-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .combination-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e9ecef;
+        font-size: 13px;
+      }
+
+      .combination-option input[type="checkbox"] {
+        transform: scale(1.1);
+      }
+
+      .combination-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      .combination-btn {
+        padding: 12px 24px;
+        border: 2px solid #03c75a;
+        background: white;
+        color: #03c75a;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .combination-btn:hover {
+        background: #03c75a;
+        color: white;
+      }
+
+      .combination-btn.primary {
+        background: #03c75a;
+        color: white;
+      }
+
+      .combination-btn.primary:hover {
+        background: #02b14f;
+      }
+
+      .combination-result {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        margin-top: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .combination-result h4 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .combination-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .combination-item {
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #495057;
+        border-left: 3px solid #3498db;
+      }
+
+      .search-form {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .search-input {
+        flex: 1;
+        padding: 18px 25px;
+        font-size: 1.1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        outline: none;
+        transition: all 0.3s ease;
+        background: white;
+        font-weight: 500;
+      }
+
+      .search-input:focus {
+        border-color: #03c75a;
+        box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.15);
+        transform: translateY(-1px);
+      }
+
+      .search-options {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        padding: 15px 0;
+        border-top: 1px solid #eee;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+
+      .search-btn {
+        padding: 18px 50px;
+        background: #03c75a;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        box-shadow: 0 4px 15px rgba(3, 199, 90, 0.25);
+      }
+
+      .search-btn:hover {
+        background: #02b14f;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(3, 199, 90, 0.35);
+      }
+
+      .search-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .server-status {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        border-radius: 12px;
+        padding: 20px 25px;
+        margin-bottom: 30px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      .server-status.offline {
+        background: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+      }
+
+      .loading {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 25px;
+        color: #2c3e50;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      .loading i {
+        color: #3498db;
+        font-size: 1.8rem;
+        margin-right: 12px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading span {
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      .stats {
+        background: white;
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        color: #2c3e50;
+        font-weight: 600;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      .error {
+        background: #ffebee;
+        color: #c62828;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        border-left: 4px solid #c62828;
+        font-weight: 500;
+        border: 1px solid #ffcdd2;
+      }
+
+      .results-table {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+      }
+
+      .table-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 1.1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .pagination-info {
+        color: #666;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+
+      .keyword-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .keyword-table th {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        text-align: center;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #e9ecef;
+        white-space: nowrap;
+        font-size: 13px;
+      }
+
+      .keyword-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f1f3f4;
+        text-align: center;
+        color: #495057;
+      }
+
+      .keyword-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+
+      .keyword-table tbody tr:nth-child(even) {
+        background: #fdfdfd;
+      }
+
+      .keyword-cell {
+        text-align: left !important;
+        font-weight: 600;
+        color: #2c3e50;
+      }
+
+      .number-cell {
+        font-weight: 600;
+        color: #28a745;
+      }
+
+      .competition-cell {
+        font-weight: 600;
+      }
+
+      .competition-high {
+        color: #dc3545;
+      }
+
+      .competition-medium {
+        color: #ffc107;
+      }
+
+      .competition-low {
+        color: #28a745;
+      }
+
+      .checkbox-cell {
+        width: 40px;
+      }
+
+      .checkbox-cell input[type="checkbox"] {
+        transform: scale(1.2);
+      }
+
+      /* 페이지네이션 스타일 */
+      .pagination-container {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      .pagination {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .pagination-btn {
+        padding: 8px 12px;
+        border: 1px solid #e9ecef;
+        background: white;
+        color: #495057;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        min-width: 40px;
+        text-align: center;
+        text-decoration: none;
+      }
+
+      .pagination-btn:hover:not(.active):not(.disabled) {
+        background: #f8f9fa;
+        border-color: #3498db;
+        color: #3498db;
+      }
+
+      .pagination-btn.active {
+        background: #3498db;
+        border-color: #3498db;
+        color: white;
+        font-weight: 700;
+      }
+
+      .pagination-btn.disabled {
+        color: #ced4da;
+        cursor: not-allowed;
+        background: #f8f9fa;
+      }
+
+      .pagination-btn.nav-btn {
+        padding: 8px 16px;
+        font-weight: 600;
+      }
+
+      .pagination-jump {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 20px;
+      }
+
+      .pagination-jump input {
+        width: 60px;
+        padding: 6px 8px;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .pagination-jump button {
+        padding: 6px 12px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .pagination-jump button:hover {
+        background: #2980b9;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #6c757d;
+      }
+
+      .empty-state svg {
+        margin-bottom: 25px;
+        opacity: 0.5;
+      }
+
+      .empty-state p {
+        font-size: 1.1rem;
+        font-weight: 500;
+      }
+
+      /* 정렬 화살표 스타일 */
+      .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        transition: background-color 0.2s ease;
+      }
+
+      .sortable-header:hover {
+        background: #e9ecef !important;
+      }
+
+      .sortable-header .sort-arrow {
+        margin-left: 5px;
+        font-size: 12px;
+        opacity: 0.5;
+      }
+
+      .sortable-header.sort-desc .sort-arrow::before {
+        content: "▼";
+        opacity: 1;
+        color: #3498db;
+      }
+
+      .sortable-header.sort-asc .sort-arrow::before {
+        content: "▲";
+        opacity: 1;
+        color: #3498db;
+      }
+
+      .sortable-header:not(.sort-desc):not(.sort-asc) .sort-arrow::before {
+        content: "↕";
+        opacity: 0.5;
+      }
+
+      /* 키워드 차트 모달 스타일 */
+      .chart-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .chart-modal.show {
+        display: flex;
+      }
+
+      .chart-content {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 900px;
+        width: 90%;
+        max-height: 90%;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .chart-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+      }
+
+      .close-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      .close-btn:hover {
+        background: #c82333;
+        transform: scale(1.1);
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+
+      .chart-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+      }
+
+      .chart-section h3 {
+        color: #495057;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        text-align: center;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+      }
+
+      .trend-chart-container {
+        position: relative;
+        height: 250px;
+        margin-bottom: 20px;
+      }
+
+      .chart-info {
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+      }
+
+      .chart-info h4 {
+        color: #1976d2;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      .chart-info ul {
+        color: #1976d2;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-left: 20px;
+      }
+
+      .keyword-link {
+        cursor: pointer;
+        color: #03c75a;
+        text-decoration: underline;
+        transition: color 0.3s ease;
+      }
+
+      .keyword-link:hover {
+        color: #02b14f;
+        text-decoration: none;
+      }
+
+      .place-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .place-item {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+      }
+
+      .place-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .place-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        text-decoration: none;
+      }
+
+      .place-title:hover {
+        color: #3498db;
+      }
+
+      .place-category {
+        background: #e3f2fd;
+        color: #1976d2;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+
+      .place-address {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+
+      .place-description {
+        color: #495057;
+        font-size: 13px;
+        line-height: 1.4;
+        margin-bottom: 10px;
+      }
+
+      .place-phone {
+        color: #28a745;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      @media (max-width: 768px) {
+        /* 헤더 겹침 방지: 로고/버튼 세로 스택 & 버튼 absolute 해제 */
+        .top-nav {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .user-actions {
+          position: static;
+          right: auto;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .nav-menu {
+          justify-content: flex-start;
+          overflow-x: auto;
+          white-space: nowrap;
+          padding: 5px 0;
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        .nav-menu::-webkit-scrollbar {
+          display: none; /* Chrome, Safari and Opera */
+        }
+
+        .nav-menu li {
+          flex-shrink: 0;
+        }
+
+        .nav-menu a {
+          font-size: 12px;
+          padding: 8px 12px;
+          white-space: nowrap;
+        }
+
+        .page-header h1 {
+          font-size: 2.2rem;
+        }
+
+        .search-form {
+          flex-direction: column;
+        }
+
+        .nav-container {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .top-nav {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .search-options {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .search-box {
+          padding: 25px;
+        }
+
+        .container {
+          padding: 30px 15px;
+        }
+
+        .pagination-container {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .pagination-jump {
+          margin-left: 0;
+        }
+
+        .table-header {
+          flex-direction: column;
+          gap: 10px;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 공통 헤더는 /assets/common-header.js 가 자동 주입됩니다 -->
+
+    <div class="container">
+      <div class="page-header">
+        <h1>네이버 키워드 도구</h1>
+        <p>네이버 광고 API를 활용한 키워드 분석 서비스</p>
+      </div>
+
+      <div id="serverStatus" class="server-status" style="display: none">
+        <span id="statusText">백엔드 서버 연결 확인 중...</span>
+      </div>
+
+      <div class="tab-container">
+        <div class="tab-buttons">
+          <button
+            class="tab-button active"
+            onclick="switchTab('keyword-search')"
+          >
+            키워드 조회
+          </button>
+          <button class="tab-button" onclick="switchTab('keyword-combination')">
+            키워드 조합기
+          </button>
+          <button class="tab-button" onclick="switchTab('related-keywords')">
+            연관키워드
+          </button>
+        </div>
+
+        <div class="tab-content">
+          <!-- 키워드 조회 탭 -->
+          <div id="keyword-search" class="tab-panel active">
+            <div class="search-form">
+              <textarea
+                id="searchQuery"
+                class="search-input"
+                placeholder="키워드를 한 줄에 하나씩 입력하세요 (최대 100개)&#10;예:&#10;치킨&#10;피자&#10;햄버거"
+                rows="6"
+                style="
+                  resize: none;
+                  overflow-y: auto;
+                  min-height: 120px;
+                  font-family: inherit;
+                "
+              ></textarea>
+              <button type="button" class="search-btn" id="searchBtn">
+                검색
+              </button>
+            </div>
+
+            <div class="search-options">
+              <span style="color: #666; font-size: 14px">
+                <span id="keywordCount">0</span>/100개 키워드
+              </span>
+            </div>
+          </div>
+
+          <!-- 키워드 조합기 탭 -->
+          <div id="keyword-combination" class="tab-panel">
+            <div class="keyword-inputs">
+              <div class="keyword-input-group">
+                <h4>키워드1</h4>
+                <textarea
+                  id="keyword1"
+                  placeholder="키워드를 입력해주세요&#10;(최대100개)"
+                ></textarea>
+              </div>
+              <div class="keyword-input-group">
+                <h4>키워드2</h4>
+                <textarea
+                  id="keyword2"
+                  placeholder="키워드를 입력해주세요&#10;(최대100개)"
+                ></textarea>
+              </div>
+              <div class="keyword-input-group">
+                <h4>키워드3</h4>
+                <textarea
+                  id="keyword3"
+                  placeholder="키워드를 입력해주세요&#10;(최대100개)"
+                ></textarea>
+              </div>
+              <div class="keyword-input-group">
+                <h4>키워드4</h4>
+                <textarea
+                  id="keyword4"
+                  placeholder="키워드를 입력해주세요&#10;(최대100개)"
+                ></textarea>
+              </div>
+              <div class="keyword-input-group">
+                <h4>키워드5</h4>
+                <textarea
+                  id="keyword5"
+                  placeholder="키워드를 입력해주세요&#10;(최대100개)"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="combination-options">
+              <h4 style="color: #2c3e50; margin-bottom: 15px; font-size: 16px">
+                조합 옵션 선택
+              </h4>
+
+              <!-- 2개 조합 -->
+              <div style="margin-bottom: 15px">
+                <strong style="color: #495057; font-size: 14px"
+                  >2개 조합:</strong
+                >
+                <div class="combination-grid">
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="1+2" /> 1+2
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="1+3" /> 1+3
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="1+4" /> 1+4
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="1+5" /> 1+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="2+3" /> 2+3
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="2+4" /> 2+4
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="2+5" /> 2+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="3+4" /> 3+4
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="3+5" /> 3+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo2" value="4+5" /> 4+5
+                  </label>
+                </div>
+              </div>
+
+              <!-- 3개 조합 -->
+              <div style="margin-bottom: 15px">
+                <strong style="color: #495057; font-size: 14px"
+                  >3개 조합:</strong
+                >
+                <div class="combination-grid">
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="1+2+3" /> 1+2+3
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="1+2+4" /> 1+2+4
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="1+2+5" /> 1+2+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="1+3+4" /> 1+3+4
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="1+3+5" /> 1+3+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="1+4+5" /> 1+4+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="2+3+4" /> 2+3+4
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="2+3+5" /> 2+3+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="2+4+5" /> 2+4+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo3" value="3+4+5" /> 3+4+5
+                  </label>
+                </div>
+              </div>
+
+              <!-- 4개, 5개 조합 -->
+              <div style="margin-bottom: 15px">
+                <strong style="color: #495057; font-size: 14px"
+                  >4개 조합:</strong
+                >
+                <div class="combination-grid">
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo4" value="1+2+3+4" />
+                    1+2+3+4
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo4" value="1+2+3+5" />
+                    1+2+3+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo4" value="1+2+4+5" />
+                    1+2+4+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo4" value="1+3+4+5" />
+                    1+3+4+5
+                  </label>
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo4" value="2+3+4+5" />
+                    2+3+4+5
+                  </label>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px">
+                <strong style="color: #495057; font-size: 14px"
+                  >5개 조합:</strong
+                >
+                <div class="combination-grid">
+                  <label class="combination-option">
+                    <input type="checkbox" name="combo5" value="1+2+3+4+5" />
+                    1+2+3+4+5
+                  </label>
+                </div>
+              </div>
+
+              <div class="combination-buttons">
+                <button
+                  class="combination-btn"
+                  onclick="selectAllCombinations()"
+                >
+                  전체선택
+                </button>
+                <button
+                  class="combination-btn"
+                  onclick="deselectAllCombinations()"
+                >
+                  전체해제
+                </button>
+                <button
+                  class="combination-btn primary"
+                  onclick="generateCombinations()"
+                >
+                  조합하기
+                </button>
+                <button
+                  class="combination-btn"
+                  onclick="downloadCombinations()"
+                >
+                  다운로드
+                </button>
+              </div>
+            </div>
+
+            <div
+              id="combinationResult"
+              class="combination-result"
+              style="display: none"
+            >
+              <h4>조합된 키워드 결과</h4>
+              <div class="combination-list" id="combinationList"></div>
+            </div>
+          </div>
+
+          <!-- 연관키워드 탭 -->
+          <div id="related-keywords" class="tab-panel">
+            <div style="text-align: center; padding: 60px 20px; color: #6c757d">
+              <p style="font-size: 1.1rem; font-weight: 500">
+                연관키워드 기능은 추후 개발 예정입니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="loadingDiv" class="loading" style="display: none">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>검색 중입니다...</span>
+      </div>
+
+      <div id="statsDiv" class="stats" style="display: none"></div>
+
+      <div class="results" id="resultsDiv"></div>
+
+      <div id="errorDiv" class="error" style="display: none"></div>
+
+      <div id="emptyState" class="empty-state">
+        <svg
+          width="80"
+          height="80"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <p>검색어를 입력하고 검색 버튼을 눌러주세요</p>
+      </div>
+    </div>
+
+    <!-- 키워드 차트 모달 -->
+    <div id="chartModal" class="chart-modal">
+      <div class="chart-content">
+        <div class="chart-header">
+          <h2 class="chart-title" id="chartTitle">키워드 분석</h2>
+          <button class="close-btn" onclick="closeChartModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- 키워드 데이터 -->
+        <div class="chart-section">
+          <h3>키워드 데이터 현황</h3>
+          <div class="trend-chart-container">
+            <canvas id="overviewChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 차트 그리드 -->
+        <div class="charts-grid">
+          <!-- PC vs 모바일 검색수 -->
+          <div class="chart-section">
+            <h3>PC vs 모바일 검색수</h3>
+            <div class="chart-container">
+              <canvas id="searchChart"></canvas>
+            </div>
+          </div>
+
+          <!-- PC vs 모바일 클릭수 -->
+          <div class="chart-section">
+            <h3>PC vs 모바일 클릭수</h3>
+            <div class="chart-container">
+              <canvas id="clickChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-info">
+          <h4>차트 정보</h4>
+          <ul>
+            <li>
+              표시된 데이터는 네이버 키워드 도구 API에서 제공하는 실제 월간 평균
+              데이터입니다.
+            </li>
+            <li>
+              월간 검색수는 네이버에서 해당 키워드를 검색한 월평균 횟수입니다.
+            </li>
+            <li>
+              클릭수는 검색 결과에서 실제로 클릭된 월평균 횟수를 나타냅니다.
+            </li>
+            <li>모든 수치는 네이버 광고 시스템 기준 데이터입니다.</li>
+          </ul>
+        </div>
+
+        <!-- 네이버 플레이스 검색 결과 -->
+        <div
+          id="placeResults"
+          class="chart-section"
+          style="margin-top: 30px; display: none"
+        >
+          <h3>관련 네이버 플레이스</h3>
+          <div id="placeList" class="place-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 백엔드 서버 설정: 상대 경로(`/api`) 사용
+
+      // DOM 요소
+      const searchQuery = document.getElementById("searchQuery");
+      const searchBtn = document.getElementById("searchBtn");
+      const loadingDiv = document.getElementById("loadingDiv");
+      const resultsDiv = document.getElementById("resultsDiv");
+      const errorDiv = document.getElementById("errorDiv");
+      const statsDiv = document.getElementById("statsDiv");
+      const serverStatus = document.getElementById("serverStatus");
+      const statusText = document.getElementById("statusText");
+      const emptyState = document.getElementById("emptyState");
+      const keywordCount = document.getElementById("keywordCount");
+
+      // 페이지네이션 변수
+      let allResults = []; // 전체 검색 결과
+      let currentPage = 1;
+      const itemsPerPage = 100;
+
+      // 키워드 조합 변수
+      let combinationResults = [];
+
+      // 탭 전환 함수
+      function switchTab(tabName) {
+        // 모든 탭 버튼에서 active 클래스 제거
+        document.querySelectorAll(".tab-button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+
+        // 모든 탭 패널 숨기기
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.classList.remove("active");
+        });
+
+        // 선택된 탭 버튼에 active 클래스 추가
+        event.target.classList.add("active");
+
+        // 선택된 탭 패널 보이기
+        document.getElementById(tabName).classList.add("active");
+
+        // 결과 영역 초기화
+        if (tabName !== "keyword-search") {
+          resultsDiv.innerHTML = "";
+          errorDiv.style.display = "none";
+          statsDiv.style.display = "none";
+          loadingDiv.style.display = "none";
+          emptyState.style.display = "none";
+        }
+      }
+
+      // 페이지네이션 함수들
+      function getTotalPages() {
+        return Math.ceil(allResults.length / itemsPerPage);
+      }
+
+      function getCurrentPageData() {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        return allResults.slice(startIndex, endIndex);
+      }
+
+      function renderPagination() {
+        const totalPages = getTotalPages();
+
+        if (totalPages <= 1) {
+          return ""; // 페이지가 1개 이하면 페이지네이션 숨김
+        }
+
+        let paginationHtml = `
+                <div class="pagination-container">
+                    <div class="pagination">
+                        <button class="pagination-btn nav-btn ${
+                          currentPage === 1 ? "disabled" : ""
+                        }" 
+                                onclick="goToPage(1)" ${
+                                  currentPage === 1 ? "disabled" : ""
+                                }>
+                            <i class="fas fa-angle-double-left"></i> 처음
+                        </button>
+                        <button class="pagination-btn nav-btn ${
+                          currentPage === 1 ? "disabled" : ""
+                        }" 
+                                onclick="goToPage(${currentPage - 1})" ${
+          currentPage === 1 ? "disabled" : ""
+        }>
+                            <i class="fas fa-angle-left"></i> 이전
+                        </button>
+            `;
+
+        // 페이지 번호 생성 (현재 페이지 주변 10개 페이지 표시)
+        const startPage = Math.max(1, currentPage - 5);
+        const endPage = Math.min(totalPages, currentPage + 5);
+
+        // 시작 부분 생략 표시
+        if (startPage > 1) {
+          paginationHtml += `<button class="pagination-btn" onclick="goToPage(1)">1</button>`;
+          if (startPage > 2) {
+            paginationHtml += `<span class="pagination-btn disabled">...</span>`;
+          }
+        }
+
+        // 페이지 번호들
+        for (let i = startPage; i <= endPage; i++) {
+          paginationHtml += `
+                    <button class="pagination-btn ${
+                      i === currentPage ? "active" : ""
+                    }" 
+                            onclick="goToPage(${i})">${i}</button>
+                `;
+        }
+
+        // 끝 부분 생략 표시
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            paginationHtml += `<span class="pagination-btn disabled">...</span>`;
+          }
+          paginationHtml += `<button class="pagination-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+        }
+
+        paginationHtml += `
+                        <button class="pagination-btn nav-btn ${
+                          currentPage === totalPages ? "disabled" : ""
+                        }" 
+                                onclick="goToPage(${currentPage + 1})" ${
+          currentPage === totalPages ? "disabled" : ""
+        }>
+                            다음 <i class="fas fa-angle-right"></i>
+                        </button>
+                        <button class="pagination-btn nav-btn ${
+                          currentPage === totalPages ? "disabled" : ""
+                        }" 
+                                onclick="goToPage(${totalPages})" ${
+          currentPage === totalPages ? "disabled" : ""
+        }>
+                            마지막 <i class="fas fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                    <div class="pagination-jump">
+                        <span>페이지 이동:</span>
+                        <input type="number" id="pageJumpInput" min="1" max="${totalPages}" value="${currentPage}">
+                        <button onclick="jumpToPage()">이동</button>
+                    </div>
+                </div>
+            `;
+
+        return paginationHtml;
+      }
+
+      function goToPage(page) {
+        const totalPages = getTotalPages();
+        if (page < 1 || page > totalPages) return;
+
+        currentPage = page;
+        renderCurrentPage();
+
+        // 페이지 이동 후 상단으로 스크롤
+        document.querySelector(".results-table").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+
+      function jumpToPage() {
+        const pageInput = document.getElementById("pageJumpInput");
+        const page = parseInt(pageInput.value);
+        const totalPages = getTotalPages();
+
+        if (page >= 1 && page <= totalPages) {
+          goToPage(page);
+        } else {
+          alert(`1부터 ${totalPages} 사이의 페이지 번호를 입력해주세요.`);
+          pageInput.value = currentPage;
+        }
+      }
+
+      function renderCurrentPage() {
+        const currentData = getCurrentPageData();
+        const totalPages = getTotalPages();
+        const startIndex = (currentPage - 1) * itemsPerPage;
+
+        // 테이블 헤더 정보 업데이트
+        const paginationInfo =
+          totalPages > 1
+            ? `${currentPage}/${totalPages} 페이지 (${startIndex + 1}-${
+                startIndex + currentData.length
+              }번째 / 총 ${allResults.length}개)`
+            : `총 ${allResults.length}개`;
+
+        // 테이블 렌더링
+        const tableHtml = `
+                <div class="results-table">
+                    <div class="table-header">
+                        <span>키워드 검색 결과</span>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button onclick="downloadSelectedKeywords()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                선택된 키워드 다운로드
+                            </button>
+                            <span class="pagination-info">${paginationInfo}</span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="keyword-table">
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-cell">
+                                        <input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes()">
+                                    </th>
+                                    <th>NO</th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "keyword"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('keyword')">
+                                        연관키워드<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "pcCount"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('pcCount')">
+                                        월간검색수<br>PC<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "mobileCount"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('mobileCount')">
+                                        월간검색수<br>모바일<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "totalCount"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('totalCount')">
+                                        검색수합계<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "pcClick"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('pcClick')">
+                                        월평균클릭수<br>PC<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "mobileClick"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('mobileClick')">
+                                        월평균클릭수<br>모바일<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "pcCtr"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('pcCtr')">
+                                        월평균클릭율<br>PC<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "mobileCtr"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('mobileCtr')">
+                                        월평균클릭율<br>모바일<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "competition"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('competition')">
+                                        경쟁정도<span class="sort-arrow"></span>
+                                    </th>
+                                    <th class="sortable-header ${
+                                      currentSort.column === "adCount"
+                                        ? "sort-" + currentSort.direction
+                                        : ""
+                                    }" 
+                                        onclick="sortResults('adCount')">
+                                        월평균노출<br>광고수<span class="sort-arrow"></span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${currentData
+                                  .map((item, index) => {
+                                    const globalIndex = startIndex + index + 1;
+                                    const keyword = extractKeyword(item);
+                                    const pcCount = sanitizeData(
+                                      item.monthlyPcQcCnt
+                                    );
+                                    const mobileCount = sanitizeData(
+                                      item.monthlyMobileQcCnt
+                                    );
+                                    const totalCount = pcCount + mobileCount;
+                                    const pcClick =
+                                      parseFloat(item.monthlyAvePcClkCnt) || 0;
+                                    const mobileClick =
+                                      parseFloat(item.monthlyAveMobileClkCnt) ||
+                                      0;
+                                    const pcCtr =
+                                      parseFloat(item.monthlyAvePcCtr) || 0;
+                                    const mobileCtr =
+                                      parseFloat(item.monthlyAveMobileCtr) || 0;
+                                    const competition = sanitizeData(
+                                      item.compIdx,
+                                      "string"
+                                    );
+                                    const adCount = extractAdCount(item);
+
+                                    let competitionClass = "";
+                                    if (competition === "높음")
+                                      competitionClass = "competition-high";
+                                    else if (competition === "중간")
+                                      competitionClass = "competition-medium";
+                                    else if (competition === "낮음")
+                                      competitionClass = "competition-low";
+
+                                    return `
+                                        <tr>
+                                            <td class="checkbox-cell">
+                                                <input type="checkbox" name="keywordCheck" value="${keyword}">
+                                            </td>
+                                            <td>${globalIndex}</td>
+                                            <td class="keyword-cell">
+                                                <span class="keyword-link" onclick="showKeywordChart('${keyword}', ${JSON.stringify(
+                                      item
+                                    ).replace(/"/g, "&quot;")})">
+                                                    ${keyword}
+                                                </span>
+                                            </td>
+                                            <td class="number-cell">${pcCount.toLocaleString()}</td>
+                                            <td class="number-cell">${mobileCount.toLocaleString()}</td>
+                                            <td class="number-cell" style="font-weight: 700; color: #2c3e50;">${totalCount.toLocaleString()}</td>
+                                            <td class="number-cell">${pcClick}</td>
+                                            <td class="number-cell">${mobileClick}</td>
+                                            <td>${pcCtr.toFixed(2)}%</td>
+                                            <td>${mobileCtr.toFixed(2)}%</td>
+                                            <td class="competition-cell ${competitionClass}">${competition}</td>
+                                            <td class="number-cell">${adCount.toLocaleString()}</td>
+                                        </tr>
+                                    `;
+                                  })
+                                  .join("")}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                ${renderPagination()}
+            `;
+
+        resultsDiv.innerHTML = tableHtml;
+      }
+
+      // 키워드 조합 관련 함수들
+      function selectAllCombinations() {
+        document
+          .querySelectorAll('input[type="checkbox"][name^="combo"]')
+          .forEach((checkbox) => {
+            checkbox.checked = true;
+          });
+      }
+
+      function deselectAllCombinations() {
+        document
+          .querySelectorAll('input[type="checkbox"][name^="combo"]')
+          .forEach((checkbox) => {
+            checkbox.checked = false;
+          });
+      }
+
+      function generateCombinations() {
+        // 키워드 입력값 가져오기
+        const keywords = [];
+        for (let i = 1; i <= 5; i++) {
+          const input = document.getElementById(`keyword${i}`);
+          if (input.value.trim()) {
+            keywords[i - 1] = input.value
+              .trim()
+              .split("\n")
+              .filter((k) => k.trim() !== "");
+          } else {
+            keywords[i - 1] = [];
+          }
+        }
+
+        // 선택된 조합 옵션 가져오기
+        const selectedCombos = [];
+        document
+          .querySelectorAll('input[type="checkbox"][name^="combo"]:checked')
+          .forEach((checkbox) => {
+            selectedCombos.push(checkbox.value);
+          });
+
+        if (selectedCombos.length === 0) {
+          alert("조합 옵션을 선택해주세요.");
+          return;
+        }
+
+        // 조합 생성
+        combinationResults = [];
+
+        selectedCombos.forEach((combo) => {
+          const indices = combo.split("+").map((n) => parseInt(n) - 1);
+
+          // 해당 인덱스의 키워드들이 모두 있는지 확인
+          const validIndices = indices.filter(
+            (idx) => keywords[idx] && keywords[idx].length > 0
+          );
+
+          if (validIndices.length === indices.length) {
+            // 모든 경우의 수 조합 생성
+            const combinations = generateCartesianProduct(
+              validIndices.map((idx) => keywords[idx])
+            );
+
+            combinations.forEach((combination) => {
+              combinationResults.push(combination.join(" "));
+            });
+          }
+        });
+
+        // 중복 제거
+        combinationResults = [...new Set(combinationResults)];
+
+        // 결과 표시
+        displayCombinationResults();
+      }
+
+      function generateCartesianProduct(arrays) {
+        if (arrays.length === 0) return [[]];
+        if (arrays.length === 1) return arrays[0].map((item) => [item]);
+
+        const result = [];
+        const first = arrays[0];
+        const rest = generateCartesianProduct(arrays.slice(1));
+
+        first.forEach((firstItem) => {
+          rest.forEach((restCombination) => {
+            result.push([firstItem, ...restCombination]);
+          });
+        });
+
+        return result;
+      }
+
+      function displayCombinationResults() {
+        const resultDiv = document.getElementById("combinationResult");
+        const listDiv = document.getElementById("combinationList");
+
+        if (combinationResults.length === 0) {
+          alert(
+            "조합 결과가 없습니다. 키워드를 입력하고 조합 옵션을 선택해주세요."
+          );
+          return;
+        }
+
+        resultDiv.style.display = "block";
+
+        listDiv.innerHTML = combinationResults
+          .map(
+            (combination, index) => `
+                <div class="combination-item">
+                    ${index + 1}. ${combination}
+                </div>
+            `
+          )
+          .join("");
+
+        // 결과 개수 업데이트
+        const header = resultDiv.querySelector("h4");
+        header.textContent = `조합된 키워드 결과 (총 ${combinationResults.length}개)`;
+      }
+
+      function downloadCombinations() {
+        if (combinationResults.length === 0) {
+          alert("다운로드할 조합 결과가 없습니다.");
+          return;
+        }
+
+        const content = combinationResults.join("\n");
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "keyword_combinations.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+
+      // 단일 키워드 다운로드 함수
+      function downloadSingleKeyword(keyword) {
+        const content = keyword;
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `keyword_${keyword}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+
+      // 키워드 차트 모달 표시 함수
+      function showKeywordChart(keyword, itemData) {
+        const modal = document.getElementById("chartModal");
+        const title = document.getElementById("chartTitle");
+
+        title.textContent = `"${keyword}" 키워드 분석`;
+        modal.classList.add("show");
+
+        // 월별 트렌드 데이터 요청 후 차트 생성
+        fetchKeywordTrendData(keyword, itemData);
+      }
+
+      // 키워드 월별 트렌드 데이터 요청
+      async function fetchKeywordTrendData(keyword, itemData) {
+        try {
+          // 로딩 표시
+          const trendSection = document.querySelector(".chart-section h3");
+          trendSection.textContent = "월별 트렌드 데이터 로딩 중...";
+
+          const response = await fetch(`/api/keyword-trend`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ keyword: keyword }),
+          });
+
+          if (response.ok) {
+            const trendData = await response.json();
+            trendSection.textContent = "월간 검색수 추이 (최근 12개월)";
+            createKeywordCharts(keyword, itemData, trendData.data);
+
+            // 네이버 플레이스 검색
+            await fetchPlaceData(keyword);
+          } else {
+            console.warn("트렌드 데이터 로딩 실패, 기본 차트 표시");
+            trendSection.textContent = "키워드 데이터 현황";
+            createKeywordCharts(keyword, itemData, null);
+
+            // 네이버 플레이스 검색
+            await fetchPlaceData(keyword);
+          }
+        } catch (error) {
+          console.error("트렌드 데이터 요청 오류:", error);
+          const trendSection = document.querySelector(".chart-section h3");
+          trendSection.textContent = "키워드 데이터 현황";
+          createKeywordCharts(keyword, itemData, null);
+
+          // 네이버 플레이스 검색
+          await fetchPlaceData(keyword);
+        }
+      }
+
+      // 네이버 플레이스 데이터 검색
+      async function fetchPlaceData(keyword) {
+        try {
+          console.log(`네이버 플레이스 검색: ${keyword}`);
+
+          const response = await fetch(
+            `/api/search/local?query=${encodeURIComponent(keyword)}`
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            displayPlaceResults(data.items || []);
+          } else {
+            console.warn("플레이스 데이터 로딩 실패");
+            document.getElementById("placeResults").style.display = "none";
+          }
+        } catch (error) {
+          console.error("플레이스 데이터 요청 오류:", error);
+          document.getElementById("placeResults").style.display = "none";
+        }
+      }
+
+      // 플레이스 검색 결과 표시
+      function displayPlaceResults(places) {
+        const placeResults = document.getElementById("placeResults");
+        const placeList = document.getElementById("placeList");
+
+        if (!places || places.length === 0) {
+          placeResults.style.display = "none";
+          return;
+        }
+
+        placeResults.style.display = "block";
+
+        placeList.innerHTML = places
+          .map((place) => {
+            // HTML 태그 제거 및 텍스트 정리
+            const title = stripHtml(place.title);
+            const category = stripHtml(place.category);
+            const address = stripHtml(place.address);
+            const description = stripHtml(place.description);
+            const telephone = place.telephone || "";
+            const link = place.link || "#";
+
+            return `
+                    <div class="place-item">
+                        <a href="${link}" target="_blank" class="place-title">${title}</a>
+                        <div class="place-category">${category}</div>
+                        <div class="place-address">${address}</div>
+                        ${
+                          description
+                            ? `<div class="place-description">${description}</div>`
+                            : ""
+                        }
+                        ${
+                          telephone
+                            ? `<div class="place-phone">☎ ${telephone}</div>`
+                            : ""
+                        }
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      // 차트 모달 닫기
+      function closeChartModal() {
+        const modal = document.getElementById("chartModal");
+        modal.classList.remove("show");
+
+        // 기존 차트 인스턴스 제거
+        destroyExistingCharts();
+      }
+
+      // 기존 차트 인스턴스 제거
+      function destroyExistingCharts() {
+        const chartIds = ["overviewChart", "searchChart", "clickChart"];
+        chartIds.forEach((id) => {
+          const canvas = document.getElementById(id);
+          if (canvas && canvas.chart) {
+            canvas.chart.destroy();
+          }
+        });
+      }
+
+      // 키워드 차트 생성
+      function createKeywordCharts(keyword, itemData, trendData = null) {
+        // 기존 차트 제거
+        destroyExistingCharts();
+
+        const pcCount = sanitizeData(itemData.monthlyPcQcCnt);
+        const mobileCount = sanitizeData(itemData.monthlyMobileQcCnt);
+        const pcClick = parseFloat(itemData.monthlyAvePcClkCnt) || 0;
+        const mobileClick = parseFloat(itemData.monthlyAveMobileClkCnt) || 0;
+        const pcCtr = parseFloat(itemData.monthlyAvePcCtr) || 0;
+        const mobileCtr = parseFloat(itemData.monthlyAveMobileCtr) || 0;
+        const competition = sanitizeData(itemData.compIdx, "string");
+
+        // 1. 트렌드 차트 또는 개요 차트
+        if (
+          trendData &&
+          trendData.monthlyTrend &&
+          trendData.monthlyTrend.length > 0
+        ) {
+          createTrendChart(keyword, trendData.monthlyTrend);
+        } else {
+          createOverviewChart(
+            keyword,
+            pcCount,
+            mobileCount,
+            pcClick,
+            mobileClick
+          );
+        }
+
+        // 2. PC vs 모바일 검색수 차트
+        createSearchChart(pcCount, mobileCount);
+
+        // 3. PC vs 모바일 클릭수 차트
+        createClickChart(pcClick, mobileClick);
+      }
+
+      // 실제 월별 트렌드 차트 생성
+      function createTrendChart(keyword, monthlyTrend) {
+        const ctx = document.getElementById("overviewChart").getContext("2d");
+
+        // 월별 데이터 파싱
+        const months = [];
+        const pcData = [];
+        const mobileData = [];
+
+        monthlyTrend.forEach((item) => {
+          // 월 정보 파싱 (YYYY-MM 형식 또는 월 인덱스)
+          if (item.month) {
+            const monthStr =
+              typeof item.month === "string" ? item.month : `${item.month}월`;
+            months.push(monthStr);
+          }
+
+          pcData.push(sanitizeData(item.monthlyPcQcCnt || item.pcCount || 0));
+          mobileData.push(
+            sanitizeData(item.monthlyMobileQcCnt || item.mobileCount || 0)
+          );
+        });
+
+        const chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: months,
+            datasets: [
+              {
+                label: "PC 검색수",
+                data: pcData,
+                borderColor: "#3498db",
+                backgroundColor: "rgba(52, 152, 219, 0.1)",
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: "#3498db",
+                pointBorderColor: "#2980b9",
+                pointRadius: 5,
+                pointHoverRadius: 7,
+              },
+              {
+                label: "모바일 검색수",
+                data: mobileData,
+                borderColor: "#2ecc71",
+                backgroundColor: "rgba(46, 204, 113, 0.1)",
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: "#2ecc71",
+                pointBorderColor: "#27ae60",
+                pointRadius: 5,
+                pointHoverRadius: 7,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "top",
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const label = context.dataset.label || "";
+                    const value = context.parsed.y.toLocaleString();
+                    return `${label}: ${value}`;
+                  },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return value.toLocaleString();
+                  },
+                },
+              },
+              x: {
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 0,
+                },
+              },
+            },
+          },
+        });
+
+        ctx.canvas.chart = chart;
+      }
+
+      // 키워드 데이터 개요 차트 생성
+      function createOverviewChart(
+        keyword,
+        pcCount,
+        mobileCount,
+        pcClick,
+        mobileClick
+      ) {
+        const ctx = document.getElementById("overviewChart").getContext("2d");
+
+        const chart = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: ["PC 검색수", "모바일 검색수"],
+            datasets: [
+              {
+                label: "검색수 분포",
+                data: [pcCount, mobileCount],
+                backgroundColor: ["#3498db", "#2ecc71"],
+                borderColor: ["#2980b9", "#27ae60"],
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const label = context.label || "";
+                    const value = context.parsed.toLocaleString();
+                    const total = pcCount + mobileCount;
+                    const percentage =
+                      total > 0
+                        ? ((context.parsed / total) * 100).toFixed(1)
+                        : 0;
+                    return `${label}: ${value} (${percentage}%)`;
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        ctx.canvas.chart = chart;
+      }
+
+      // 검색수 차트 생성 (가로형)
+      function createSearchChart(pcCount, mobileCount) {
+        const ctx = document.getElementById("searchChart").getContext("2d");
+
+        const chart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["PC", "모바일"],
+            datasets: [
+              {
+                label: "월간 검색수",
+                data: [pcCount, mobileCount],
+                backgroundColor: ["#3498db", "#2ecc71"],
+                borderColor: ["#2980b9", "#27ae60"],
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            indexAxis: "y", // 가로형으로 변경
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false,
+              },
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return value.toLocaleString();
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        ctx.canvas.chart = chart;
+      }
+
+      // 클릭수 차트 생성
+      function createClickChart(pcClick, mobileClick) {
+        const ctx = document.getElementById("clickChart").getContext("2d");
+
+        const chart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["PC", "모바일"],
+            datasets: [
+              {
+                label: "월평균 클릭수",
+                data: [pcClick, mobileClick],
+                backgroundColor: ["#e74c3c", "#f39c12"],
+                borderColor: ["#c0392b", "#e67e22"],
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false,
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return value.toLocaleString();
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        ctx.canvas.chart = chart;
+      }
+
+      // 트렌드 데이터 생성 (샘플)
+      function generateTrendData(baseValue, months) {
+        const data = [];
+        let currentValue = baseValue;
+
+        for (let i = 0; i < months; i++) {
+          // 15% 범위에서 랜덤 변동
+          const variation = (Math.random() - 0.5) * 0.3;
+          currentValue = Math.max(0, Math.floor(baseValue * (1 + variation)));
+          data.push(currentValue);
+        }
+
+        return data;
+      }
+
+      // 모달 외부 클릭 시 닫기
+      document
+        .getElementById("chartModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeChartModal();
+          }
+        });
+
+      // ESC 키로 모달 닫기
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          closeChartModal();
+        }
+      });
+
+      // 선택된 키워드들 일괄 다운로드 함수
+      function downloadSelectedKeywords() {
+        const checkedBoxes = document.querySelectorAll(
+          'input[name="keywordCheck"]:checked'
+        );
+
+        if (checkedBoxes.length === 0) {
+          alert("다운로드할 키워드를 선택해주세요.");
+          return;
+        }
+
+        const selectedKeywords = Array.from(checkedBoxes).map(
+          (checkbox) => checkbox.value
+        );
+        const content = selectedKeywords.join("\n");
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `selected_keywords_${selectedKeywords.length}개.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+
+      // 키워드 개수 업데이트
+      function updateKeywordCount() {
+        const keywords = searchQuery.value
+          .trim()
+          .split("\n")
+          .filter((k) => k.trim() !== "");
+        keywordCount.textContent = keywords.length;
+
+        if (keywords.length > 100) {
+          keywordCount.style.color = "#dc3545";
+        } else {
+          keywordCount.style.color = "#666";
+        }
+      }
+
+      // 키워드 입력 시 실시간 카운팅
+      searchQuery.addEventListener("input", updateKeywordCount);
+
+      // 서버 상태 확인
+      async function checkServerStatus() {
+        try {
+          const response = await fetch(`/api/health`);
+          if (response.ok) {
+            serverStatus.className = "server-status";
+            statusText.textContent =
+              "✅ 백엔드 서버가 정상적으로 실행 중입니다.";
+            return true;
+          }
+        } catch (error) {
+          serverStatus.className = "server-status offline";
+          statusText.innerHTML = `
+                    ❌ 백엔드 서버에 연결할 수 없습니다.<br>
+                    <strong>naver_search.js</strong>를 실행했는지 확인해주세요. (node naver_search.js)
+                `;
+          return false;
+        }
+        serverStatus.style.display = "block";
+      }
+
+      // 검색 함수 (키워드 검색만 사용)
+      async function performSearch(query) {
+        try {
+          const response = await fetch(`/api/keywords`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ DataQ: query }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `서버 오류: ${response.status}`);
+          }
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("Search error:", error);
+          if (error.message.includes("fetch")) {
+            throw new Error(
+              "백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요."
+            );
+          }
+          throw error;
+        }
+      }
+
+      // HTML 태그 제거 함수
+      function stripHtml(html) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+      }
+
+      // 데이터 정제 함수
+      function sanitizeData(value, type = "number") {
+        if (
+          value === null ||
+          value === undefined ||
+          value === "" ||
+          value === "NaN"
+        ) {
+          return type === "number" ? 0 : "-";
+        }
+
+        if (type === "number") {
+          const num = parseInt(value);
+          return isNaN(num) ? 0 : num;
+        } else {
+          return String(value).trim() || "-";
+        }
+      }
+
+      // 키워드 추출 함수
+      function extractKeyword(item) {
+        // 다양한 키워드 필드명 시도
+        const possibleFields = [
+          "relKeyword",
+          "keyword",
+          "searchKeyword",
+          "word",
+          "term",
+        ];
+
+        for (let field of possibleFields) {
+          if (item[field] && String(item[field]).trim() !== "") {
+            return String(item[field]).trim();
+          }
+        }
+
+        return "키워드 없음";
+      }
+
+      // 광고수 데이터 추출 함수
+      function extractAdCount(item) {
+        // 네이버 API에서 사용하는 실제 필드명들
+        const possibleAdFields = [
+          "plAvgDepth", // 네이버 키워드 도구에서 주로 사용
+          "monthlyAveAd",
+          "monthlyAverageAd",
+          "adExposureCount",
+          "avgAdCount",
+          "adCount",
+          "exposureAdCount",
+          "avgDepth",
+          "depth",
+        ];
+
+        for (let field of possibleAdFields) {
+          if (
+            item[field] !== null &&
+            item[field] !== undefined &&
+            item[field] !== ""
+          ) {
+            const num = parseFloat(item[field]);
+            if (!isNaN(num)) {
+              return num;
+            }
+          }
+        }
+
+        // 디버깅: 어떤 필드가 있는지 확인
+        console.log(
+          "광고수 필드 찾기 실패. 사용 가능한 필드들:",
+          Object.keys(item)
+        );
+        return 0;
+      }
+
+      // 정렬 상태 관리
+      let currentSort = {
+        column: null,
+        direction: "desc",
+      };
+
+      // 정렬 함수
+      function sortResults(column) {
+        if (currentSort.column === column) {
+          currentSort.direction =
+            currentSort.direction === "desc" ? "asc" : "desc";
+        } else {
+          currentSort.column = column;
+          currentSort.direction = "desc";
+        }
+
+        allResults.sort((a, b) => {
+          let aValue, bValue;
+
+          switch (column) {
+            case "keyword":
+              aValue = (a.relKeyword || a.keyword || "").toLowerCase();
+              bValue = (b.relKeyword || b.keyword || "").toLowerCase();
+              break;
+            case "pcCount":
+              aValue = sanitizeData(a.monthlyPcQcCnt);
+              bValue = sanitizeData(b.monthlyPcQcCnt);
+              break;
+            case "mobileCount":
+              aValue = sanitizeData(a.monthlyMobileQcCnt);
+              bValue = sanitizeData(b.monthlyMobileQcCnt);
+              break;
+            case "totalCount":
+              aValue =
+                sanitizeData(a.monthlyPcQcCnt) +
+                sanitizeData(a.monthlyMobileQcCnt);
+              bValue =
+                sanitizeData(b.monthlyPcQcCnt) +
+                sanitizeData(b.monthlyMobileQcCnt);
+              break;
+            case "pcClick":
+              aValue = sanitizeData(a.monthlyAvePcClkCnt);
+              bValue = sanitizeData(b.monthlyAvePcClkCnt);
+              break;
+            case "mobileClick":
+              aValue = sanitizeData(a.monthlyAveMobileClkCnt);
+              bValue = sanitizeData(b.monthlyAveMobileClkCnt);
+              break;
+            case "pcCtr":
+              aValue = parseFloat(a.monthlyAvePcCtr) || 0;
+              bValue = parseFloat(b.monthlyAvePcCtr) || 0;
+              break;
+            case "mobileCtr":
+              aValue = parseFloat(a.monthlyAveMobileCtr) || 0;
+              bValue = parseFloat(b.monthlyAveMobileCtr) || 0;
+              break;
+            case "competition":
+              const compOrder = { 높음: 3, 중간: 2, 낮음: 1, "-": 0 };
+              aValue = compOrder[a.compIdx] || 0;
+              bValue = compOrder[b.compIdx] || 0;
+              break;
+            case "adCount":
+              aValue = sanitizeData(a.monthlyAveAd);
+              bValue = sanitizeData(b.monthlyAveAd);
+              break;
+            default:
+              return 0;
+          }
+
+          if (typeof aValue === "string") {
+            return currentSort.direction === "desc"
+              ? bValue.localeCompare(aValue)
+              : aValue.localeCompare(bValue);
+          } else {
+            return currentSort.direction === "desc"
+              ? bValue - aValue
+              : aValue - bValue;
+          }
+        });
+
+        currentPage = 1; // 정렬 후 첫 페이지로 이동
+        renderCurrentPage();
+      }
+
+      // 검색 결과 렌더링 (페이지네이션 적용)
+      function renderResults(data, query) {
+        const items = data.keywordList || [];
+
+        // 디버깅: API 응답 구조 확인
+        console.log("=== API 응답 디버깅 ===");
+        console.log("전체 응답:", data);
+        console.log("키워드 리스트:", items);
+        if (items.length > 0) {
+          console.log("첫 번째 아이템:", items[0]);
+          console.log("첫 번째 아이템의 모든 키:", Object.keys(items[0]));
+        }
+        console.log("=====================");
+
+        if (items.length === 0) {
+          resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>검색 결과가 없습니다</h3>
+                        <p>"${query}"에 대한 키워드 결과를 찾을 수 없습니다.</p>
+                    </div>
+                `;
+          return;
+        }
+
+        // 전체 결과 저장 및 페이지 초기화
+        allResults = items;
+        currentPage = 1;
+        currentSort = { column: null, direction: "desc" }; // 정렬 상태 초기화
+
+        // 통계 정보
+        statsDiv.innerHTML = `
+                <strong>${
+                  query.split("\n").filter((k) => k.trim()).length
+                }개 키워드</strong>에 대한 키워드 검색 결과 
+                <strong>${items.length}</strong>개 표시
+            `;
+        statsDiv.style.display = "block";
+
+        // 첫 페이지 렌더링
+        renderCurrentPage();
+      }
+
+      // 전체 선택/해제 기능
+      function toggleAllCheckboxes() {
+        const selectAll = document.getElementById("selectAll");
+        const checkboxes = document.querySelectorAll(
+          'input[name="keywordCheck"]'
+        );
+
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = selectAll.checked;
+        });
+      }
+
+      // 에러 표시
+      function showError(message) {
+        errorDiv.innerHTML = `
+                <h3>❌ 검색 오류</h3>
+                <p>${message}</p>
+                <small>백엔드 서버가 실행 중인지 확인해주세요.</small>
+            `;
+        errorDiv.style.display = "block";
+      }
+
+      // 폼 제출 이벤트 (마우스 클릭만)
+      searchBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+
+        const queryText = searchQuery.value.trim();
+
+        if (!queryText) {
+          alert("키워드를 입력해주세요.");
+          return;
+        }
+
+        // 키워드 개수 확인
+        const keywords = queryText.split("\n").filter((k) => k.trim() !== "");
+        if (keywords.length === 0) {
+          alert("최소 1개의 키워드를 입력해주세요.");
+          return;
+        }
+
+        if (keywords.length > 100) {
+          alert("최대 100개의 키워드까지 입력 가능합니다.");
+          return;
+        }
+
+        // 다중 키워드를 쉼표로 구분하여 전송
+        const query = keywords.join(",");
+
+        // UI 상태 업데이트
+        searchBtn.disabled = true;
+        searchBtn.textContent = "검색 중...";
+        loadingDiv.style.display = "block";
+        resultsDiv.innerHTML = "";
+        errorDiv.style.display = "none";
+        statsDiv.style.display = "none";
+        emptyState.style.display = "none";
+
+        try {
+          const data = await performSearch(query);
+          renderResults(data, queryText);
+        } catch (error) {
+          showError(error.message || "검색 중 오류가 발생했습니다.");
+          await checkServerStatus();
+          emptyState.style.display = "block";
+        } finally {
+          // UI 상태 복원
+          searchBtn.disabled = false;
+          searchBtn.textContent = "검색";
+          loadingDiv.style.display = "none";
+        }
+      });
+
+      // textarea에서 엔터키는 줄바꿈만 실행 (검색 실행 안 함)
+      searchQuery.addEventListener("keydown", (e) => {
+        // 엔터키로 검색 실행 방지 - 줄바꿈만 허용
+        if (e.key === "Enter") {
+          // 기본 동작(줄바꿈) 허용, 검색은 실행하지 않음
+          updateKeywordCount(); // 키워드 카운트 업데이트
+        }
+      });
+
+      // 페이지 로드 시 초기화
+      window.addEventListener("load", async () => {
+        searchQuery.focus();
+        updateKeywordCount(); // 초기 키워드 카운트 설정
+        await checkServerStatus();
+        checkLoginStatusNav(); // 로그인 상태 확인
+      });
+
+      // 로그인 상태 확인 및 UI 업데이트
+      function checkLoginStatusNav() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        const userData = localStorage.getItem("userData");
+
+        const loginBtn = document.querySelector(".login-btn");
+        const signupBtns = document.querySelectorAll(".signup-btn");
+
+        if (isLoggedIn === "true" && userData) {
+          try {
+            const user = JSON.parse(userData);
+
+            // 로그인 버튼 숨기기
+            if (loginBtn) loginBtn.style.display = "none";
+
+            // 회원가입 버튼은 로그아웃 버튼으로 변경
+            if (signupBtns.length > 0) {
+              signupBtns[0].textContent = "로그아웃";
+              signupBtns[0].onclick = function (e) {
+                e.preventDefault();
+                if (confirm("로그아웃 하시겠습니까?")) {
+                  localStorage.removeItem("isLoggedIn");
+                  localStorage.removeItem("userData");
+                  location.href = "index.html";
+                }
+              };
+            }
+          } catch (e) {
+            console.error("로그인 정보 파싱 오류:", e);
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userData");
+          }
+        } else {
+          // 로그인하지 않은 상태
+          if (loginBtn) loginBtn.style.display = "inline-block";
+          signupBtns.forEach((btn) => (btn.style.display = "inline-block"));
+        }
+      }
+    </script>
+  </body>
+</html>

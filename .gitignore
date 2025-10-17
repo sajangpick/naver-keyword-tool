@@ -1,0 +1,23 @@
+# 환경 변수 파일 (API 키 보호)
+.env
+.env.local
+.env.production
+.env.development
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 로그 파일
+*.log
+logs/
+
+# 임시 파일
+.DS_Store
+Thumbs.db
+
+# IDE 설정
+.vscode/
+.idea/naver-keyword-tool/

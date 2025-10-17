@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>네이버 플레이스 순위 조회 - 사장픽</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --bg: #f7f9fb;
+        --panel: #ffffff;
+        --muted: #6b7280;
+        --text: #111827;
+        --accent: var(--naver-green);
+        --border: #e5e7eb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
+          Noto Sans KR, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 16px 0;
+        color: var(--text);
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: linear-gradient(135deg, #03c75a 0%, #02b14f 100%);
+      }
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffffff;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .card-body {
+        padding: 24px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+      label {
+        font-size: 13px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 12px 14px;
+        background: #fff;
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 10px;
+        font-size: 14px;
+      }
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1);
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: #111827;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+      .btn:hover {
+        background: #f9fafb;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .btn.primary:hover {
+        background: var(--naver-green-dark);
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+        text-align: left;
+      }
+      th {
+        color: #374151;
+        font-weight: 700;
+        background: #fafafa;
+        position: sticky;
+        top: 0;
+      }
+      td {
+        color: var(--text);
+      }
+      .table-container {
+        max-height: 600px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .sticky-note {
+        border-left: 4px solid var(--accent);
+        padding: 16px;
+        background: #f0fdf4;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .sticky-note .hint {
+        margin: 0;
+        font-size: 14px;
+        color: #065f46;
+      }
+      @media (max-width: 768px) {
+        .row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="/assets/common-header.js" defer></script>
+  </head>
+  <body>
+    <main class="container" id="app">
+      <h1>🔍 네이버 플레이스 순위 조회</h1>
+
+      <div class="sticky-note">
+        <div class="hint">
+          <i class="fas fa-info-circle"></i> 키워드를 입력하고 <strong>실시간 상세 수집</strong> 버튼을 클릭하면 
+          네이버 플레이스의 실시간 순위 정보를 확인할 수 있습니다.
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="title">
+            <i class="fas fa-search"></i> 키워드 검색
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="panel">
+            <div class="row">
+              <div style="flex: 1;">
+                <label>검색할 키워드</label>
+                <input
+                  id="keyword"
+                  type="text"
+                  placeholder="예: 부산고기맛집"
+                />
+                <div class="hint">네이버에서 검색할 키워드를 입력하세요</div>
+              </div>
+              <div style="width: auto;">
+                <button
+                  class="btn primary"
+                  id="crawlFetch"
+                  title="네이버에서 상세 정보까지 수집 (평점, 리뷰, 전화번호 등)"
+                >
+                  <i class="fas fa-spider"></i> 실시간 상세 수집
+                </button>
+                <button
+                  class="btn"
+                  id="crawlCsv"
+                  title="수집 결과 CSV로 저장"
+                >
+                  <i class="fas fa-download"></i> CSV 다운로드
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" id="crawlPanel" style="display: none;">
+            <div class="hint" style="margin-bottom: 12px;">
+              <i class="fas fa-check-circle" style="color: #03c75a;"></i> 
+              네이버 실시간 크롤링 결과 (상세 정보 포함)
+            </div>
+            <div class="table-container">
+              <table id="crawlTable">
+                <thead>
+                  <tr>
+                    <th>순위</th>
+                    <th>업체명</th>
+                    <th>카테고리</th>
+                    <th>평점</th>
+                    <th>방문자리뷰</th>
+                    <th>블로그리뷰</th>
+                    <th>주소</th>
+                    <th>전화번호</th>
+                    <th>영업시간</th>
+                    <th>편의시설</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const el = (id) => document.getElementById(id);
+      const state = {
+        crawl: [],
+      };
+
+      // 크롤링 실행
+      el("crawlFetch").addEventListener("click", async () => {
+        const keyword = el("keyword").value.trim();
+        if (!keyword) {
+          alert("키워드를 입력하세요.");
+          return;
+        }
+
+        const btn = el("crawlFetch");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 수집 중...';
+
+        try {
+          const res = await fetch("/api/place-detail-crawl", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ keyword, max_scrolls: 6 }),
+          });
+
+          const data = await res.json();
+          if (!data.success || !data.list) {
+            throw new Error(data.error || "수집 실패");
+          }
+
+          state.crawl = data.list;
+          renderCrawlTable();
+
+          el("crawlPanel").style.display = "block";
+          alert(`✅ ${state.crawl.length}개 업체 정보 수집 완료!`);
+        } catch (err) {
+          console.error("크롤링 오류:", err);
+          alert("크롤링 중 오류가 발생했습니다:\n" + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-spider"></i> 실시간 상세 수집';
+        }
+      });
+
+      // 크롤링 결과 테이블 렌더링
+      function renderCrawlTable() {
+        const tbody = document.querySelector("#crawlTable tbody");
+        tbody.innerHTML = "";
+
+        state.crawl.forEach((item, idx) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
+            <td><strong>${item.place_name || "-"}</strong></td>
+            <td>${item.category || "-"}</td>
+            <td style="text-align: center;">${item.rating || "-"}</td>
+            <td style="text-align: center;">${item.visitor_reviews || "-"}</td>
+            <td style="text-align: center;">${item.blog_reviews || "-"}</td>
+            <td>${item.address || "-"}</td>
+            <td>${item.phone || "-"}</td>
+            <td>${item.hours || "-"}</td>
+            <td>${item.amenities || "-"}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // CSV 다운로드
+      el("crawlCsv").addEventListener("click", () => {
+        if (state.crawl.length === 0) {
+          alert("먼저 크롤링을 실행하세요.");
+          return;
+        }
+
+        const keyword = el("keyword").value.trim() || "키워드";
+        const headers = [
+          "순위",
+          "업체명",
+          "카테고리",
+          "평점",
+          "방문자리뷰",
+          "블로그리뷰",
+          "주소",
+          "전화번호",
+          "영업시간",
+          "편의시설",
+        ];
+        const rows = state.crawl.map((item, idx) => [
+          idx + 1,
+          item.place_name || "",
+          item.category || "",
+          item.rating || "",
+          item.visitor_reviews || "",
+          item.blog_reviews || "",
+          item.address || "",
+          item.phone || "",
+          item.hours || "",
+          item.amenities || "",
+        ]);
+
+        const csv = Papa.unparse({
+          fields: headers,
+          data: rows,
+        });
+
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `사장픽_${keyword}_${new Date().toISOString().split("T")[0]}.csv`;
+        link.click();
+      });
+    </script>
+  </body>
+</html>
+

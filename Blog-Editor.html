@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>블로그/SNS 업로드 - 사장픽</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="/assets/common-header.js" defer></script>
+    <style>
+      :root {
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --naver-green-50: #e6f9f0;
+        --bg: #f7f9fb;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Noto Sans KR", Arial, sans-serif;
+        background: var(--bg);
+        min-height: 100vh;
+        color: #111827;
+      }
+
+      .header {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 20px;
+        gap: 20px;
+      }
+
+      .top-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        position: relative;
+      }
+
+      .logo {
+        font-size: 32px;
+        font-weight: 800;
+        color: #111827;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        letter-spacing: -1px;
+      }
+
+      .logo:hover {
+        transform: scale(1.05);
+        color: var(--naver-green);
+      }
+
+      .nav-menu {
+        display: flex;
+        list-style: none;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+        position: relative;
+      }
+
+      .nav-menu li {
+        position: relative;
+      }
+
+      .nav-menu a {
+        text-decoration: none;
+        color: #333;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        padding: 12px 18px;
+        display: block;
+        border-radius: 8px;
+        position: relative;
+      }
+
+      .nav-menu a:hover {
+        color: var(--naver-green);
+        background: var(--naver-green-50);
+        transform: translateY(-1px);
+      }
+
+      .nav-menu a.active {
+        color: white;
+        background: var(--naver-green);
+        font-weight: 700;
+        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
+      }
+
+      .dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        min-width: 220px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-15px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        padding: 15px 0;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .nav-menu li:hover .dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .dropdown a {
+        padding: 12px 25px;
+        color: #666;
+        font-size: 14px;
+        border-radius: 0;
+        background: transparent;
+        font-weight: 500;
+      }
+
+      .dropdown a:hover {
+        background: #f1f2f6;
+        color: #3498db;
+        transform: none;
+      }
+
+      .user-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        position: absolute;
+        right: 0;
+      }
+
+      .login-btn,
+      .signup-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .login-btn {
+        background: var(--naver-green);
+        color: white;
+        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
+      }
+
+      .signup-btn {
+        background: transparent;
+        color: var(--naver-green);
+        border: 2px solid var(--naver-green);
+      }
+
+      .login-btn:hover,
+      .signup-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+      }
+
+      /* 블로그 에디터 스타일 */
+      .blog-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin-top: 30px;
+        margin-bottom: 30px;
+      }
+
+      .blog-header {
+        background: linear-gradient(
+          135deg,
+          var(--naver-green),
+          var(--naver-green-dark)
+        );
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .blog-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+
+      .blog-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        padding: 40px;
+      }
+
+      .form-section {
+        background: #f8fafc;
+        padding: 30px;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .form-section h2 {
+        color: #1e293b;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #374151;
+        font-weight: 600;
+      }
+
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: var(--naver-green);
+        box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.15);
+      }
+
+      .region-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+
+      .style-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 10px;
+      }
+
+      .style-option {
+        position: relative;
+      }
+
+      .style-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .style-option label {
+        display: block;
+        padding: 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        background: white;
+      }
+
+      .style-option input[type="radio"]:checked + label {
+        border-color: #4f46e5;
+        background: #4f46e5;
+        color: white;
+      }
+
+      .style-option label:hover {
+        border-color: #6366f1;
+      }
+
+      .word-count-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .word-count-container input[type="range"] {
+        flex: 1;
+      }
+
+      .word-count-display {
+        background: var(--naver-green);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+        min-width: 80px;
+        text-align: center;
+      }
+
+      .generate-btn {
+        width: 100%;
+        background: linear-gradient(
+          135deg,
+          var(--naver-green),
+          var(--naver-green-dark)
+        );
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 18px;
+        font-weight: 600;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+      }
+
+      .generate-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(3, 199, 90, 0.3);
+      }
+
+      .generate-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .result-section {
+        background: #f8fafc;
+        padding: 30px;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .progress-container {
+        margin-bottom: 30px;
+      }
+
+      .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        border-radius: 25px;
+        background: #e2e8f0;
+        color: #64748b;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .progress-step.active {
+        background: #4f46e5;
+        color: white;
+      }
+
+      .progress-step.completed {
+        background: #10b981;
+        color: white;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4f46e5 0%, #10b981 100%);
+        width: 0%;
+        transition: width 0.5s ease;
+      }
+
+      .result-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .result-tab {
+        padding: 10px 20px;
+        border: 2px solid #e2e8f0;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .result-tab.active {
+        border-color: #4f46e5;
+        background: #4f46e5;
+        color: white;
+      }
+
+      .result-content {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        min-height: 300px;
+      }
+
+      .result-text {
+        line-height: 1.8;
+        color: #374151;
+        font-size: 16px;
+      }
+
+      .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid var(--naver-green);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .error-message {
+        background: #fef2f2;
+        color: #dc2626;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #fecaca;
+        margin-top: 15px;
+      }
+
+      .debug-info {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        color: #0c4a6e;
+      }
+
+      @media (max-width: 768px) {
+        /* 헤더 겹침 방지: 로고/버튼 세로 스택 & 버튼 absolute 해제 */
+        .top-nav {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .user-actions {
+          position: static;
+          right: auto;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .nav-menu {
+          justify-content: flex-start;
+          overflow-x: auto;
+          white-space: nowrap;
+          padding: 5px 0;
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        .nav-menu::-webkit-scrollbar {
+          display: none; /* Chrome, Safari and Opera */
+        }
+
+        .nav-menu li {
+          flex-shrink: 0;
+        }
+
+        .nav-menu a {
+          font-size: 12px;
+          padding: 8px 12px;
+          white-space: nowrap;
+        }
+
+        .page-header h1 {
+          font-size: 2.2rem;
+        }
+
+        .nav-container {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .top-nav {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .main-content {
+          grid-template-columns: 1fr;
+          padding: 20px;
+        }
+
+        .style-options {
+          grid-template-columns: 1fr;
+        }
+
+        .region-row {
+          grid-template-columns: 1fr;
+        }
+
+        .blog-header h1 {
+          font-size: 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 공통 헤더는 /assets/common-header.js 가 자동 주입합니다 -->
+
+    <div class="blog-container">
+      <div class="blog-header">
+        <h1>AI 가게 블로그 생성기</h1>
+        <p>ChatGPT → Gemini → Claude 3단계 AI로 완성하는 가게 리뷰 블로그</p>
+      </div>
+
+      <div class="main-content">
+        <!-- 입력 폼 섹션 -->
+        <div class="form-section">
+          <h2>가게 정보 입력</h2>
+          <form id="blogForm">
+            <div class="form-group">
+              <label for="storeName">가게 이름 *</label>
+              <input
+                type="text"
+                id="storeName"
+                name="storeName"
+                required
+                placeholder="예: 맛있는 김치찌개집"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="category">음식/업종 *</label>
+              <input
+                type="text"
+                id="category"
+                name="category"
+                required
+                placeholder="예: 한식당, 카페, 이탈리안 등"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="address">가게 주소</label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                placeholder="예: 서울시 강남구 역삼동 123-45"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="businessHours">영업시간</label>
+              <input
+                type="text"
+                id="businessHours"
+                name="businessHours"
+                placeholder="예: 11:00~22:00"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>지역 선택</label>
+              <div class="region-row">
+                <select id="city" name="city">
+                  <option value="">도시 선택</option>
+                  <option value="서울">서울</option>
+                  <option value="부산">부산</option>
+                  <option value="대구">대구</option>
+                  <option value="인천">인천</option>
+                </select>
+                <select id="district" name="district">
+                  <option value="">구/군 선택</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>블로그 스타일 *</label>
+              <div class="style-options">
+                <div class="style-option">
+                  <input
+                    type="radio"
+                    id="daily"
+                    name="blogStyle"
+                    value="일상후기"
+                    required
+                  />
+                  <label for="daily">일상후기</label>
+                </div>
+                <div class="style-option">
+                  <input
+                    type="radio"
+                    id="detailed"
+                    name="blogStyle"
+                    value="상세리뷰"
+                    required
+                  />
+                  <label for="detailed">상세리뷰</label>
+                </div>
+                <div class="style-option">
+                  <input
+                    type="radio"
+                    id="photo"
+                    name="blogStyle"
+                    value="사진중심"
+                    required
+                  />
+                  <label for="photo">사진중심</label>
+                </div>
+                <div class="style-option">
+                  <input
+                    type="radio"
+                    id="mood"
+                    name="blogStyle"
+                    value="분위기중심"
+                    required
+                  />
+                  <label for="mood">분위기중심</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="wordCount">글자 수</label>
+              <div class="word-count-container">
+                <input
+                  type="range"
+                  id="wordCount"
+                  name="wordCount"
+                  min="300"
+                  max="2000"
+                  value="800"
+                  step="100"
+                />
+                <div class="word-count-display">800자</div>
+              </div>
+            </div>
+
+            <button type="submit" class="generate-btn" id="generateBtn">
+              블로그 생성하기
+            </button>
+          </form>
+        </div>
+
+        <!-- 결과 섹션 -->
+        <div class="result-section">
+          <h2>생성 결과</h2>
+
+          <div
+            class="progress-container"
+            id="progressContainer"
+            style="display: none"
+          >
+            <div class="progress-steps">
+              <div class="progress-step" id="step1">
+                <span>1. ChatGPT</span>
+              </div>
+              <div class="progress-step" id="step2">
+                <span>2. Gemini</span>
+              </div>
+              <div class="progress-step" id="step3">
+                <span>3. Claude</span>
+              </div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+          </div>
+
+          <div class="result-tabs" id="resultTabs" style="display: none">
+            <div class="result-tab active" data-tab="final">최종 결과</div>
+            <div class="result-tab" data-tab="step1">ChatGPT</div>
+            <div class="result-tab" data-tab="step2">Gemini</div>
+            <div class="result-tab" data-tab="step3">Claude</div>
+          </div>
+
+          <div class="result-content" id="resultContent">
+            <p style="text-align: center; color: #64748b; padding: 50px">
+              가게 정보를 입력하고 "블로그 생성하기" 버튼을 클릭하세요.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 상대 경로(`/api`) 사용
+      console.log("Using backend URL:", "/api");
+
+      // 지역 데이터
+      const regions = {
+        서울: [
+          "강남구",
+          "강동구",
+          "강북구",
+          "강서구",
+          "관악구",
+          "광진구",
+          "구로구",
+          "금천구",
+          "노원구",
+          "도봉구",
+          "동대문구",
+          "동작구",
+          "마포구",
+          "서대문구",
+          "서초구",
+          "성동구",
+          "성북구",
+          "송파구",
+          "양천구",
+          "영등포구",
+          "용산구",
+          "은평구",
+          "종로구",
+          "중구",
+          "중랑구",
+        ],
+        부산: [
+          "강서구",
+          "금정구",
+          "남구",
+          "동구",
+          "동래구",
+          "부산진구",
+          "북구",
+          "사상구",
+          "사하구",
+          "서구",
+          "수영구",
+          "연제구",
+          "영도구",
+          "중구",
+          "해운대구",
+          "기장군",
+        ],
+        대구: [
+          "남구",
+          "달서구",
+          "동구",
+          "북구",
+          "서구",
+          "수성구",
+          "중구",
+          "달성군",
+        ],
+        인천: [
+          "계양구",
+          "남동구",
+          "동구",
+          "미추홀구",
+          "부평구",
+          "서구",
+          "연수구",
+          "중구",
+          "강화군",
+          "옹진군",
+        ],
+      };
+
+      // DOM 요소들
+      const citySelect = document.getElementById("city");
+      const districtSelect = document.getElementById("district");
+      const wordCountSlider = document.getElementById("wordCount");
+      const wordCountDisplay = document.querySelector(".word-count-display");
+      const blogForm = document.getElementById("blogForm");
+      const generateBtn = document.getElementById("generateBtn");
+      const progressContainer = document.getElementById("progressContainer");
+      const resultTabs = document.getElementById("resultTabs");
+      const resultContent = document.getElementById("resultContent");
+
+      // 글자 수 슬라이더 이벤트
+      wordCountSlider.addEventListener("input", function () {
+        wordCountDisplay.textContent = this.value + "자";
+      });
+
+      // 도시 선택 이벤트
+      citySelect.addEventListener("change", function () {
+        const selectedCity = this.value;
+        districtSelect.innerHTML = '<option value="">구/군 선택</option>';
+
+        if (selectedCity && regions[selectedCity]) {
+          regions[selectedCity].forEach((district) => {
+            const option = document.createElement("option");
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+          });
+        }
+      });
+
+      // 결과 탭 전환
+      document.addEventListener("click", function (e) {
+        if (e.target.classList.contains("result-tab")) {
+          document.querySelectorAll(".result-tab").forEach((tab) => {
+            tab.classList.remove("active");
+          });
+          e.target.classList.add("active");
+
+          const tabType = e.target.dataset.tab;
+          showResult(tabType);
+        }
+      });
+
+      // 진행 상태 업데이트
+      function updateProgress(step) {
+        const steps = ["step1", "step2", "step3"];
+        const progressFill = document.getElementById("progressFill");
+
+        steps.forEach((stepId, index) => {
+          const stepElement = document.getElementById(stepId);
+          if (index < step) {
+            stepElement.classList.add("completed");
+            stepElement.classList.remove("active");
+          } else if (index === step) {
+            stepElement.classList.add("active");
+            stepElement.classList.remove("completed");
+          } else {
+            stepElement.classList.remove("active", "completed");
+          }
+        });
+
+        const progressPercent = ((step + 1) / 3) * 100;
+        progressFill.style.width = progressPercent + "%";
+      }
+
+      // 결과 표시
+      function showResult(type) {
+        const results = window.blogResults || {};
+        let content = "";
+
+        switch (type) {
+          case "final":
+            content = results.step3_claude || results.finalBlog || "";
+            break;
+          case "step1":
+            content = results.step1_chatgpt || "";
+            break;
+          case "step2":
+            content = results.step2_gemini || "";
+            break;
+          case "step3":
+            content = results.step3_claude || "";
+            break;
+        }
+
+        if (content) {
+          resultContent.innerHTML = `<div class="result-text">${content.replace(
+            /\n/g,
+            "<br>"
+          )}</div>`;
+        } else {
+          resultContent.innerHTML =
+            '<p style="text-align: center; color: #64748b;">아직 생성되지 않았습니다.</p>';
+        }
+      }
+
+      // 로딩 표시
+      function showLoading() {
+        resultContent.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <p style="text-align: center; color: #64748b; margin-top: 20px;">
+                    AI가 블로그를 생성하고 있습니다...<br>
+                    잠시만 기다려 주세요.
+                </p>
+            `;
+      }
+
+      // 에러 표시
+      function showError(message, errorDetails = null) {
+        let errorHtml = `
+                <div class="error-message">
+                    <strong>오류가 발생했습니다:</strong><br>
+                    ${message}
+                </div>
+            `;
+
+        if (errorDetails) {
+          errorHtml += `
+                    <div class="debug-info">
+                        <strong>디버그 정보:</strong><br>
+                        Backend URL: /api<br>
+                        Current URL: ${window.location.href}<br>
+                        Error Details: ${JSON.stringify(errorDetails, null, 2)}
+                    </div>
+                `;
+        }
+
+        resultContent.innerHTML = errorHtml;
+      }
+
+      // 폼 제출 이벤트
+      blogForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const data = {
+          storeName: formData.get("storeName"),
+          category: formData.get("category"),
+          address: formData.get("address"),
+          businessHours: formData.get("businessHours"),
+          region: {
+            city: formData.get("city"),
+            district: formData.get("district"),
+          },
+          blogStyle: formData.get("blogStyle"),
+          wordCount: parseInt(formData.get("wordCount")),
+        };
+
+        // 유효성 검사
+        if (!data.storeName || !data.category || !data.blogStyle) {
+          alert("필수 항목을 모두 입력해주세요.");
+          return;
+        }
+
+        console.log("Sending request to:", `/api/generate-blog`);
+        console.log("Request data:", data);
+
+        try {
+          generateBtn.disabled = true;
+          generateBtn.textContent = "생성 중...";
+          progressContainer.style.display = "block";
+          showLoading();
+
+          // 단계별 진행 시뮬레이션
+          updateProgress(0);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          updateProgress(1);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          updateProgress(2);
+
+          // API 호출
+          const response = await fetch(`/api/generate-blog`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+            mode: "cors", // CORS 모드 명시적 설정
+          });
+
+          console.log("Response status:", response.status);
+          console.log("Response headers:", response.headers);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Response error:", errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+
+          const result = await response.json();
+          console.log("Response data:", result);
+
+          if (result.success) {
+            window.blogResults = result.data;
+            resultTabs.style.display = "flex";
+            showResult("final");
+          } else {
+            throw new Error(result.error || "알 수 없는 오류가 발생했습니다.");
+          }
+        } catch (error) {
+          console.error("Request failed:", error);
+
+          // 에러 타입별 상세 메시지
+          let errorMessage = "";
+          let errorDetails = null;
+
+          if (error.name === "TypeError" && error.message.includes("fetch")) {
+            errorMessage =
+              "서버에 연결할 수 없습니다. 네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.";
+            errorDetails = {
+              type: "Network Error",
+              backend_url: "/api",
+              error: error.message,
+            };
+          } else if (error.message.includes("CORS")) {
+            errorMessage =
+              "CORS 오류가 발생했습니다. 서버 설정을 확인해주세요.";
+            errorDetails = {
+              type: "CORS Error",
+              backend_url: "/api",
+              error: error.message,
+            };
+          } else {
+            errorMessage = error.message || "알 수 없는 오류가 발생했습니다.";
+            errorDetails = {
+              type: "General Error",
+              backend_url: "/api",
+              error: error.message,
+            };
+          }
+
+          showError(errorMessage, errorDetails);
+        } finally {
+          generateBtn.disabled = false;
+          generateBtn.textContent = "블로그 생성하기";
+        }
+      });
+
+      // 페이지 로드시 서버 연결 테스트
+      window.addEventListener("load", async function () {
+        try {
+          console.log("Testing server connection...");
+          const response = await fetch(`/api/health`, {
+            method: "GET",
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log("Server connection successful:", data);
+          } else {
+            console.warn("Server connection test failed:", response.status);
+          }
+        } catch (error) {
+          console.warn("Server connection test error:", error.message);
+        }
+
+        // 로그인 상태 확인
+        checkLoginStatus();
+      });
+
+      // 로그인 상태 확인 및 UI 업데이트
+      function checkLoginStatus() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        const userData = localStorage.getItem("userData");
+
+        const loginBtn = document.querySelector(".login-btn");
+        const signupBtns = document.querySelectorAll(".signup-btn");
+
+        if (isLoggedIn === "true" && userData) {
+          try {
+            const user = JSON.parse(userData);
+
+            // 로그인 버튼 숨기기
+            if (loginBtn) loginBtn.style.display = "none";
+
+            // 회원가입 버튼은 로그아웃 버튼으로 변경
+            if (signupBtns.length > 0) {
+              signupBtns[0].textContent = "로그아웃";
+              signupBtns[0].onclick = function (e) {
+                e.preventDefault();
+                if (confirm("로그아웃 하시겠습니까?")) {
+                  localStorage.removeItem("isLoggedIn");
+                  localStorage.removeItem("userData");
+                  location.href = "index.html";
+                }
+              };
+            }
+          } catch (e) {
+            console.error("로그인 정보 파싱 오류:", e);
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userData");
+          }
+        } else {
+          // 로그인하지 않은 상태
+          if (loginBtn) loginBtn.style.display = "inline-block";
+          signupBtns.forEach((btn) => (btn.style.display = "inline-block"));
+        }
+      }
+    </script>
+  </body>
+</html>

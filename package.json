@@ -1,0 +1,37 @@
+{
+  "name": "sajangpick-server",
+  "version": "1.0.0",
+  "description": "사장픽 - 네이버 키워드 분석 및 AI 블로그 생성 통합 서버",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "@sparticuz/chromium": "^141.0.0",
+    "puppeteer-core": "^23.11.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "naver",
+    "keyword",
+    "blog",
+    "ai",
+    "generator",
+    "sajangpick"
+  ],
+  "author": "SajangPick",
+  "license": "ISC"
+}

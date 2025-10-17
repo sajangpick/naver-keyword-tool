@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>회원가입 - 사장픽</title>
+    <style>
+      :root {
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --bg: #f7f9fb;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Noto Sans KR", Arial, sans-serif;
+        background: var(--bg);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+      }
+
+      .signup-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        width: 100%;
+        max-width: 450px;
+        position: relative;
+      }
+
+      .back-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .logo {
+        text-align: center;
+        font-size: 32px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 40px;
+        font-size: 14px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #6c5ce7;
+      }
+
+      .form-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .form-row .form-group {
+        flex: 1;
+      }
+
+      .password-strength {
+        margin-top: 5px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .strength-bar {
+        height: 4px;
+        background: #e1e5e9;
+        border-radius: 2px;
+        margin-top: 5px;
+        overflow: hidden;
+      }
+
+      .strength-fill {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s;
+        border-radius: 2px;
+      }
+
+      .strength-weak {
+        background: #ff4757;
+        width: 25%;
+      }
+      .strength-fair {
+        background: #ffa502;
+        width: 50%;
+      }
+      .strength-good {
+        background: #2ed573;
+        width: 75%;
+      }
+      .strength-strong {
+        background: #26de81;
+        width: 100%;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        margin-top: 3px;
+      }
+
+      .checkbox-group label {
+        font-size: 14px;
+        line-height: 1.4;
+        color: #666;
+      }
+
+      .checkbox-group a {
+        color: #6c5ce7;
+        text-decoration: none;
+      }
+
+      .signup-btn {
+        width: 100%;
+        background: var(--naver-green);
+        color: white;
+        padding: 15px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 20px;
+      }
+
+      .signup-btn:hover {
+        background: var(--naver-green-dark);
+        transform: translateY(-2px);
+      }
+
+      .signup-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .divider {
+        text-align: center;
+        margin: 30px 0;
+        position: relative;
+        color: #666;
+      }
+
+      .divider::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e1e5e9;
+      }
+
+      .divider span {
+        background: white;
+        padding: 0 20px;
+      }
+
+      .social-login {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .terms-note {
+        margin-top: 16px;
+        font-size: 12px;
+        color: #666;
+        line-height: 1.5;
+        text-align: center;
+      }
+      .terms-note a {
+        color: #6c5ce7;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .google-btn,
+      .kakao-btn {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        background: white;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s;
+      }
+
+      .google-btn:hover {
+        border-color: #db4437;
+        color: #db4437;
+      }
+
+      .kakao-btn {
+        background: #fee500;
+        border-color: #fee500;
+        color: #3c1e1e;
+      }
+
+      .kakao-btn:hover {
+        background: #fdd835;
+      }
+
+      .login-link {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e1e5e9;
+        color: #666;
+      }
+
+      .login-link a {
+        color: #6c5ce7;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .error-message {
+        background: #fee;
+        color: #c33;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
+      }
+
+      .success-message {
+        background: #efe;
+        color: #363;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--naver-green);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .input-error {
+        border-color: #ff4757 !important;
+      }
+
+      .field-error {
+        color: #ff4757;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+
+      @media (max-width: 480px) {
+        .signup-container {
+          margin: 20px;
+          padding: 30px 20px;
+        }
+
+        .form-row {
+          flex-direction: column;
+          gap: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="signup-container">
+      <button class="back-btn" onclick="location.href='index.html'">←</button>
+
+      <div class="logo">사장픽</div>
+      <div class="subtitle">새로운 체험의 시작, 지금 가입하세요</div>
+
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+
+      <!-- 이메일 회원가입 -->
+      <form id="emailSignupForm">
+        <div class="form-group">
+          <label class="form-label">이메일</label>
+          <input
+            type="email"
+            class="form-input"
+            id="emailInput"
+            placeholder="이메일을 입력하세요"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">비밀번호</label>
+          <input
+            type="password"
+            class="form-input"
+            id="passwordInput"
+            placeholder="비밀번호를 입력하세요"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">비밀번호 확인</label>
+          <input
+            type="password"
+            class="form-input"
+            id="confirmPasswordInput"
+            placeholder="비밀번호를 다시 입력하세요"
+            required
+          />
+        </div>
+
+        <button type="submit" class="signup-btn" id="emailSignupBtn">
+          이메일로 회원가입
+        </button>
+      </form>
+
+      <div class="divider"><span>또는</span></div>
+
+      <!-- 카카오 회원가입 -->
+      <div class="social-login">
+        <button class="kakao-btn" id="kakaoSignup">
+          <span>💬</span>
+          카카오톡 아이디로 회원가입
+        </button>
+      </div>
+
+      <div class="terms-note">
+        계속 진행하면
+        <a href="https://www.sajangpick.co.kr/terms" target="_blank"
+          >이용약관</a
+        >
+        및
+        <a href="https://www.sajangpick.co.kr/privacy" target="_blank"
+          >개인정보처리방침</a
+        >에 동의한 것으로 간주됩니다. 카카오 계정 정보 제공에 동의가 필요합니다.
+      </div>
+
+      <div class="login-link">
+        이미 계정이 있으신가요? <a href="login.html">로그인</a>
+      </div>
+    </div>
+
+    <script>
+      // 이미 로그인된 경우 메인 페이지로 리다이렉트
+      (function checkAlreadyLoggedIn() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        if (isLoggedIn === "true") {
+          window.location.href = "index.html";
+        }
+      })();
+
+      // DOM elements
+      const emailSignupForm = document.getElementById("emailSignupForm");
+      const emailInput = document.getElementById("emailInput");
+      const passwordInput = document.getElementById("passwordInput");
+      const confirmPasswordInput = document.getElementById(
+        "confirmPasswordInput"
+      );
+      const emailSignupBtn = document.getElementById("emailSignupBtn");
+      const kakaoSignupBtn = document.getElementById("kakaoSignup");
+      const errorMessage = document.getElementById("errorMessage");
+      const successMessage = document.getElementById("successMessage");
+
+      // Show error message
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = "block";
+        successMessage.style.display = "none";
+      }
+
+      // Show success message
+      function showSuccess(message) {
+        successMessage.textContent = message;
+        successMessage.style.display = "block";
+        errorMessage.style.display = "none";
+      }
+
+      // Hide messages
+      function hideMessages() {
+        errorMessage.style.display = "none";
+        successMessage.style.display = "none";
+      }
+
+      // 간단한 회원가입 (localStorage 사용)
+      emailSignupForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        hideMessages();
+
+        const email = emailInput.value;
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+
+        // 간단한 유효성 검사
+        if (!email || !password) {
+          showError("이메일과 비밀번호를 입력해주세요.");
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          showError("비밀번호가 일치하지 않습니다.");
+          return;
+        }
+
+        // localStorage에서 사용자 목록 가져오기
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+
+        // 이미 가입된 이메일 확인
+        if (users[email]) {
+          showError("이미 가입된 이메일입니다. 로그인 페이지로 이동합니다.");
+          setTimeout(() => {
+            window.location.href = "login.html";
+          }, 2000);
+          return;
+        }
+
+        // 새 사용자 등록
+        users[email] = {
+          password: password,
+          email: email,
+          createdAt: new Date().toISOString(),
+        };
+        localStorage.setItem("users", JSON.stringify(users));
+
+        // 자동 로그인
+        const userData = {
+          email: email,
+          displayName: email.split("@")[0],
+          loginTime: new Date().toISOString(),
+        };
+        localStorage.setItem("userData", JSON.stringify(userData));
+        localStorage.setItem("isLoggedIn", "true");
+
+        showSuccess("회원가입 완료! 자동 로그인되었습니다.");
+
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
+      });
+
+      // Kakao 회원가입
+      kakaoSignupBtn.addEventListener("click", () => {
+        // 카카오 로그인 페이지로 이동 (회원가입도 동일)
+        window.location.href = "/auth/kakao/login?state=signup";
+      });
+    </script>
+  </body>
+</html>
