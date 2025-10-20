@@ -44,7 +44,7 @@ function fetchToken(params) {
   });
 }
 
-function buildCookie(name, value, { maxAge, secure = true } = {}) {
+function buildCookie(name, value, { maxAge, secure, domain } = {}) {
   const parts = [
     `${name}=${encodeURIComponent(value)}`,
     "Path=/",
@@ -52,6 +52,7 @@ function buildCookie(name, value, { maxAge, secure = true } = {}) {
     "SameSite=Lax",
   ];
   if (typeof maxAge === "number") parts.push(`Max-Age=${maxAge}`);
+  if (domain) parts.push(`Domain=${domain}`);
   if (secure) parts.push("Secure");
   return parts.join("; ");
 }
@@ -83,8 +84,11 @@ module.exports = async (req, res) => {
 
     const token = await fetchToken(tokenPayload);
     if (!token || !token.access_token) {
-      res.statusCode = 502;
-      res.end("Failed to get token");
+      const err = encodeURIComponent(token?.error || "token_error");
+      const desc = encodeURIComponent(token?.error_description || "");
+      res.statusCode = 302;
+      res.setHeader("Location", `/login.html?error=kakao&reason=${err}&detail=${desc}`);
+      res.end();
       return;
     }
 
@@ -97,9 +101,11 @@ module.exports = async (req, res) => {
     );
 
     // Set session cookie and clear csrf cookie
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieDomain = process.env.COOKIE_DOMAIN || (isProd ? ".sajangpick.co.kr" : undefined);
     res.setHeader("Set-Cookie", [
-      buildCookie("session", session, { maxAge: 7200 }),
-      "kstate=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax",
+      buildCookie("session", session, { maxAge: 7200, secure: isProd, domain: cookieDomain }),
+      buildCookie("kstate", "", { maxAge: 0, secure: isProd, domain: cookieDomain }),
     ]);
 
     const target =
@@ -108,7 +114,9 @@ module.exports = async (req, res) => {
     res.setHeader("Location", target);
     res.end();
   } catch (e) {
-    res.statusCode = 500;
-    res.end("Callback error");
+    const msg = encodeURIComponent(e?.message || "callback_error");
+    res.statusCode = 302;
+    res.setHeader("Location", `/login.html?error=kakao&detail=${msg}`);
+    res.end();
   }
 };

@@ -1,6 +1,10 @@
 const crypto = require("crypto");
 
-function buildCookie(name, value, { maxAge, secure = true } = {}) {
+function buildCookie(
+  name,
+  value,
+  { maxAge, secure, domain } = {}
+) {
   const pieces = [
     `${name}=${encodeURIComponent(value)}`,
     "Path=/",
@@ -8,6 +12,7 @@ function buildCookie(name, value, { maxAge, secure = true } = {}) {
     "SameSite=Lax",
   ];
   if (typeof maxAge === "number") pieces.push(`Max-Age=${maxAge}`);
+  if (domain) pieces.push(`Domain=${domain}`);
   if (secure) pieces.push("Secure");
   return pieces.join("; ");
 }
@@ -27,7 +32,16 @@ module.exports = async (req, res) => {
   const state = `${nonce}:${mode}`;
 
   // Set short-lived CSRF cookie
-  res.setHeader("Set-Cookie", buildCookie("kstate", state, { maxAge: 300 }));
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieDomain = process.env.COOKIE_DOMAIN || (isProd ? ".sajangpick.co.kr" : undefined);
+  res.setHeader(
+    "Set-Cookie",
+    buildCookie("kstate", state, {
+      maxAge: 300,
+      secure: isProd,
+      domain: cookieDomain,
+    })
+  );
 
   const authorize = new URL("https://kauth.kakao.com/oauth/authorize");
   authorize.searchParams.set("response_type", "code");
