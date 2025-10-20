@@ -63,16 +63,20 @@ async function crawlPlaceDetail(placeId, { timeoutMs = 30000 } = {}) {
 
     const placeData = await page.evaluate(() => {
       const data = {
-        basic: {},
-        contact: {},
-        business: {},
-        stats: {},
-        facilities: {},
-        media: {},
+        basic: {},           // 기본 정보 (업체명, 카테고리)
+        contact: {},         // 연락처 (주소, 전화번호)
+        business: {},        // 영업 정보 (시간, 메뉴)
+        stats: {},           // 통계 (평점, 리뷰 수)
+        facilities: {},      // 편의시설
+        media: {},           // 미디어 (사진)
+        introduction: {},    // 소개/소식 ✨ NEW
+        menu: [],            // 메뉴 목록 ✨ NEW
+        images: [],          // 메인 사진 5장 ✨ NEW
+        receipts: {},        // 영수증 정보 ✨ NEW
       };
 
       // ========== 기본 정보 ==========
-      // 업체명
+      // 업체명 (우선 CSS, 실패 시 og:title, 실패 시 문서 타이틀)
       const nameSelectors = [
         ".GHAhO", // 최신 셀렉터
         ".place_detail_name",
@@ -85,6 +89,16 @@ async function crawlPlaceDetail(placeId, { timeoutMs = 30000 } = {}) {
           data.basic.name = el.textContent.trim();
           break;
         }
+      }
+      if (!data.basic.name) {
+        const og = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || "";
+        if (og && og.trim()) {
+          // 보통 "가게명" 형태. 사이트명이 붙으면 분리
+          data.basic.name = og.replace(/\s*[|-].*$/, '').trim();
+        }
+      }
+      if (!data.basic.name && document.title) {
+        data.basic.name = document.title.replace(/\s*[|-].*$/, '').trim();
       }
 
       // 카테고리
@@ -100,24 +114,44 @@ async function crawlPlaceDetail(placeId, { timeoutMs = 30000 } = {}) {
           break;
         }
       }
+      // 카테고리 폴백: 이름 인접 텍스트에서 작은 회색 글씨 형태가 흔함
+      if (!data.basic.category && data.basic.name) {
+        const nameEl = document.querySelector(".GHAhO, .place_detail_name, h1");
+        const sibling = nameEl?.parentElement?.querySelector('span, div');
+        const sibText = sibling?.textContent?.trim() || "";
+        if (sibText && sibText.length <= 20 && !/리뷰|예약|알림|전화/.test(sibText)) {
+          data.basic.category = sibText;
+        }
+      }
 
       // 평점 및 리뷰 수
       const ratingEl = document.querySelector(".PXMot, .rating, [class*='rating']");
       if (ratingEl) {
         data.stats.rating = ratingEl.textContent.trim();
       }
-
-      // 방문자 리뷰 수
-      const visitorReviewEl = document.querySelector("[class*='visitor'], [class*='review']");
-      if (visitorReviewEl) {
-        const match = visitorReviewEl.textContent.match(/방문자.*?(\d+[\d,]*)/);
-        if (match) data.stats.visitor_reviews = match[1].replace(/,/g, "");
+      // 평점 폴백: 별점 숫자가 텍스트로만 있을 수 있음 (예: 4.7)
+      if (!data.stats.rating) {
+        const maybeRating = Array.from(document.querySelectorAll('span, div'))
+          .map(el => el.textContent?.trim() || "")
+          .find(t => /^(?:[0-5](?:\.[0-9])?)$/.test(t));
+        if (maybeRating) data.stats.rating = maybeRating;
       }
 
-      // 블로그 리뷰 수
-      const blogReviewEl = document.querySelector("[class*='blog']");
-      if (blogReviewEl) {
-        const match = blogReviewEl.textContent.match(/블로그.*?(\d+[\d,]*)/);
+      // 방문자 리뷰 수 (텍스트 기반 폴백 포함)
+      let visitorTextEl = document.querySelector("[class*='visitor'], [class*='review']");
+      let blogTextEl = document.querySelector("[class*='blog']");
+      if (!visitorTextEl || !/방문자\s*리뷰/.test(visitorTextEl.textContent)) {
+        visitorTextEl = Array.from(document.querySelectorAll('span, div')).find(el => /방문자\s*리뷰/.test(el.textContent));
+      }
+      if (!blogTextEl || !/블로그\s*리뷰/.test(blogTextEl.textContent)) {
+        blogTextEl = Array.from(document.querySelectorAll('span, div')).find(el => /블로그\s*리뷰/.test(el.textContent));
+      }
+      if (visitorTextEl) {
+        const match = visitorTextEl.textContent.match(/(\d[\d,]*)/);
+        if (match) data.stats.visitor_reviews = match[1].replace(/,/g, "");
+      }
+      if (blogTextEl) {
+        const match = blogTextEl.textContent.match(/(\d[\d,]*)/);
         if (match) data.stats.blog_reviews = match[1].replace(/,/g, "");
       }
 
@@ -128,20 +162,28 @@ async function crawlPlaceDetail(placeId, { timeoutMs = 30000 } = {}) {
       }
 
       // ========== 연락처 정보 ==========
-      // 주소
-      const addressSelectors = [
-        ".LDgIH", // 주소
-        "[class*='address']",
-        "[class*='addr']",
-      ];
-      for (const sel of addressSelectors) {
-        const el = document.querySelector(sel);
-        if (el?.textContent?.trim()) {
-          // "주소" 레이블 제거
-          let address = el.textContent.trim();
-          address = address.replace(/^주소\s*/, "");
-          data.contact.address = address;
-          break;
+      // 주소 (도로명 + 지번)
+      const addressElements = document.querySelectorAll('.LDgIH, [class*="address"], [class*="addr"]');
+      addressElements.forEach((el) => {
+        const text = el.textContent.trim().replace(/^주소\s*/, '');
+        if (text) {
+          // 도로명 주소 (보통 첫번째)
+          if (!data.contact.road_address && !text.includes('지번')) {
+            data.contact.road_address = text;
+          }
+          // 지번 주소 찾기
+          if (text.includes('지번') || /\d+번지/.test(text)) {
+            data.contact.lot_address = text.replace(/^지번\s*/, '');
+          }
+        }
+      });
+      
+      // "지도" 버튼 클릭시 나오는 지번 주소도 확인
+      const lotAddressEl = document.querySelector('[class*="lot"], [class*="지번"]');
+      if (lotAddressEl && !data.contact.lot_address) {
+        const lotText = lotAddressEl.textContent.trim();
+        if (lotText) {
+          data.contact.lot_address = lotText.replace(/^지번\s*/, '');
         }
       }
 
@@ -188,6 +230,11 @@ async function crawlPlaceDetail(placeId, { timeoutMs = 30000 } = {}) {
           data.business.hours = hours;
           break;
         }
+      }
+      // 영업시간 폴백: 본문 텍스트 내 "영업" 라인이 있는 경우
+      if (!data.business.hours) {
+        const hoursEl = Array.from(document.querySelectorAll('span, div')).find(el => /영업\s*시작|영업\s*시간/.test(el.textContent));
+        if (hoursEl) data.business.hours = hoursEl.textContent.trim();
       }
 
       // 브레이크타임
@@ -267,6 +314,98 @@ async function crawlPlaceDetail(placeId, { timeoutMs = 30000 } = {}) {
       const subwayEl = document.querySelector("[class*='subway'], [class*='역']");
       if (subwayEl) {
         data.contact.subway = subwayEl.textContent.trim();
+      }
+
+      // ========== ✨ 소개/소식 (NEW) ==========
+      const introSelectors = [
+        '[class*="introduction"]',
+        '[class*="소개"]',
+        '[class*="info"]',
+        '.place_intro',
+        '[class*="description"]'
+      ];
+      for (const sel of introSelectors) {
+        const el = document.querySelector(sel);
+        if (el?.textContent?.trim() && el.textContent.length > 10) {
+          data.introduction.text = el.textContent.trim();
+          break;
+        }
+      }
+
+      // ========== ✨ 메뉴 (NEW) ==========
+      const menuItems = [];
+      const menuSelectors = [
+        '.place_section_content .list_menu li', // 메뉴 리스트
+        '[class*="menu"] li',
+        '.menu_list li',
+      ];
+      
+      for (const sel of menuSelectors) {
+        const items = document.querySelectorAll(sel);
+        if (items.length > 0) {
+          items.forEach((item) => {
+            const nameEl = item.querySelector('[class*="name"], .menu_name, strong');
+            const priceEl = item.querySelector('[class*="price"], .menu_price, .price');
+            
+            if (nameEl) {
+              const menuItem = {
+                name: nameEl.textContent.trim(),
+                price: priceEl ? priceEl.textContent.trim() : null
+              };
+              menuItems.push(menuItem);
+            }
+          });
+          break;
+        }
+      }
+      data.menu = menuItems;
+
+      // ========== ✨ 메인 사진 5장 (NEW) ==========
+      const imageUrls = [];
+      const imgSelectors = [
+        '.place_thumb img',           // 메인 썸네일
+        '.photo_list img',            // 사진 리스트
+        '[class*="photo"] img',
+        '[class*="image"] img',
+        '.swiper-slide img',          // 슬라이드
+      ];
+
+      for (const sel of imgSelectors) {
+        const imgs = document.querySelectorAll(sel);
+        imgs.forEach((img) => {
+          const src = img.src || img.dataset.src || img.getAttribute('data-original');
+          if (src && !src.includes('placeholder') && !imageUrls.includes(src)) {
+            imageUrls.push(src);
+          }
+        });
+        if (imageUrls.length >= 5) break;
+      }
+      data.images = imageUrls.slice(0, 5); // 최대 5장
+
+      // ========== ✨ 신규영수증 개수 (NEW) ==========
+      const receiptSelectors = [
+        '[class*="receipt"]',
+        '[class*="영수증"]',
+        '[class*="payment"]',
+        '.new_receipt_count'
+      ];
+      
+      for (const sel of receiptSelectors) {
+        const el = document.querySelector(sel);
+        if (el) {
+          const text = el.textContent;
+          // "신규 영수증 123개" 같은 패턴 찾기
+          const match = text.match(/신규.*?(\d+)/);
+          if (match) {
+            data.receipts.new_count = parseInt(match[1], 10);
+          }
+          // 전체 영수증 개수
+          const totalMatch = text.match(/영수증.*?(\d+)/);
+          if (totalMatch) {
+            data.receipts.total_count = parseInt(totalMatch[1], 10);
+          }
+          break;
+        }
       }
 
       return data;
@@ -362,4 +501,6 @@ if (require.main === module) {
     console.log("상태:", status);
   })();
 }
+
+
 

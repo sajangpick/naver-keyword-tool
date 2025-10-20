@@ -11,7 +11,8 @@ const app = express();
 app.set("trust proxy", true);
 
 // 환경변수에서 설정 읽기 (Render 호환)
-const PORT = process.env.PORT || 10000; // Render는 기본적으로 10000번 포트 사용
+// 로컬 개발: 3000번 포트 강제 사용 (환경변수 무시)
+const PORT = 3000;
 
 // 네이버 API 설정
 const NAVER_API = {
@@ -58,6 +59,11 @@ const ALLOWED_ORIGINS = RAW_CORS.split(",")
 const ALLOW_ALL = ALLOWED_ORIGINS.includes("*");
 const corsOptions = {
   origin: (origin, callback) => {
+    // 개발 환경에서는 모든 origin 허용
+    if (process.env.NODE_ENV !== "production") {
+      return callback(null, true);
+    }
+    // Production 환경
     if (!origin) return callback(null, true); // Non-browser / same-origin fallback
     if (ALLOW_ALL) return callback(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
@@ -78,7 +84,15 @@ if (
     "[SECURITY] In production, CORS_ORIGIN is not set or is '*'. Set it to your exact domain to prevent unwanted origins."
   );
 }
-app.use(helmet({ crossOriginEmbedderPolicy: false }));
+// 개발 환경에서는 helmet CSP 비활성화
+if (process.env.NODE_ENV === "production") {
+  app.use(helmet({ crossOriginEmbedderPolicy: false }));
+} else {
+  app.use(helmet({ 
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false // 개발 환경에서 CSP 완전 비활성화
+  }));
+}
 // Referrer-Policy 강화
 app.use(helmet.referrerPolicy({ policy: "strict-origin-when-cross-origin" }));
 // Permissions-Policy 최소 허용 (필요 기능만 허용)
@@ -109,23 +123,29 @@ if (process.env.NODE_ENV === "production") {
 }
 // CSP in Report-Only mode to observe violations without breaking existing pages
 const CSP_ENFORCE = (process.env.CSP_ENFORCE || "false") === "true";
-app.use(
-  helmet.contentSecurityPolicy({
-    useDefaults: true,
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https:", "'unsafe-inline'"],
-      styleSrc: ["'self'", "https:", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      frameAncestors: ["'self'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      reportUri: ["/csp-report"],
-    },
-    reportOnly: !CSP_ENFORCE,
-  })
-);
+// CSP 개발 환경에서는 비활성화 (production에서만 활성화)
+if (process.env.NODE_ENV === "production") {
+  app.use(
+    helmet.contentSecurityPolicy({
+      useDefaults: true,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https:", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https:"],
+        frameAncestors: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        reportUri: ["/csp-report"],
+      },
+      reportOnly: !CSP_ENFORCE,
+    })
+  );
+} else {
+  // 개발 환경에서는 CSP 비활성화
+  console.log("[DEV] Content Security Policy disabled for development");
+}
 // Request ID & timing
 app.use((req, res, next) => {
   const reqId =
@@ -168,6 +188,7 @@ app.use("/csp-report", rateLimiter);
 app.use("/css", express.static(path.join(__dirname, "css")));
 app.use("/js", express.static(path.join(__dirname, "js")));
 app.use("/images", express.static(path.join(__dirname, "images")));
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // 주요 HTML 라우트 화이트리스트 서빙
 function sendHtml(res, file) {
@@ -183,6 +204,8 @@ app.get("/ChatGPT.html", (req, res) => sendHtml(res, "ChatGPT.html"));
 app.get("/AI-Review.html", (req, res) => sendHtml(res, "AI-Review.html"));
 app.get("/Blog-Editor.html", (req, res) => sendHtml(res, "Blog-Editor.html"));
 app.get("/mypage.html", (req, res) => sendHtml(res, "mypage.html"));
+app.get("/rank-report.html", (req, res) => sendHtml(res, "rank-report.html"));
+app.get("/admin/rank-report.html", (req, res) => sendHtml(res, "admin/rank-report.html"));
 
 // Rate limiting
 const requestCounts = new Map();
@@ -675,6 +698,23 @@ app.post("/auth/logout", (req, res) => {
   res.setHeader("Set-Cookie", setCookies);
   res.json({ success: true });
 });
+
+// ==================== 크롤링 API (Vercel Functions를 로컬에서 연결) ====================
+
+// 배치 크롤링 (목록 + 상세 정보)
+const placeBatchCrawlHandler = require("./api/place-batch-crawl");
+app.post("/api/place-batch-crawl", placeBatchCrawlHandler);
+app.get("/api/place-batch-crawl", placeBatchCrawlHandler);
+
+// 목록 크롤링
+const rankListCrawlHandler = require("./api/rank-list-crawl");
+app.post("/api/rank-list-crawl", rankListCrawlHandler);
+app.get("/api/rank-list-crawl", rankListCrawlHandler);
+
+// 상세 정보 크롤링
+const placeDetailCrawlHandler = require("./api/place-detail-crawl");
+app.post("/api/place-detail-crawl", placeDetailCrawlHandler);
+app.get("/api/place-detail-crawl", placeDetailCrawlHandler);
 
 // ==================== 네이버 키워드 API ====================
 

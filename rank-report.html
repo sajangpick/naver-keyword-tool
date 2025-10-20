@@ -253,10 +253,12 @@
                     <th>평점</th>
                     <th>방문자리뷰</th>
                     <th>블로그리뷰</th>
-                    <th>주소</th>
+                    <th>도로명주소</th>
+                    <th>지번주소</th>
                     <th>전화번호</th>
-                    <th>영업시간</th>
-                    <th>편의시설</th>
+                    <th>메뉴</th>
+                    <th>사진</th>
+                    <th>신규영수증</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -286,10 +288,10 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 수집 중...';
 
         try {
-          const res = await fetch("/api/place-detail-crawl", {
+          const res = await fetch("/api/place-batch-crawl", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ keyword, max_scrolls: 6 }),
+            body: JSON.stringify({ keyword, maxScrolls: 6, detailCrawl: true }),
           });
 
           const data = await res.json();
@@ -317,18 +319,37 @@
         tbody.innerHTML = "";
 
         state.crawl.forEach((item, idx) => {
+          const detail = item.detail || {};
+          
+          // 메뉴 목록 표시 (최대 3개)
+          const menuText = detail.menu && detail.menu.length > 0
+            ? detail.menu.slice(0, 3).map(m => `${m.name} ${m.price || ''}`).join(', ')
+            : '-';
+          
+          // 사진 개수 표시
+          const photoText = detail.images && detail.images.length > 0
+            ? `${detail.images.length}장`
+            : '-';
+          
+          // 신규영수증 표시
+          const receiptText = detail.receipts?.new_count
+            ? `신규 ${detail.receipts.new_count}개`
+            : '-';
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
             <td><strong>${item.place_name || "-"}</strong></td>
-            <td>${item.category || "-"}</td>
-            <td style="text-align: center;">${item.rating || "-"}</td>
-            <td style="text-align: center;">${item.visitor_reviews || "-"}</td>
-            <td style="text-align: center;">${item.blog_reviews || "-"}</td>
-            <td>${item.address || "-"}</td>
-            <td>${item.phone || "-"}</td>
-            <td>${item.hours || "-"}</td>
-            <td>${item.amenities || "-"}</td>
+            <td>${detail.basic?.category || "-"}</td>
+            <td style="text-align: center;">${detail.stats?.rating || "-"}</td>
+            <td style="text-align: center;">${detail.stats?.visitor_reviews || "-"}</td>
+            <td style="text-align: center;">${detail.stats?.blog_reviews || "-"}</td>
+            <td>${detail.contact?.road_address || "-"}</td>
+            <td>${detail.contact?.lot_address || "-"}</td>
+            <td>${detail.contact?.phone || "-"}</td>
+            <td style="font-size: 11px;">${menuText}</td>
+            <td style="text-align: center;">${photoText}</td>
+            <td style="text-align: center;">${receiptText}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -349,23 +370,36 @@
           "평점",
           "방문자리뷰",
           "블로그리뷰",
-          "주소",
+          "도로명주소",
+          "지번주소",
           "전화번호",
-          "영업시간",
-          "편의시설",
+          "메뉴",
+          "사진개수",
+          "신규영수증",
+          "소개",
         ];
-        const rows = state.crawl.map((item, idx) => [
-          idx + 1,
-          item.place_name || "",
-          item.category || "",
-          item.rating || "",
-          item.visitor_reviews || "",
-          item.blog_reviews || "",
-          item.address || "",
-          item.phone || "",
-          item.hours || "",
-          item.amenities || "",
-        ]);
+        const rows = state.crawl.map((item, idx) => {
+          const detail = item.detail || {};
+          const menuText = detail.menu && detail.menu.length > 0
+            ? detail.menu.map(m => `${m.name}:${m.price || '-'}`).join(' / ')
+            : '';
+          
+          return [
+            idx + 1,
+            item.place_name || "",
+            detail.basic?.category || "",
+            detail.stats?.rating || "",
+            detail.stats?.visitor_reviews || "",
+            detail.stats?.blog_reviews || "",
+            detail.contact?.road_address || "",
+            detail.contact?.lot_address || "",
+            detail.contact?.phone || "",
+            menuText,
+            detail.images?.length || 0,
+            detail.receipts?.new_count || "",
+            detail.introduction?.text || "",
+          ];
+        });
 
         const csv = Papa.unparse({
           fields: headers,

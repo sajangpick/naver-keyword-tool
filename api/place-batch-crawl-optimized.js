@@ -1,5 +1,5 @@
 // ⚡ 최적화된 네이버 플레이스 배치 크롤링
-// 병렬 처리 + 속도 최적화 + 새로운 데이터 수집
+// 병렬 처리 + 속도 최적화 + 데이터베이스 저장
 
 const isVercel = process.env.VERCEL || process.env.NODE_ENV === "production";
 
@@ -17,9 +17,8 @@ if (isVercel) {
  * - 병렬 처리로 10배 빠름
  * - 최소한의 대기 시간
  * - 중복 제거
- * - 새로운 데이터 수집 (메뉴, 사진, 신규영수증, 지번주소)
  */
-async function batchCrawlPlaces(
+async function batchCrawlPlacesOptimized(
   keyword,
   {
     maxPlaces = 50,
@@ -212,7 +211,7 @@ async function batchCrawlPlaces(
     }
 
     const selectedPlaces = uniquePlaces.slice(0, maxPlaces);
-    debugInfo.steps.push(`5. 상위 ${selectedPlaces.length}개 선택 (중복 제거 후)`);
+    debugInfo.steps.push(`5. 상위 ${selectedPlaces.length}개 선택`);
 
     // ========== STEP 2: ⚡ 병렬 상세 크롤링 ==========
     if (!detailCrawl) {
@@ -274,37 +273,17 @@ async function batchCrawlPlaces(
               receipts: {},
             };
 
-            // 업체명 (CSS → og:title → document.title)
+            // 업체명
             const nameEl = document.querySelector(".GHAhO, h1");
             if (nameEl) data.basic.name = nameEl.textContent.trim();
-            if (!data.basic.name) {
-              const og = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || "";
-              if (og) data.basic.name = og.replace(/\s*[|-].*$/, '').trim();
-            }
-            if (!data.basic.name && document.title) {
-              data.basic.name = document.title.replace(/\s*[|-].*$/, '').trim();
-            }
 
             // 카테고리
             const categoryEl = document.querySelector(".DJJvD");
             if (categoryEl) data.basic.category = categoryEl.textContent.trim();
-            if (!data.basic.category && nameEl?.parentElement) {
-              const sib = nameEl.parentElement.querySelector('span, div');
-              const txt = sib?.textContent?.trim() || "";
-              if (txt && txt.length <= 20 && !/리뷰|예약|알림|전화/.test(txt)) {
-                data.basic.category = txt;
-              }
-            }
 
             // 평점
             const ratingEl = document.querySelector(".PXMot");
             if (ratingEl) data.stats.rating = ratingEl.textContent.trim();
-            if (!data.stats.rating) {
-              const maybeRating = Array.from(document.querySelectorAll('span, div'))
-                .map(el => el.textContent?.trim() || "")
-                .find(t => /^(?:[0-5](?:\.[0-9])?)$/.test(t));
-              if (maybeRating) data.stats.rating = maybeRating;
-            }
 
             // 방문자 리뷰
             const visitorEls = Array.from(document.querySelectorAll("span, div")).filter(
@@ -314,11 +293,6 @@ async function batchCrawlPlaces(
               const match = visitorEls[0].textContent.match(/(\d+[\d,]*)/);
               if (match) data.stats.visitor_reviews = match[1].replace(/,/g, "");
             }
-            if (!data.stats.visitor_reviews) {
-              const el = Array.from(document.querySelectorAll('span, div')).find(el => /방문자\s*리뷰/.test(el.textContent));
-              const m = el?.textContent?.match(/(\d[\d,]*)/);
-              if (m) data.stats.visitor_reviews = m[1].replace(/,/g, "");
-            }
 
             // 블로그 리뷰
             const blogEls = Array.from(document.querySelectorAll("span, div")).filter(
@@ -327,11 +301,6 @@ async function batchCrawlPlaces(
             if (blogEls.length > 0) {
               const match = blogEls[0].textContent.match(/(\d+[\d,]*)/);
               if (match) data.stats.blog_reviews = match[1].replace(/,/g, "");
-            }
-            if (!data.stats.blog_reviews) {
-              const el = Array.from(document.querySelectorAll('span, div')).find(el => /블로그\s*리뷰/.test(el.textContent));
-              const m = el?.textContent?.match(/(\d[\d,]*)/);
-              if (m) data.stats.blog_reviews = m[1].replace(/,/g, "");
             }
 
             // 주소 (도로명 + 지번)
@@ -524,7 +493,7 @@ module.exports = async (req, res) => {
     });
   }
 
-  const [result, statusCode] = await batchCrawlPlaces(keyword, options);
+  const [result, statusCode] = await batchCrawlPlacesOptimized(keyword, options);
   return res.status(statusCode).json(result);
 };
 
@@ -533,7 +502,7 @@ if (require.main === module) {
   (async () => {
     console.log("⚡ 최적화된 배치 크롤링 테스트 시작...");
     const testKeyword = "명장동맛집";
-    const [result, status] = await batchCrawlPlaces(testKeyword, {
+    const [result, status] = await batchCrawlPlacesOptimized(testKeyword, {
       maxPlaces: 20,
       maxScrolls: 5,
       detailCrawl: true,
@@ -543,3 +512,4 @@ if (require.main === module) {
     console.log("상태:", status);
   })();
 }
+
