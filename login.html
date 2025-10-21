@@ -499,22 +499,10 @@
         showError("비밀번호 재설정은 준비 중입니다.");
       });
 
-      // Kakao 로그인 (Supabase OAuth)
-      kakaoLoginBtn.addEventListener("click", async () => {
-        hideMessages();
-        if (!SUPABASE_ANON_KEY) {
-          showError("Supabase anon 키가 설정되지 않았습니다. Supabase 대시보드의 anon public 키를 설정해 주세요.");
-          return;
-        }
-        try {
-          const { error } = await supabase.auth.signInWithOAuth({
-            provider: "kakao",
-            options: { redirectTo: window.location.origin },
-          });
-          if (error) showError("카카오 로그인 실패: " + error.message);
-        } catch (e) {
-          showError("카카오 로그인 중 오류가 발생했습니다.");
-        }
+      // Kakao 로그인 (서버 OAuth)
+      kakaoLoginBtn.addEventListener("click", () => {
+        // 서버의 카카오 로그인 엔드포인트로 리다이렉트
+        window.location.href = "/auth/kakao/login";
       });
     </script>
   </body>

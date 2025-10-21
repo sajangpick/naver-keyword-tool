@@ -549,21 +549,10 @@
         }, 1500);
       });
 
-      // Kakao 회원가입 (Supabase OAuth)
-      kakaoSignupBtn.addEventListener("click", async () => {
-        if (!SUPABASE_ANON_KEY) {
-          showError("Supabase anon 키가 설정되지 않았습니다. Supabase 대시보드의 anon public 키를 설정해 주세요.");
-          return;
-        }
-        try {
-          const { error } = await supabase.auth.signInWithOAuth({
-            provider: "kakao",
-            options: { redirectTo: window.location.origin },
-          });
-          if (error) showError("카카오 회원가입 실패: " + error.message);
-        } catch (e) {
-          showError("카카오 회원가입 중 오류가 발생했습니다.");
-        }
+      // Kakao 회원가입 (서버 OAuth)
+      kakaoSignupBtn.addEventListener("click", () => {
+        // 서버의 카카오 로그인 엔드포인트로 리다이렉트 (state=signup으로 구분)
+        window.location.href = "/auth/kakao/login?state=signup";
       });
     </script>
   </body>
