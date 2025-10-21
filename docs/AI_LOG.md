@@ -19,6 +19,50 @@
 
 ---
 
+## 🧭 비개발자용 초간단 가이드(10분 완성)
+
+> 이 섹션만 따라 하면 “코드 올리기 → 배포 → 로그인 점검”이 끝납니다. 터미널은 필요 없습니다.
+
+### 1) 코드 올리기(GitHub Desktop)
+1. GitHub Desktop 실행 → File → Add local repository… → `C:\Users\admin\Desktop\사장픽` 선택 → Add
+2. Repository → Repository settings… → Remote → URL에 `https://github.com/sajangpick/naver-keyword-tool.git` 입력 → Save
+3. Changes 탭에서 Summary에 `chore: 프로젝트 동기화(사장픽 → naver-keyword-tool)` 입력 → Commit → 우측 상단 Push origin(또는 Publish branch)
+4. “View on GitHub” 버튼으로 커밋이 보이는지 확인
+
+필수 제외(절대 올리지 않음): `.env`, `.env.*`, `.vercel/`, `node_modules/`, `dist/`, `build/`, `coverage/`, `.DS_Store`
+```
+.env
+.env.*
+.vercel/
+node_modules/
+dist/
+build/
+coverage/
+.DS_Store
+```
+
+### 2) 배포(Vercel 웹)
+1. Vercel 대시보드 → New Project → GitHub에서 `sajangpick/naver-keyword-tool` 선택 → Team은 `sajangpick-team`
+2. Production 환경변수 추가:
+   - `KAKAO_REST_API_KEY`
+   - `KAKAO_REDIRECT_URI` = `https://sajangpick.co.kr/auth/kakao/callback`
+   - `JWT_SECRET` = 32자 이상 임의 문자열
+   - `KAKAO_CLIENT_SECRET` = (카카오 콘솔에서 사용 ON일 때만)
+   - `COOKIE_DOMAIN` = `.sajangpick.co.kr`
+3. Deploy 클릭 → 최근 Deployments에서 성공 여부 확인
+
+### 3) 빠른 점검(3가지 URL)
+- 헬스체크: `https://www.sajangpick.co.kr/health` 가 OK면 정상
+- 로그인 플로우: `https://www.sajangpick.co.kr/login.html` → 카카오 로그인 → 돌아왔을 때 주소에 `error` 파라미터가 없어야 정상
+- 세션 확인: `https://www.sajangpick.co.kr/api/auth/me` 가 `{ authenticated: true }`
+
+### 4) 로그인 실패 시, 이 정보만 전달해주세요
+- 주소창에 보이는 `?error=...&reason=...&detail=...` 값을 그대로 복사
+- 마지막으로 변경한 내용(파일명 1~2개, 한 줄 설명)
+- 위 두 가지만 주시면 원인 즉시 특정 가능
+
+---
+
 ## 🔥 최신 중요 사항 TOP 3 (바쁘면 여기만!)
 
 ### 1. 관리자/고객 페이지 분리 완료 (2025-10-17) ⭐ NEW
@@ -47,6 +91,64 @@
 ---
 
 ## 📋 전체 작업 이력 (상세)
+
+### 2025-10-21 - Supabase 샘플 테이블 생성 및 RLS 정책 적용
+
+**작업 목적:**
+- Supabase 연결 검증과 최소 예제 테이블 구축(RLS 포함)
+
+**수행 내용:**
+1. Supabase 대시보드 → SQL Editor에서 아래 스크립트 실행:
+   ```sql
+   create table if not exists public.instruments (
+     id bigint generated always as identity primary key,
+     name text not null unique
+   );
+
+   insert into public.instruments (name) values
+     ('violin'), ('viola'), ('cello')
+   on conflict do nothing;
+
+   alter table public.instruments enable row level security;
+
+   drop policy if exists "Public can read instruments" on public.instruments;
+   create policy "Public can read instruments"
+   on public.instruments
+   for select
+   to anon, authenticated
+   using (true);
+
+   -- (선택) 인증 사용자의 쓰기 허용 시 활성화
+   -- create policy "Authenticated can insert instruments"
+   -- on public.instruments for insert to authenticated with check (true);
+   ```
+2. 데이터 확인(동일 SQL Editor):
+   ```sql
+   select * from public.instruments;
+   ```
+   - 결과: `violin`, `viola`, `cello` 3행 정상 조회 확인
+
+**환경변수 정합성 확인:**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (anon key)
+- `SUPABASE_SERVICE_ROLE_KEY` (서버 전용, 노출 금지)
+
+**클라이언트/REST 테스트 스니펫:**
+```js
+// 브라우저
+const supabase = window.supabase.createClient(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+const { data, error } = await supabase.from('instruments').select('*');
+```
+```bash
+# REST
+curl "https://<project>.supabase.co/rest/v1/instruments?select=*" \
+  -H "apikey: <ANON_KEY>" \
+  -H "Authorization: Bearer <ANON_KEY>"
+```
+
+**영향/비고:**
+- Supabase 연결 및 RLS 읽기 정책 정상 동작 확인.
+- 앱에서 읽기 연동 즉시 가능. 쓰기가 필요하면 insert 정책 활성화 필요.
 
 ### 2025-10-17 - 코드 정리 및 로컬 크롤링 환경 구축 (작업 중단)
 

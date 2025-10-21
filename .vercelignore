@@ -1,0 +1,11 @@
+# 배포에서 제외할 파일들
+place-check.html
+rank-report.html
+rank-report-pro.html
+
+# 개발 파일
+node_modules/
+*.log
+.env
+.env.local
+

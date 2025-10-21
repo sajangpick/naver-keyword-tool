@@ -22,10 +22,6 @@
   },
   "rewrites": [
     {
-      "source": "/auth/:path*",
-      "destination": "/api/auth/:path*"
-    },
-    {
       "source": "/api/rank-list-crawl",
       "destination": "/api/rank-list-crawl.js"
     },
@@ -42,5 +38,10 @@
       "source": "/api/:path((?!auth|compute-rank|rank-list-crawl|place-detail-crawl|place-batch-crawl).*)*",
       "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
     }
+  ],
+  "redirects": [
+    { "source": "/auth/:path*", "destination": "/login.html", "permanent": false },
+    { "source": "/rank-report.html", "destination": "/", "permanent": false },
+    { "source": "/place-check.html", "destination": "/", "permanent": false }
   ]
 }

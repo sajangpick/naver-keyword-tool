@@ -10,9 +10,9 @@ const helmet = require("helmet");
 const app = express();
 app.set("trust proxy", true);
 
-// 환경변수에서 설정 읽기 (Render 호환)
-// 로컬 개발: 3000번 포트 강제 사용 (환경변수 무시)
-const PORT = 3000;
+// 환경변수에서 설정 읽기 (Render/Vercel/로컬 모두 호환)
+// PORT가 지정되어 있으면 해당 포트 사용, 없으면 3000 사용
+const PORT = Number(process.env.PORT) || 3000;
 
 // 네이버 API 설정
 const NAVER_API = {
@@ -199,12 +199,14 @@ app.get(["/index.html"], (req, res) => sendHtml(res, "index.html"));
 app.get("/login.html", (req, res) => sendHtml(res, "login.html"));
 app.get("/join.html", (req, res) => sendHtml(res, "join.html"));
 app.get("/naver_search.html", (req, res) => sendHtml(res, "naver_search.html"));
-app.get("/place-check.html", (req, res) => sendHtml(res, "place-check.html"));
+// 플점검은 일반 화면에서 노출/접근 불가 (홈으로 리다이렉트)
+app.get("/place-check.html", (req, res) => res.redirect("/"));
 app.get("/ChatGPT.html", (req, res) => sendHtml(res, "ChatGPT.html"));
 app.get("/AI-Review.html", (req, res) => sendHtml(res, "AI-Review.html"));
 app.get("/Blog-Editor.html", (req, res) => sendHtml(res, "Blog-Editor.html"));
 app.get("/mypage.html", (req, res) => sendHtml(res, "mypage.html"));
-app.get("/rank-report.html", (req, res) => sendHtml(res, "rank-report.html"));
+// 플순위는 어드민 전용으로만 접근 허용 (일반 경로는 홈으로 리다이렉트)
+app.get("/rank-report.html", (req, res) => res.redirect("/"));
 app.get("/admin/rank-report.html", (req, res) => sendHtml(res, "admin/rank-report.html"));
 
 // Rate limiting
