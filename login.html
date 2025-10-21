@@ -288,36 +288,6 @@
       <div class="success-message" id="successMessage"></div>
 
       <!-- 이메일 로그인 -->
-      <form id="emailLoginForm">
-        <div class="form-group">
-          <label class="form-label">이메일</label>
-          <input
-            type="email"
-            class="form-input"
-            id="emailInput"
-            placeholder="이메일을 입력하세요"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">비밀번호</label>
-          <input
-            type="password"
-            class="form-input"
-            id="passwordInput"
-            placeholder="비밀번호를 입력하세요"
-            required
-          />
-        </div>
-
-        <button type="submit" class="login-btn" id="emailLoginBtn">
-          이메일로 로그인
-        </button>
-      </form>
-
-      <div class="divider"><span>또는</span></div>
-
       <!-- 카카오 로그인 -->
       <div class="social-login">
         <button class="kakao-btn" id="kakaoLogin">
@@ -329,10 +299,6 @@
       <div class="loading" id="loading">
         <div class="spinner"></div>
         <p>로그인 중...</p>
-      </div>
-
-      <div class="forgot-password">
-        <a href="#" id="forgotPassword">비밀번호를 잊으셨나요?</a>
       </div>
 
       <!-- 부가 로그인 방식 제거 -->
@@ -392,12 +358,7 @@
       });
 
       // DOM elements
-      const emailLoginForm = document.getElementById("emailLoginForm");
-      const emailInput = document.getElementById("emailInput");
-      const passwordInput = document.getElementById("passwordInput");
-      const emailLoginBtn = document.getElementById("emailLoginBtn");
       const kakaoLoginBtn = document.getElementById("kakaoLogin");
-      const forgotPasswordLink = document.getElementById("forgotPassword");
       const errorMessage = document.getElementById("errorMessage");
       const successMessage = document.getElementById("successMessage");
       const loading = document.getElementById("loading");
@@ -431,73 +392,6 @@
       function hideLoading() {
         loading.style.display = "none";
       }
-
-      // 간단한 로그인 (localStorage 사용)
-      emailLoginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        hideMessages();
-        showLoading();
-
-        const email = emailInput.value;
-        const password = passwordInput.value;
-
-        // localStorage에서 사용자 목록 가져오기
-        const users = JSON.parse(localStorage.getItem("users") || "{}");
-
-        // 사용자 확인
-        if (!users[email]) {
-          showError("등록되지 않은 이메일입니다. 회원가입을 해주세요.");
-          hideLoading();
-          return;
-        }
-
-        if (users[email].password !== password) {
-          showError("비밀번호가 올바르지 않습니다.");
-          hideLoading();
-          return;
-        }
-
-        // 로그인 성공 - 사용자 데이터 저장
-        const userData = {
-          email: email,
-          displayName: email.split("@")[0],
-          loginTime: new Date().toISOString(),
-        };
-        localStorage.setItem("userData", JSON.stringify(userData));
-        localStorage.setItem("isLoggedIn", "true");
-
-        showSuccess("로그인에 성공했습니다. 메인 페이지로 이동합니다.");
-
-        setTimeout(() => {
-          window.location.href = "index.html";
-        }, 1500);
-
-        hideLoading();
-      });
-
-      // Save user data to localStorage
-      function saveUserData(user) {
-        const userData = {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName || "",
-          photoURL: user.photoURL || "",
-          emailVerified: user.emailVerified,
-          loginTime: new Date().toISOString(),
-        };
-        localStorage.setItem("userData", JSON.stringify(userData));
-        localStorage.setItem("isLoggedIn", "true");
-      }
-
-      // email/password login removed
-
-      // google login removed
-
-      // Forgot password (비활성화)
-      forgotPasswordLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        showError("비밀번호 재설정은 준비 중입니다.");
-      });
 
       // Kakao 로그인 (서버 OAuth)
       kakaoLoginBtn.addEventListener("click", () => {
