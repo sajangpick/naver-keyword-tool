@@ -1,5 +1,8 @@
 # 🎯 카카오 로그인 설정 가이드 (비개발자용)
 
+> ⚠️ **이 문서는 구식입니다!**  
+> 현재는 `docs/KAKAO_LOGIN_GUIDE.md`를 사용하세요 (Supabase 방식)
+
 ## 📌 목차
 
 1. [카카오 개발자 등록](#1-카카오-개발자-등록)
@@ -186,3 +189,4 @@
 
 - 카카오 개발자 문서: https://developers.kakao.com/docs/latest/ko/kakaologin/common
 - Vercel 환경변수 문서: https://vercel.com/docs/environment-variables
+

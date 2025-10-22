@@ -80,9 +80,13 @@ async function batchCrawlPlacesOptimized(
           "--disable-setuid-sandbox",
           "--disable-dev-shm-usage",
           "--disable-gpu",
+          "--disable-blink-features=AutomationControlled",  // ✨ 자동화 감지 우회
+          "--disable-web-security",
+          "--disable-features=IsolateOrigins,site-per-process",
         ],
         defaultViewport: { width: 412, height: 915, deviceScaleFactor: 2 },
         headless: true,
+        ignoreDefaultArgs: ["--enable-automation"],  // ✨ 자동화 플래그 제거
       };
     }
 
@@ -90,6 +94,27 @@ async function batchCrawlPlacesOptimized(
     debugInfo.steps.push(`✅ Chrome 실행 성공 (환경: ${isVercel ? 'Vercel' : 'Local'})`);
 
     const page = await browser.newPage();
+    
+    // ✨ webdriver 속성 제거 (봇 감지 우회)
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined,
+      });
+      
+      // Chrome 객체 추가 (일반 브라우저처럼 보이게)
+      window.chrome = {
+        runtime: {},
+      };
+      
+      // Permissions 설정
+      const originalQuery = window.navigator.permissions.query;
+      window.navigator.permissions.query = (parameters) => (
+        parameters.name === 'notifications' ?
+          Promise.resolve({ state: Notification.permission }) :
+          originalQuery(parameters)
+      );
+    });
+    
     await page.setUserAgent(
       "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
     );
@@ -99,24 +124,28 @@ async function batchCrawlPlacesOptimized(
     // ========== STEP 1: 목록 크롤링 ==========
     debugInfo.steps.push("2. 목록 페이지 로딩 중...");
     
-    // ⚡ domcontentloaded로 변경 (더 빠름)
-    await page.goto(listUrl, { waitUntil: "domcontentloaded" });
+    // ⚡ networkidle2로 변경 (JavaScript 렌더링 완료 대기)
+    await page.goto(listUrl, { waitUntil: "networkidle2" });
     debugInfo.steps.push("✅ 목록 페이지 로드 완료");
 
-    // 리스트 대기 (짧게)
+    // JavaScript 렌더링 대기 (중요!)
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    debugInfo.steps.push("✅ JavaScript 렌더링 대기 완료 (5초)");
+
+    // 리스트 대기
     try {
       await page.waitForSelector("ul", { timeout: 5000 });
     } catch (e) {
       debugInfo.steps.push("⚠️ 리스트 대기 실패, 계속 진행");
     }
 
-    // ⚡ 스크롤 최적화 (대기 시간 단축)
+    // ⚡ 스크롤 최적화
     debugInfo.steps.push(`3. 스크롤 시작 (${maxScrolls}회)...`);
     for (let i = 0; i < maxScrolls; i++) {
       await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
       });
-      await new Promise((resolve) => setTimeout(resolve, 800)); // 1500ms → 800ms
+      await new Promise((resolve) => setTimeout(resolve, 1500)); // 안정적인 스크롤을 위해 1500ms
     }
     debugInfo.steps.push("✅ 스크롤 완료");
 
@@ -151,20 +180,40 @@ async function batchCrawlPlacesOptimized(
               }
 
               const linkEl = el.querySelector(combo.link);
-              const href = linkEl?.getAttribute("href") || "";
+              let href = linkEl?.getAttribute("href") || "";
 
               let placeId = "";
-              const patterns = [
-                /\/restaurant\/(\d+)/,
-                /\/place\/(\d+)/,
-                /place[_-]?id[=:](\d+)/i,
-              ];
+              
+              // URL 디코딩 (tivan.naver.com 리다이렉트 URL 처리)
+              try {
+                const decodedHref = decodeURIComponent(href);
+                const patterns = [
+                  /\/restaurant\/(\d+)/,
+                  /\/place\/(\d+)/,
+                  /place[_-]?id[=:](\d+)/i,
+                ];
 
-              for (const pattern of patterns) {
-                const match = href.match(pattern);
-                if (match) {
-                  placeId = match[1];
-                  break;
+                for (const pattern of patterns) {
+                  const match = decodedHref.match(pattern);
+                  if (match) {
+                    placeId = match[1];
+                    break;
+                  }
+                }
+              } catch (e) {
+                // URL 디코딩 실패 시 원본으로 시도
+                const patterns = [
+                  /\/restaurant\/(\d+)/,
+                  /\/place\/(\d+)/,
+                  /place[_-]?id[=:](\d+)/i,
+                ];
+
+                for (const pattern of patterns) {
+                  const match = href.match(pattern);
+                  if (match) {
+                    placeId = match[1];
+                    break;
+                  }
                 }
               }
 
@@ -249,6 +298,15 @@ async function batchCrawlPlacesOptimized(
         let detailPage;
         try {
           detailPage = await browser.newPage();
+          
+          // ✨ webdriver 속성 제거 (봇 감지 우회)
+          await detailPage.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, 'webdriver', {
+              get: () => undefined,
+            });
+            window.chrome = { runtime: {} };
+          });
+          
           await detailPage.setUserAgent(
             "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15"
           );
@@ -256,9 +314,9 @@ async function batchCrawlPlacesOptimized(
 
           const detailUrl = `https://m.place.naver.com/restaurant/${place.place_id}`;
           
-          // ⚡ domcontentloaded로 빠르게
-          await detailPage.goto(detailUrl, { waitUntil: "domcontentloaded" });
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // 2초 → 1초
+          // networkidle2로 안정적인 로딩
+          await detailPage.goto(detailUrl, { waitUntil: "networkidle2" });
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // JavaScript 렌더링 대기
 
           const detail = await detailPage.evaluate(() => {
             const data = {
@@ -501,6 +559,9 @@ module.exports = async (req, res) => {
 if (require.main === module) {
   (async () => {
     console.log("⚡ 최적화된 배치 크롤링 테스트 시작...");
+    console.log("🔧 봇 감지 우회 설정 적용됨");
+    console.log("");
+    
     const testKeyword = "명장동맛집";
     const [result, status] = await batchCrawlPlacesOptimized(testKeyword, {
       maxPlaces: 20,
@@ -508,8 +569,25 @@ if (require.main === module) {
       detailCrawl: true,
       parallelPages: 5,
     });
-    console.log("결과:", JSON.stringify(result, null, 2));
-    console.log("상태:", status);
+    
+    console.log("\n" + "=".repeat(60));
+    if (result.success && result.total > 0) {
+      console.log("✅ 크롤링 성공!");
+      console.log(`📊 발견된 업체: ${result.total}개`);
+      console.log(`⏱️  소요 시간: ${result.stats.duration}초`);
+      console.log("");
+      console.log("🏪 상위 5개 업체:");
+      result.list.slice(0, 5).forEach((place, i) => {
+        console.log(`  ${i + 1}. ${place.place_name} (ID: ${place.place_id})`);
+      });
+    } else {
+      console.log("❌ 크롤링 실패 또는 0개 발견");
+      console.log("📋 디버그 정보:");
+      result.debug.steps.forEach(step => console.log(`  ${step}`));
+    }
+    console.log("=".repeat(60));
+    console.log("\n상세 결과:", JSON.stringify(result, null, 2));
+    console.log("상태 코드:", status);
   })();
 }
 

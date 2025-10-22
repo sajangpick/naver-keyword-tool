@@ -1,53 +1,59 @@
 # 사장픽 프론트엔드 (Vercel)
 
-> 🤖 **새 AI 자동 열람 지침**: 이 저장소를 처음 여는 AI/도우미는 **반드시** 다음 순서로 문서를 읽어주세요:
-> 1. **@docs/AI_LOG.md** ← 최신 중요 사항 TOP 3
-> 2. **@docs/QUICK_START.md** ← 프로젝트 빠른 파악
-> 3. **본 문서(README.md)** ← 기본 정보
+---
 
-## ⚠️ 새로운 AI/기여자는 반드시 먼저 읽어주세요!
+## 🚨 **새 AI 필수 체크리스트** (작업 전 반드시 확인!)
 
-### 🚀 처음이라면 여기서 시작!
+**아래 항목을 확인하지 않고 작업하면 안 됩니다!**
 
-**[👉 docs/QUICK_START.md](docs/QUICK_START.md)** ← 3분 안에 핵심 파악!
+- [ ] ✅ **1단계**: `@docs/AI_START_HERE.md` 읽었나요? (30초)
+- [ ] ✅ **2단계**: 현재 프로젝트 상태 파악했나요?
+  - 기술 스택: Express.js + Supabase + Vercel
+  - 주요 기능: 네이버 플레이스 크롤링, 카카오 로그인
+  - 환경변수: SUPABASE_URL, SUPABASE_ANON_KEY 등
+- [ ] ✅ **3단계**: 사용자 요청 내용 이해했나요?
+- [ ] ✅ **4단계**: 필요한 정보 검색했나요? (grep 활용)
 
-### 📚 추가 문서 (필요시)
-
-1. 🎯 **[docs/BEGINNER_DEPLOY_GUIDE.md](docs/BEGINNER_DEPLOY_GUIDE.md)** ⭐ **비개발자용!**
-   - 클릭만으로 배포하는 완전 초보 가이드
-   - 코딩 몰라도 따라할 수 있어요!
-   
-2. 🚀 **[docs/VERCEL_배포가이드.md](docs/VERCEL_배포가이드.md)**
-   - Vercel 배포 완벽 가이드
-   - 환경변수 설정 방법
-   - 도메인 연결 및 문제 해결
-
-3. 📋 **[docs/AI_LOG.md](docs/AI_LOG.md)**
-   - 상세한 작업 이력 (최신 TOP 3 요약 포함)
-   - 모든 변경사항 기록
-
-4. 📝 **[docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)**
-   - 전체 프로젝트 계획 및 향후 전환 계획
-   - 단계별 실행 가이드 및 롤백 방법
-
-5. 📄 **[docs/env.example.md](docs/env.example.md)**
-   - 환경변수 설정 가이드
-   
-6. ⚙️ **[docs/환경변수_템플릿.env](docs/환경변수_템플릿.env)**
-   - Vercel 배포용 환경변수 템플릿
+**위 체크리스트를 완료하지 않으면 작업을 시작하지 마세요!**
 
 ---
 
-### 📖 읽는 순서 추천
+> 🤖 **AI 작업 시작 전 필독**: `@docs/AI_START_HERE.md` (30초, 메모리 효율)
+
+## 📚 문서 구조
+
+### 🚀 새 AI 필독 (순서대로!)
+1. **[docs/AI_START_HERE.md](docs/AI_START_HERE.md)** ⚡ **30초, 프로젝트 핵심 정보**
+2. **[docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md)** ⚡ **1분, 작업 순서 필수!**
+3. **사용자에게 확인 보고** ← 이거 안 하면 작업 금지!
+
+### 📋 작업별 가이드 (필요시 검색)
+- **[docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md)** - Vercel 배포
+- **[docs/KAKAO_LOGIN_GUIDE.md](docs/KAKAO_LOGIN_GUIDE.md)** - 카카오 로그인 (Supabase)
+- **[docs/CRAWLING_GUIDE.md](docs/CRAWLING_GUIDE.md)** - 네이버 플레이스 크롤링 (Python)
+
+### 📖 참고 문서
+- **[docs/AI_LOG.md](docs/AI_LOG.md)** - 작업 이력 (완료 후 기록용)
+- **[docs/env.example.md](docs/env.example.md)** - 환경변수
+- **[docs/archive/](docs/archive/)** - 구식 문서
+
+---
+
+## ⚡ AI 작업 원칙
 
 ```
-처음이라면:       QUICK_START.md (3분)
-├─ 빠른 파악:     AI_LOG.md의 "최신 TOP 3" (1분)
-├─ 상세 확인:     AI_LOG.md 전체 (필요시)
-└─ 전체 계획:     PROJECT_PLAN.md (필요시)
+✅ 해야 할 것:
+- AI_START_HERE.md만 읽고 시작 (30초)
+- 필요한 정보는 grep/검색으로 찾기
+- 작업 완료 후 AI_LOG.md에 간단히 기록
+
+❌ 하지 말 것:
+- AI_LOG.md 전체 읽기 (1200줄, 메모리 낭비!)
+- 모든 가이드 문서 미리 읽기
+- 작업 전 과도한 컨텍스트 로드
 ```
 
-> ⚡ **중요**: 모든 작업 후에는 반드시 `docs/AI_LOG.md`에 변경사항을 기록해주세요!
+> 💡 **효율성**: 필요한 정보만 검색 → 메모리 절약 → 작업 성능 향상!
 
 ## ⚡ 빠른 배포 가이드
 
@@ -65,7 +71,7 @@
    ```
 
 3. **처음 배포하는 경우**
-   - 👉 **[docs/VERCEL_배포가이드.md](docs/VERCEL_배포가이드.md)** 참고
+   - 👉 **[docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md)** 참고
    - Vercel 계정 연동
    - 환경변수 설정 필수!
 
@@ -73,7 +79,7 @@
 
 - ✅ GitHub에 코드 푸시 완료
 - ✅ Vercel 프로젝트 연결
-- ✅ 환경변수 설정 ([템플릿](docs/환경변수_템플릿.env) 참고)
+- ✅ 환경변수 설정 ([템플릿](docs/env.example.md) 참고)
 - ✅ 배포 후 "실시간 목록 수집" 기능 테스트
 
 ---

@@ -600,7 +600,7 @@
                 </div>
                 <div class="app-label" style="font-size: 14px">채팅</div>
               </a>
-              <a class="app" href="/#review">
+              <a class="app" href="/review.html">
                 <div class="app-icon">
                   <i class="fa-solid fa-pen-nib" style="font-size: 20px"></i>
                 </div>
@@ -653,10 +653,9 @@
     <section class="hero">
       <div class="container">
         <div class="hero-box">
-          <h1 class="title">스마트 비즈니스 툴 허브</h1>
+          <h1 class="title">AI 리뷰 관리</h1>
           <p class="subtitle">
-            하단의 4가지 기능을 바로 사용할 수 있습니다. 동일 도메인에서
-            백엔드가 실행 중이라면 별도 CORS 설정 없이 동작합니다.
+            고객 리뷰를 분석하고 답글을 자동으로 생성합니다.
           </p>
         </div>
       </div>
@@ -664,84 +663,7 @@
 
     <main class="container">
       <div class="grid">
-        <!-- 1) ChatGPT 채팅 -->
-        <section id="chat" class="card half">
-          <div class="card-header">
-            <div class="title">
-              <i class="fa-solid fa-comments"></i> ChatGPT 채팅
-            </div>
-            <span class="small muted">POST /api/chat</span>
-          </div>
-          <div class="card-body">
-            <!-- Naver-style quick ChatGPT search -->
-            <div class="naver-search">
-              <form id="naverChatForm" class="ns-box">
-                <div class="ns-logo" aria-label="ChatGPT">
-                  <i class="fa-solid fa-comments"></i>
-                </div>
-                <input
-                  id="naverChatInput"
-                  class="ns-input"
-                  type="text"
-                  placeholder="무엇이 궁금하신가요? 예) 오늘 매출을 늘릴 방법 정리해줘"
-                  autocomplete="off"
-                />
-                <div class="ns-actions">
-                  <button
-                    type="submit"
-                    id="naverChatSubmit"
-                    class="ns-btn"
-                    aria-label="검색"
-                  >
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                  </button>
-                </div>
-              </form>
-              <div class="ns-shortcuts">
-                <button
-                  type="button"
-                  class="ns-chip"
-                  data-q="오늘 핫한 마케팅 아이디어 3가지"
-                >
-                  <i class="fa-regular fa-lightbulb"></i> 아이디어
-                </button>
-                <button
-                  type="button"
-                  class="ns-chip"
-                  data-q="리뷰에 공손하게 답장 작성해줘"
-                >
-                  <i class="fa-regular fa-message"></i> 리뷰답글
-                </button>
-                <button
-                  type="button"
-                  class="ns-chip"
-                  data-q="점심 특선 홍보 문구 1문장"
-                >
-                  <i class="fa-solid fa-bullhorn"></i> 홍보문구
-                </button>
-              </div>
-              <div
-                id="chatSearchOutput"
-                class="output"
-                style="display: none"
-              ></div>
-            </div>
-            <div class="row">
-              <label for="chatMessage">메시지</label>
-              <textarea
-                id="chatMessage"
-                placeholder="질문을 입력하세요..."
-              ></textarea>
-            </div>
-            <div class="actions">
-              <button class="btn primary" id="chatSend">전송</button>
-              <button class="btn ghost" id="chatClear">지우기</button>
-            </div>
-            <div id="chatOutput" class="output" style="min-height: 80px"></div>
-          </div>
-        </section>
-
-        <!-- 2) AI 리뷰작성 -->
+        <!-- AI 리뷰작성 -->
         <section id="review" class="card half">
           <div class="card-header">
             <div class="title">
@@ -772,101 +694,6 @@
               class="output"
               style="min-height: 80px"
             ></div>
-          </div>
-        </section>
-
-        <!-- 3) AI 블로그 작성 -->
-        <section id="blog" class="card">
-          <div class="card-header">
-            <div class="title">
-              <i class="fa-solid fa-blog"></i> AI 블로그 작성
-            </div>
-            <span class="small muted">POST /api/generate-blog</span>
-          </div>
-          <div class="card-body">
-            <div class="row cols-2">
-              <div>
-                <label for="storeName">가게명</label>
-                <input
-                  type="text"
-                  id="storeName"
-                  placeholder="예) 사장픽카페"
-                />
-              </div>
-              <div>
-                <label for="category">업종</label>
-                <input
-                  type="text"
-                  id="category"
-                  placeholder="예) 카페/디저트"
-                />
-              </div>
-            </div>
-            <div class="row cols-2">
-              <div>
-                <label for="blogStyle">블로그 스타일</label>
-                <select id="blogStyle">
-                  <option value="일상후기">일상후기</option>
-                  <option value="상세리뷰">상세리뷰</option>
-                  <option value="사진중심">사진중심</option>
-                  <option value="분위기중심">분위기중심</option>
-                </select>
-              </div>
-              <div>
-                <label for="wordCount">목표 글자수</label>
-                <input
-                  type="number"
-                  id="wordCount"
-                  value="800"
-                  min="300"
-                  max="4000"
-                />
-              </div>
-            </div>
-            <div class="actions">
-              <button class="btn primary" id="blogGenerate">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> 생성
-              </button>
-              <button class="btn ghost" id="blogClear">지우기</button>
-            </div>
-            <div id="blogOutput" class="output" style="min-height: 120px"></div>
-          </div>
-        </section>
-
-        <!-- 4) 키워드 검색 -->
-        <section id="keyword" class="card">
-          <div class="card-header">
-            <div class="title"><i class="fa-solid fa-key"></i> 키워드 검색</div>
-            <span class="small muted">POST /api/keywords</span>
-          </div>
-          <div class="card-body">
-            <div class="row cols-2">
-              <div>
-                <label for="keywordInput">검색 키워드</label>
-                <input type="text" id="keywordInput" placeholder="예) 치킨" />
-              </div>
-              <div class="actions" style="align-items: end">
-                <button class="btn primary" id="keywordSearch">
-                  <i class="fa-solid fa-search"></i> 검색
-                </button>
-                <button class="btn ghost" id="keywordClear">지우기</button>
-              </div>
-            </div>
-            <div id="keywordInfo" class="small muted"></div>
-            <div id="keywordOutput" class="output" style="display: none"></div>
-            <div style="overflow: auto">
-              <table class="table" id="keywordTable" style="display: none">
-                <thead>
-                  <tr>
-                    <th>키워드</th>
-                    <th>월간 PC</th>
-                    <th>월간 모바일</th>
-                    <th>경쟁도</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
           </div>
         </section>
       </div>
@@ -928,43 +755,7 @@
         ).toString();
       }
 
-      // 1) ChatGPT 채팅
-      const chatSendBtn = document.getElementById("chatSend");
-      const chatClearBtn = document.getElementById("chatClear");
-      chatSendBtn?.addEventListener("click", async () => {
-        const message = (
-          document.getElementById("chatMessage")?.value || ""
-        ).trim();
-        const out = document.getElementById("chatOutput");
-        if (!message) {
-          showError(out, { message: "메시지를 입력하세요." });
-          return;
-        }
-        setLoading(chatSendBtn, true, "전송 중...");
-        showOutput(out, "");
-        try {
-          const res = await fetch(`/api/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message }),
-          });
-          const data = await readJsonSafely(res);
-          if (!res.ok || data.success === false) throw data;
-          showOutput(out, data.reply || data);
-        } catch (e) {
-          showError(out, e);
-        } finally {
-          setLoading(chatSendBtn, false);
-        }
-      });
-      chatClearBtn?.addEventListener("click", () => {
-        const out = document.getElementById("chatOutput");
-        const ta = document.getElementById("chatMessage");
-        if (ta) ta.value = "";
-        showOutput(out, "");
-      });
-
-      // 2) AI 리뷰작성
+      // AI 리뷰작성
       const analyzeBtn = document.getElementById("analyzeBtn");
       const replyBtn = document.getElementById("replyBtn");
       analyzeBtn?.addEventListener("click", async () => {
@@ -1024,196 +815,6 @@
         }
       });
 
-      // 3) AI 블로그 작성
-      const blogBtn = document.getElementById("blogGenerate");
-      const blogClear = document.getElementById("blogClear");
-      blogBtn?.addEventListener("click", async () => {
-        const storeName = (
-          document.getElementById("storeName")?.value || ""
-        ).trim();
-        const category = (
-          document.getElementById("category")?.value || ""
-        ).trim();
-        const blogStyle = (
-          document.getElementById("blogStyle")?.value || ""
-        ).trim();
-        const wordCount = Number(
-          document.getElementById("wordCount")?.value || 800
-        );
-        const out = document.getElementById("blogOutput");
-        if (!storeName || !category || !blogStyle) {
-          showError(out, { message: "가게명/업종/스타일을 입력하세요." });
-          return;
-        }
-        setLoading(blogBtn, true, "생성 중...");
-        showOutput(out, "");
-        try {
-          const res = await fetch(`/api/generate-blog`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ storeName, category, blogStyle, wordCount }),
-          });
-          const data = await readJsonSafely(res);
-          if (!res.ok || data.success === false) throw data;
-          const steps = data.data || data;
-          const finalText =
-            steps.finalBlog ||
-            steps.step3_claude ||
-            steps.step2_gemini ||
-            steps.step1_chatgpt ||
-            steps;
-          const composed = [
-            steps.step1_chatgpt
-              ? "Step1(ChatGPT)\n\n" + steps.step1_chatgpt
-              : null,
-            steps.step2_gemini
-              ? "\n\nStep2(Gemini)\n\n" + steps.step2_gemini
-              : null,
-            steps.step3_claude
-              ? "\n\nStep3(Claude)\n\n" + steps.step3_claude
-              : null,
-            finalText ? "\n\n최종본\n\n" + finalText : null,
-          ]
-            .filter(Boolean)
-            .join("");
-          showOutput(out, composed || steps);
-        } catch (e) {
-          showError(out, e);
-        } finally {
-          setLoading(blogBtn, false);
-        }
-      });
-      blogClear?.addEventListener("click", () => {
-        ["storeName", "category"].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) el.value = "";
-        });
-        const out = document.getElementById("blogOutput");
-        showOutput(out, "");
-      });
-
-      // 4) 키워드 검색
-      const kwBtn = document.getElementById("keywordSearch");
-      const kwClear = document.getElementById("keywordClear");
-      kwBtn?.addEventListener("click", async () => {
-        const DataQ = (
-          document.getElementById("keywordInput")?.value || ""
-        ).trim();
-        const info = document.getElementById("keywordInfo");
-        const out = document.getElementById("keywordOutput");
-        const table = document.getElementById("keywordTable");
-        const tbody = table?.querySelector("tbody");
-        if (!DataQ) {
-          showError(out, { message: "검색 키워드를 입력하세요." });
-          table.style.display = "none";
-          return;
-        }
-        setLoading(kwBtn, true, "검색 중...");
-        out.style.display = "none";
-        info.textContent = "";
-        table.style.display = "none";
-        if (tbody) tbody.innerHTML = "";
-        try {
-          const res = await fetch(`/api/keywords`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ DataQ }),
-          });
-          const data = await readJsonSafely(res);
-          if (!res.ok) throw data;
-          const list = data.keywordList || data.results || [];
-          info.textContent = `검색어: ${DataQ} | 총 ${list.length || 0}개 결과`;
-          if (list.length > 0 && tbody) {
-            list.slice(0, 50).forEach((item) => {
-              const tr = document.createElement("tr");
-              const name = item.relKeyword || item.keyword || "-";
-              const pc = item.monthlyPcQcCnt ?? "-";
-              const mobile = item.monthlyMobileQcCnt ?? "-";
-              const comp = item.compIdx ?? item.competition ?? "-";
-              tr.innerHTML = `<td>${name}</td><td>${pc}</td><td>${mobile}</td><td>${comp}</td>`;
-              tbody.appendChild(tr);
-            });
-            table.style.display = "table";
-          } else {
-            showOutput(out, data);
-          }
-        } catch (e) {
-          showError(out, e);
-        } finally {
-          setLoading(kwBtn, false);
-        }
-      });
-      kwClear?.addEventListener("click", () => {
-        const info = document.getElementById("keywordInfo");
-        const out = document.getElementById("keywordOutput");
-        const table = document.getElementById("keywordTable");
-        const tbody = table?.querySelector("tbody");
-        document.getElementById("keywordInput").value = "";
-        info.textContent = "";
-        showOutput(out, "");
-        if (tbody) tbody.innerHTML = "";
-        table.style.display = "none";
-      });
-
-      // Unify ChatGPT quick search handlers (top + card)
-      function bindChatForm({ formId, inputId, submitId, outId, chipScope }) {
-        const form = document.getElementById(formId);
-        const input = document.getElementById(inputId);
-        const submit = document.getElementById(submitId);
-        const out = document.getElementById(outId);
-        form?.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const message = (input?.value || "").trim();
-          if (!message) {
-            showError(out, { message: "검색어를 입력하세요." });
-            return;
-          }
-          setLoading(submit, true, "검색 중...");
-          out.style.display = "block";
-          showOutput(out, "");
-          try {
-            const res = await fetch(`/api/chat`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ message }),
-            });
-            const data = await readJsonSafely(res);
-            if (!res.ok || data.success === false) throw data;
-            showOutput(out, data.reply || data);
-          } catch (e) {
-            showError(out, e);
-          } finally {
-            setLoading(submit, false);
-          }
-        });
-        if (chipScope) {
-          document
-            .querySelectorAll(`${chipScope} .ns-chip`)
-            ?.forEach((chip) => {
-              chip.addEventListener("click", () => {
-                const q = chip.getAttribute("data-q") || "";
-                if (input) input.value = q;
-                form?.dispatchEvent(new Event("submit"));
-              });
-            });
-        }
-      }
-
-      bindChatForm({
-        formId: "naverChatForm",
-        inputId: "naverChatInput",
-        submitId: "naverChatSubmit",
-        outId: "chatSearchOutput",
-        chipScope: ".naver-search",
-      });
-
-      bindChatForm({
-        formId: "topNaverChatForm",
-        inputId: "topNaverChatInput",
-        submitId: "topNaverChatSubmit",
-        outId: "topChatSearchOutput",
-        chipScope: ".top-search",
-      });
 
       // 강제 적용: 일부 기기에서 캐시/브라우저 이슈로 CSS가 즉시 반영되지 않는 문제 보완
       (function enforceMobileLayout() {

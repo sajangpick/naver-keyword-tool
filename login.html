@@ -358,7 +358,6 @@
       });
 
       // DOM elements
-      const kakaoLoginBtn = document.getElementById("kakaoLogin");
       const errorMessage = document.getElementById("errorMessage");
       const successMessage = document.getElementById("successMessage");
       const loading = document.getElementById("loading");
@@ -393,11 +392,35 @@
         loading.style.display = "none";
       }
 
-      // Kakao 로그인 (서버 OAuth)
-      kakaoLoginBtn.addEventListener("click", () => {
-        // 서버의 카카오 로그인 엔드포인트로 리다이렉트
-        window.location.href = "/auth/kakao/login";
-      });
+      // Kakao 로그인 (Supabase OAuth 방식)
+      const kakaoLoginBtn = document.getElementById("kakaoLogin");
+      if (kakaoLoginBtn) {
+        kakaoLoginBtn.addEventListener("click", async () => {
+          try {
+            showLoading();
+            hideMessages();
+            
+            // Supabase OAuth를 사용한 카카오 로그인
+            const { data, error } = await supabase.auth.signInWithOAuth({
+              provider: 'kakao',
+              options: {
+                redirectTo: window.location.origin + '/login.html'
+              }
+            });
+
+            if (error) {
+              hideLoading();
+              showError('로그인 실패: ' + error.message);
+              console.error('카카오 로그인 오류:', error);
+            }
+            // 성공 시 자동으로 카카오 페이지로 리다이렉트됨
+          } catch (err) {
+            hideLoading();
+            showError('로그인 중 오류가 발생했습니다.');
+            console.error('로그인 오류:', err);
+          }
+        });
+      }
     </script>
   </body>
 </html>

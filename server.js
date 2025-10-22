@@ -208,6 +208,10 @@ app.get("/mypage.html", (req, res) => sendHtml(res, "mypage.html"));
 // 플순위는 어드민 전용으로만 접근 허용 (일반 경로는 홈으로 리다이렉트)
 app.get("/rank-report.html", (req, res) => res.redirect("/"));
 app.get("/admin/rank-report.html", (req, res) => sendHtml(res, "admin/rank-report.html"));
+// Supabase 테스트 페이지
+app.get("/supabase-test.html", (req, res) => sendHtml(res, "supabase-test.html"));
+// 리뷰 페이지
+app.get("/review.html", (req, res) => sendHtml(res, "review.html"));
 
 // Rate limiting
 const requestCounts = new Map();
@@ -700,6 +704,16 @@ app.post("/auth/logout", (req, res) => {
   res.setHeader("Set-Cookie", setCookies);
   res.json({ success: true });
 });
+
+// ==================== Supabase 테스트 API ====================
+
+// Supabase 연결 테스트 (로컬에서 데이터 확인)
+const testSupabaseHandler = require("./api/test-supabase");
+app.get("/api/test-supabase", testSupabaseHandler);
+
+// Supabase CRUD (데이터 추가/수정/삭제)
+const supabaseCrudHandler = require("./api/supabase-crud");
+app.post("/api/supabase-crud", supabaseCrudHandler);
 
 // ==================== 크롤링 API (Vercel Functions를 로컬에서 연결) ====================
 

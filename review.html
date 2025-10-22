@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 리뷰 관리 - 사장픽</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Noto Sans KR", Arial, sans-serif;
+        background: #f7f9fb;
+        color: #111827;
+        min-height: 100vh;
+      }
+      :root {
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --naver-green-50: #e6f9f0;
+      }
+
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .header-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .logo {
+        font-weight: 800;
+        font-size: 24px;
+        color: #111827;
+        cursor: pointer;
+      }
+      .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #374151;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .back-btn:hover {
+        background: var(--naver-green-50);
+        color: var(--naver-green);
+        border-color: var(--naver-green);
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 24px;
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      .hero h1 {
+        font-size: 36px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 12px;
+      }
+      .hero p {
+        font-size: 16px;
+        color: #6b7280;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+      .card-header .title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .card-body {
+        padding: 24px;
+        display: grid;
+        gap: 20px;
+      }
+
+      label {
+        font-size: 14px;
+        color: #374151;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+      }
+      textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        outline: none;
+        font-size: 15px;
+        min-height: 150px;
+        resize: vertical;
+        font-family: inherit;
+      }
+      textarea:focus {
+        border-color: var(--naver-green);
+        box-shadow: 0 0 0 3px var(--naver-green-50);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #111827;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.2s;
+      }
+      .btn:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+      }
+      .btn.primary {
+        background: var(--naver-green);
+        color: #fff;
+        border-color: var(--naver-green);
+      }
+      .btn.primary:hover {
+        background: var(--naver-green-dark);
+        border-color: var(--naver-green-dark);
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .output {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 20px;
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 14px;
+        color: #111827;
+        min-height: 100px;
+        line-height: 1.6;
+      }
+      .output:empty::before {
+        content: "결과가 여기에 표시됩니다...";
+        color: #9ca3af;
+      }
+      .output.error {
+        border-color: #fecaca;
+        background: #fff1f2;
+        color: #991b1b;
+      }
+
+      .small {
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      @media (max-width: 768px) {
+        .hero h1 {
+          font-size: 28px;
+        }
+        .container {
+          padding: 24px 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo" onclick="location.href='/'">사장픽</div>
+        <a href="/" class="back-btn">
+          <i class="fa-solid fa-arrow-left"></i>
+          메인으로
+        </a>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="hero">
+        <h1>🎯 AI 리뷰 관리</h1>
+        <p>고객 리뷰를 분석하고 전문적인 답글을 자동으로 생성합니다</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="title">
+            <i class="fa-solid fa-pen-nib"></i> 리뷰 분석 & 답글 생성
+          </div>
+          <span class="small">POST /api/analyze-review, /api/generate-reply</span>
+        </div>
+        <div class="card-body">
+          <div>
+            <label for="reviewText">
+              <i class="fa-solid fa-message"></i> 고객 리뷰 원문
+            </label>
+            <textarea
+              id="reviewText"
+              placeholder="고객이 작성한 리뷰 내용을 입력하세요...&#10;&#10;예시:&#10;음식이 정말 맛있었어요! 특히 불고기가 일품이었습니다. 다만 대기 시간이 좀 길었던 게 아쉬워요. 직원분들은 친절하셨습니다."
+            ></textarea>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="analyzeBtn">
+              <i class="fa-solid fa-magnifying-glass-chart"></i> 리뷰 분석
+            </button>
+            <button class="btn primary" id="replyBtn">
+              <i class="fa-solid fa-reply"></i> 답글 생성
+            </button>
+          </div>
+
+          <div id="reviewOutput" class="output"></div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // 공통 유틸
+      function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
+        if (!el) return;
+        el.dataset._originalText = el.dataset._originalText || el.textContent;
+        el.disabled = !!isLoading;
+        el.textContent = isLoading ? textWhenLoading : el.dataset._originalText;
+      }
+
+      async function readJsonSafely(res) {
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          try {
+            return await res.json();
+          } catch (_) {
+            return { error: "JSON 파싱 실패", status: res.status };
+          }
+        }
+        try {
+          const text = await res.text();
+          return text
+            ? { error: text, status: res.status }
+            : { status: res.status };
+        } catch (_) {
+          return { error: "응답 본문을 읽을 수 없습니다.", status: res.status };
+        }
+      }
+
+      function showOutput(el, data) {
+        if (!el) return;
+        el.classList.remove("error");
+        el.style.display = "block";
+        try {
+          if (typeof data === "string") {
+            el.textContent = data.trim();
+          } else {
+            el.textContent = JSON.stringify(data, null, 2);
+          }
+        } catch (e) {
+          el.textContent = String(data);
+        }
+      }
+
+      function showError(el, err) {
+        if (!el) return;
+        el.classList.add("error");
+        el.style.display = "block";
+        el.textContent = (
+          err?.error ||
+          err?.message ||
+          err?.raw ||
+          err?.errorText ||
+          "오류가 발생했습니다."
+        ).toString();
+      }
+
+      // 리뷰 분석
+      const analyzeBtn = document.getElementById("analyzeBtn");
+      const replyBtn = document.getElementById("replyBtn");
+
+      analyzeBtn?.addEventListener("click", async () => {
+        const reviewText = (
+          document.getElementById("reviewText")?.value || ""
+        ).trim();
+        const out = document.getElementById("reviewOutput");
+        
+        if (!reviewText) {
+          showError(out, { message: "리뷰 원문을 입력하세요." });
+          return;
+        }
+        
+        setLoading(analyzeBtn, true, "분석 중...");
+        showOutput(out, "");
+        
+        try {
+          const res = await fetch(`/api/analyze-review`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              reviewText,
+              analysisType: "comprehensive",
+              options: [],
+            }),
+          });
+          const data = await readJsonSafely(res);
+          if (!res.ok || data.success === false) throw data;
+          showOutput(out, data.data || data);
+        } catch (e) {
+          showError(out, e);
+        } finally {
+          setLoading(analyzeBtn, false);
+        }
+      });
+
+      // 답글 생성
+      replyBtn?.addEventListener("click", async () => {
+        const reviewText = (
+          document.getElementById("reviewText")?.value || ""
+        ).trim();
+        const out = document.getElementById("reviewOutput");
+        
+        if (!reviewText) {
+          showError(out, { message: "리뷰 원문을 입력하세요." });
+          return;
+        }
+        
+        setLoading(replyBtn, true, "생성 중...");
+        showOutput(out, "");
+        
+        try {
+          const res = await fetch(`/api/generate-reply`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reviewText }),
+          });
+          const data = await readJsonSafely(res);
+          if (!res.ok || data.success === false) throw data;
+          showOutput(out, data.data?.reply || data.reply || data);
+        } catch (e) {
+          showError(out, e);
+        } finally {
+          setLoading(replyBtn, false);
+        }
+      });
+    </script>
+  </body>
+</html>
+
