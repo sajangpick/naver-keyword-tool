@@ -9,245 +9,461 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E"
     />
     <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
+    <script src="/assets/common-header.js?v=20251022" defer></script>
     <style>
+      :root {
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --naver-green-50: #e6f9f0;
+        --bg: #f7f9fb;
+      }
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
+
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
           "Noto Sans KR", Arial, sans-serif;
-        background: #f7f9fb;
-        color: #111827;
+        background: var(--bg);
         min-height: 100vh;
-      }
-      :root {
-        --naver-green: #03c75a;
-        --naver-green-dark: #02b14f;
-        --naver-green-50: #e6f9f0;
+        color: #111827;
       }
 
       .header {
-        position: sticky;
-        top: 0;
-        z-index: 50;
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(8px);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
         border-bottom: 1px solid #e5e7eb;
       }
-      .header-inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 24px;
-        max-width: 1200px;
+
+      .nav-container {
+        max-width: 1400px;
         margin: 0 auto;
-      }
-      .logo {
-        font-weight: 800;
-        font-size: 24px;
-        color: #111827;
-        cursor: pointer;
-      }
-      .back-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #374151;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 600;
-      }
-      .back-btn:hover {
-        background: var(--naver-green-50);
-        color: var(--naver-green);
-        border-color: var(--naver-green);
-      }
-
-      .container {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 40px 24px;
-      }
-
-      .hero {
-        text-align: center;
-        margin-bottom: 40px;
-      }
-      .hero h1 {
-        font-size: 36px;
-        font-weight: 800;
-        color: #111827;
-        margin-bottom: 12px;
-      }
-      .hero p {
-        font-size: 16px;
-        color: #6b7280;
-      }
-
-      .card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-      }
-      .card-header {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
-        padding: 20px 24px;
-        border-bottom: 1px solid #f3f4f6;
-        background: #fafafa;
-      }
-      .card-header .title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 18px;
-        font-weight: 700;
-        color: #111827;
-      }
-      .card-body {
-        padding: 24px;
-        display: grid;
+        padding: 20px 20px;
         gap: 20px;
       }
 
-      label {
-        font-size: 14px;
-        color: #374151;
-        font-weight: 600;
-        margin-bottom: 8px;
-        display: block;
-      }
-      textarea {
+      .top-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         width: 100%;
-        padding: 12px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        outline: none;
-        font-size: 15px;
-        min-height: 150px;
-        resize: vertical;
-        font-family: inherit;
-      }
-      textarea:focus {
-        border-color: var(--naver-green);
-        box-shadow: 0 0 0 3px var(--naver-green-50);
+        position: relative;
       }
 
-      .actions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 20px;
-        border-radius: 10px;
-        border: 1px solid #e5e7eb;
-        background: #fff;
+      .logo {
+        font-size: 32px;
+        font-weight: 800;
         color: #111827;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        letter-spacing: -1px;
+      }
+
+      .logo:hover {
+        transform: scale(1.05);
+        color: var(--naver-green);
+      }
+
+      .nav-menu {
+        display: flex;
+        list-style: none;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+        position: relative;
+      }
+
+      .nav-menu li {
+        position: relative;
+      }
+
+      .nav-menu a {
+        text-decoration: none;
+        color: #333;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        padding: 12px 18px;
+        display: block;
+        border-radius: 8px;
+        position: relative;
+      }
+
+      .nav-menu a:hover {
+        color: var(--naver-green);
+        background: var(--naver-green-50);
+        transform: translateY(-1px);
+      }
+
+      .nav-menu a.active {
+        color: white;
+        background: var(--naver-green);
+        font-weight: 700;
+        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
+      }
+
+      .user-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        position: absolute;
+        right: 0;
+      }
+
+      .login-btn,
+      .signup-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .login-btn {
+        background: var(--naver-green);
+        color: white;
+        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
+      }
+
+      .signup-btn {
+        background: transparent;
+        color: var(--naver-green);
+        border: 2px solid var(--naver-green);
+      }
+
+      .login-btn:hover,
+      .signup-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(3, 199, 90, 0.35);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 50px 20px;
+      }
+
+      .page-header {
+        text-align: center;
+        margin-bottom: 50px;
+        color: #2c3e50;
+      }
+
+      .page-header h1 {
+        font-size: 2.8rem;
+        margin-bottom: 15px;
+        font-weight: 700;
+        letter-spacing: -1px;
+      }
+
+      .page-header p {
+        font-size: 1.1rem;
+        color: #7f8c8d;
+        font-weight: 400;
+      }
+
+      .review-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin-bottom: 30px;
+      }
+
+      .review-header {
+        background: linear-gradient(
+          135deg,
+          var(--naver-green),
+          var(--naver-green-dark)
+        );
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .review-header h2 {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+
+      .review-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .review-content {
+        padding: 40px;
+      }
+
+      .form-group {
+        margin-bottom: 30px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 12px;
+        color: #374151;
+        font-weight: 600;
+        font-size: 16px;
+      }
+
+      .form-group label i {
+        margin-right: 8px;
+        color: var(--naver-green);
+      }
+
+      .form-group textarea {
+        width: 100%;
+        padding: 15px 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 180px;
+        line-height: 1.6;
+      }
+
+      .form-group textarea:focus {
+        outline: none;
+        border-color: var(--naver-green);
+        box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.15);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+      }
+
+      .btn {
+        padding: 15px 30px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
         cursor: pointer;
         font-weight: 600;
         font-size: 15px;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+        background: white;
+        color: #374151;
       }
+
       .btn:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
       }
+
       .btn.primary {
-        background: var(--naver-green);
-        color: #fff;
+        background: linear-gradient(
+          135deg,
+          var(--naver-green),
+          var(--naver-green-dark)
+        );
+        color: white;
         border-color: var(--naver-green);
       }
+
       .btn.primary:hover {
-        background: var(--naver-green-dark);
-        border-color: var(--naver-green-dark);
+        box-shadow: 0 6px 20px rgba(3, 199, 90, 0.35);
       }
+
       .btn:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+        transform: none;
       }
 
-      .output {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 20px;
+      .result-section {
+        background: #f8fafc;
+        padding: 30px;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+        min-height: 200px;
+      }
+
+      .result-section h3 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .result-content {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
         white-space: pre-wrap;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
-        font-size: 14px;
-        color: #111827;
-        min-height: 100px;
-        line-height: 1.6;
+        line-height: 1.8;
+        color: #374151;
+        font-size: 15px;
       }
-      .output:empty::before {
-        content: "결과가 여기에 표시됩니다...";
+
+      .result-content:empty::before {
+        content: "분석 결과가 여기에 표시됩니다...";
         color: #9ca3af;
+        font-style: italic;
       }
-      .output.error {
-        border-color: #fecaca;
+
+      .result-content.error {
         background: #fff1f2;
+        border-color: #fecaca;
         color: #991b1b;
       }
 
-      .small {
-        font-size: 13px;
-        color: #6b7280;
+      .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid var(--naver-green);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .info-box {
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 30px;
+      }
+
+      .info-box h4 {
+        color: #1976d2;
+        margin-bottom: 12px;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .info-box ul {
+        color: #1565c0;
+        font-size: 14px;
+        line-height: 1.8;
+        margin-left: 20px;
       }
 
       @media (max-width: 768px) {
-        .hero h1 {
-          font-size: 28px;
+        .top-nav {
+          flex-direction: column;
+          gap: 10px;
         }
-        .container {
-          padding: 24px 16px;
+        .user-actions {
+          position: static;
+          right: auto;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .nav-menu {
+          justify-content: flex-start;
+          overflow-x: auto;
+          white-space: nowrap;
+          padding: 5px 0;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .nav-menu::-webkit-scrollbar {
+          display: none;
+        }
+
+        .nav-menu li {
+          flex-shrink: 0;
+        }
+
+        .nav-menu a {
+          font-size: 12px;
+          padding: 8px 12px;
+          white-space: nowrap;
+        }
+
+        .page-header h1 {
+          font-size: 2.2rem;
+        }
+
+        .review-content {
+          padding: 20px;
+        }
+
+        .button-group {
+          flex-direction: column;
+        }
+
+        .btn {
+          width: 100%;
+          justify-content: center;
         }
       }
     </style>
   </head>
   <body>
-    <header class="header">
-      <div class="header-inner">
-        <div class="logo" onclick="location.href='/'">사장픽</div>
-        <a href="/" class="back-btn">
-          <i class="fa-solid fa-arrow-left"></i>
-          메인으로
-        </a>
-      </div>
-    </header>
+    <!-- 공통 헤더는 /assets/common-header.js 가 자동 주입합니다 -->
 
-    <main class="container">
-      <div class="hero">
-        <h1>🎯 AI 리뷰 관리</h1>
+    <div class="container">
+      <div class="page-header">
+        <h1>AI 리뷰 관리</h1>
         <p>고객 리뷰를 분석하고 전문적인 답글을 자동으로 생성합니다</p>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="title">
-            <i class="fa-solid fa-pen-nib"></i> 리뷰 분석 & 답글 생성
-          </div>
-          <span class="small">POST /api/analyze-review, /api/generate-reply</span>
+      <div class="review-container">
+        <div class="review-header">
+          <h2>🎯 리뷰 분석 & 답글 생성</h2>
+          <p>고객의 리뷰를 입력하면 AI가 자동으로 분석하고 답글을 작성해드립니다</p>
         </div>
-        <div class="card-body">
-          <div>
+
+        <div class="review-content">
+          <div class="form-group">
             <label for="reviewText">
-              <i class="fa-solid fa-message"></i> 고객 리뷰 원문
+              <i class="fa-solid fa-message"></i>
+              고객 리뷰 원문
             </label>
             <textarea
               id="reviewText"
@@ -255,27 +471,69 @@
             ></textarea>
           </div>
 
-          <div class="actions">
+          <div class="button-group">
             <button class="btn" id="analyzeBtn">
-              <i class="fa-solid fa-magnifying-glass-chart"></i> 리뷰 분석
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              리뷰 분석하기
             </button>
             <button class="btn primary" id="replyBtn">
-              <i class="fa-solid fa-reply"></i> 답글 생성
+              <i class="fa-solid fa-reply"></i>
+              답글 생성하기
             </button>
           </div>
 
-          <div id="reviewOutput" class="output"></div>
+          <div class="result-section">
+            <h3>
+              <i class="fa-solid fa-chart-bar"></i>
+              분석 결과
+            </h3>
+            <div id="reviewOutput" class="result-content"></div>
+          </div>
+
+          <div class="info-box">
+            <h4>
+              <i class="fa-solid fa-info-circle"></i>
+              기능 안내
+            </h4>
+            <ul>
+              <li>
+                <strong>리뷰 분석하기:</strong> 고객 리뷰의 감정, 주요 키워드,
+                긍정/부정 요소를 종합적으로 분석합니다.
+              </li>
+              <li>
+                <strong>답글 생성하기:</strong> 분석 결과를 바탕으로 전문적이고
+                공손한 답글을 자동으로 작성합니다.
+              </li>
+              <li>
+                리뷰 내용이 길수록 더 정확한 분석 결과를 얻을 수 있습니다.
+              </li>
+              <li>생성된 답글은 수정하여 사용하실 수 있습니다.</li>
+            </ul>
+          </div>
         </div>
       </div>
-    </main>
+    </div>
 
     <script>
-      // 공통 유틸
+      // 백엔드 서버 설정: 상대 경로(`/api`) 사용
+      console.log("Using backend URL:", "/api");
+
+      // DOM 요소
+      const reviewText = document.getElementById("reviewText");
+      const analyzeBtn = document.getElementById("analyzeBtn");
+      const replyBtn = document.getElementById("replyBtn");
+      const reviewOutput = document.getElementById("reviewOutput");
+
+      // 공통 유틸리티 함수
       function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
         if (!el) return;
         el.dataset._originalText = el.dataset._originalText || el.textContent;
         el.disabled = !!isLoading;
-        el.textContent = isLoading ? textWhenLoading : el.dataset._originalText;
+        if (isLoading) {
+          el.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${textWhenLoading}`;
+        } else {
+          el.textContent = el.dataset._originalText;
+        }
       }
 
       async function readJsonSafely(res) {
@@ -297,26 +555,22 @@
         }
       }
 
-      function showOutput(el, data) {
-        if (!el) return;
-        el.classList.remove("error");
-        el.style.display = "block";
+      function showOutput(data) {
+        reviewOutput.classList.remove("error");
         try {
           if (typeof data === "string") {
-            el.textContent = data.trim();
+            reviewOutput.textContent = data.trim();
           } else {
-            el.textContent = JSON.stringify(data, null, 2);
+            reviewOutput.textContent = JSON.stringify(data, null, 2);
           }
         } catch (e) {
-          el.textContent = String(data);
+          reviewOutput.textContent = String(data);
         }
       }
 
-      function showError(el, err) {
-        if (!el) return;
-        el.classList.add("error");
-        el.style.display = "block";
-        el.textContent = (
+      function showError(err) {
+        reviewOutput.classList.add("error");
+        reviewOutput.textContent = (
           err?.error ||
           err?.message ||
           err?.raw ||
@@ -325,75 +579,116 @@
         ).toString();
       }
 
-      // 리뷰 분석
-      const analyzeBtn = document.getElementById("analyzeBtn");
-      const replyBtn = document.getElementById("replyBtn");
+      // 리뷰 분석 버튼 클릭
+      analyzeBtn.addEventListener("click", async () => {
+        const text = reviewText.value.trim();
 
-      analyzeBtn?.addEventListener("click", async () => {
-        const reviewText = (
-          document.getElementById("reviewText")?.value || ""
-        ).trim();
-        const out = document.getElementById("reviewOutput");
-        
-        if (!reviewText) {
-          showError(out, { message: "리뷰 원문을 입력하세요." });
+        if (!text) {
+          showError({ message: "리뷰 원문을 입력하세요." });
           return;
         }
-        
+
         setLoading(analyzeBtn, true, "분석 중...");
-        showOutput(out, "");
-        
+        reviewOutput.textContent = "";
+
         try {
           const res = await fetch(`/api/analyze-review`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              reviewText,
+              reviewText: text,
               analysisType: "comprehensive",
               options: [],
             }),
           });
+
           const data = await readJsonSafely(res);
+
           if (!res.ok || data.success === false) throw data;
-          showOutput(out, data.data || data);
+
+          showOutput(data.data || data);
         } catch (e) {
-          showError(out, e);
+          showError(e);
         } finally {
           setLoading(analyzeBtn, false);
         }
       });
 
-      // 답글 생성
-      replyBtn?.addEventListener("click", async () => {
-        const reviewText = (
-          document.getElementById("reviewText")?.value || ""
-        ).trim();
-        const out = document.getElementById("reviewOutput");
-        
-        if (!reviewText) {
-          showError(out, { message: "리뷰 원문을 입력하세요." });
+      // 답글 생성 버튼 클릭
+      replyBtn.addEventListener("click", async () => {
+        const text = reviewText.value.trim();
+
+        if (!text) {
+          showError({ message: "리뷰 원문을 입력하세요." });
           return;
         }
-        
+
         setLoading(replyBtn, true, "생성 중...");
-        showOutput(out, "");
-        
+        reviewOutput.textContent = "";
+
         try {
           const res = await fetch(`/api/generate-reply`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ reviewText }),
+            body: JSON.stringify({ reviewText: text }),
           });
+
           const data = await readJsonSafely(res);
+
           if (!res.ok || data.success === false) throw data;
-          showOutput(out, data.data?.reply || data.reply || data);
+
+          showOutput(data.data?.reply || data.reply || data);
         } catch (e) {
-          showError(out, e);
+          showError(e);
         } finally {
           setLoading(replyBtn, false);
         }
       });
+
+      // 페이지 로드 시 초기화
+      window.addEventListener("load", function () {
+        reviewText.focus();
+        checkLoginStatus();
+      });
+
+      // 로그인 상태 확인 및 UI 업데이트
+      function checkLoginStatus() {
+        const isLoggedIn = localStorage.getItem("isLoggedIn");
+        const userData = localStorage.getItem("userData");
+
+        const loginBtn = document.querySelector(".login-btn");
+        const signupBtns = document.querySelectorAll(".signup-btn");
+
+        if (isLoggedIn === "true" && userData) {
+          try {
+            const user = JSON.parse(userData);
+
+            // 로그인 버튼 숨기기
+            if (loginBtn) loginBtn.style.display = "none";
+
+            // 회원가입 버튼은 로그아웃 버튼으로 변경
+            if (signupBtns.length > 0) {
+              signupBtns[0].textContent = "로그아웃";
+              signupBtns[0].onclick = function (e) {
+                e.preventDefault();
+                if (confirm("로그아웃 하시겠습니까?")) {
+                  localStorage.removeItem("isLoggedIn");
+                  localStorage.removeItem("userData");
+                  location.href = "index.html";
+                }
+              };
+            }
+          } catch (e) {
+            console.error("로그인 정보 파싱 오류:", e);
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userData");
+          }
+        } else {
+          // 로그인하지 않은 상태
+          if (loginBtn) loginBtn.style.display = "inline-block";
+          signupBtns.forEach((btn) => (btn.style.display = "inline-block"));
+        }
+      }
     </script>
   </body>
 </html>
-

@@ -72,7 +72,7 @@
         <div class="top-actions-row top-actions">
           <div class="top-apps" style="padding:0">
             <a class="app" href="/ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
-            <a class="app" href="/index.html#review"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
+            <a class="app" href="/review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
             <a class="app" href="/Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
             <a class="app" href="/naver_search.html"><div class="app-icon"><i class="fa-solid fa-key" style="font-size:20px"></i></div><div class="app-label">키워드</div></a>
             

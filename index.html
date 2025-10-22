@@ -52,10 +52,6 @@
       main.container {
         padding-top: calc(var(--section-gap) / 2);
       }
-      /* Normalize hero container: only horizontal padding, no extra vertical spacing */
-      .hero .container {
-        padding: 0 24px;
-      }
       .header {
         position: sticky;
         top: 0;
@@ -101,33 +97,6 @@
       .nav a:hover {
         background: var(--naver-green-50);
         color: var(--naver-green);
-      }
-
-      .hero {
-        background: transparent;
-        padding: 0; /* remove extra vertical space, grid margin governs gap */
-      }
-      .hero .title {
-        color: #ffffff;
-        font-size: 34px;
-        font-weight: 800;
-        line-height: 1.2;
-        margin-bottom: var(--section-gap);
-      }
-      .hero .subtitle {
-        color: rgba(255, 255, 255, 0.92);
-        font-size: 16px;
-      }
-      .hero-box {
-        background: linear-gradient(
-          135deg,
-          var(--naver-green),
-          var(--naver-green-dark)
-        );
-        border-radius: 16px;
-        padding: var(--section-pad);
-        max-width: none; /* restore original width */
-        margin: 0 auto;
       }
 
       .grid {
@@ -546,10 +515,6 @@
           min-width: 0 !important; /* 5등분을 막는 최소폭 제약 제거 */
           width: 100% !important;
         }
-        /* 2) 스마트 비즈니스 툴 허브 배너는 모바일에서 숨김 */
-        .hero {
-          display: none !important;
-        }
       }
     </style>
   </head>
@@ -650,180 +615,96 @@
       </section>
     </header>
 
-    <section class="hero">
-      <div class="container">
-        <div class="hero-box">
-          <h1 class="title">AI 리뷰 관리</h1>
-          <p class="subtitle">
-            고객 리뷰를 분석하고 답글을 자동으로 생성합니다.
-          </p>
-        </div>
-      </div>
-    </section>
-
     <main class="container">
       <div class="grid">
+        <!-- ChatGPT 채팅 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fa-solid fa-comments" style="color: var(--chatgpt-green)"></i> ChatGPT 채팅
+            </div>
+            <span class="small muted">POST /api/chat</span>
+          </div>
+          <div class="card-body">
+            <p style="color: #6b7280; margin-bottom: 16px;">
+              AI와 실시간으로 대화하며 궁금한 것들을 물어보세요. 아이디어, 리뷰답글, 홍보문구 등 다양한 도움을 받을 수 있습니다.
+            </p>
+            <div class="actions">
+              <a href="/ChatGPT.html" class="btn primary" style="text-decoration: none;">
+                <i class="fa-solid fa-arrow-right"></i> 채팅 시작하기
+              </a>
+            </div>
+          </div>
+        </section>
+
         <!-- AI 리뷰작성 -->
-        <section id="review" class="card half">
+        <section class="card">
           <div class="card-header">
             <div class="title">
               <i class="fa-solid fa-pen-nib"></i> AI 리뷰작성
             </div>
-            <span class="small muted"
-              >POST /api/analyze-review, POST /api/generate-reply</span
-            >
+            <span class="small muted">POST /api/analyze-review, POST /api/generate-reply</span>
           </div>
           <div class="card-body">
-            <div class="row">
-              <label for="reviewText">리뷰 원문</label>
-              <textarea
-                id="reviewText"
-                placeholder="고객 리뷰 내용을 입력하세요..."
-              ></textarea>
-            </div>
+            <p style="color: #6b7280; margin-bottom: 16px;">
+              고객 리뷰를 분석하고 전문적인 답글을 자동으로 생성합니다. 긍정/부정 감정 분석과 함께 공손한 답변을 작성해드립니다.
+            </p>
             <div class="actions">
-              <button class="btn" id="analyzeBtn">
-                <i class="fa-solid fa-magnifying-glass-chart"></i> 리뷰 분석
-              </button>
-              <button class="btn primary" id="replyBtn">
-                <i class="fa-solid fa-reply"></i> 답글 생성
-              </button>
+              <a href="/review.html" class="btn primary" style="text-decoration: none;">
+                <i class="fa-solid fa-arrow-right"></i> 리뷰 관리 시작하기
+              </a>
             </div>
-            <div
-              id="reviewOutput"
-              class="output"
-              style="min-height: 80px"
-            ></div>
+          </div>
+        </section>
+
+        <!-- AI 블로그 작성 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fa-solid fa-blog"></i> AI 블로그 작성
+            </div>
+            <span class="small muted">POST /api/generate-blog</span>
+          </div>
+          <div class="card-body">
+            <p style="color: #6b7280; margin-bottom: 16px;">
+              ChatGPT, Gemini, Claude 3단계 AI로 완성하는 가게 리뷰 블로그를 생성합니다. 다양한 스타일과 글자 수 조절이 가능합니다.
+            </p>
+            <div class="actions">
+              <a href="/Blog-Editor.html" class="btn primary" style="text-decoration: none;">
+                <i class="fa-solid fa-arrow-right"></i> 블로그 생성하기
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- 키워드 검색 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fa-solid fa-key"></i> 키워드 검색
+            </div>
+            <span class="small muted">POST /api/keywords</span>
+          </div>
+          <div class="card-body">
+            <p style="color: #6b7280; margin-bottom: 16px;">
+              네이버 광고 API를 활용한 키워드 분석 서비스입니다. 월간 검색수, 클릭수, 경쟁정도 등을 확인할 수 있습니다.
+            </p>
+            <div class="actions">
+              <a href="/naver_search.html" class="btn primary" style="text-decoration: none;">
+                <i class="fa-solid fa-arrow-right"></i> 키워드 조회하기
+              </a>
+            </div>
           </div>
         </section>
       </div>
     </main>
 
     <script>
-      // 백엔드 베이스 URL 제거: 현재 도메인의 /api 상대경로 사용
-
-      // 공통 유틸
-      function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
-        if (!el) return;
-        el.dataset._originalText = el.dataset._originalText || el.textContent;
-        el.disabled = !!isLoading;
-        el.textContent = isLoading ? textWhenLoading : el.dataset._originalText;
-      }
-      async function readJsonSafely(res) {
-        // 안전하게 JSON 파싱 (빈 응답/HTML 응답 대비)
-        const contentType = res.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          try {
-            return await res.json();
-          } catch (_) {
-            return { error: "JSON 파싱 실패", status: res.status };
-          }
-        }
-        try {
-          const text = await res.text();
-          return text
-            ? { error: text, status: res.status }
-            : { status: res.status };
-        } catch (_) {
-          return { error: "응답 본문을 읽을 수 없습니다.", status: res.status };
-        }
-      }
-      function showOutput(el, data) {
-        if (!el) return;
-        el.classList.remove("error");
-        el.style.display = "block";
-        try {
-          if (typeof data === "string") {
-            el.textContent = data.trim();
-          } else {
-            el.textContent = JSON.stringify(data, null, 2);
-          }
-        } catch (e) {
-          el.textContent = String(data);
-        }
-      }
-      function showError(el, err) {
-        if (!el) return;
-        el.classList.add("error");
-        el.style.display = "block";
-        el.textContent = (
-          err?.error ||
-          err?.message ||
-          err?.raw ||
-          err?.errorText ||
-          "오류가 발생했습니다."
-        ).toString();
-      }
-
-      // AI 리뷰작성
-      const analyzeBtn = document.getElementById("analyzeBtn");
-      const replyBtn = document.getElementById("replyBtn");
-      analyzeBtn?.addEventListener("click", async () => {
-        const reviewText = (
-          document.getElementById("reviewText")?.value || ""
-        ).trim();
-        const out = document.getElementById("reviewOutput");
-        if (!reviewText) {
-          showError(out, { message: "리뷰 원문을 입력하세요." });
-          return;
-        }
-        setLoading(analyzeBtn, true, "분석 중...");
-        showOutput(out, "");
-        try {
-          const res = await fetch(`/api/analyze-review`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              reviewText,
-              analysisType: "comprehensive",
-              options: [],
-            }),
-          });
-          const data = await readJsonSafely(res);
-          if (!res.ok || data.success === false) throw data;
-          showOutput(out, data.data || data);
-        } catch (e) {
-          showError(out, e);
-        } finally {
-          setLoading(analyzeBtn, false);
-        }
-      });
-      replyBtn?.addEventListener("click", async () => {
-        const reviewText = (
-          document.getElementById("reviewText")?.value || ""
-        ).trim();
-        const out = document.getElementById("reviewOutput");
-        if (!reviewText) {
-          showError(out, { message: "리뷰 원문을 입력하세요." });
-          return;
-        }
-        setLoading(replyBtn, true, "생성 중...");
-        showOutput(out, "");
-        try {
-          const res = await fetch(`/api/generate-reply`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ reviewText }),
-          });
-          const data = await readJsonSafely(res);
-          if (!res.ok || data.success === false) throw data;
-          showOutput(out, data.data?.reply || data.reply || data);
-        } catch (e) {
-          showError(out, e);
-        } finally {
-          setLoading(replyBtn, false);
-        }
-      });
-
-
       // 강제 적용: 일부 기기에서 캐시/브라우저 이슈로 CSS가 즉시 반영되지 않는 문제 보완
       (function enforceMobileLayout() {
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
         if (!isMobile) return;
-        // 1) 히어로 배너 숨김
-        const hero = document.querySelector(".hero");
-        if (hero) hero.classList.add("is-hidden");
-        // 2) 기능 아이콘 5등분 그리드 강제(일부 브라우저 캐시 이슈 대응)
+        // 기능 아이콘 5등분 그리드 강제(일부 브라우저 캐시 이슈 대응)
         const topApps = document.querySelector(".top-actions-row .top-apps");
         if (topApps) {
           topApps.style.display = "grid";
