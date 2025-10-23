@@ -2894,101 +2894,108 @@ if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("==========================================");
-  console.log("🚀 통합 API 서버가 시작되었습니다!");
-  console.log(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
-  console.log(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
-  console.log(`📊 환경: ${process.env.NODE_ENV || "development"}`);
-  console.log("==========================================");
-  console.log("");
-  console.log("🔧 사용 가능한 서비스:");
-  console.log("");
-  console.log("📊 네이버 키워드 도구:");
-  console.log('- 키워드 검색: POST /api/keywords (Body: {DataQ: "치킨"})');
-  console.log(
-    '- 키워드 트렌드: POST /api/keyword-trend (Body: {keyword: "치킨"})'
-  );
-  console.log("- 연관 키워드: GET /api/related-keywords?seed=맛집");
-  console.log("");
-  console.log("🤖 AI 블로그 생성:");
-  console.log("- 블로그 생성: POST /api/generate-blog");
-  console.log("- API 키 테스트: GET /api/test-keys");
-  console.log("");
-  console.log("🔍 리뷰 분석:");
-  console.log("- 리뷰 분석: POST /api/analyze-review");
-  console.log("- 답글 생성: POST /api/generate-reply");
-  console.log("- 분석 옵션: GET /api/analysis-options");
-  console.log("");
-  console.log("📍 네이버 플레이스 검색:");
-  console.log("- 로컬 검색: GET /api/search/local?query=마포맛집");
-  console.log("");
-  console.log("⚙️ API 설정 확인:");
-  console.log(
-    `- 네이버 Customer ID: ${NAVER_API.customerId ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log(
-    `- 네이버 API Key: ${NAVER_API.apiKey ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log(
-    `- 네이버 Secret Key: ${NAVER_API.secretKey ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log(
-    `- 네이버 검색 Client ID: ${
-      NAVER_SEARCH.clientId ? "✅ 설정됨" : "❌ 미설정"
-    }`
-  );
-  console.log(
-    `- 네이버 검색 Client Secret: ${
-      NAVER_SEARCH.clientSecret ? "✅ 설정됨" : "❌ 미설정"
-    }`
-  );
-  console.log(
-    `- OpenAI API Key: ${OPENAI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log(
-    `- Gemini API Key: ${GEMINI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log(
-    `- Claude API Key: ${CLAUDE_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log("------------------------------------------");
-  console.log("Feature Flags:");
-  console.log(
-    `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
-  );
-  console.log(
-    `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
-  );
-  console.log(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
-  console.log("==========================================");
-  console.log("🔐 Kakao OAuth:");
-  console.log(
-    `- Kakao REST API Key: ${KAKAO_REST_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log(`- Kakao Redirect URI: ${KAKAO_REDIRECT_URI || "❌ 미설정"}`);
-  console.log(
-    `- Kakao Client Secret: ${KAKAO_CLIENT_SECRET ? "✅ 설정됨" : "❌ 미설정"}`
-  );
-  console.log("------------------------------------------");
-  console.log("Feature Flags:");
-  console.log(
-    `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
-  );
-  console.log(
-    `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
-  );
-  console.log(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
-  console.log("==========================================");
-});
+// Vercel 환경에서는 export만, 로컬 환경에서는 listen
+if (process.env.VERCEL) {
+  // Vercel serverless 환경
+  module.exports = app;
+} else {
+  // 로컬 개발 환경
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log("==========================================");
+    console.log("🚀 통합 API 서버가 시작되었습니다!");
+    console.log(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
+    console.log(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
+    console.log(`📊 환경: ${process.env.NODE_ENV || "development"}`);
+    console.log("==========================================");
+    console.log("");
+    console.log("🔧 사용 가능한 서비스:");
+    console.log("");
+    console.log("📊 네이버 키워드 도구:");
+    console.log('- 키워드 검색: POST /api/keywords (Body: {DataQ: "치킨"})');
+    console.log(
+      '- 키워드 트렌드: POST /api/keyword-trend (Body: {keyword: "치킨"})'
+    );
+    console.log("- 연관 키워드: GET /api/related-keywords?seed=맛집");
+    console.log("");
+    console.log("🤖 AI 블로그 생성:");
+    console.log("- 블로그 생성: POST /api/generate-blog");
+    console.log("- API 키 테스트: GET /api/test-keys");
+    console.log("");
+    console.log("🔍 리뷰 분석:");
+    console.log("- 리뷰 분석: POST /api/analyze-review");
+    console.log("- 답글 생성: POST /api/generate-reply");
+    console.log("- 분석 옵션: GET /api/analysis-options");
+    console.log("");
+    console.log("📍 네이버 플레이스 검색:");
+    console.log("- 로컬 검색: GET /api/search/local?query=마포맛집");
+    console.log("");
+    console.log("⚙️ API 설정 확인:");
+    console.log(
+      `- 네이버 Customer ID: ${NAVER_API.customerId ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log(
+      `- 네이버 API Key: ${NAVER_API.apiKey ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log(
+      `- 네이버 Secret Key: ${NAVER_API.secretKey ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log(
+      `- 네이버 검색 Client ID: ${
+        NAVER_SEARCH.clientId ? "✅ 설정됨" : "❌ 미설정"
+      }`
+    );
+    console.log(
+      `- 네이버 검색 Client Secret: ${
+        NAVER_SEARCH.clientSecret ? "✅ 설정됨" : "❌ 미설정"
+      }`
+    );
+    console.log(
+      `- OpenAI API Key: ${OPENAI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log(
+      `- Gemini API Key: ${GEMINI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log(
+      `- Claude API Key: ${CLAUDE_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log("------------------------------------------");
+    console.log("Feature Flags:");
+    console.log(
+      `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
+    );
+    console.log(
+      `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
+    );
+    console.log(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
+    console.log("==========================================");
+    console.log("🔐 Kakao OAuth:");
+    console.log(
+      `- Kakao REST API Key: ${KAKAO_REST_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log(`- Kakao Redirect URI: ${KAKAO_REDIRECT_URI || "❌ 미설정"}`);
+    console.log(
+      `- Kakao Client Secret: ${KAKAO_CLIENT_SECRET ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    console.log("------------------------------------------");
+    console.log("Feature Flags:");
+    console.log(
+      `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
+    );
+    console.log(
+      `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
+    );
+    console.log(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
+    console.log("==========================================");
+  });
 
-// 종료 처리
-process.on("SIGINT", () => {
-  console.log("\n🛑 서버를 종료합니다...");
-  process.exit(0);
-});
+  // 종료 처리 (로컬 환경에서만)
+  process.on("SIGINT", () => {
+    console.log("\n🛑 서버를 종료합니다...");
+    process.exit(0);
+  });
 
-process.on("SIGTERM", () => {
-  console.log("\n🛑 서버를 종료합니다...");
-  process.exit(0);
-});
+  process.on("SIGTERM", () => {
+    console.log("\n🛑 서버를 종료합니다...");
+    process.exit(0);
+  });
+}
