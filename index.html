@@ -556,14 +556,11 @@
           <!-- 상단 추천 단축 버튼(추천메뉴/응대/주제) 제거 -->
           <div class="top-actions-row top-actions">
             <div class="top-apps">
-              <a class="app" href="/ChatGPT.html">
+              <a class="app" href="/naver_search.html">
                 <div class="app-icon">
-                  <i
-                    class="fa-solid fa-comments"
-                    style="font-size: 20px; color: var(--chatgpt-green)"
-                  ></i>
+                  <i class="fa-solid fa-key" style="font-size: 20px"></i>
                 </div>
-                <div class="app-label" style="font-size: 14px">채팅</div>
+                <div class="app-label" style="font-size: 14px">키워드</div>
               </a>
               <a class="app" href="/review.html">
                 <div class="app-icon">
@@ -577,11 +574,14 @@
                 </div>
                 <div class="app-label" style="font-size: 14px">블로그</div>
               </a>
-              <a class="app" href="/naver_search.html">
+              <a class="app" href="/ChatGPT.html">
                 <div class="app-icon">
-                  <i class="fa-solid fa-key" style="font-size: 20px"></i>
+                  <i
+                    class="fa-solid fa-comments"
+                    style="font-size: 20px; color: var(--chatgpt-green)"
+                  ></i>
                 </div>
-                <div class="app-label" style="font-size: 14px">키워드</div>
+                <div class="app-label" style="font-size: 14px">채팅</div>
               </a>
               
             </div>
@@ -617,21 +617,21 @@
 
     <main class="container">
       <div class="grid">
-        <!-- ChatGPT 채팅 -->
+        <!-- 키워드 검색 -->
         <section class="card">
           <div class="card-header">
             <div class="title">
-              <i class="fa-solid fa-comments" style="color: var(--chatgpt-green)"></i> ChatGPT 채팅
+              <i class="fa-solid fa-key"></i> 키워드 검색
             </div>
-            <span class="small muted">POST /api/chat</span>
+            <span class="small muted">POST /api/keywords</span>
           </div>
           <div class="card-body">
             <p style="color: #6b7280; margin-bottom: 16px;">
-              AI와 실시간으로 대화하며 궁금한 것들을 물어보세요. 아이디어, 리뷰답글, 홍보문구 등 다양한 도움을 받을 수 있습니다.
+              네이버 광고 API를 활용한 키워드 분석 서비스입니다. 월간 검색수, 클릭수, 경쟁정도 등을 확인할 수 있습니다.
             </p>
             <div class="actions">
-              <a href="/ChatGPT.html" class="btn primary" style="text-decoration: none;">
-                <i class="fa-solid fa-arrow-right"></i> 채팅 시작하기
+              <a href="/naver_search.html" class="btn primary" style="text-decoration: none;">
+                <i class="fa-solid fa-arrow-right"></i> 키워드 조회하기
               </a>
             </div>
           </div>
@@ -677,21 +677,21 @@
           </div>
         </section>
 
-        <!-- 키워드 검색 -->
+        <!-- ChatGPT 채팅 -->
         <section class="card">
           <div class="card-header">
             <div class="title">
-              <i class="fa-solid fa-key"></i> 키워드 검색
+              <i class="fa-solid fa-comments" style="color: var(--chatgpt-green)"></i> ChatGPT 채팅
             </div>
-            <span class="small muted">POST /api/keywords</span>
+            <span class="small muted">POST /api/chat</span>
           </div>
           <div class="card-body">
             <p style="color: #6b7280; margin-bottom: 16px;">
-              네이버 광고 API를 활용한 키워드 분석 서비스입니다. 월간 검색수, 클릭수, 경쟁정도 등을 확인할 수 있습니다.
+              AI와 실시간으로 대화하며 궁금한 것들을 물어보세요. 아이디어, 리뷰답글, 홍보문구 등 다양한 도움을 받을 수 있습니다.
             </p>
             <div class="actions">
-              <a href="/naver_search.html" class="btn primary" style="text-decoration: none;">
-                <i class="fa-solid fa-arrow-right"></i> 키워드 조회하기
+              <a href="/ChatGPT.html" class="btn primary" style="text-decoration: none;">
+                <i class="fa-solid fa-arrow-right"></i> 채팅 시작하기
               </a>
             </div>
           </div>
