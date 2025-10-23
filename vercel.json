@@ -5,7 +5,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/api/[...all]"
+      "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://naver-keyword-tool.onrender.com/auth/:path*"
     }
   ]
 }
