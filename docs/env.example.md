@@ -38,6 +38,11 @@ KAKAO_REDIRECT_URI=https://www.sajangpick.co.kr/auth/kakao/callback
 # 선택(활성화되어 있으면 토큰 교환에 포함)
 KAKAO_CLIENT_SECRET=
 
+# Supabase (데이터베이스)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
 # Auth / JWT
 # 반드시 충분히 긴 랜덤 문자열로 설정하고 환경별(.env, .env.production)로 분리하세요.
 JWT_SECRET=

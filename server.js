@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const path = require("path");
 const { spawn } = require("child_process");
 const helmet = require("helmet");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 app.set("trust proxy", true);
@@ -32,6 +33,23 @@ const NAVER_SEARCH = {
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+
+// Supabase 설정
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let supabase = null;
+
+// Supabase 클라이언트 초기화
+if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    console.log("✅ Supabase 클라이언트 초기화 성공");
+  } catch (error) {
+    console.error("❌ Supabase 클라이언트 초기화 실패:", error.message);
+  }
+} else {
+  console.warn("⚠️ Supabase 환경변수가 설정되지 않았습니다. DB 저장 기능이 비활성화됩니다.");
+}
 // Kakao OAuth 설정
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
 const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI;
@@ -1902,8 +1920,16 @@ app.post("/api/analyze-review", async (req, res) => {
       req.body?.analysisType || "comprehensive"
     );
     const options = Array.isArray(req.body?.options) ? req.body.options : [];
+    const placeInfo = req.body?.placeInfo || null;
+    const ownerTips = sanitizeString(req.body?.ownerTips || "");
 
     console.log("리뷰 분석 요청 수신");
+    if (placeInfo) {
+      console.log("식당 정보 포함됨:", placeInfo.basic?.name || "정보 없음");
+    }
+    if (ownerTips) {
+      console.log("사장님 추천 정보 포함됨");
+    }
 
     // 입력 데이터 검증
     if (!reviewText || reviewText.trim().length === 0) {
@@ -1984,21 +2010,61 @@ app.post("/api/analyze-review", async (req, res) => {
     if (options && options.includes("generateReply")) {
       try {
         console.log("Step 3: Claude로 답글 생성");
-        const replyPrompt = `다음 고객 리뷰에 대한 사업주 답글을 한국어로 자연스럽게 작성해주세요:
+        
+        // 식당 정보를 프롬프트에 추가
+        let placeInfoText = "";
+        if (placeInfo || ownerTips) {
+          placeInfoText = "\n\n=== 우리 식당 정보 ===\n";
+          if (placeInfo) {
+            if (placeInfo.basic?.name) placeInfoText += `상호명: ${placeInfo.basic.name}\n`;
+            if (placeInfo.basic?.category) placeInfoText += `업종: ${placeInfo.basic.category}\n`;
+            if (placeInfo.menu && placeInfo.menu.length > 0) {
+              placeInfoText += `주요 메뉴: ${placeInfo.menu.slice(0, 10).map(m => `${m.name}${m.price ? `(${m.price})` : ''}`).join(', ')}\n`;
+            }
+            if (placeInfo.introduction?.text) {
+              placeInfoText += `특징: ${placeInfo.introduction.text}\n`;
+            }
+          }
+          if (ownerTips) {
+            placeInfoText += `\n🌟 사장님이 앞으로 추천하고 싶은 포인트 (고객이 경험한 내용 아님!):\n${ownerTips}\n`;
+          }
+          placeInfoText += "========================\n";
+        }
+        
+        let ownerTipsInstruction = "";
+        if (ownerTips) {
+          ownerTipsInstruction = `
+
+🚨🚨🚨 필수 작업 🚨🚨🚨
+다음 메뉴들을 답글에 반드시 포함하고 자세하게 설명하세요:
+"${ownerTips}"
+
+각 메뉴의 특징, 맛, 인기 이유 등을 구체적으로 설명하세요!`;
+        }
+
+        const replyPrompt = `당신은 식당 사장입니다. 고객 리뷰에 답글을 작성하세요.
 
 고객 리뷰: "${reviewText}"
+${placeInfoText}${ownerTipsInstruction}
 
-답글 작성 가이드라인:
-1. 진심어린 감사 인사로 시작
-2. 구체적으로 언급된 내용에 대한 응답
-3. 문제점이 있다면 사과와 개선 의지 표현
-4. 긍정적인 내용이라면 감사 표현
-5. 재방문 유도 메시지
-6. 친근하고 정중한 톤 유지
-7. 100-250자 정도로 적절한 길이
-8. 과도하게 형식적이지 않고 진솔하게
+답글 작성 규칙:
+1. 리뷰 내용에 먼저 간단히 답변 (1-2문장)
+2. ${ownerTips ? `사장님 추천 메뉴("${ownerTips}")를 반드시 모두 언급하고 각 메뉴의 특징을 자세히 설명 (2-3문장)` : '추가 메뉴 추천'}
+3. 재방문 유도
+4. 200-350자, 친근하고 자세한 톤
 
-답글만 작성해주세요:`;
+예시:
+리뷰: "맛있어요"
+사장님 추천: "삼겹살, 돼지갈비"
+답글: "방문 감사합니다. 맛있게 드셨다니 정말 기쁩니다. 다음에는 저희 삼겹살을 꼭 드셔보세요. 육즙이 풍부하고 고소한 맛이 일품입니다. 돼지갈비도 부드럽고 양념이 잘 배어 많은 고객님들께서 좋아하시는 인기 메뉴입니다. 다음 방문 시 꼭 맛보시길 추천드립니다!"
+
+⚠️ 중요:
+- 사장님 추천 메뉴는 단순 언급이 아니라 매력적으로 상세 설명
+- 맛과 특징을 일반적이고 긍정적으로 표현 (맛있다, 인기 있다, 부드럽다, 풍부하다 등)
+- 🚨 절대 금지: 구체적인 재료(국내산, 1등급), 조리법(숯불, 24시간 숙성) 등 확인되지 않은 정보 만들어내지 마세요!
+- 고객이 먹고 싶어지게 만들되 사실에 근거한 일반적 표현만 사용
+
+답글:`;
 
         const claudeResponse = await callClaude(replyPrompt);
         results.reply = claudeResponse.trim().replace(/^"|"$/g, "");
@@ -2025,30 +2091,162 @@ app.post("/api/analyze-review", async (req, res) => {
         try {
           console.log("ChatGPT로 대체 답글 생성 시도");
 
+          // 식당 정보를 프롬프트에 추가
+          let fallbackPlaceInfo = "";
+          if (placeInfo || ownerTips) {
+            fallbackPlaceInfo = "\n\n우리 식당 정보:\n";
+            if (placeInfo) {
+              if (placeInfo.basic?.name) fallbackPlaceInfo += `상호: ${placeInfo.basic.name}\n`;
+              if (placeInfo.basic?.category) fallbackPlaceInfo += `업종: ${placeInfo.basic.category}\n`;
+              if (placeInfo.menu && placeInfo.menu.length > 0) {
+                fallbackPlaceInfo += `메뉴: ${placeInfo.menu.slice(0, 8).map(m => m.name).join(', ')}\n`;
+              }
+            }
+            if (ownerTips) {
+              fallbackPlaceInfo += `🌟 사장님 강조 포인트: ${ownerTips}\n`;
+            }
+          }
+
           const fallbackPrompt = `다음 고객 리뷰에 대한 사업주 답글을 작성해주세요:
 "${reviewText}"
+${fallbackPlaceInfo}
 
 요구사항:
 - 감사 인사 포함
-- 구체적 내용 언급
+- 리뷰에서 언급한 메뉴에 대해 반드시 답변
+- 궁금해하는 메뉴가 있다면 우리 식당 메뉴를 바탕으로 추천
+- 🌟 사장님이 강조한 포인트를 자연스럽게 반영
+- 새로운 고객들도 볼 것을 고려하여 메뉴와 분위기 소개
 - 친근하고 정중한 톤
-- 100-200자 내외
+- 150-250자 내외
 - 답글만 작성`;
 
           const fallbackReply = await callChatGPTForReview(fallbackPrompt);
           const cleanFallbackReply = fallbackReply.trim().replace(/^"|"$/g, "");
+
+          // ==================== DB 저장 로직 (Fallback) ====================
+          let fallbackReviewId = null;
+          let fallbackDbSaveStatus = "not_attempted";
+          let fallbackDbError = null;
+
+          if (supabase) {
+            try {
+              console.log("📦 DB 저장 시작 (Fallback)...");
+
+              // 1. places 테이블에 식당 정보 저장 (UPSERT)
+              let savedPlaceId = null;
+              if (placeInfo && placeInfo.basic) {
+                const placeData = {
+                  place_id: placeInfo.basic.place_id || placeInfo.basic.id || null,
+                  place_name: placeInfo.basic.name || "정보 없음",
+                  category: placeInfo.basic.category || null,
+                  road_address: placeInfo.contact?.road_address || null,
+                  lot_address: placeInfo.contact?.lot_address || null,
+                  phone: placeInfo.contact?.phone_display || placeInfo.contact?.phone || null,
+                  homepage: placeInfo.contact?.homepage || null,
+                  rating: placeInfo.stats?.rating ? parseFloat(placeInfo.stats.rating) : null,
+                  visitor_reviews: placeInfo.stats?.visitor_reviews || 0,
+                  blog_reviews: placeInfo.stats?.blog_reviews || 0,
+                  business_hours: placeInfo.business?.hours || null,
+                  last_crawled_at: new Date().toISOString(),
+                };
+
+                if (placeData.place_id) {
+                  const { data: placeResult, error: placeError } = await supabase
+                    .from("places")
+                    .upsert(placeData, {
+                      onConflict: "place_id",
+                      ignoreDuplicates: false,
+                    })
+                    .select();
+
+                  if (placeError) {
+                    console.error("❌ places 저장 실패:", placeError);
+                  } else {
+                    savedPlaceId = placeData.place_id;
+                    console.log("✅ places 저장 성공:", savedPlaceId);
+                  }
+                } else {
+                  console.warn("⚠️ place_id가 없어 places 테이블에 저장하지 않습니다.");
+                }
+              }
+
+              // 2. review_responses 테이블에 리뷰 & 답글 저장
+              const { data: testUser, error: userError } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("name", "김사장")
+                .single();
+
+              let userId = testUser?.id;
+              
+              if (userError || !testUser) {
+                console.warn("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
+                const { data: firstUser, error: firstUserError } = await supabase
+                  .from("profiles")
+                  .select("id")
+                  .limit(1)
+                  .single();
+                
+                if (firstUserError || !firstUser) {
+                  throw new Error("profiles 테이블에 회원이 없습니다.");
+                }
+                
+                userId = firstUser.id;
+              }
+
+              const reviewData = {
+                user_id: userId,
+                place_id: savedPlaceId || null,
+                naver_place_url: req.body?.placeUrl || null,
+                customer_review: reviewText,
+                owner_tips: ownerTips || null,
+                place_info_json: placeInfo || null,
+                ai_response: cleanFallbackReply,
+                ai_model: "chatgpt",
+                generation_time_ms: null,
+                is_used: false,
+                status: "draft",
+              };
+
+              const { data: reviewResult, error: reviewError } = await supabase
+                .from("review_responses")
+                .insert(reviewData)
+                .select();
+
+              if (reviewError) {
+                console.error("❌ review_responses 저장 실패:", reviewError);
+                fallbackDbSaveStatus = "failed";
+                fallbackDbError = reviewError.message;
+              } else {
+                fallbackReviewId = reviewResult[0]?.id;
+                console.log("✅ review_responses 저장 성공:", fallbackReviewId);
+                fallbackDbSaveStatus = "success";
+              }
+            } catch (dbErr) {
+              console.error("❌ DB 저장 중 오류:", dbErr);
+              fallbackDbSaveStatus = "failed";
+              fallbackDbError = dbErr.message;
+            }
+          } else {
+            console.log("⚠️ Supabase 클라이언트가 초기화되지 않아 DB 저장을 건너뜁니다.");
+          }
+          // ==================== DB 저장 로직 끝 (Fallback) ====================
 
           res.json({
             success: true,
             data: {
               reply: cleanFallbackReply,
               originalReview: reviewText,
+              reviewId: fallbackReviewId,
             },
             metadata: {
               textLength: reviewText.length,
               replyLength: cleanFallbackReply.length,
               generatedAt: new Date().toISOString(),
               server: "Integrated Server (Fallback)",
+              dbSaveStatus: fallbackDbSaveStatus,
+              dbError: fallbackDbError,
             },
           });
         } catch (fallbackError) {
@@ -2102,8 +2300,16 @@ app.post("/api/analyze-review", async (req, res) => {
 app.post("/api/generate-reply", async (req, res) => {
   try {
     const reviewText = sanitizeString(req.body?.reviewText || "");
+    const placeInfo = req.body?.placeInfo || null;
+    const ownerTips = sanitizeString(req.body?.ownerTips || "");
 
     console.log("리뷰 답글 생성 요청 수신");
+    if (placeInfo) {
+      console.log("식당 정보 포함됨:", placeInfo.basic?.name || "정보 없음");
+    }
+    if (ownerTips) {
+      console.log("사장님 추천 정보 포함됨");
+    }
 
     // 입력 데이터 검증
     if (!reviewText || reviewText.trim().length === 0) {
@@ -2124,38 +2330,218 @@ app.post("/api/generate-reply", async (req, res) => {
     try {
       console.log("Claude로 답글 생성 시작");
 
-      const replyPrompt = `다음 고객 리뷰에 대한 사업주 답글을 한국어로 자연스럽게 작성해주세요:
+      // 식당 정보를 프롬프트에 추가
+      let placeInfoText = "";
+      if (placeInfo || ownerTips) {
+        placeInfoText = "\n\n=== 우리 식당 정보 ===\n";
+        
+        if (placeInfo) {
+          if (placeInfo.basic?.name) {
+            placeInfoText += `상호명: ${placeInfo.basic.name}\n`;
+          }
+          if (placeInfo.basic?.category) {
+            placeInfoText += `업종: ${placeInfo.basic.category}\n`;
+          }
+          if (placeInfo.contact?.road_address) {
+            placeInfoText += `위치: ${placeInfo.contact.road_address}\n`;
+          }
+          if (placeInfo.business?.hours) {
+            placeInfoText += `영업시간: ${placeInfo.business.hours}\n`;
+          }
+          
+          // 메뉴 정보 (중요!)
+          if (placeInfo.menu && placeInfo.menu.length > 0) {
+            placeInfoText += `\n주요 메뉴:\n`;
+            placeInfo.menu.slice(0, 10).forEach(item => {
+              placeInfoText += `- ${item.name}${item.price ? ` (${item.price})` : ''}\n`;
+            });
+          }
+          
+          // 소개글
+          if (placeInfo.introduction?.text) {
+            placeInfoText += `\n우리 식당 특징: ${placeInfo.introduction.text}\n`;
+          }
+          
+          // 편의시설
+          if (placeInfo.facilities?.list && placeInfo.facilities.list.length > 0) {
+            placeInfoText += `\n편의시설: ${placeInfo.facilities.list.join(', ')}\n`;
+          }
+        }
+        
+        // 🌟 사장님이 강조하고 싶은 포인트 (최우선 반영!)
+        if (ownerTips) {
+          placeInfoText += `\n🌟 사장님이 앞으로 추천하고 싶은 포인트 (고객이 경험한 내용 아님!):\n${ownerTips}\n`;
+        }
+        
+        placeInfoText += "========================\n";
+      }
+
+      let ownerTipsInstruction = "";
+      if (ownerTips) {
+        ownerTipsInstruction = `
+
+🚨🚨🚨 필수 작업 🚨🚨🚨
+다음 메뉴들을 답글에 반드시 포함하고 자세하게 설명하세요:
+"${ownerTips}"
+
+각 메뉴의 특징, 맛, 인기 이유 등을 구체적으로 설명하세요!`;
+      }
+
+      const replyPrompt = `당신은 식당 사장입니다. 고객 리뷰에 답글을 작성하세요.
 
 고객 리뷰: "${reviewText}"
+${placeInfoText}${ownerTipsInstruction}
 
-답글 작성 가이드라인:
-1. 진심어린 감사 인사로 시작
-2. 구체적으로 언급된 내용에 대한 응답
-3. 문제점이 있다면 사과와 개선 의지 표현
-4. 긍정적인 내용이라면 감사 표현
-5. 재방문 유도 메시지
-6. 친근하고 정중한 톤 유지
-7. 100-250자 정도로 적절한 길이
-8. 과도하게 형식적이지 않고 진솔하게
+답글 작성 규칙:
+1. 리뷰 내용에 먼저 간단히 답변 (1-2문장)
+2. ${ownerTips ? `사장님 추천 메뉴("${ownerTips}")를 반드시 모두 언급하고 각 메뉴의 특징을 자세히 설명 (2-3문장)` : '추가 메뉴 추천'}
+3. 재방문 유도
+4. 200-350자, 친근하고 자세한 톤
 
-답글만 작성해주세요:`;
+예시:
+리뷰: "맛있어요"
+사장님 추천: "삼겹살, 돼지갈비"
+답글: "방문 감사합니다. 맛있게 드셨다니 정말 기쁩니다. 다음에는 저희 삼겹살을 꼭 드셔보세요. 육즙이 풍부하고 고소한 맛이 일품입니다. 돼지갈비도 부드럽고 양념이 잘 배어 많은 고객님들께서 좋아하시는 인기 메뉴입니다. 다음 방문 시 꼭 맛보시길 추천드립니다!"
+
+⚠️ 중요:
+- 사장님 추천 메뉴는 단순 언급이 아니라 매력적으로 상세 설명
+- 맛과 특징을 일반적이고 긍정적으로 표현 (맛있다, 인기 있다, 부드럽다, 풍부하다 등)
+- 🚨 절대 금지: 구체적인 재료(국내산, 1등급), 조리법(숯불, 24시간 숙성) 등 확인되지 않은 정보 만들어내지 마세요!
+- 고객이 먹고 싶어지게 만들되 사실에 근거한 일반적 표현만 사용
+
+답글:`;
 
       const reply = await callClaude(replyPrompt);
       const cleanReply = reply.trim().replace(/^"|"$/g, "");
 
       console.log("답글 생성 완료");
 
+      // ==================== DB 저장 로직 ====================
+      let savedReviewId = null;
+      let dbSaveStatus = "not_attempted"; // "not_attempted", "success", "failed"
+      let dbError = null;
+
+      if (supabase) {
+        try {
+          console.log("📦 DB 저장 시작...");
+
+          // 1. places 테이블에 식당 정보 저장 (UPSERT)
+          let savedPlaceId = null;
+          if (placeInfo && placeInfo.basic) {
+            const placeData = {
+              place_id: placeInfo.basic.place_id || placeInfo.basic.id || null,
+              place_name: placeInfo.basic.name || "정보 없음",
+              category: placeInfo.basic.category || null,
+              road_address: placeInfo.contact?.road_address || null,
+              lot_address: placeInfo.contact?.lot_address || null,
+              phone: placeInfo.contact?.phone_display || placeInfo.contact?.phone || null,
+              homepage: placeInfo.contact?.homepage || null,
+              rating: placeInfo.stats?.rating ? parseFloat(placeInfo.stats.rating) : null,
+              visitor_reviews: placeInfo.stats?.visitor_reviews || 0,
+              blog_reviews: placeInfo.stats?.blog_reviews || 0,
+              business_hours: placeInfo.business?.hours || null,
+              last_crawled_at: new Date().toISOString(),
+            };
+
+            if (placeData.place_id) {
+              // place_id가 있으면 UPSERT
+              const { data: placeResult, error: placeError } = await supabase
+                .from("places")
+                .upsert(placeData, {
+                  onConflict: "place_id",
+                  ignoreDuplicates: false,
+                })
+                .select();
+
+              if (placeError) {
+                console.error("❌ places 저장 실패:", placeError);
+              } else {
+                savedPlaceId = placeData.place_id;
+                console.log("✅ places 저장 성공:", savedPlaceId);
+              }
+            } else {
+              console.warn("⚠️ place_id가 없어 places 테이블에 저장하지 않습니다.");
+            }
+          }
+
+          // 2. review_responses 테이블에 리뷰 & 답글 저장
+          // 테스트 회원 ID 조회 (김사장)
+          const { data: testUser, error: userError } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("name", "김사장")
+            .single();
+
+          let userId = testUser?.id;
+          
+          if (userError || !testUser) {
+            console.warn("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
+            // 첫 번째 회원 가져오기
+            const { data: firstUser, error: firstUserError } = await supabase
+              .from("profiles")
+              .select("id")
+              .limit(1)
+              .single();
+            
+            if (firstUserError || !firstUser) {
+              throw new Error("profiles 테이블에 회원이 없습니다.");
+            }
+            
+            userId = firstUser.id;
+          }
+
+          const reviewData = {
+            user_id: userId,
+            place_id: savedPlaceId || null, // place_id가 없으면 NULL
+            naver_place_url: req.body?.placeUrl || null,
+            customer_review: reviewText,
+            owner_tips: ownerTips || null,
+            place_info_json: placeInfo || null,
+            ai_response: cleanReply,
+            ai_model: "claude",
+            generation_time_ms: null, // 필요시 계산
+            is_used: false,
+            status: "draft",
+          };
+
+          const { data: reviewResult, error: reviewError } = await supabase
+            .from("review_responses")
+            .insert(reviewData)
+            .select();
+
+          if (reviewError) {
+            console.error("❌ review_responses 저장 실패:", reviewError);
+            dbSaveStatus = "failed";
+            dbError = reviewError.message;
+          } else {
+            savedReviewId = reviewResult[0]?.id;
+            console.log("✅ review_responses 저장 성공:", savedReviewId);
+            dbSaveStatus = "success";
+          }
+        } catch (dbErr) {
+          console.error("❌ DB 저장 중 오류:", dbErr);
+          dbSaveStatus = "failed";
+          dbError = dbErr.message;
+        }
+      } else {
+        console.log("⚠️ Supabase 클라이언트가 초기화되지 않아 DB 저장을 건너뜁니다.");
+      }
+      // ==================== DB 저장 로직 끝 ====================
+
       res.json({
         success: true,
         data: {
           reply: cleanReply,
           originalReview: reviewText,
+          reviewId: savedReviewId, // 저장된 리뷰 ID 반환
         },
         metadata: {
           textLength: reviewText.length,
           replyLength: cleanReply.length,
           generatedAt: new Date().toISOString(),
           server: "Integrated Server",
+          dbSaveStatus: dbSaveStatus, // "not_attempted", "success", "failed"
+          dbError: dbError, // 에러 메시지 (있을 경우)
         },
       });
     } catch (error) {
@@ -2165,14 +2551,34 @@ app.post("/api/generate-reply", async (req, res) => {
       try {
         console.log("ChatGPT로 대체 답글 생성 시도");
 
+        // 식당 정보를 프롬프트에 추가
+        let placeInfoText = "";
+        if (placeInfo || ownerTips) {
+          placeInfoText = "\n\n우리 식당 정보:\n";
+          if (placeInfo) {
+            if (placeInfo.basic?.name) placeInfoText += `상호: ${placeInfo.basic.name}\n`;
+            if (placeInfo.basic?.category) placeInfoText += `업종: ${placeInfo.basic.category}\n`;
+            if (placeInfo.menu && placeInfo.menu.length > 0) {
+              placeInfoText += `메뉴: ${placeInfo.menu.slice(0, 8).map(m => m.name).join(', ')}\n`;
+            }
+          }
+          if (ownerTips) {
+            placeInfoText += `🌟 사장님 강조 포인트: ${ownerTips}\n`;
+          }
+        }
+
         const fallbackPrompt = `다음 고객 리뷰에 대한 사업주 답글을 작성해주세요:
 "${reviewText}"
+${placeInfoText}
 
 요구사항:
 - 감사 인사 포함
-- 구체적 내용 언급
+- 리뷰에서 언급한 메뉴나 음식에 대해 반드시 답변
+- 궁금해하는 메뉴가 있다면 우리 식당 메뉴를 바탕으로 추천
+- 🌟 사장님이 강조한 포인트를 자연스럽게 반영
+- 새로운 고객들도 볼 것을 고려하여 메뉴와 분위기 소개
 - 친근하고 정중한 톤
-- 100-200자 내외
+- 150-250자 내외
 - 답글만 작성`;
 
         const fallbackReply = await callChatGPTForReview(fallbackPrompt);

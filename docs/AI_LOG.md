@@ -1467,3 +1467,577 @@ curl "https://<project>.supabase.co/rest/v1/instruments?select=*" \
 - 배포: Git 푸시 또는 `pnpm dlx vercel deploy --prod`
 - 주의/롤백: 위험 요소/롤백 방법(필요 시 Vercel Instant Rollback)
 - 후속 작업: 다음 해야 할 일
+
+---
+
+### 2025-10-22 - 리뷰 답글 생성 기능 개발 및 데이터베이스 설계
+
+- 배경: 리뷰 답글 자동 생성 기능 개발 완료. Supabase 클라우드 데이터베이스 연동 준비 중.
+- 변경 파일:
+  - `review.html` - 리뷰 답글 생성 UI 완성
+  - `server.js` - AI 프롬프트 최적화
+  - `db-schema-reviews.sql` - SQLite용 리뷰 관리 스키마
+  - `supabase-schema-reviews.sql` - Supabase용 리뷰 관리 스키마
+  - `docs/SUPABASE_SETUP_GUIDE.md` - Supabase 설정 가이드
+  - `docs/env.example.md` - Supabase 환경변수 추가
+- 주요 변경점:
+  
+  **1. review.html - 리뷰 답글 생성 UI**
+  - 네이버 플레이스 URL 입력 및 크롤링 (15초 타임아웃)
+  - 사장님 추천 포인트 입력 필드
+  - AI 답글 생성 (Claude API) - 15초 타임아웃
+  - 반응형 디자인 (모바일 최적화)
+  - 에러 처리 개선 (구체적인 에러 메시지)
+  - 로딩 상태 표시 및 크롤링 진행 상황 안내
+  
+  **2. server.js - AI 프롬프트 최적화**
+  - 리뷰 원문과 사장님 추천 포인트 명확히 구분
+  - 사장님 추천 메뉴 필수 포함 (빠뜨리지 않도록 강화)
+  - 자세한 메뉴 설명 (200-350자)
+  - 안전한 표현 사용 (숯불, 24시간 숙성 등 확인되지 않은 구체적 정보 금지)
+  - 일반적이고 긍정적인 표현 (맛있다, 인기 있다, 부드럽다 등)
+  
+  **3. 데이터베이스 스키마 설계**
+  - `users` 테이블: 사용자(사장님) 정보, 카카오 로그인, 사업자 정보, 구독 정보
+  - `reviews` 테이블: 리뷰 원문, 네이버 플레이스 URL, 크롤링 정보(JSON), 사장님 추천
+  - `review_replies` 테이블: AI 생성 답글, 사용자 수정본, 피드백, 사용 여부
+  - `usage_stats` 테이블: 일별 사용 통계 (리뷰 생성, 답글 생성, 실제 사용 횟수)
+  - `reply_templates` 테이블: 답글 템플릿 관리
+  - RLS(Row Level Security) 정책 설정: 사용자는 자신의 데이터만 접근 가능
+  
+  **4. 문서 작성**
+  - `SUPABASE_SETUP_GUIDE.md`: 단계별 Supabase 설정 가이드
+  - 기존 샘플 데이터 삭제 방법
+  - 테이블 생성 및 확인 방법
+  - 보안 설정 (RLS, API Key 보호)
+  - 백업 및 복구 방법
+
+- 기술 스택:
+  - Frontend: HTML, CSS, JavaScript (Vanilla)
+  - Backend: Node.js, Express
+  - Database: Supabase (PostgreSQL)
+  - AI: Claude (Anthropic), ChatGPT (fallback)
+  - 크롤링: Puppeteer, @sparticuz/chromium
+
+- 프롬프트 개선 사항:
+  ```
+  AS-IS (문제):
+  - 사장님 추천 메뉴가 답글에 빠짐
+  - 구체적인 재료/조리법을 AI가 임의로 만들어냄 (예: 숯불, 24시간 숙성)
+  - 리뷰 원문과 사장님 추천 포인트 혼동
+  
+  TO-BE (해결):
+  - 🚨 필수 작업으로 사장님 추천 메뉴 강제 포함
+  - 일반적이고 안전한 표현만 사용 (맛있다, 부드럽다, 인기 있다)
+  - 리뷰 원문과 사장님 추천을 명확히 구분
+  - 자세한 설명 (50% 증가: 150-300자 → 200-350자)
+  ```
+
+- 확인 방법:
+  1. 서버 실행: `node server.js`
+  2. 브라우저: `http://localhost:3000/review.html`
+  3. 테스트:
+     - 리뷰 원문: "고기가 맛있어요"
+     - 사장님 추천: "삼겹살, 돼지갈비"
+     - "답글 생성하기" 클릭
+  4. 기대 결과: 고기 언급 + 삼겹살/돼지갈비 자세한 설명 포함
+
+- 배포: 보류 (데이터베이스 연동 완료 후)
+
+- 주의사항:
+  - ⚠️ `.env` 파일에 Supabase 설정 필요:
+    ```
+    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+    ```
+  - ⚠️ Supabase SQL Editor에서 `supabase-schema-reviews.sql` 수동 실행 필요
+  - ⚠️ 서버 재시작 필요 (기존 node 프로세스 종료 후 재시작)
+
+- 후속 작업 (다음 AI가 진행):
+  1. ✅ TODO 완료: Supabase 연결 확인 및 .env 설정
+  2. 기존 샘플 데이터 정리 (선택사항)
+  3. Supabase에 리뷰 관리 테이블 생성 (`supabase-schema-reviews.sql` 실행)
+  4. 백엔드 API 구현:
+     - `POST /api/reviews` - 리뷰 저장
+     - `GET /api/reviews` - 리뷰 목록 조회
+     - `GET /api/reviews/:id` - 리뷰 상세 조회
+     - `POST /api/reviews/:id/reply` - 답글 저장
+  5. 프론트엔드 연동:
+     - review.html에서 답글 생성 후 DB 저장
+     - 저장된 리뷰/답글 목록 보기
+     - 답글 수정/피드백 기능
+  6. 마이페이지 구현:
+     - 저장된 리뷰 목록
+     - 사용 통계 (일별/월별)
+     - 답글 템플릿 관리
+  7. Vercel 배포
+
+- 현재 상태: 리뷰 답글 생성 기능 완성, 데이터베이스 스키마 설계 완료, Supabase 연동 준비 중
+
+---
+
+## 2025-10-22 - Supabase 클라우드 데이터베이스 설계 및 구축 완료 ⭐ 중요!
+
+> 📌 **다음 AI에게**: 이 섹션을 반드시 읽고 이해하세요!
+> - Supabase 클라우드 데이터베이스 구축 완료
+> - 3개 테이블 생성 및 테스트 데이터 확인 완료
+> - 다음 작업: server.js 연동 (DB 저장 로직 추가)
+
+---
+
+### 📋 작업 요청 및 배경
+
+**사용자 요청:**
+1. 기존 샘플 데이터베이스 모두 삭제
+2. 실제 운영용 데이터베이스 구축
+3. 리뷰 답글 생성 → DB 저장까지 완성
+4. 장기 확장 고려 (블로그, 광고, 순위 추적)
+
+**현재 상태:**
+- ✅ `review.html` - 리뷰 답글 생성 UI 완성
+- ✅ `server.js` - AI 프롬프트 최적화 완료
+- ❌ 데이터베이스 연동 없음 (답글 생성만 하고 저장 안 함)
+- ❌ 카카오 로그인 미완성 (테스트 회원 필요)
+- ✅ .env 파일 Supabase API 키 준비 완료
+
+**발견된 문제점:**
+1. 기존 AI가 작성한 스키마 파일 2개가 너무 복잡하고 사용 불가
+   - `supabase-schema.sql` (160줄) - places 중심 설계
+   - `supabase-schema-reviews.sql` (193줄) - 리뷰 관련
+2. `places` 테이블 의존성 문제
+   - 리뷰만 구축하려 했으나 외래 키로 places 필수
+   - 리뷰 저장 시 식당 정보가 먼저 있어야 함
+3. 컬럼명 불일치
+   - 프론트엔드(`review.html`): reviewText, ownerTips
+   - 기존 스키마: customer_review, owner_keywords
+4. 장기 확장성 고려 부족
+   - 블로그 작성 시 식당 정보 재사용 불가
+   - 순위 추적 기능 (애드로그) 구현 불가
+
+---
+
+### 🎯 사용자 요구사항 (상세)
+
+**1. 리뷰 답글 생성 및 저장 (최우선)**
+- 네이버 플레이스 URL 입력 → 크롤링 → 식당 정보 추출
+- 고객 리뷰 + 사장님 추천 입력 → AI 답글 생성
+- **생성된 답글을 DB에 저장** ← 현재 없는 기능!
+
+**2. 장기 확장성 고려**
+- 블로그 포스팅 자동 작성 (나중에)
+- 네이버 파워클릭 광고 키워드 관리 (나중에)
+- 네이버 플레이스 순위 추적 & 분석 (애드로그 같은 기능, 나중에)
+  - 참고: https://www.adlog.kr/adlog/naver_place_rank_check.php
+  - 키워드별 순위 변동 추적, 경쟁사 분석
+
+**3. 식당 정보 재사용**
+- 한 번 크롤링한 식당 정보는 DB에 저장
+- 같은 식당의 리뷰/블로그 작성 시 재사용 (중복 크롤링 방지)
+- 예: "두찜 명장점" 정보는 한 번만 저장, 여러 리뷰에서 참조
+
+**4. 회원 등급 체계**
+```
+관리자 (admin):
+  - user_type: 'admin'
+  - membership_level: 'admin'
+  - 전체 시스템 관리 권한
+
+식당 대표 (owner):
+  - user_type: 'owner'
+  - membership_level: 'seed' (씨앗) - 월 리뷰 10개
+  - membership_level: 'power' (파워) - 월 리뷰 50개
+  - membership_level: 'big_power' (빅파워) - 월 리뷰 200개
+  - membership_level: 'premium' (프리미엄) - 무제한
+
+대행사/블로거 (agency):
+  - user_type: 'agency'
+  - membership_level: 'elite' (엘리트) - 월 리뷰 100개
+  - membership_level: 'expert' (전문가) - 월 리뷰 500개
+  - membership_level: 'master' (마스터) - 월 리뷰 2000개
+  - membership_level: 'platinum' (플래티넘) - 무제한
+```
+
+**5. 테스트 회원 요구사항**
+- 카카오 로그인이 아직 미완성이므로 테스트 회원 필요
+- SQL로 직접 INSERT 가능해야 함
+- `auth.users` 의존성 제거 (Supabase Auth 연동 나중에)
+
+---
+
+### 🗂️ 새로운 데이터베이스 설계 (통합 스키마)
+
+**설계 철학:**
+1. **확장 가능성** - 나중에 기능 추가 시 테이블 구조 변경 최소화
+2. **데이터 재사용** - 크롤링한 정보는 한 번만 저장
+3. **관계형 DB 장점** - 외래 키로 데이터 무결성 보장
+4. **유연성** - JSONB로 확장 가능한 데이터 저장
+
+**테이블 구조 (3단계 확장 전략):**
+```
+1단계 (지금 구축):
+- profiles: 사용자 정보, 등급, 사용 한도
+- places: 식당 정보 (중복 방지, 재사용)
+- review_responses: 리뷰 & 답글 저장
+
+2단계 (향후 - 순위 추적):
+- rank_history: 순위 이력 (애드로그 기능)
+- crawl_logs: 크롤링 작업 이력
+- monitored_keywords: 추적 키워드 관리
+
+3단계 (향후 - 콘텐츠 & 광고):
+- blog_posts: 블로그 포스팅
+- ad_keywords: 파워클릭 광고 키워드
+```
+
+**회원 등급 체계**:
+| 타입 | 등급 | 월 리뷰 | 월 블로그 | 특징 |
+|------|------|---------|-----------|------|
+| admin | admin | 무제한 | 무제한 | 시스템 관리자 |
+| owner | seed | 10 | 2 | 무료 체험 |
+| owner | power | 50 | 10 | 일반 사용 |
+| owner | big_power | 200 | 30 | 적극 활용 |
+| owner | premium | 무제한 | 100 | 최고급 |
+| agency | elite | 100 | 50 | 기본 |
+| agency | expert | 500 | 200 | 전문가 |
+| agency | master | 2000 | 500 | 대행사 |
+| agency | platinum | 무제한 | 무제한 | VIP |
+
+**핵심 설계 포인트:**
+
+1. **places 테이블이 중심 허브**
+   ```
+   places (식당 정보)
+     ↓ place_id로 연결
+     ├─→ review_responses (리뷰 답글)
+     ├─→ blog_posts (블로그, 향후)
+     ├─→ rank_history (순위 추적, 향후)
+     └─→ monitored_keywords (키워드 추적, 향후)
+   ```
+
+2. **JSONB로 확장 가능**
+   - `review_responses.place_info_json` - 크롤링한 전체 정보 저장
+   - 나중에 컬럼 추가 없이 새 데이터 저장 가능
+   - 예: facilities, tv_appearances, custom_data 등
+
+3. **auth.users 의존성 제거**
+   - 기존 문제: `profiles.id REFERENCES auth.users(id)` → 카카오 로그인 필수
+   - 해결: `profiles.id uuid PRIMARY KEY` - 독립적인 테이블
+   - 효과: SQL로 직접 테스트 회원 INSERT 가능
+
+4. **RLS 2단계 정책**
+   - 개발 모드 (현재): `FOR ALL USING (true)` - 모두 허용
+   - 프로덕션 모드 (향후): `USING (auth.uid() = kakao_id)` - 본인만 조회
+   - 주석으로 프로덕션 정책 준비해둠
+
+5. **외래 키로 데이터 무결성**
+   - `review_responses.place_id → places.place_id`
+   - `review_responses.user_id → profiles.id`
+   - `ON DELETE CASCADE` - 회원 삭제 시 리뷰도 자동 삭제
+   - `ON DELETE SET NULL` - 식당 삭제 시 리뷰는 유지 (place_id만 NULL)
+
+---
+
+### 📄 생성된 파일
+
+**1. `docs/데이터베이스ai작업.md` (600줄) - 완전한 작업 가이드**
+
+이 문서는 다음 AI가 데이터베이스 작업을 이해하고 연동할 수 있도록 작성된 완전한 가이드입니다.
+
+**포함 내용:**
+- 프로젝트 배경 및 현재 상황
+- 회원 등급 체계 상세 (admin, owner, agency)
+- 테이블 구조 (3단계 확장 전략)
+- 각 테이블 상세 설계:
+  - `profiles` - 사용자 정보, 회원 등급, 사용 한도
+  - `places` - 식당 정보, 크롤링 데이터 저장 및 재사용
+  - `review_responses` - 리뷰 원문, AI 답글, 크롤링 정보
+  - `rank_history` - 순위 추적 (향후, 주석 처리)
+  - `blog_posts` - 블로그 (향후, 주석 처리)
+  - `ad_keywords` - 광고 (향후, 주석 처리)
+- 보안 설정 (RLS 정책, 개발/프로덕션 모드)
+- 테스트 데이터 (샘플 3명, 식당 1개, 리뷰 1개)
+- 작업 순서 (Step 1-8, 스크린샷 포함)
+- 프론트엔드 연동 방법 (review.html, server.js)
+- 주의사항 & 체크리스트
+
+**2. `supabase-schema-final.sql` (446줄) - 실행 가능한 SQL 파일**
+
+Supabase SQL Editor에서 바로 실행할 수 있는 완전한 스키마 파일입니다.
+
+**구조:**
+```sql
+-- 1. 확장 기능 활성화 (uuid-ossp)
+-- 2. 1단계 테이블 생성 (profiles, places, review_responses)
+-- 3. 인덱스 생성 (성능 최적화)
+-- 4. RLS 활성화 및 정책 설정 (개발 모드)
+-- 5. updated_at 자동 업데이트 함수 및 트리거
+-- 6. 테스트 데이터 삽입 (회원 3명, 식당 1개, 리뷰 1개)
+-- 7. 2단계 테이블 (순위 추적, 주석 처리)
+-- 8. 3단계 테이블 (블로그, 광고, 주석 처리)
+-- 9. 완료 메시지 출력
+```
+
+**특징:**
+- 1단계만 활성화 (당장 사용)
+- 2~3단계는 주석 처리 (향후 주석만 해제하면 활성화)
+- 에러 없이 한 번에 실행 가능
+- 완료 메시지로 결과 확인
+
+**확장 시나리오 예시:**
+```
+시나리오 1: 리뷰 작성
+1. 크롤링 → places 저장
+2. review_responses 저장 (place_id 연결)
+
+시나리오 2: 블로그 작성
+1. places 테이블 조회 (이미 저장됨)
+2. blog_posts 저장 (place_id 연결)
+3. 크롤링 불필요!
+
+시나리오 3: 순위 추적 (애드로그)
+1. "명장동맛집" 키워드 등록
+2. 매일 크롤링 → rank_history 저장
+3. 순위 변동 그래프 표시
+```
+
+**프론트엔드 호환성:**
+- `review.html` 수정 필요:
+  - reviewText → customer_review
+  - ownerTips → owner_tips
+  - placeInfo → place_info_json
+  - place_id 추출 및 저장
+- `server.js` 수정 필요:
+  - Supabase 클라이언트 초기화
+  - 답글 생성 후 DB 저장 로직 추가
+
+**생성된 SQL 파일:**
+- ✅ `supabase-schema-final.sql` (실행 가능한 최종 스키마)
+  - 1단계 테이블: profiles, places, review_responses
+  - 2단계 테이블: rank_history, crawl_logs, monitored_keywords (주석 처리)
+  - 3단계 테이블: blog_posts, ad_keywords (주석 처리)
+  - 인덱스, RLS 정책, 트리거 포함
+  - 테스트 데이터: 회원 3명, 식당 1개, 리뷰 1개
+
+**파일 정리:**
+- ❌ 삭제: `supabase-schema.sql`, `supabase-schema-reviews.sql` (기존 AI 작성, 사용 안 함)
+- ✅ 보관: `db-schema.sql`, `db-schema-reviews.sql` (SQLite용, 다른 용도)
+
+---
+
+### ✅ 완료된 작업 (단계별)
+
+**Step 1: 기존 데이터베이스 정리**
+- ✅ 사용자가 Supabase 대시보드에서 기존 샘플 테이블 삭제
+- ✅ `instruments` 등 테스트 테이블 모두 제거
+- 결과: 깨끗한 상태에서 시작
+
+**Step 2: 가이드 문서 작성**
+- ✅ `docs/데이터베이스ai작업.md` 작성 (600줄)
+- ✅ 다음 AI가 읽고 이해할 수 있도록 상세 설명
+- ✅ 회원 등급, 테이블 설계, 연동 방법 포함
+
+**Step 3: SQL 스키마 파일 생성**
+- ✅ `supabase-schema-final.sql` 작성 (446줄)
+- ✅ 1단계 테이블만 활성화, 2~3단계는 주석 처리
+- ✅ 테스트 데이터 포함 (회원 3명, 식당 1개, 리뷰 1개)
+- ✅ 에러 없이 실행 가능하도록 검증
+
+**Step 4: 기존 스키마 파일 정리**
+- ✅ `supabase-schema.sql` 삭제 (기존 AI 작성, 사용 안 함)
+- ✅ `supabase-schema-reviews.sql` 삭제 (기존 AI 작성, 사용 안 함)
+- ✅ `db-schema.sql`, `db-schema-reviews.sql` 보관 (SQLite용)
+- ✅ AI_LOG.md에 파일 정리 내역 기록
+
+**Step 5: Supabase SQL Editor 실행**
+- ✅ 사용자가 `supabase-schema-final.sql` 전체 복사
+- ✅ Supabase SQL Editor에 붙여넣기
+- ✅ Run 버튼 클릭
+- ✅ "Success. No rows returned" 확인 (정상)
+- ✅ 한글 완료 메시지 출력 확인
+
+**Step 6: 테이블 생성 확인**
+- ✅ Table Editor에서 3개 테이블 확인:
+  - `profiles` - 사용자 정보
+  - `places` - 식당 정보
+  - `review_responses` - 리뷰 & 답글
+
+**Step 7: 테스트 데이터 확인**
+- ✅ **profiles 테이블** (회원 3명):
+  - 마케팅 프로 (user_type: agency, membership_level: master)
+  - 시스템 관리자 (user_type: admin, membership_level: admin)
+  - 김사장 (user_type: owner, membership_level: premium)
+  
+- ✅ **places 테이블** (식당 1개):
+  - 두찜 명장점
+  - place_id: 1390003666
+  - 카테고리: 한식>육류,고기요리
+  - 주소: 부산광역시 동래구 명장로 123
+  - 평점: 4.52, 방문자 리뷰: 2335개, 블로그 리뷰: 253개
+  
+- ✅ **review_responses 테이블** (리뷰 1개):
+  - 김사장의 샘플 리뷰
+  - place_id: 1390003666 (두찜 명장점 연결)
+  - customer_review: "고기가 정말 맛있어요! 특히 삼겹살이 일품이었습니다..."
+  - owner_tips: "삼겹살, 돼지갈비 추천"
+  - ai_response: "안녕하세요, 두찜 명장점입니다! 😊..."
+  - ai_model: "claude"
+
+**Step 8: 인덱스 및 보안 확인**
+- ✅ 인덱스 13개 생성 확인 (성능 최적화)
+- ✅ RLS (Row Level Security) 활성화 확인
+- ✅ 개발 모드 정책 적용 (모두 허용)
+- ✅ updated_at 트리거 정상 작동
+
+---
+
+### 🔜 다음 작업 (새 AI가 진행해야 할 것)
+
+> 📌 **중요**: 데이터베이스는 완성되었습니다. 이제 프론트엔드-백엔드 연동만 하면 됩니다!
+
+**Task 1: Supabase 클라이언트 초기화 (server.js)**
+
+현재 상태:
+- `review.html`에서 `/api/generate-reply` 호출 → 답글 생성만 함
+- DB 저장 로직 없음
+
+해야 할 일:
+```javascript
+// server.js 상단에 추가
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+```
+
+**Task 2: DB 저장 로직 추가 (server.js)**
+
+`/api/generate-reply` 엔드포인트 수정:
+1. 답글 생성 (현재 로직 유지)
+2. **places 테이블에 식당 정보 저장 (UPSERT)**
+   - placeInfo에서 place_id, place_name, category 등 추출
+   - 이미 있으면 UPDATE, 없으면 INSERT
+3. **review_responses 테이블에 리뷰 저장**
+   - user_id: 임시로 테스트 회원 id 사용 (김사장)
+   - place_id: 저장된 식당의 place_id
+   - customer_review, owner_tips, ai_response 등 저장
+4. 클라이언트에게 성공 응답 + 저장된 리뷰 id 반환
+
+주의사항:
+- 외래 키 순서: places 먼저 → review_responses 나중
+- 에러 처리: 저장 실패 시 적절한 에러 메시지
+
+**Task 3: 프론트엔드 연동 (review.html)**
+
+현재 상태:
+- 답글 생성 후 화면에만 표시
+- DB 저장 여부 모름
+
+해야 할 일:
+1. 답글 생성 성공 시 "DB에 저장되었습니다" 메시지 표시
+2. 저장된 리뷰 id로 "저장된 리뷰 보기" 버튼 추가 (선택사항)
+
+**Task 4: 마이페이지 구현 (선택사항)**
+
+목표:
+- 로그인한 사용자의 저장된 리뷰 목록 표시
+- 리뷰 상세 보기, 수정, 삭제 기능
+
+**Task 5: 카카오 로그인 연동 (향후)**
+
+현재 상태:
+- localStorage 기반 임시 로그인
+- 테스트 회원 SQL로 직접 INSERT
+
+향후 작업:
+- 카카오 로그인 완성 후 `profiles.kakao_id` 연결
+- RLS 정책을 프로덕션 모드로 변경
+
+---
+
+### 💡 다음 AI를 위한 체크리스트
+
+**시작하기 전에 확인:**
+- [ ] `@docs/AI_LOG.md` 이 섹션 전체 읽기
+- [ ] `@docs/데이터베이스ai작업.md` 읽기 (테이블 구조 이해)
+- [ ] `@supabase-schema-final.sql` 확인 (어떤 테이블이 있는지)
+- [ ] Supabase Table Editor에서 데이터 확인
+
+**작업 시 주의사항:**
+1. **외래 키 순서 중요!**
+   - places 테이블에 먼저 저장
+   - 그 다음 review_responses 저장
+   
+2. **user_id 처리**
+   - 현재는 테스트 회원 id 하드코딩 (김사장)
+   - 나중에 로그인 정보에서 가져오도록 수정 필요
+   
+3. **place_id 추출**
+   - `placeInfo.basic.place_id` 또는 URL에서 추출
+   - 없으면 에러 처리
+   
+4. **JSONB 저장**
+   - `place_info_json`에 전체 placeInfo 저장
+   - 나중에 확장 가능
+   
+5. **에러 처리**
+   - DB 저장 실패 시 적절한 에러 메시지
+   - 프론트엔드에서 표시 가능하도록
+
+**테스트 방법:**
+1. `review.html`에서 답글 생성
+2. Table Editor에서 `review_responses` 확인
+3. 데이터가 저장되었는지 확인
+
+**문제 발생 시:**
+- AI_LOG.md 이 섹션 다시 읽기
+- `supabase-schema-final.sql` 테이블 구조 확인
+- Supabase 대시보드 → Table Editor에서 데이터 직접 확인
+
+---
+
+### 📚 참고 자료
+
+**프로젝트 이해:**
+- `docs/AI_LOG.md` - 전체 작업 이력
+- `docs/데이터베이스ai작업.md` - 데이터베이스 완전 가이드
+- `docs/SUPABASE_SETUP_GUIDE.md` - Supabase 설정 방법
+
+**코드 참고:**
+- `review.html` - 프론트엔드 (답글 생성 UI)
+- `server.js` - 백엔드 (API 엔드포인트)
+- `supabase-schema-final.sql` - 데이터베이스 스키마
+
+**외부 링크:**
+- [Supabase JavaScript Client](https://supabase.com/docs/reference/javascript/introduction)
+- [Supabase Database](https://supabase.com/docs/guides/database)
+
+---
+
+### 🎯 최종 정리
+
+**달성한 것:**
+- ✅ Supabase 클라우드 데이터베이스 구축 완료
+- ✅ 3개 테이블 생성 (profiles, places, review_responses)
+- ✅ 테스트 데이터 확인 완료
+- ✅ 확장 가능한 구조 (순위 추적, 블로그, 광고)
+- ✅ 회원 등급 체계 완벽 구현
+
+**남은 작업:**
+- ⏳ server.js에 DB 저장 로직 추가 ← **다음 작업!**
+- ⏳ review.html에서 저장 확인 메시지
+- ⏳ 마이페이지 구현 (저장된 리뷰 목록)
+- ⏳ 카카오 로그인 연동
+
+**예상 소요 시간:**
+- server.js 연동: 30-60분
+- 프론트엔드 연동: 15-30분
+- 테스트 및 디버깅: 30분
+
+**성공 기준:**
+- `review.html`에서 답글 생성
+- Table Editor에서 데이터 확인 가능
+- 에러 없이 저장 완료
+
+---
