@@ -372,20 +372,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      // 이미 로그인된 경우 메인 페이지로 리다이렉트 (단, signup=success가 있으면 환영 메시지를 보여주기 위해 리다이렉트하지 않음)
+      // 이미 로그인된 경우 메인 페이지로 리다이렉트
       (function checkAlreadyLoggedIn() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const isSignupSuccess = urlParams.get('signup') === 'success';
-        
         const isLoggedIn = localStorage.getItem("isLoggedIn");
-        if (isLoggedIn === "true" && !isSignupSuccess) {
+        if (isLoggedIn === "true") {
           window.location.href = "index.html";
         }
       })();
 
       // Supabase 초기화
       const SUPABASE_URL = "https://ptuzlubgggbgsophfcna.supabase.co";
-      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE"; // 대시보드의 anon public 키
+      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE"; // 대시보드의 anon public 키를 넣으세요
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY || "");
 
       function setLoggedInFromSession(session) {
@@ -403,28 +400,22 @@
         localStorage.setItem("isLoggedIn", "true");
       }
 
-      // 페이지 로드 시 Supabase 세션 확인 (signup=success가 있으면 환영 메시지 먼저 표시)
+      // 페이지 로드 시 Supabase 세션 확인
       (async () => {
         try {
-          const urlParams = new URLSearchParams(window.location.search);
-          const isSignupSuccess = urlParams.get('signup') === 'success';
-          
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             setLoggedInFromSession(session);
-            // 회원가입 성공 시에는 환영 메시지를 보여주기 위해 리다이렉트하지 않음
-            if (!isSignupSuccess) {
-              window.location.replace("index.html");
-            }
+            window.location.replace("index.html");
           }
         } catch (_) {}
       })();
 
-      // 로그인 상태 변화 감지 (회원가입 페이지에서는 바로 리다이렉트하지 않음)
+      // 로그인 상태 변화 감지
       supabase.auth.onAuthStateChange((event, session) => {
         if (event === "SIGNED_IN") {
           setLoggedInFromSession(session);
-          // 회원가입 페이지에서는 환영 메시지를 보여주므로 바로 리다이렉트하지 않음
+          window.location.replace("index.html");
         }
       });
 
@@ -453,46 +444,11 @@
         successMessage.style.display = "none";
       }
 
-      // Kakao 회원가입 (Supabase OAuth 방식)
-      if (kakaoSignupBtn) {
-        kakaoSignupBtn.addEventListener("click", async () => {
-          try {
-            hideMessages();
-            
-            // Supabase OAuth를 사용한 카카오 회원가입
-            const { data, error } = await supabase.auth.signInWithOAuth({
-              provider: 'kakao',
-              options: {
-                redirectTo: window.location.origin + '/join.html?signup=success'
-              }
-            });
-
-            if (error) {
-              hideLoading();
-              showError('회원가입 실패: ' + error.message);
-              console.error('카카오 회원가입 오류:', error);
-            }
-            // 성공 시 자동으로 카카오 페이지로 리다이렉트됨
-          } catch (err) {
-            hideLoading();
-            showError('회원가입 중 오류가 발생했습니다.');
-            console.error('회원가입 오류:', err);
-          }
-        });
-      } else {
-        console.error('카카오 회원가입 버튼을 찾을 수 없습니다!');
-      }
-
-      // 회원가입 성공 시 환영 메시지 표시 후 메인으로 이동
-      (function checkSignupSuccess() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('signup') === 'success') {
-          showSuccess('🎉 회원가입이 완료되었습니다! 환영합니다!');
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 2000); // 2초 후 메인으로 이동
-        }
-      })();
+      // Kakao 회원가입 (서버 OAuth)
+      kakaoSignupBtn.addEventListener("click", () => {
+        // 서버의 카카오 로그인 엔드포인트로 리다이렉트 (state=signup으로 구분)
+        window.location.href = "/auth/kakao/login?state=signup";
+      });
     </script>
   </body>
 </html>
