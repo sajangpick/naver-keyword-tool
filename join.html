@@ -372,10 +372,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      // 이미 로그인된 경우 메인 페이지로 리다이렉트
+      // 이미 로그인된 경우 메인 페이지로 리다이렉트 (단, signup=success가 있으면 환영 메시지를 보여주기 위해 리다이렉트하지 않음)
       (function checkAlreadyLoggedIn() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSignupSuccess = urlParams.get('signup') === 'success';
+        
         const isLoggedIn = localStorage.getItem("isLoggedIn");
-        if (isLoggedIn === "true") {
+        if (isLoggedIn === "true" && !isSignupSuccess) {
           window.location.href = "index.html";
         }
       })();
