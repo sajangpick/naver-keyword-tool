@@ -381,8 +381,8 @@
       })();
 
       // Supabase 초기화
-      const SUPABASE_URL = "https://ptuzlubggggbgsophfcna.supabase.co";
-      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE"; // 대시보드의 anon public 키를 넣으세요
+      const SUPABASE_URL = "https://ptuzlubgggbgsophfcna.supabase.co";
+      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE"; // 대시보드의 anon public 키
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY || "");
 
       function setLoggedInFromSession(session) {
@@ -444,10 +444,28 @@
         successMessage.style.display = "none";
       }
 
-      // Kakao 회원가입 (서버 OAuth)
-      kakaoSignupBtn.addEventListener("click", () => {
-        // 서버의 카카오 로그인 엔드포인트로 리다이렉트 (state=signup으로 구분)
-        window.location.href = "/auth/kakao/login?state=signup";
+      // Kakao 회원가입 (Supabase OAuth 방식)
+      kakaoSignupBtn.addEventListener("click", async () => {
+        try {
+          hideMessages();
+          
+          // Supabase OAuth를 사용한 카카오 회원가입
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'kakao',
+            options: {
+              redirectTo: window.location.origin + '/index.html'
+            }
+          });
+
+          if (error) {
+            showError('회원가입 실패: ' + error.message);
+            console.error('카카오 회원가입 오류:', error);
+          }
+          // 성공 시 자동으로 카카오 페이지로 리다이렉트됨
+        } catch (err) {
+          showError('회원가입 중 오류가 발생했습니다.');
+          console.error('회원가입 오류:', err);
+        }
       });
     </script>
   </body>

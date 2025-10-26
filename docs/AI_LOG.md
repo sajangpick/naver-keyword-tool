@@ -112,6 +112,328 @@ coverage/
 
 ---
 
+## 🔥 최신 작업 (2025-10-26) ✨ NEW!
+
+### 📌 카카오 로그인 Supabase OAuth 설정 및 트러블슈팅
+
+**작업 일시:** 2025-10-26  
+**소요 시간:** 약 3시간  
+**작업 난이도:** ⭐⭐⭐⭐ (높음 - KOE205 에러 트러블슈팅 포함)
+
+---
+
+#### 📋 작업 내용 요약
+
+1. **카카오 로그인 연동 정보 확인**
+   - Supabase Project URL: `https://ptuzlubgggbgsophfcna.supabase.co`
+   - REST API Key (Client ID): `e44a1f2a2c720f9c6036f5b6fcd51490`
+   - Client Secret: `SWDyhf5Ezh7wGuk1aJCRTRoAuUNT6Y5D`
+   - Callback URL: `https://ptuzlubgggbgsophfcna.supabase.co/auth/v1/callback`
+
+2. **login.html 수정**
+   - Supabase URL 오타 수정: `ptuzlubggggbgsophfcna` (g 4개) → `ptuzlubgggbgsophfcna` (g 3개)
+   - 로그인 성공 후 리다이렉트 경로 개선: `/login.html` → `/index.html`
+
+3. **Supabase Provider 설정 확인**
+   - Kakao enabled: ON ✅
+   - REST API Key: 등록됨 ✅
+   - Client Secret: 등록됨 ✅
+   - Allow users without an email: ON ✅
+   - Callback URL: 정상 등록됨 ✅
+
+4. **카카오 개발자 콘솔 설정 확인**
+   - Redirect URI 정확히 등록: `https://ptuzlubgggbgsophfcna.supabase.co/auth/v1/callback` ✅
+   - 동의항목 설정:
+     - 닉네임: 필수 동의 ✅
+     - 프로필 사진: 필수 동의 ✅
+     - 카카오계정(이메일): 필수 동의 [수집] ✅
+   - 플랫폼 설정:
+     - Web 사이트 도메인: `https://www.sajangpick.co.kr`, `http://localhost:5505` 등록됨
+
+5. **KOE205 에러 트러블슈팅**
+   - 문제: "잘못된 요청 (KOE205) - 서비스 설정에 오류"
+   - 원인 분석:
+     - Supabase URL g 개수 불일치
+     - 로컬 테스트 시 `localhost:3000` 미등록
+     - 이메일 동의항목 누락 가능성
+   - 해결 시도:
+     - Supabase URL 수정 완료
+     - 플랫폼에 `localhost:3000` 추가 권장
+     - 동의항목 모두 확인 완료
+
+6. **배포 진행**
+   - Git commit 및 push 완료
+   - Vercel 자동 배포 진행
+   - 배포 중 502 Bad Gateway 발생 (배포 완료 대기 중)
+
+---
+
+#### 🔧 수정된 파일
+
+**프론트엔드:**
+- `login.html`
+  - Supabase URL 수정 (322번째 줄)
+  - redirectTo 경로 변경 (407번째 줄)
+
+---
+
+#### 🐛 발생한 문제와 해결
+
+**1. Supabase URL 오타**
+- **문제**: `ptuzlubggggbgsophfcna` (g 4개)
+- **해결**: `ptuzlubgggbgsophfcna` (g 3개)로 수정
+
+**2. KOE205 에러 지속 발생**
+- **문제**: 카카오 로그인 시 "서비스 설정에 오류" 메시지
+- **원인 추정**:
+  1. 카카오 로그인 활성화 상태 미확인
+  2. 로컬 개발 시 `localhost:3000` 플랫폼 미등록
+  3. 이메일 동의항목 설정 누락 가능성
+- **시도한 해결책**:
+  - Redirect URI 확인 완료
+  - 동의항목 모두 확인 완료
+  - 플랫폼에 `localhost:3000` 추가 권장
+- **최종 결정**: 배포 후 프로덕션 환경에서 테스트
+
+**3. 배포 후 502 Bad Gateway**
+- **문제**: 배포 직후 서버 응답 없음
+- **원인**: Vercel 배포가 완전히 완료되지 않음 (Cold Start)
+- **해결**: 2-3분 대기 후 재시도 필요
+
+---
+
+#### 📝 다음 AI를 위한 중요 메모
+
+1. **Supabase URL 오타 주의**
+   - ✅ 정확한 URL: `ptuzlubgggbgsophfcna` (g 3개)
+   - ❌ 잘못된 URL: `ptuzlubggggbgsophfcna` (g 4개)
+
+2. **KOE205 에러 체크리스트**
+   - [ ] Supabase URL 정확한지 확인
+   - [ ] 카카오 개발자 콘솔 Redirect URI 일치 확인
+   - [ ] 카카오 로그인 활성화 상태(ON) 확인
+   - [ ] 동의항목 설정 (닉네임, 프로필, 이메일) 확인
+   - [ ] 플랫폼 Web 도메인 등록 확인
+   - [ ] "Skip nonce check" 옵션 확인 (Supabase Provider)
+
+3. **로컬 개발 시**
+   - 카카오 개발자 콘솔 플랫폼에 `http://localhost:3000` 추가 필요
+   - 또는 실제 배포된 도메인에서 테스트
+
+4. **배포 후 테스트**
+   - 502 에러 발생 시 2-3분 대기
+   - Vercel 대시보드에서 배포 상태 "Ready" 확인
+   - `https://www.sajangpick.co.kr/login.html`에서 카카오 로그인 테스트
+
+---
+
+#### ✅ 완료 상태
+
+- ✅ Supabase 설정 확인 완료
+- ✅ 카카오 개발자 콘솔 설정 확인 완료
+- ✅ login.html 코드 수정 완료
+- ✅ Git commit 및 push 완료
+- ⏳ 배포 완료 대기 중
+- ⏳ 프로덕션 환경 테스트 필요
+
+---
+
+## 🔥 이전 작업 (2025-10-23)
+
+### 📌 Supabase DB 저장 기능 완전 구축 + 배포 완료
+
+**작업 일시:** 2025-10-23  
+**소요 시간:** 약 4시간  
+**작업 난이도:** ⭐⭐⭐⭐ (높음 - 다수의 트러블슈팅 포함)
+
+---
+
+#### 📋 작업 내용 요약
+
+1. **Supabase DB 저장 로직 구현** (server.js)
+   - `/api/generate-reply` 엔드포인트에 DB 저장 기능 추가
+   - `places` 테이블 UPSERT (식당 정보)
+   - `review_responses` 테이블 INSERT (리뷰 & 답글)
+   - Supabase 클라이언트 초기화 코드 추가
+
+2. **환경변수 설정 및 트러블슈팅**
+   - `.env` 파일의 `NEXT_PUBLIC_SUPABASE_URL` 오타 수정
+     - 잘못: `ptuzlubg**gggg**bgsophfcna.supabase.co` (g 4개)
+     - 정답: `ptuzlubg**ggg**bgsophfcna.supabase.co` (g 3개)
+   - Vercel 환경변수 3개 추가
+   - Render 환경변수 3개 추가
+
+3. **review.html UI 개선**
+   - DB 저장 상태 메시지 표시
+   - 로딩 인디케이터 자동 숨김 로직 개선
+   - 성공/실패 케이스별 메시지 구분
+
+4. **배포 구조 이해 및 복구**
+   - Vercel serverless 환경의 한계 파악
+   - 원래 구조(Render API 서버 + Vercel 프론트) 복구
+   - `vercel.json`에 Render 프록시 설정 복구
+
+5. **UI 개선 - 메뉴 순서 변경**
+   - 전체 페이지 메뉴 순서 변경: 키워드 → 리뷰작성 → 블로그 → 채팅
+   - `index.html` 및 `assets/common-header.js` 수정
+
+---
+
+#### 🔧 수정된 파일
+
+**백엔드:**
+- `server.js`
+  - Supabase 클라이언트 초기화 (37-52번째 줄)
+  - `/api/generate-reply` DB 저장 로직 (2420-2530번째 줄 근처)
+  - Vercel 환경 감지 및 export (2897-3001번째 줄)
+
+**프론트엔드:**
+- `review.html`
+  - DB 저장 상태 표시 로직
+  - 로딩 메시지 자동 숨김
+  
+**설정 파일:**
+- `vercel.json`
+  - Render 프록시 설정 복구
+  ```json
+  {
+    "rewrites": [
+      { "source": "/api/:path*", "destination": "https://naver-keyword-tool.onrender.com/api/:path*" },
+      { "source": "/auth/:path*", "destination": "https://naver-keyword-tool.onrender.com/auth/:path*" }
+    ]
+  }
+  ```
+
+**UI:**
+- `index.html` - 메인 페이지 메뉴 순서 변경
+- `assets/common-header.js` - 전체 페이지 공통 헤더 메뉴 순서 변경
+
+---
+
+#### 🌟 환경변수 설정
+
+**추가된 환경변수 (Vercel & Render 공통):**
+
+```bash
+# Supabase 클라우드 DB
+NEXT_PUBLIC_SUPABASE_URL=https://ptuzlubgggbgsophfcna.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**주의사항:**
+- `SUPABASE_SERVICE_ROLE_KEY`는 백엔드(Render)에만 필요
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`는 프론트엔드용 (현재는 미사용)
+
+---
+
+#### 🐛 발생한 문제와 해결
+
+**1. profiles 테이블이 비어있음**
+- **문제:** `Error: profiles 테이블에 회원이 없습니다.`
+- **원인:** Supabase에 테스트 유저 데이터가 없었음
+- **해결:** SQL Editor에서 김사장 테스트 유저 생성
+  ```sql
+  INSERT INTO profiles (id, name, email, membership_level, phone, business_name, created_at)
+  VALUES (gen_random_uuid(), '김사장', 'test@sajangpick.com', 'free', '010-1234-5678', '사장픽 테스트', NOW());
+  ```
+
+**2. Supabase URL 오타**
+- **문제:** `fetch failed` - 네트워크 연결 실패
+- **원인:** `.env` 파일의 URL에 `g`가 하나 더 많았음
+- **해결:** URL 수정 후 서버 재시작
+
+**3. Vercel serverless 환경에서 Express 서버 실행 불가**
+- **문제:** Vercel 배포 후 500 에러
+- **원인:** Express 서버 전체를 serverless function으로 변환하려 시도
+- **해결:** 
+  - 원래 구조로 복귀 (Render API 서버 + Vercel 프론트)
+  - `vercel.json`에 Render 프록시 설정 복구
+  - `server.js`에 Vercel 환경 감지 로직 추가
+
+**4. Render 환경변수 누락**
+- **문제:** 클라우드에서 DB 저장 실패
+- **원인:** Render 서버에 Supabase 환경변수가 없었음
+- **해결:** Render 대시보드에서 환경변수 3개 추가 후 재시작
+
+---
+
+#### 📊 최종 배포 구조
+
+```
+사용자 브라우저
+    ↓
+Vercel (정적 파일: HTML, CSS, JS)
+    ↓ /api 요청
+Render (Express 서버 - server.js)
+    ↓ DB 저장
+Supabase (PostgreSQL 데이터베이스)
+```
+
+**장점:**
+- ✅ Vercel: 빠른 정적 파일 서빙
+- ✅ Render: Express 서버 완전 실행 가능
+- ✅ Supabase: 관리형 DB, RLS 보안
+
+---
+
+#### ✅ 테스트 결과
+
+**로컬 환경:**
+- ✅ 답글 생성 성공
+- ✅ Supabase DB 저장 성공
+- ✅ 데이터 조회 확인
+
+**클라우드 환경 (www.sajangpick.co.kr):**
+- ✅ 답글 생성 성공
+- ✅ Supabase DB 저장 성공
+- ✅ 데이터 조회 확인
+
+---
+
+#### 📝 다음 AI를 위한 중요 메모
+
+1. **Vercel은 serverless 환경입니다**
+   - Express 서버 전체를 실행할 수 없음
+   - 간단한 API만 가능
+   - 복잡한 서버는 Render/Railway 사용
+
+2. **환경변수는 3곳에 설정 필요**
+   - `.env` (로컬)
+   - Vercel (프론트엔드)
+   - Render (백엔드)
+
+3. **Supabase URL 오타 주의**
+   - `ptuzlubgggbgsophfcna` (g 3개) ✅
+   - `ptuzlubggggbgsophfcna` (g 4개) ❌
+
+4. **Service Role Key vs Anon Key**
+   - Service Role: 백엔드 전용, RLS 무시
+   - Anon: 프론트엔드용, RLS 적용
+
+5. **Render 재시작 시간**
+   - 환경변수 변경 후 30초~1분 대기 필요
+   - Live 상태 확인 후 테스트
+
+---
+
+#### 🎯 학습한 근본 원리
+
+**문제 해결 접근법:**
+1. ❌ 증상만 보고 해결 시도 (실패)
+2. ✅ 근본 원인 파악 (성공)
+   - 로그 확인
+   - 환경 확인 (로컬 vs 클라우드)
+   - 네트워크 연결 테스트
+   - 정확한 에러 메시지 확인
+
+**Vercel vs Render 이해:**
+- Vercel = 택배 대행 (필요할 때만 일꾼 호출)
+- Render = 가게 직원 (24시간 대기)
+- 우리 프로젝트는 "가게 직원" 필요 → Render 사용
+
+---
+
 ## 🔥 최신 중요 사항 TOP 3 (바쁘면 여기만!)
 
 ### 1. 📁 문서 정리 완료 + Supabase 로컬 테스트 API 추가 (2025-10-22) ✨ NEW!
