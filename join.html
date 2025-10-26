@@ -400,22 +400,28 @@
         localStorage.setItem("isLoggedIn", "true");
       }
 
-      // 페이지 로드 시 Supabase 세션 확인
+      // 페이지 로드 시 Supabase 세션 확인 (signup=success가 있으면 환영 메시지 먼저 표시)
       (async () => {
         try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const isSignupSuccess = urlParams.get('signup') === 'success';
+          
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             setLoggedInFromSession(session);
-            window.location.replace("index.html");
+            // 회원가입 성공 시에는 환영 메시지를 보여주기 위해 리다이렉트하지 않음
+            if (!isSignupSuccess) {
+              window.location.replace("index.html");
+            }
           }
         } catch (_) {}
       })();
 
-      // 로그인 상태 변화 감지
+      // 로그인 상태 변화 감지 (회원가입 페이지에서는 바로 리다이렉트하지 않음)
       supabase.auth.onAuthStateChange((event, session) => {
         if (event === "SIGNED_IN") {
           setLoggedInFromSession(session);
-          window.location.replace("index.html");
+          // 회원가입 페이지에서는 환영 메시지를 보여주므로 바로 리다이렉트하지 않음
         }
       });
 
@@ -445,28 +451,45 @@
       }
 
       // Kakao 회원가입 (Supabase OAuth 방식)
-      kakaoSignupBtn.addEventListener("click", async () => {
-        try {
-          hideMessages();
-          
-          // Supabase OAuth를 사용한 카카오 회원가입
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'kakao',
-            options: {
-              redirectTo: window.location.origin + '/index.html'
-            }
-          });
+      if (kakaoSignupBtn) {
+        kakaoSignupBtn.addEventListener("click", async () => {
+          try {
+            hideMessages();
+            
+            // Supabase OAuth를 사용한 카카오 회원가입
+            const { data, error } = await supabase.auth.signInWithOAuth({
+              provider: 'kakao',
+              options: {
+                redirectTo: window.location.origin + '/join.html?signup=success'
+              }
+            });
 
-          if (error) {
-            showError('회원가입 실패: ' + error.message);
-            console.error('카카오 회원가입 오류:', error);
+            if (error) {
+              hideLoading();
+              showError('회원가입 실패: ' + error.message);
+              console.error('카카오 회원가입 오류:', error);
+            }
+            // 성공 시 자동으로 카카오 페이지로 리다이렉트됨
+          } catch (err) {
+            hideLoading();
+            showError('회원가입 중 오류가 발생했습니다.');
+            console.error('회원가입 오류:', err);
           }
-          // 성공 시 자동으로 카카오 페이지로 리다이렉트됨
-        } catch (err) {
-          showError('회원가입 중 오류가 발생했습니다.');
-          console.error('회원가입 오류:', err);
+        });
+      } else {
+        console.error('카카오 회원가입 버튼을 찾을 수 없습니다!');
+      }
+
+      // 회원가입 성공 시 환영 메시지 표시 후 메인으로 이동
+      (function checkSignupSuccess() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('signup') === 'success') {
+          showSuccess('🎉 회원가입이 완료되었습니다! 환영합니다!');
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 2000); // 2초 후 메인으로 이동
         }
-      });
+      })();
     </script>
   </body>
 </html>
