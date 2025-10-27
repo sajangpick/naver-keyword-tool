@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChatGPT 채팅 - 사장픽</title>
     <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
     />
     <script src="/assets/common-header.js?v=20251022" defer></script>
@@ -619,6 +619,8 @@
       </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/assets/auth-state.js?v=202410"></script>
     <script>
       // 전역 설정: 상대 경로(`/api`) 사용
       let totalTokens = 0;
@@ -823,7 +825,7 @@
       });
 
       // 로그인 상태 확인 및 UI 업데이트 (즉시 실행)
-      (function checkLoginStatus() {
+      function updateAuthUI() {
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         const userData = localStorage.getItem("userData");
 
@@ -831,6 +833,8 @@
         const signupBtn = document.getElementById("signupBtn");
         const userEmailSpan = document.getElementById("userEmail");
         const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+        const userAvatar = document.getElementById("userAvatar");
 
         if (isLoggedIn === "true" && userData) {
           try {
@@ -841,21 +845,35 @@
             if (signupBtn) signupBtn.style.display = "none";
 
             // 사용자 정보 및 로그아웃 버튼 표시
+            if (authUser) authUser.style.display = "flex";
             if (userEmailSpan) {
-              userEmailSpan.textContent = user.email || user.name || "사용자";
-              userEmailSpan.style.display = "inline";
+              const emailText = user.email || user.displayName || user.name || "사용자";
+              userEmailSpan.textContent = emailText;
+              userEmailSpan.title = emailText;
+            }
+            if (userAvatar) {
+              const base =
+                user.displayName ||
+                user.user_metadata?.full_name ||
+                user.email ||
+                "U";
+              userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
             }
             if (logoutBtn) {
-              logoutBtn.style.display = "inline-block";
-
-              // 로그아웃 버튼 클릭 이벤트
-              logoutBtn.addEventListener("click", function () {
-                if (confirm("로그아웃 하시겠습니까?")) {
-                  localStorage.removeItem("isLoggedIn");
-                  localStorage.removeItem("userData");
-                  location.href = "index.html";
+              logoutBtn.style.display = "inline-flex";
+              logoutBtn.onclick = async function () {
+                if (!confirm("로그아웃 하시겠습니까?")) return;
+                try {
+                  if (window.authState?.signOut) {
+                    await window.authState.signOut();
+                  } else {
+                    localStorage.removeItem("isLoggedIn");
+                    localStorage.removeItem("userData");
+                  }
+                } finally {
+                  location.href = "login.html";
                 }
-              });
+              };
             }
           } catch (e) {
             console.error("로그인 정보 파싱 오류:", e);
@@ -865,12 +883,60 @@
           }
         } else {
           // 로그인하지 않은 상태 - 로그인/회원가입 버튼 표시
-          if (loginBtn) loginBtn.style.display = "inline-block";
-          if (signupBtn) signupBtn.style.display = "inline-block";
-          if (userEmailSpan) userEmailSpan.style.display = "none";
-          if (logoutBtn) logoutBtn.style.display = "none";
+          if (loginBtn) loginBtn.style.display = "inline-flex";
+          if (signupBtn) signupBtn.style.display = "inline-flex";
+          if (authUser) authUser.style.display = "none";
+          if (userEmailSpan) {
+            userEmailSpan.textContent = "";
+            userEmailSpan.title = "";
+          }
+          if (logoutBtn) {
+            logoutBtn.style.display = "none";
+            logoutBtn.onclick = null;
+          }
         }
+      }
+
+      function buildRedirectUrl() {
+        const current =
+          window.location.pathname +
+          window.location.search +
+          window.location.hash;
+        return `login.html?redirect=${encodeURIComponent(current)}`;
+      }
+
+      function redirectToLogin() {
+        window.location.replace(buildRedirectUrl());
+      }
+
+      function handleAuthState() {
+        updateAuthUI();
+        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+        if (!isLoggedIn) {
+          redirectToLogin();
+        }
+      }
+
+      (async function ensureAuthenticated() {
+        if (localStorage.getItem("isLoggedIn") === "true") {
+          updateAuthUI();
+          return;
+        }
+        if (window.authState?.syncSession) {
+          try {
+            const session = await window.authState.syncSession();
+            updateAuthUI();
+            if (session) return;
+          } catch (error) {
+            console.warn("세션 동기화 실패:", error);
+          }
+        } else {
+          updateAuthUI();
+        }
+        redirectToLogin();
       })();
+
+      window.addEventListener("auth:state-changed", handleAuthState);
     </script>
   </body>
 </html>

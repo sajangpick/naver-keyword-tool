@@ -26,7 +26,7 @@
   })();
 
   const css = `
-  :root{--naver-green:#03c75a;--naver-green-dark:#02b14f;--bg:#f7f9fb}
+  :root{--naver-green:#03c75a;--naver-green-dark:#02b14f;--naver-green-50:#e6f9f0;--bg:#f7f9fb}
   .header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.8);backdrop-filter:blur(8px);border-bottom:1px solid #e5e7eb}
   .header-inner{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 24px;max-width:1200px;margin:0 auto}
   .logo{font-weight:800;font-size:24px;color:#111827;cursor:pointer}
@@ -44,10 +44,20 @@
   .app-icon{width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(0,0,0,.06);color:var(--naver-green);font-size:18px}
   .app-label{font-size:14px;color:#374151}
   .top-apps a.app:hover .app-icon{border-color:var(--naver-green);transform:translateY(-2px);transition:all .2s ease}
-  .auth-buttons{position:absolute;right:0;top:0;bottom:0;margin:auto 0;display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center}
-  .login-link{display:inline-flex;align-items:center;justify-content:center;width:200px;height:48px;padding:0 16px;border-radius:6px;background:var(--naver-green);color:#fff;font-weight:800;font-size:15px;border:none;text-decoration:none}
-  .kakao-signup{display:inline-flex;align-items:center;justify-content:center;width:200px;height:48px;background:transparent;color:#6b7280;font-weight:800;font-size:15px;border-radius:6px;text-decoration:underline;text-underline-offset:3px}
-  @media (max-width:768px){.auth-buttons{position:static;width:100%;align-items:center}.top-actions-row{flex-direction:column}.top-actions-row .top-apps{display:flex !important;flex-wrap:nowrap !important;gap:12px;overflow-x:auto !important;-webkit-overflow-scrolling:touch;padding:8px 12px 10px 12px;scroll-snap-type:x proximity;justify-content:flex-start !important}.top-actions-row .top-apps a.app{flex:0 0 calc((100% - 48px)/5) !important;scroll-snap-align:start}.top-actions-row .top-apps::-webkit-scrollbar{display:none}}
+  .auth-buttons{position:absolute;right:0;top:0;bottom:0;margin:auto 0;display:flex;align-items:center;gap:12px}
+  .auth-user{display:none;align-items:center;gap:12px;padding:6px 12px;border-radius:999px;border:1px solid rgba(17,24,39,.08);background:rgba(255,255,255,.95);box-shadow:0 16px 28px rgba(15,23,42,.08)}
+  .auth-user__avatar{width:36px;height:36px;border-radius:50%;background:var(--naver-green-50);color:var(--naver-green);font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:-.02em;text-transform:uppercase}
+  .auth-user__meta{display:flex;flex-direction:column;line-height:1.1}
+  .auth-user__label{font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase}
+  .auth-user__email{font-size:14px;font-weight:600;color:#1f2937}
+  .auth-user__logout{height:32px;padding:0 14px;border-radius:999px;border:1px solid rgba(17,24,39,.08);background:#fff;color:#374151;font-weight:600;cursor:pointer;transition:all .2s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .auth-user__logout:hover{background:#f3f4f6;border-color:rgba(17,24,39,.15)}
+  .auth-btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 18px;border-radius:999px;font-weight:700;font-size:14px;gap:8px;border:1px solid transparent;text-decoration:none;cursor:pointer;transition:all .2s ease}
+  .auth-btn--primary{background:var(--naver-green);color:#fff;box-shadow:0 12px 24px rgba(3,199,90,.25)}
+  .auth-btn--primary:hover{background:var(--naver-green-dark)}
+  .auth-btn--ghost{background:rgba(3,199,90,.12);color:var(--naver-green)}
+  .auth-btn--ghost:hover{background:rgba(3,199,90,.18)}
+  @media (max-width:768px){.top-actions-row{flex-direction:column;align-items:stretch}.top-actions-row .top-apps{display:flex !important;flex-wrap:nowrap !important;gap:12px;overflow-x:auto !important;-webkit-overflow-scrolling:touch;padding:8px 12px 10px 12px;scroll-snap-type:x proximity;justify-content:flex-start !important}.top-actions-row .top-apps a.app{flex:0 0 calc((100% - 48px)/5) !important;scroll-snap-align:start}.top-actions-row .top-apps::-webkit-scrollbar{display:none}.auth-buttons{position:static;width:100%;flex-direction:column;align-items:stretch;gap:10px}.auth-user{width:100%;justify-content:space-between;padding:10px 16px}.auth-user__logout{height:36px}.auth-btn{width:100%}}
   `;
 
   // inject style only once
@@ -77,7 +87,27 @@
             <a class="app" href="/ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
             
           </div>
-          <div class="auth-buttons" id="authButtons" style="display:none"></div>
+          <div class="auth-buttons" id="authButtons">
+            <div class="auth-user" id="authUser" style="display:none;">
+              <div class="auth-user__avatar" id="userAvatar">U</div>
+              <div class="auth-user__meta">
+                <span class="auth-user__label">로그인 계정</span>
+                <span class="auth-user__email" id="userEmail"></span>
+              </div>
+              <button class="auth-user__logout" id="logoutBtn" type="button">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                로그아웃
+              </button>
+            </div>
+            <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+              <i class="fa-solid fa-arrow-right-to-bracket"></i>
+              <span>로그인</span>
+            </a>
+            <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>회원가입</span>
+            </a>
+          </div>
         </div>
         <div id="topChatSearchOutput" class="output" style="display:none"></div>
       </div>
@@ -166,52 +196,77 @@
     }
   });
 
-  // Login status (same localStorage logic)
-  (function checkLoginStatus() {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const userData = localStorage.getItem("userData");
-    const container = document.getElementById("authButtons");
-    if (!container) return;
-    container.style.display = "flex";
-    if (isLoggedIn === "true" && userData) {
+  const loginBtn = document.getElementById("loginBtn");
+  const signupBtn = document.getElementById("signupBtn");
+  const authUser = document.getElementById("authUser");
+  const userEmailSpan = document.getElementById("userEmail");
+  const userAvatar = document.getElementById("userAvatar");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  function updateAuthUI() {
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const rawUser = localStorage.getItem("userData");
+
+    if (isLoggedIn && rawUser) {
       try {
-        const user = JSON.parse(userData);
-        const span = document.createElement("span");
-        span.id = "userEmail";
-        span.style.marginRight = "10px";
-        span.style.fontSize = "14px";
-        span.textContent = user.email || user.name || "사용자";
-        const logout = document.createElement("button");
-        logout.id = "logoutBtn";
-        logout.className = "kakao-signup";
-        logout.style.border = "none";
-        logout.style.cursor = "pointer";
-        logout.textContent = "로그아웃";
-        logout.addEventListener("click", function () {
-          if (confirm("로그아웃 하시겠습니까?")) {
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("userData");
-            location.href = "index.html";
-          }
-        });
-        container.replaceChildren(span, logout);
-      } catch (e) {
+        const user = JSON.parse(rawUser);
+        if (loginBtn) loginBtn.style.display = "none";
+        if (signupBtn) signupBtn.style.display = "none";
+        if (authUser) authUser.style.display = "flex";
+
+        if (userEmailSpan) {
+          const emailText = user.email || user.displayName || user.name || "사용자";
+          userEmailSpan.textContent = emailText;
+          userEmailSpan.title = emailText;
+        }
+        if (userAvatar) {
+          const base =
+            user.displayName ||
+            user.user_metadata?.full_name ||
+            user.email ||
+            "U";
+          userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = "inline-flex";
+          logoutBtn.onclick = async function () {
+            if (!confirm("로그아웃 하시겠습니까?")) return;
+            try {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
+              } else {
+                localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("userData");
+              }
+            } catch (error) {
+              console.error("[auth] signOut failed", error);
+            } finally {
+              location.href = "login.html";
+            }
+          };
+        }
+      } catch (error) {
+        console.error("[auth] failed to parse userData", error);
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("userData");
+        updateAuthUI();
+        return;
       }
     } else {
-      const login = document.createElement("a");
-      login.href = "/login.html";
-      login.className = "login-link";
-      login.id = "loginBtn";
-      login.innerHTML =
-        '<span class="emph">사장님픽</span><span class="sub"> 로그인</span>';
-      const signup = document.createElement("a");
-      signup.href = "/join.html";
-      signup.className = "kakao-signup";
-      signup.id = "signupBtn";
-      signup.textContent = "카카오톡 아이디로 회원가입";
-      container.replaceChildren(login, signup);
+      if (authUser) authUser.style.display = "none";
+      if (loginBtn) loginBtn.style.display = "inline-flex";
+      if (signupBtn) signupBtn.style.display = "inline-flex";
+      if (userEmailSpan) {
+        userEmailSpan.textContent = "";
+        userEmailSpan.title = "";
+      }
+      if (logoutBtn) {
+        logoutBtn.style.display = "none";
+        logoutBtn.onclick = null;
+      }
     }
-  })();
+  }
+
+  updateAuthUI();
+  window.addEventListener("auth:state-changed", updateAuthUI);
 })();

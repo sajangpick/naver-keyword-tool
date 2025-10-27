@@ -385,81 +385,122 @@
         right: 0;
         top: 0;
         bottom: 0;
-        margin: auto 0; /* vertically center without translate issues */
+        margin: auto 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .auth-user {
+        display: none;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(17, 24, 39, 0.08);
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 16px 28px rgba(15, 23, 42, 0.08);
+      }
+      .auth-user__avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--naver-green-50);
+        color: var(--naver-green);
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+      .auth-user__meta {
         display: flex;
         flex-direction: column;
+        line-height: 1.1;
+      }
+      .auth-user__label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #9ca3af;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .auth-user__email {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+      }
+      .auth-user__logout {
+        height: 32px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(17, 24, 39, 0.08);
+        background: #fff;
+        color: #374151;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .auth-user__logout:hover {
+        background: #f3f4f6;
+        border-color: rgba(17, 24, 39, 0.15);
+      }
+      .auth-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 44px;
+        padding: 0 18px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 14px;
         gap: 8px;
-        align-items: stretch;
-        justify-content: center; /* true vertical centering */
+        border: 1px solid transparent;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .auth-btn--primary {
+        background: var(--naver-green);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(3, 199, 90, 0.25);
+      }
+      .auth-btn--primary:hover {
+        background: var(--naver-green-dark);
+      }
+      .auth-btn--ghost {
+        background: rgba(3, 199, 90, 0.12);
+        color: var(--naver-green);
+      }
+      .auth-btn--ghost:hover {
+        background: rgba(3, 199, 90, 0.18);
       }
       @media (max-width: 768px) {
         .top-actions-row {
           flex-direction: column;
-          align-items: center;
+          align-items: stretch;
         }
         .auth-buttons {
           position: static;
           width: 100%;
-          align-items: center;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
         }
-      }
-      .login-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 200px;
-        height: 48px;
-        padding: 0 16px;
-        border-radius: 6px;
-        background: var(--naver-green);
-        color: #fff;
-        font-weight: 800;
-        font-size: 15px;
-        border: none;
-        text-decoration: none;
-        transition: background-color 0.2s ease;
-      }
-      .login-link .emph {
-        color: #ffffff;
-        font-weight: 900;
-      }
-      .login-link .sub {
-        color: rgba(255, 255, 255, 0.85);
-        font-weight: 700;
-        margin-left: 4px;
-      }
-      .login-link .owner {
-        display: none;
-      }
-      .login-link:hover {
-        background: var(--naver-green-dark);
-      }
-      .kakao-signup {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 200px;
-        height: 48px; /* match login height */
-        background: transparent; /* remove yellow background */
-        color: #6b7280; /* lighter text */
-        font-weight: 800;
-        font-size: 15px; /* match login font size */
-        border-radius: 6px;
-        text-decoration: underline; /* subtle underline */
-        text-underline-offset: 3px;
-        text-decoration-thickness: 1.5px;
-        transition: color 0.2s ease, text-decoration-thickness 0.2s ease;
-      }
-      .kakao-signup:hover {
-        background: transparent;
-        color: #374151; /* slightly darker on hover for readability */
-        text-decoration-thickness: 2px;
-      }
-      @media (max-width: 768px) {
-        .login-link {
-          position: static;
-          transform: none;
-          margin-top: 10px;
+        .auth-user {
+          width: 100%;
+          justify-content: space-between;
+          padding: 10px 16px;
+        }
+        .auth-user__logout {
+          height: 36px;
+        }
+        .auth-btn {
+          width: 100%;
         }
       }
       .top-apps {
@@ -586,24 +627,25 @@
               
             </div>
             <div class="auth-buttons" id="authButtons">
-              <a href="/login.html" class="login-link" id="loginBtn"
-                ><span class="emph">사장님픽</span
-                ><span class="sub"> 로그인</span></a
-              >
-              <a href="/join.html" class="kakao-signup" id="signupBtn"
-                >카카오톡 아이디로 회원가입</a
-              >
-              <button
-                class="kakao-signup"
-                id="logoutBtn"
-                style="display: none; border: none; cursor: pointer"
-              >
-                로그아웃
-              </button>
-              <span
-                id="userEmail"
-                style="display: none; margin-right: 10px; font-size: 14px"
-              ></span>
+              <div class="auth-user" id="authUser" style="display: none;">
+                <div class="auth-user__avatar" id="userAvatar">U</div>
+                <div class="auth-user__meta">
+                  <span class="auth-user__label">로그인 계정</span>
+                  <span class="auth-user__email" id="userEmail"></span>
+                </div>
+                <button class="auth-user__logout" id="logoutBtn" type="button">
+                  <i class="fa-solid fa-right-from-bracket"></i>
+                  로그아웃
+                </button>
+              </div>
+              <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                <span>로그인</span>
+              </a>
+              <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>회원가입</span>
+              </a>
             </div>
           </div>
           <div
@@ -699,6 +741,8 @@
       </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/assets/auth-state.js?v=202410"></script>
     <script>
       // 강제 적용: 일부 기기에서 캐시/브라우저 이슈로 CSS가 즉시 반영되지 않는 문제 보완
       (function enforceMobileLayout() {
@@ -715,7 +759,7 @@
       })();
 
       // 로그인 상태 확인 및 UI 업데이트 (즉시 실행)
-      (function checkLoginStatus() {
+      function updateAuthUI() {
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         const userData = localStorage.getItem("userData");
 
@@ -723,6 +767,8 @@
         const signupBtn = document.getElementById("signupBtn");
         const userEmailSpan = document.getElementById("userEmail");
         const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+        const userAvatar = document.getElementById("userAvatar");
 
         if (isLoggedIn === "true" && userData) {
           try {
@@ -733,21 +779,35 @@
             if (signupBtn) signupBtn.style.display = "none";
 
             // 사용자 정보 및 로그아웃 버튼 표시
+            if (authUser) authUser.style.display = "flex";
             if (userEmailSpan) {
-              userEmailSpan.textContent = user.email || user.name || "사용자";
-              userEmailSpan.style.display = "inline";
+              const emailText = user.email || user.displayName || user.name || "사용자";
+              userEmailSpan.textContent = emailText;
+              userEmailSpan.title = emailText;
+            }
+            if (userAvatar) {
+              const base =
+                user.displayName ||
+                user.user_metadata?.full_name ||
+                user.email ||
+                "U";
+              userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
             }
             if (logoutBtn) {
-              logoutBtn.style.display = "inline-block";
-
-              // 로그아웃 버튼 클릭 이벤트
-              logoutBtn.addEventListener("click", function () {
-                if (confirm("로그아웃 하시겠습니까?")) {
-                  localStorage.removeItem("isLoggedIn");
-                  localStorage.removeItem("userData");
-                  location.href = "index.html";
+              logoutBtn.style.display = "inline-flex";
+              logoutBtn.onclick = async function () {
+                if (!confirm("로그아웃 하시겠습니까?")) return;
+                try {
+                  if (window.authState?.signOut) {
+                    await window.authState.signOut();
+                  } else {
+                    localStorage.removeItem("isLoggedIn");
+                    localStorage.removeItem("userData");
+                  }
+                } finally {
+                  location.href = "login.html";
                 }
-              });
+              };
             }
           } catch (e) {
             console.error("로그인 정보 파싱 오류:", e);
@@ -757,12 +817,25 @@
           }
         } else {
           // 로그인하지 않은 상태 - 로그인/회원가입 버튼 표시
-          if (loginBtn) loginBtn.style.display = "inline-block";
-          if (signupBtn) signupBtn.style.display = "inline-block";
-          if (userEmailSpan) userEmailSpan.style.display = "none";
-          if (logoutBtn) logoutBtn.style.display = "none";
+          if (authUser) authUser.style.display = "none";
+          if (loginBtn) loginBtn.style.display = "inline-flex";
+          if (signupBtn) signupBtn.style.display = "inline-flex";
+          if (userEmailSpan) {
+            userEmailSpan.textContent = "";
+            userEmailSpan.title = "";
+          }
+          if (logoutBtn) {
+            logoutBtn.style.display = "none";
+            logoutBtn.onclick = null;
+          }
         }
-      })();
+      }
+
+      updateAuthUI();
+      window.addEventListener("auth:state-changed", updateAuthUI);
+      if (window.authState?.syncSession) {
+        window.authState.syncSession();
+      }
     </script>
   </body>
 </html>

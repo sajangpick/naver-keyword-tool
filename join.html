@@ -401,12 +401,19 @@
       }
 
       // 페이지 로드 시 Supabase 세션 확인
+      // 단, 카카오 OAuth 콜백에서 돌아온 경우는 onAuthStateChange에서 처리하도록 스킵
       (async () => {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            setLoggedInFromSession(session);
-            window.location.replace("index.html");
+          // URL 해시나 쿼리에 OAuth 관련 파라미터가 있으면 스킵
+          const hasOAuthParams = window.location.hash.includes('access_token') || 
+                                 window.location.search.includes('code=');
+          
+          if (!hasOAuthParams) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              setLoggedInFromSession(session);
+              window.location.replace("index.html");
+            }
           }
         } catch (_) {}
       })();
@@ -454,7 +461,7 @@
             const { data, error } = await supabase.auth.signInWithOAuth({
               provider: 'kakao',
               options: {
-                redirectTo: window.location.origin + '/index.html'
+                redirectTo: window.location.origin + '/join.html'
               }
             });
 
