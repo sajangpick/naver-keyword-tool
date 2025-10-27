@@ -27,7 +27,8 @@
 
   const css = `
   :root{--naver-green:#03c75a;--naver-green-dark:#02b14f;--naver-green-50:#e6f9f0;--bg:#f7f9fb}
-  .header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.8);backdrop-filter:blur(8px);border-bottom:1px solid #e5e7eb}
+  .header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.8);backdrop-filter:blur(8px);border-bottom:1px solid #e5e7eb;transition:transform .3s ease}
+  .header.header-hidden{transform:translateY(-100%)}
   .header-inner{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 24px;max-width:1200px;margin:0 auto}
   .logo{font-weight:800;font-size:24px;color:#111827;cursor:pointer}
   .top-search{background:#fff;border-bottom:1px solid #e5e7eb}
@@ -269,4 +270,49 @@
 
   updateAuthUI();
   window.addEventListener("auth:state-changed", updateAuthUI);
+
+  // 모바일에서 스크롤 시 헤더 숨김/표시 (kmong 스타일)
+  (function initHeaderAutoHide() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    function updateHeader() {
+      const currentScrollY = window.scrollY;
+      
+      // 모바일에서만 작동 (768px 이하)
+      if (window.innerWidth > 768) {
+        header.classList.remove('header-hidden');
+        return;
+      }
+
+      // 최상단(100px 미만)이면 항상 헤더 표시
+      if (currentScrollY < 100) {
+        header.classList.remove('header-hidden');
+      }
+      // 아래로 스크롤 && 100px 이상
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        header.classList.add('header-hidden');
+      }
+      // 위로 스크롤
+      else if (currentScrollY < lastScrollY) {
+        header.classList.remove('header-hidden');
+      }
+
+      lastScrollY = currentScrollY;
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        window.requestAnimationFrame(updateHeader);
+        ticking = true;
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateHeader, { passive: true });
+  })();
 })();
