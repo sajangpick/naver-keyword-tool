@@ -611,6 +611,10 @@ const placeDetailCrawlHandler = require("./api/place-detail-crawl");
 app.post("/api/place-detail-crawl", placeDetailCrawlHandler);
 app.get("/api/place-detail-crawl", placeDetailCrawlHandler);
 
+// ==================== ChatGPT 블로그 생성 API ====================
+const chatgptBlogHandler = require("./api/chatgpt-blog");
+app.post("/api/chatgpt-blog", chatgptBlogHandler);
+
 // ==================== 네이버 키워드 API ====================
 
 // 키워드 도구 API
@@ -2550,6 +2554,14 @@ app.get("/api/test-keys", async (req, res) => {
 });
 
 // ==================== 추가 API 엔드포인트들 ====================
+
+// 클라이언트용 환경변수 제공 (공개 가능한 키만)
+app.get("/api/config", (req, res) => {
+  res.json({
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+  });
+});
 
 // 블로그 스타일 옵션 조회
 app.get("/api/blog-styles", (req, res) => {
