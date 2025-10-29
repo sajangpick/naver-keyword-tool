@@ -12,6 +12,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
     />
+    <script src="/assets/common-header.js?v=20251029" defer></script>
     <style>
       .is-hidden {
         display: none !important;
@@ -793,9 +794,8 @@
             // 사용자 정보 및 로그아웃 버튼 표시
             if (authUser) authUser.style.display = "flex";
             if (userEmailSpan) {
-              const emailText = user.email || user.displayName || user.name || "사용자";
-              userEmailSpan.textContent = emailText;
-              userEmailSpan.title = emailText;
+              userEmailSpan.textContent = "마이페이지";
+              userEmailSpan.title = "클릭하여 마이페이지로 이동";
             }
             if (userAvatar) {
               const base =
