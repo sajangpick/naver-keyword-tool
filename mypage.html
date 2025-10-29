@@ -604,8 +604,17 @@
       try {
         await initSupabase();
         
-        // 로그인 확인 (auth-state.js 사용)
-        const user = checkAuth();
+        // 로그인 확인 (localStorage 사용)
+        const userDataStr = localStorage.getItem('userData');
+        if (!userDataStr) {
+          showError('로그인이 필요합니다.');
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 2000);
+          return;
+        }
+
+        const user = JSON.parse(userDataStr);
         if (!user || !user.id) {
           showError('로그인이 필요합니다.');
           setTimeout(() => {
