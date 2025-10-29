@@ -286,6 +286,16 @@
       box-shadow: 0 10px 30px rgba(3, 199, 90, 0.4);
     }
 
+    .btn-secondary {
+      background: linear-gradient(45deg, #6b7280, #4b5563);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(107, 114, 128, 0.4);
+    }
+
     .btn-danger {
       background: linear-gradient(45deg, #ef4444, #dc2626);
       color: white;
@@ -407,9 +417,14 @@
               <span class="badge" id="levelBadge">-</span>
             </div>
           </div>
-          <button class="btn btn-danger" id="logoutBtn" style="height: fit-content; align-self: center;">
-            <i class="fas fa-right-from-bracket"></i> 로그아웃
-          </button>
+          <div style="display: flex; gap: 12px; align-self: center;">
+            <button class="btn btn-secondary" onclick="location.href='/'" style="height: fit-content;">
+              <i class="fas fa-home"></i> 홈으로
+            </button>
+            <button class="btn btn-danger" id="logoutBtn" style="height: fit-content;">
+              <i class="fas fa-right-from-bracket"></i> 로그아웃
+            </button>
+          </div>
         </div>
 
         <!-- 이번 달 사용량 -->
