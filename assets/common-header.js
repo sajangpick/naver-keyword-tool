@@ -50,7 +50,7 @@
   .auth-user__avatar{width:36px;height:36px;border-radius:50%;background:var(--naver-green-50);color:var(--naver-green);font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:-.02em;text-transform:uppercase}
   .auth-user__meta{display:flex;flex-direction:column;line-height:1.1}
   .auth-user__label{font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase}
-  .auth-user__email{font-size:14px;font-weight:600;color:#1f2937}
+  .auth-user__email{font-size:14px;font-weight:600;color:#1f2937;cursor:pointer;transition:color .2s ease}.auth-user__email:hover{color:var(--naver-green)}
   .auth-user__logout{height:32px;padding:0 14px;border-radius:999px;border:1px solid rgba(17,24,39,.08);background:#fff;color:#374151;font-weight:600;cursor:pointer;transition:all .2s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px}
   .auth-user__logout:hover{background:#f3f4f6;border-color:rgba(17,24,39,.15)}
   .auth-btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 18px;border-radius:999px;font-weight:700;font-size:14px;gap:8px;border:1px solid transparent;text-decoration:none;cursor:pointer;transition:all .2s ease}
@@ -86,19 +86,15 @@
             <a class="app" href="/review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
             <a class="app" href="/Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
             <a class="app" href="/ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
-            
+            <a class="app" href="/mypage.html" id="mypageLink" style="display:none"><div class="app-icon"><i class="fa-solid fa-user-circle" style="font-size:20px"></i></div><div class="app-label">마이페이지</div></a>
           </div>
           <div class="auth-buttons" id="authButtons">
             <div class="auth-user" id="authUser" style="display:none;">
               <div class="auth-user__avatar" id="userAvatar">U</div>
               <div class="auth-user__meta">
-                <span class="auth-user__label">로그인 계정</span>
+                <span class="auth-user__label">내 정보</span>
                 <span class="auth-user__email" id="userEmail"></span>
               </div>
-              <button class="auth-user__logout" id="logoutBtn" type="button">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                로그아웃
-              </button>
             </div>
             <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
               <i class="fa-solid fa-arrow-right-to-bracket"></i>
@@ -202,23 +198,35 @@
   const authUser = document.getElementById("authUser");
   const userEmailSpan = document.getElementById("userEmail");
   const userAvatar = document.getElementById("userAvatar");
-  const logoutBtn = document.getElementById("logoutBtn");
+  const mypageLink = document.getElementById("mypageLink");
 
   function updateAuthUI() {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const rawUser = localStorage.getItem("userData");
+    
+    console.log('[Header Auth] 로그인 상태 체크:', { isLoggedIn, hasUserData: !!rawUser });
 
     if (isLoggedIn && rawUser) {
       try {
         const user = JSON.parse(rawUser);
+        console.log('[Header Auth] 사용자 정보:', { email: user.email, id: user.id });
+        
         if (loginBtn) loginBtn.style.display = "none";
         if (signupBtn) signupBtn.style.display = "none";
         if (authUser) authUser.style.display = "flex";
+        if (mypageLink) {
+          mypageLink.style.display = "flex";
+          console.log('[Header Auth] 마이페이지 버튼 활성화 ✅');
+        }
 
         if (userEmailSpan) {
-          const emailText = user.email || user.displayName || user.name || "사용자";
-          userEmailSpan.textContent = emailText;
-          userEmailSpan.title = emailText;
+          userEmailSpan.textContent = "마이페이지";
+          userEmailSpan.title = "클릭하여 마이페이지로 이동";
+          // 마이페이지 클릭 시 이동
+          userEmailSpan.style.cursor = 'pointer';
+          userEmailSpan.onclick = function() {
+            location.href = '/mypage.html';
+          };
         }
         if (userAvatar) {
           const base =
@@ -227,24 +235,6 @@
             user.email ||
             "U";
           userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-        }
-        if (logoutBtn) {
-          logoutBtn.style.display = "inline-flex";
-          logoutBtn.onclick = async function () {
-            if (!confirm("로그아웃 하시겠습니까?")) return;
-            try {
-              if (window.authState?.signOut) {
-                await window.authState.signOut();
-              } else {
-                localStorage.removeItem("isLoggedIn");
-                localStorage.removeItem("userData");
-              }
-            } catch (error) {
-              console.error("[auth] signOut failed", error);
-            } finally {
-              location.href = "login.html";
-            }
-          };
         }
       } catch (error) {
         console.error("[auth] failed to parse userData", error);
@@ -257,13 +247,10 @@
       if (authUser) authUser.style.display = "none";
       if (loginBtn) loginBtn.style.display = "inline-flex";
       if (signupBtn) signupBtn.style.display = "inline-flex";
+      if (mypageLink) mypageLink.style.display = "none";
       if (userEmailSpan) {
         userEmailSpan.textContent = "";
         userEmailSpan.title = "";
-      }
-      if (logoutBtn) {
-        logoutBtn.style.display = "none";
-        logoutBtn.onclick = null;
       }
     }
   }

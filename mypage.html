@@ -286,6 +286,16 @@
       box-shadow: 0 10px 30px rgba(3, 199, 90, 0.4);
     }
 
+    .btn-danger {
+      background: linear-gradient(45deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+    }
+
     .loading {
       text-align: center;
       padding: 60px 20px;
@@ -397,6 +407,9 @@
               <span class="badge" id="levelBadge">-</span>
             </div>
           </div>
+          <button class="btn btn-danger" id="logoutBtn" style="height: fit-content; align-self: center;">
+            <i class="fas fa-right-from-bracket"></i> 로그아웃
+          </button>
         </div>
 
         <!-- 이번 달 사용량 -->
@@ -1137,8 +1150,37 @@
     }
 
     // 페이지 로드 시 초기화
+    // 로그아웃 버튼 이벤트
+    function setupLogoutButton() {
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function() {
+          if (!confirm('로그아웃 하시겠습니까?')) return;
+          
+          try {
+            // Supabase 로그아웃
+            if (supabase) {
+              await supabase.auth.signOut();
+            }
+            
+            // 로컬 스토리지 정리
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userData');
+            
+            // 로그인 페이지로 이동
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/login.html';
+          } catch (error) {
+            console.error('로그아웃 오류:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+          }
+        });
+      }
+    }
+
     window.addEventListener('load', function() {
       initPage();
+      setupLogoutButton();
     });
   </script>
 </body>
