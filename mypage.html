@@ -387,6 +387,38 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* 리뷰 모니터링 토글 스타일 */
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-label:hover {
+      background: #f5f5f5;
+    }
+
+    .toggle-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .toggle-text {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
@@ -503,7 +535,104 @@
           </button>
         </section>
 
-        <!-- 2. 내 가게 알리기 -->
+        <!-- 2. 리뷰 모니터링 (NEW!) -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-bell"></i>
+            리뷰 자동 모니터링
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            네이버 플레이스 리뷰를 자동으로 수집하고, 긴급 리뷰(1-2점)가 등록되면 즉시 카카오톡으로 알림을 받습니다!
+          </p>
+
+          <!-- 모니터링 상태 -->
+          <div id="monitoringStatus" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #4caf50; border-radius: 15px; padding: 20px; margin-bottom: 25px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 5px 0; color: #2e7d32; font-size: 16px;">
+                  <i class="fas fa-check-circle"></i> 모니터링 활성화됨
+                </h4>
+                <p style="margin: 0; color: #558b2f; font-size: 13px;">
+                  마지막 크롤링: <span id="lastCrawled">-</span>
+                </p>
+              </div>
+              <button class="btn" style="background: #fff; color: #4caf50; border: 2px solid #4caf50;" onclick="toggleMonitoring(false)">
+                <i class="fas fa-pause"></i> 일시 정지
+              </button>
+            </div>
+          </div>
+
+          <div id="monitoringInactive" style="background: #ffebee; border: 2px solid #f44336; border-radius: 15px; padding: 20px; margin-bottom: 25px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 5px 0; color: #c62828; font-size: 16px;">
+                  <i class="fas fa-pause-circle"></i> 모니터링 비활성화됨
+                </h4>
+                <p style="margin: 0; color: #d32f2f; font-size: 13px;">
+                  알림을 받으려면 모니터링을 활성화하세요
+                </p>
+              </div>
+              <button class="btn btn-primary" onclick="toggleMonitoring(true)">
+                <i class="fas fa-play"></i> 활성화하기
+              </button>
+            </div>
+          </div>
+
+          <!-- 알림 설정 -->
+          <div style="background: #f5f5f5; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 15px 0; color: #333; font-size: 15px;">
+              <i class="fas fa-cog"></i> 알림 설정
+            </h4>
+
+            <label class="toggle-label">
+              <input type="checkbox" id="alertLowRating" checked>
+              <span class="toggle-text">
+                <i class="fas fa-exclamation-triangle" style="color: #f44336;"></i>
+                저평점 리뷰 알림 (1-2점)
+              </span>
+            </label>
+
+            <label class="toggle-label">
+              <input type="checkbox" id="alertHighRating" checked>
+              <span class="toggle-text">
+                <i class="fas fa-star" style="color: #ffc107;"></i>
+                고평점 리뷰 알림 (5점)
+              </span>
+            </label>
+
+            <label class="toggle-label">
+              <input type="checkbox" id="alertKeywords">
+              <span class="toggle-text">
+                <i class="fas fa-search" style="color: #2196f3;"></i>
+                키워드 감지 알림
+              </span>
+            </label>
+
+            <div id="keywordsInput" style="display: none; margin-top: 10px; margin-left: 30px;">
+              <label class="form-label" style="font-size: 13px; color: #666;">감지할 키워드 (쉼표로 구분)</label>
+              <input type="text" class="form-input" id="alertKeywordsList" placeholder="예: 불친절, 위생, 맛없, 불결">
+              <small style="color: #999; font-size: 12px;">이 단어가 리뷰에 포함되면 즉시 알림을 받습니다</small>
+            </div>
+          </div>
+
+          <!-- 최근 리뷰 -->
+          <div style="background: #f9f9f9; border-radius: 12px; padding: 20px;">
+            <h4 style="margin: 0 0 15px 0; color: #333; font-size: 15px;">
+              <i class="fas fa-list"></i> 최근 리뷰
+            </h4>
+            <div id="recentReviews">
+              <p style="color: #999; text-align: center; padding: 20px;">
+                플레이스 URL을 입력하고 저장하면 자동으로 리뷰를 수집합니다
+              </p>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="margin-top: 15px;" onclick="saveMonitoringSettings()">
+            <i class="fas fa-save"></i> 모니터링 설정 저장
+          </button>
+        </section>
+
+        <!-- 3. 내 가게 알리기 -->
         <section class="section">
           <h3 class="section-title">
             <i class="fas fa-bullhorn"></i>
@@ -1185,8 +1314,149 @@
         if (data.store_keywords) document.getElementById('editStoreKeywords').value = data.store_keywords;
 
         console.log('✅ 가게 정보 로드 완료');
+
+        // 리뷰 모니터링 설정도 로드
+        loadMonitoringSettings();
       } catch (error) {
         console.error('가게 정보 로드 오류:', error);
+      }
+    }
+
+    // ==================== 리뷰 모니터링 기능 ====================
+
+    // 키워드 입력 토글
+    document.getElementById('alertKeywords')?.addEventListener('change', function(e) {
+      document.getElementById('keywordsInput').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    // 모니터링 활성화/비활성화 토글
+    async function toggleMonitoring(enable) {
+      if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      try {
+        const storeUrl = document.getElementById('editStoreUrl').value;
+        if (!storeUrl) {
+          alert('플레이스 URL을 먼저 입력해주세요.');
+          return;
+        }
+
+        // API 호출 (준비중)
+        // TODO: API 구현 후 연동
+        
+        // 임시로 localStorage에 저장
+        localStorage.setItem('monitoring_enabled', enable);
+
+        // UI 업데이트
+        document.getElementById('monitoringStatus').style.display = enable ? 'block' : 'none';
+        document.getElementById('monitoringInactive').style.display = enable ? 'none' : 'block';
+
+        alert(enable ? '✅ 리뷰 모니터링이 활성화되었습니다!' : '⏸️ 리뷰 모니터링이 일시 정지되었습니다.');
+      } catch (error) {
+        console.error('모니터링 토글 오류:', error);
+        alert('설정 변경 실패: ' + error.message);
+      }
+    }
+
+    // 모니터링 설정 저장
+    async function saveMonitoringSettings() {
+      if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      try {
+        const storeUrl = document.getElementById('editStoreUrl').value;
+        if (!storeUrl) {
+          alert('먼저 "내 가게 정보"에서 플레이스 URL을 입력하고 저장해주세요.');
+          return;
+        }
+
+        // 설정 수집
+        const settings = {
+          userId: currentUser.id,
+          storeUrl: storeUrl,
+          alertLowRating: document.getElementById('alertLowRating').checked,
+          alertHighRating: document.getElementById('alertHighRating').checked,
+          alertKeywords: document.getElementById('alertKeywords').checked,
+          keywordsList: document.getElementById('alertKeywordsList').value
+        };
+
+        // API 호출 (준비중)
+        // TODO: API 구현 후 연동
+        console.log('저장할 설정:', settings);
+
+        // 임시로 localStorage에 저장
+        localStorage.setItem('review_monitoring_settings', JSON.stringify(settings));
+
+        alert('✅ 리뷰 모니터링 설정이 저장되었습니다!\n\n플레이스 URL을 입력하면 자동으로 리뷰를 수집하기 시작합니다.');
+
+        // 모니터링 활성화
+        await toggleMonitoring(true);
+
+      } catch (error) {
+        console.error('모니터링 설정 저장 오류:', error);
+        alert('설정 저장 실패: ' + error.message);
+      }
+    }
+
+    // 모니터링 설정 로드
+    async function loadMonitoringSettings() {
+      if (!currentUser) return;
+
+      try {
+        // API 호출 (준비중)
+        // TODO: API 구현 후 연동
+
+        // 임시로 localStorage에서 로드
+        const saved = localStorage.getItem('review_monitoring_settings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          
+          document.getElementById('alertLowRating').checked = settings.alertLowRating !== false;
+          document.getElementById('alertHighRating').checked = settings.alertHighRating !== false;
+          document.getElementById('alertKeywords').checked = settings.alertKeywords || false;
+          document.getElementById('alertKeywordsList').value = settings.keywordsList || '';
+          
+          if (settings.alertKeywords) {
+            document.getElementById('keywordsInput').style.display = 'block';
+          }
+        }
+
+        // 모니터링 활성화 상태 확인
+        const enabled = localStorage.getItem('monitoring_enabled') === 'true';
+        document.getElementById('monitoringStatus').style.display = enabled ? 'block' : 'none';
+        document.getElementById('monitoringInactive').style.display = enabled ? 'none' : 'block';
+
+        // 최근 리뷰 로드
+        loadRecentReviews();
+
+      } catch (error) {
+        console.error('모니터링 설정 로드 오류:', error);
+      }
+    }
+
+    // 최근 리뷰 로드
+    async function loadRecentReviews() {
+      if (!currentUser) return;
+
+      try {
+        // API 호출 (준비중)
+        // TODO: API 구현 후 연동
+
+        // 임시 데이터
+        const recentReviewsDiv = document.getElementById('recentReviews');
+        recentReviewsDiv.innerHTML = `
+          <p style="color: #999; text-align: center; padding: 20px;">
+            크롤링 시스템 개발 중입니다.<br>
+            곧 자동으로 리뷰를 수집하고 표시합니다!
+          </p>
+        `;
+
+      } catch (error) {
+        console.error('최근 리뷰 로드 오류:', error);
       }
     }
 
