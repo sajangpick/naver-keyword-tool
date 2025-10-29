@@ -12,18 +12,20 @@
   - 설정 방법
   - 사용법
 
-### 개발 가이드 🆕
-- **[CRAWLING_DEVELOPMENT.md](./CRAWLING_DEVELOPMENT.md)** - 네이버 플레이스 크롤링 구현 가이드
-  - Puppeteer 설치 및 설정
-  - 크롤링 함수 구현
-  - 단계별 개발 체크리스트
-  - 문제 해결 및 팁
-
-- **[KAKAO_ALIMTALK_DEVELOPMENT.md](./KAKAO_ALIMTALK_DEVELOPMENT.md)** - 카카오 알림톡 연동 가이드
-  - 템플릿 등록 방법
-  - API 함수 구현
-  - 테스트 및 배포
-  - 문제 해결 및 팁
+### 개발 가이드 🆕 (AI용)
+- **[리뷰모니터링_개발가이드.md](./리뷰모니터링_개발가이드.md)** - 크롤링 + 알림톡 통합 개발 가이드
+  - **Part 1: 네이버 플레이스 크롤링 구현**
+    - Puppeteer 설치 및 설정
+    - 크롤링 함수 구현 (코드 전체 포함)
+    - 로컬 테스트 방법
+    - 문제 해결
+  - **Part 2: 카카오 알림톡 구현**
+    - 템플릿 3개 등록 방법
+    - API 함수 구현 (코드 전체 포함)
+    - 환경변수 설정
+    - 문제 해결
+  - **Part 3: 통합 테스트**
+  - 단계별 체크리스트
 
 ---
 
@@ -33,8 +35,7 @@
 
 **전체 개발 인덱스:** [../DEVELOPMENT_INDEX.md](../DEVELOPMENT_INDEX.md)
 
-1. 크롤링부터 개발하려면 → [CRAWLING_DEVELOPMENT.md](./CRAWLING_DEVELOPMENT.md)
-2. 알림톡부터 개발하려면 → [KAKAO_ALIMTALK_DEVELOPMENT.md](./KAKAO_ALIMTALK_DEVELOPMENT.md)
+**AI 개발자는 이 문서부터 읽으세요:** [리뷰모니터링_개발가이드.md](./리뷰모니터링_개발가이드.md)
 
 ---
 

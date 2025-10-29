@@ -85,19 +85,12 @@ admin/
 - [ ] Supabase 테이블 생성 여부 확인
 
 #### 3. 개발 시작
-**크롤링부터 시작하는 경우:**
-1. [docs/CRAWLING_DEVELOPMENT.md](./docs/CRAWLING_DEVELOPMENT.md) 읽기
-2. Puppeteer 설치: `pnpm add puppeteer`
-3. `api/utils/puppeteer-setup.js` 생성
-4. `api/review-monitoring.js` (51-87줄) 수정
-5. 로컬 테스트: `node test-crawling.js`
-
-**알림톡부터 시작하는 경우:**
-1. [docs/KAKAO_ALIMTALK_DEVELOPMENT.md](./docs/KAKAO_ALIMTALK_DEVELOPMENT.md) 읽기
-2. 카카오 템플릿 승인 상태 확인
-3. `.env`에 API 키 추가
-4. `api/kakao-alimtalk.js` 함수 구현
-5. 테스트 발송
+**🎯 AI 개발자는 이 문서 하나만 읽으세요:**
+1. [docs/리뷰모니터링_개발가이드.md](./docs/리뷰모니터링_개발가이드.md) 읽기
+2. Part 1: 크롤링 구현 (4-6시간)
+3. Part 2: 알림톡 구현 (3-4시간)
+4. Part 3: 통합 테스트
+5. 체크리스트로 진행 상황 추적
 
 ---
 
