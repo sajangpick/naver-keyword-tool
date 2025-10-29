@@ -1010,9 +1010,21 @@
 
                 const generateResult = await generateResponse.json();
                 const blogContentText = generateResult.data;
+                const metadata = generateResult.metadata || {};
+                
                 console.log('생성된 블로그:', blogContentText);
+                console.log('글쓰기 앵글:', metadata.writingAngle);
                 
                 showSuccess();
+                
+                // 앵글 정보 표시
+                if (metadata.writingAngle) {
+                    const angleInfo = document.createElement('div');
+                    angleInfo.style.cssText = 'background: #e7f3ff; border: 1px solid #2196F3; border-radius: 10px; padding: 15px; margin-bottom: 20px; color: #1976D2;';
+                    angleInfo.innerHTML = `<strong>📝 글쓰기 관점:</strong> ${metadata.writingAngle}<br><small>이 관점으로 글이 작성되었습니다. 다음에는 다른 관점으로 작성됩니다!</small>`;
+                    blogContent.insertBefore(angleInfo, blogText);
+                }
+                
                 blogContent.style.display = 'block';
                 blogText.textContent = blogContentText;
 
@@ -1054,12 +1066,17 @@
                 showLoading("플레이스 정보를 분석하고 있습니다...");
                 updateStep(0);
 
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
                 const crawlResponse = await fetch('/api/chatgpt-blog', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         step: 'crawl',
                         data: {
+                            userId,
                             placeUrl,
                             companyName,
                             companyAddress,
@@ -1089,7 +1106,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         step: 'analyze',
-                        data: { placeInfo: globalPlaceInfo }
+                        data: { 
+                            userId,
+                            placeInfo: globalPlaceInfo 
+                        }
                     })
                 });
 
@@ -1112,6 +1132,7 @@
                     body: JSON.stringify({
                         step: 'recommend',
                         data: {
+                            userId,
                             placeInfo: globalPlaceInfo,
                             menuAnalysis: globalMenuAnalysis
                         }

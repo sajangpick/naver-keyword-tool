@@ -615,6 +615,11 @@ app.get("/api/place-detail-crawl", placeDetailCrawlHandler);
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
 
+// ==================== 블로그 스타일 설정 API ====================
+const blogStyleHandler = require("./api/blog-style");
+app.get("/api/blog-style", blogStyleHandler);
+app.post("/api/blog-style", blogStyleHandler);
+
 // ==================== 네이버 키워드 API ====================
 
 // 키워드 도구 API

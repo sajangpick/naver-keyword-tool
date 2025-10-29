@@ -470,7 +470,96 @@
           </button>
         </section>
 
-        <!-- 2. 최근 리뷰 답글 -->
+        <!-- 2. 블로그 스타일 설정 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-palette"></i>
+            블로그 스타일 설정
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            AI가 나만의 스타일로 블로그를 작성합니다
+          </p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+              <label for="blogTone">말투</label>
+              <select id="blogTone" class="form-control">
+                <option value="friendly">친근한</option>
+                <option value="formal">격식 있는</option>
+                <option value="casual">캐주얼한</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogFormality">격식</label>
+              <select id="blogFormality" class="form-control">
+                <option value="polite">존댓말</option>
+                <option value="semi-formal">존댓말/반말 혼용</option>
+                <option value="informal">반말</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogEmojiUsage">이모티콘 사용</label>
+              <select id="blogEmojiUsage" class="form-control">
+                <option value="none">사용 안 함</option>
+                <option value="minimal">최소한</option>
+                <option value="moderate">적당히</option>
+                <option value="frequent">자주 사용</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogPersonality">성격</label>
+              <select id="blogPersonality" class="form-control">
+                <option value="warm">따뜻한</option>
+                <option value="professional">프로페셔널한</option>
+                <option value="humorous">유머러스한</option>
+                <option value="enthusiastic">열정적인</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogExpertiseLevel">전문성</label>
+              <select id="blogExpertiseLevel" class="form-control">
+                <option value="beginner">초보자 관점</option>
+                <option value="intermediate">중급자 관점</option>
+                <option value="expert">전문가 관점</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogContentLength">글 길이</label>
+              <select id="blogContentLength" class="form-control">
+                <option value="brief">간결하게</option>
+                <option value="moderate">적당하게</option>
+                <option value="detailed">상세하게</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label for="blogWritingStyle">글쓰기 스타일</label>
+              <select id="blogWritingStyle" class="form-control">
+                <option value="storytelling">스토리텔링 중심</option>
+                <option value="informative">정보 전달 중심</option>
+                <option value="conversational">대화체 중심</option>
+                <option value="analytical">분석적 중심</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin: 15px 0;">
+            <p style="margin: 0; color: #856404; font-size: 14px;">
+              💡 <strong>팁:</strong> 이 설정은 블로그 작성 시 기본 톤앤매너로 사용됩니다. 매번 랜덤하게 다른 관점(단골 고객, 첫 방문, 미식가 등)이 적용되어 다양한 블로그를 생성합니다.
+            </p>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveBlogStyle()">
+            <i class="fas fa-save"></i> 블로그 스타일 저장
+          </button>
+        </section>
+
+        <!-- 3. 최근 리뷰 답글 -->
         <section class="section">
           <h3 class="section-title">
             <i class="fas fa-comment-dots"></i>
@@ -667,6 +756,7 @@
 
         // 가게 정보는 백그라운드에서 로드 (await 제거)
         loadStoreInfo();
+        loadBlogStyle();
 
       } catch (error) {
         console.error('❌ 프로필 로드 실패:', error);
@@ -952,6 +1042,78 @@
         console.log('✅ 가게 정보 로드 완료');
       } catch (error) {
         console.error('가게 정보 로드 오류:', error);
+      }
+    }
+
+    // 블로그 스타일 로드
+    async function loadBlogStyle() {
+      if (!currentUser) return;
+
+      try {
+        const response = await fetch(`/api/blog-style?userId=${currentUser.id}`);
+        if (!response.ok) return;
+
+        const result = await response.json();
+        if (!result.success || !result.data) return;
+
+        const style = result.data;
+
+        // 폼 필드 자동 입력
+        if (style.tone) document.getElementById('blogTone').value = style.tone;
+        if (style.formality) document.getElementById('blogFormality').value = style.formality;
+        if (style.emoji_usage) document.getElementById('blogEmojiUsage').value = style.emoji_usage;
+        if (style.personality) document.getElementById('blogPersonality').value = style.personality;
+        if (style.expertise_level) document.getElementById('blogExpertiseLevel').value = style.expertise_level;
+        if (style.content_length) document.getElementById('blogContentLength').value = style.content_length;
+        if (style.writing_style) document.getElementById('blogWritingStyle').value = style.writing_style;
+
+        console.log('✅ 블로그 스타일 로드 완료');
+      } catch (error) {
+        console.error('블로그 스타일 로드 오류:', error);
+      }
+    }
+
+    // 블로그 스타일 저장
+    async function saveBlogStyle() {
+      if (!currentUser) {
+        alert('사용자 정보를 불러오지 못했습니다.');
+        return;
+      }
+
+      try {
+        const blogStyle = {
+          tone: document.getElementById('blogTone').value,
+          formality: document.getElementById('blogFormality').value,
+          emoji_usage: document.getElementById('blogEmojiUsage').value,
+          personality: document.getElementById('blogPersonality').value,
+          expertise_level: document.getElementById('blogExpertiseLevel').value,
+          content_length: document.getElementById('blogContentLength').value,
+          writing_style: document.getElementById('blogWritingStyle').value
+        };
+
+        const response = await fetch('/api/blog-style', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId: currentUser.id, 
+            blogStyle 
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('저장 실패');
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          alert('✅ 블로그 스타일이 저장되었습니다!\n다음 블로그 작성 시부터 이 스타일로 작성됩니다.');
+        } else {
+          throw new Error(result.error || '저장 실패');
+        }
+
+      } catch (error) {
+        console.error('❌ 블로그 스타일 저장 실패:', error);
+        alert('블로그 스타일 저장 실패: ' + error.message);
       }
     }
 
