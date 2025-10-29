@@ -86,7 +86,6 @@
             <a class="app" href="/review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
             <a class="app" href="/Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
             <a class="app" href="/ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
-            <a class="app" href="/mypage.html" id="mypageLink" style="display:none"><div class="app-icon"><i class="fa-solid fa-user-circle" style="font-size:20px"></i></div><div class="app-label">마이페이지</div></a>
           </div>
           <div class="auth-buttons" id="authButtons">
             <div class="auth-user" id="authUser" style="display:none;">
@@ -198,7 +197,6 @@
   const authUser = document.getElementById("authUser");
   const userEmailSpan = document.getElementById("userEmail");
   const userAvatar = document.getElementById("userAvatar");
-  const mypageLink = document.getElementById("mypageLink");
 
   function updateAuthUI() {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -214,10 +212,6 @@
         if (loginBtn) loginBtn.style.display = "none";
         if (signupBtn) signupBtn.style.display = "none";
         if (authUser) authUser.style.display = "flex";
-        if (mypageLink) {
-          mypageLink.style.display = "flex";
-          console.log('[Header Auth] 마이페이지 버튼 활성화 ✅');
-        }
 
         if (userEmailSpan) {
           userEmailSpan.textContent = "마이페이지";
@@ -247,7 +241,6 @@
       if (authUser) authUser.style.display = "none";
       if (loginBtn) loginBtn.style.display = "inline-flex";
       if (signupBtn) signupBtn.style.display = "inline-flex";
-      if (mypageLink) mypageLink.style.display = "none";
       if (userEmailSpan) {
         userEmailSpan.textContent = "";
         userEmailSpan.title = "";
