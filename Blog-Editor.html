@@ -590,13 +590,13 @@
               </div>
 
                     <div class="form-group">
-                        <label for="existingBlog2">기존 블로그 글</label>
+                        <label for="existingBlog2">기존 블로그 글 (선택사항)</label>
                         <textarea 
                             id="existingBlog2" 
                             name="existingBlog" 
-                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 체험단 리뷰를 작성합니다."
+                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 체험단 리뷰를 작성합니다. (선택사항: 입력하지 않아도 생성 가능)"
                         ></textarea>
-                        <small style="color: #666; font-size: 12px;">기존 블로그 글의 스타일을 참고하여 체험단 리뷰 형태로 작성합니다</small>
+                        <small style="color: #666; font-size: 12px;">💡 선택사항: 기존 블로그 글을 입력하면 그 스타일을 참고하고, 없으면 기본 스타일로 작성합니다</small>
             </div>
 
                     <button type="submit" class="btn" id="generateReviewTeamBtn">
@@ -705,13 +705,13 @@
             </div>
 
                     <div class="form-group">
-                        <label for="existingBlog3">기존 블로그 글</label>
+                        <label for="existingBlog3">기존 블로그 글 (선택사항)</label>
                         <textarea 
                             id="existingBlog3" 
                             name="existingBlog" 
-                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 방문 후기를 작성합니다."
+                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 방문 후기를 작성합니다. (선택사항: 입력하지 않아도 생성 가능)"
                         ></textarea>
-                        <small style="color: #666; font-size: 12px;">기존 블로그 글의 스타일을 참고하여 방문 후기 형태로 작성합니다</small>
+                        <small style="color: #666; font-size: 12px;">💡 선택사항: 기존 블로그 글을 입력하면 그 스타일을 참고하고, 없으면 기본 스타일로 작성합니다</small>
           </div>
 
                     <button type="submit" class="btn" id="generateVisitReviewBtn">
@@ -1507,10 +1507,7 @@
                 return;
             }
 
-            if (!existingBlog || existingBlog.trim().length < 100) {
-                alert("기존 블로그 글을 입력해주세요. (최소 100자 이상)");
-                return;
-            }
+            // 기존 블로그 글은 선택사항 (입력하면 스타일 참고, 없으면 기본 스타일로 생성)
 
             try {
                 generateReviewTeamBtn.disabled = true;
@@ -1589,10 +1586,7 @@
                 return;
             }
 
-            if (!existingBlog || existingBlog.trim().length < 100) {
-                alert("기존 블로그 글을 입력해주세요. (최소 100자 이상)");
-                return;
-            }
+            // 기존 블로그 글은 선택사항 (입력하면 스타일 참고, 없으면 기본 스타일로 생성)
 
             try {
                 generateVisitReviewBtn.disabled = true;
