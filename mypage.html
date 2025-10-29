@@ -571,25 +571,9 @@
     // Supabase 초기화
     async function initSupabase() {
       try {
-        let supabaseUrl, supabaseAnonKey;
-        
-        // 서버에서 설정 가져오기 시도
-        try {
-          const response = await fetch('/api/config');
-          if (response.ok) {
-            const config = await response.json();
-            supabaseUrl = config.supabaseUrl;
-            supabaseAnonKey = config.supabaseAnonKey;
-          }
-        } catch (e) {
-          console.warn('API 호출 실패, 직접 설정 사용:', e);
-        }
-        
-        // 직접 설정 사용
-        if (!supabaseUrl || !supabaseAnonKey) {
-          supabaseUrl = 'https://ptuzlubgggbgsophfcna.supabase.co';
-          supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
-        }
+        // ⚡ 직접 설정 사용 (API 호출 건너뛰기 - 더 빠름)
+        const supabaseUrl = 'https://ptuzlubgggbgsophfcna.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
         
         supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
         console.log('✅ Supabase 초기화 완료');
@@ -623,12 +607,12 @@
           return;
         }
 
-        // 사용자 정보 로드
-        await loadUserProfile(user.id);
-        
-        // 최근 활동 로드
-        loadRecentReviews(user.id);
-        loadRecentBlogs(user.id);
+        // ⚡ 모든 데이터를 병렬로 로드 (빠름!)
+        await Promise.all([
+          loadUserProfile(user.id),
+          loadRecentReviews(user.id),
+          loadRecentBlogs(user.id)
+        ]);
 
       } catch (error) {
         console.error('❌ 페이지 초기화 실패:', error);
@@ -677,12 +661,12 @@
         document.getElementById('editBusinessName').value = profile.business_name || '';
         document.getElementById('editPhone').value = profile.phone || '';
 
-        // 가게 정보 로드
-        await loadStoreInfo();
-
-        // 메인 컨텐츠 표시
+        // ⚡ 메인 컨텐츠 먼저 표시 (빠른 렌더링)
         document.getElementById('loadingContainer').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
+
+        // 가게 정보는 백그라운드에서 로드 (await 제거)
+        loadStoreInfo();
 
       } catch (error) {
         console.error('❌ 프로필 로드 실패:', error);
@@ -918,7 +902,21 @@
 
         const result = await response.json();
         if (result.success) {
-          alert('✅ 가게 정보가 저장되었습니다!\n블로그 작성 시 자동으로 입력됩니다.');
+          let message = '✅ 가게 정보가 저장되었습니다!\n블로그 작성 시 자동으로 입력됩니다.';
+          
+          // 크롤링 결과 표시
+          if (result.crawlResult) {
+            if (result.crawlResult.fromCache) {
+              message += '\n\n🔄 캐시된 플레이스 정보를 사용했습니다.';
+            } else {
+              message += '\n\n🆕 플레이스를 새로 크롤링했습니다!';
+            }
+            
+            // 자동으로 입력된 정보 다시 로드
+            await loadStoreInfo();
+          }
+          
+          alert(message);
         } else {
           throw new Error(result.error || '저장 실패');
         }

@@ -333,7 +333,10 @@
                         name="placeUrl" 
                         placeholder="예: https://map.naver.com/p/entry/place/..."
                     />
-                    <small style="color: #666; font-size: 12px;">네이버 플레이스 URL을 입력하면 자동으로 정보를 크롤링합니다</small>
+                    <button type="button" id="crawlPlaceBtn" style="margin-top: 8px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; display: none;">
+                        🔍 이 플레이스 정보 가져오기
+                    </button>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">다른 플레이스 URL을 입력하면 "정보 가져오기" 버튼을 눌러주세요</small>
             </div>
 
             <div class="form-group">
@@ -682,6 +685,7 @@
         window.addEventListener('load', async function() {
             await ensureAuthenticated();
             await loadStoreInfo(); // 가게 정보 자동 입력
+            setupPlaceUrlHandler(); // 플레이스 URL 핸들러 설정
         });
 
         // 가게 정보 자동 입력
@@ -738,6 +742,89 @@
             } catch (error) {
                 console.error('가게 정보 로드 오류:', error);
             }
+        }
+
+        // 플레이스 URL 핸들러 설정
+        function setupPlaceUrlHandler() {
+            const placeUrlInput = document.getElementById('placeUrl');
+            const crawlBtn = document.getElementById('crawlPlaceBtn');
+
+            // URL 입력 시 버튼 표시
+            placeUrlInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    crawlBtn.style.display = 'inline-block';
+                } else {
+                    crawlBtn.style.display = 'none';
+                }
+            });
+
+            // 크롤링 버튼 클릭
+            crawlBtn.addEventListener('click', async function() {
+                const placeUrl = placeUrlInput.value.trim();
+                
+                if (!placeUrl) {
+                    alert('플레이스 URL을 입력해주세요.');
+                    return;
+                }
+
+                // URL 유효성 검사
+                if (!placeUrl.includes('map.naver.com') && !placeUrl.includes('naver.me')) {
+                    alert('네이버 플레이스 URL을 입력해주세요.');
+                    return;
+                }
+
+                try {
+                    // 버튼 비활성화
+                    crawlBtn.disabled = true;
+                    crawlBtn.textContent = '🔄 정보 가져오는 중...';
+
+                    // 크롤링 API 호출
+                    const response = await fetch('/api/chatgpt-blog', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            step: 'crawl',
+                            data: {
+                                placeUrl: placeUrl,
+                                companyName: '',
+                                companyAddress: '',
+                                businessHours: '',
+                                mainMenu: '',
+                                landmarks: '',
+                                keywords: ''
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('플레이스 정보를 가져올 수 없습니다.');
+                    }
+
+                    const result = await response.json();
+                    const placeInfo = result.data;
+
+                    // 폼 필드 업데이트
+                    if (placeInfo.name) document.getElementById('companyName').value = placeInfo.name;
+                    if (placeInfo.address) document.getElementById('companyAddress').value = placeInfo.address;
+                    if (placeInfo.hours) document.getElementById('businessHours').value = placeInfo.hours;
+                    if (placeInfo.mainMenu && placeInfo.mainMenu.length > 0) {
+                        document.getElementById('mainMenu').value = placeInfo.mainMenu.join(', ');
+                    }
+                    
+                    alert('✅ 플레이스 정보를 성공적으로 가져왔습니다!\n필요시 수정 후 블로그를 생성하세요.');
+                    
+                    // 버튼 숨기기
+                    crawlBtn.style.display = 'none';
+
+                } catch (error) {
+                    console.error('크롤링 오류:', error);
+                    alert('❌ ' + error.message);
+                } finally {
+                    // 버튼 복구
+                    crawlBtn.disabled = false;
+                    crawlBtn.textContent = '🔍 이 플레이스 정보 가져오기';
+                }
+            });
         }
 
         // 가게 정보 저장 버튼 이벤트

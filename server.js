@@ -2608,14 +2608,124 @@ app.post("/api/store-info", async (req, res) => {
       return res.status(400).json({ error: "userId가 필요합니다" });
     }
 
+    let finalStoreInfo = { ...storeInfo };
+    let crawlResult = null;
+
+    // 🔍 플레이스 URL이 있으면 자동 크롤링 시도
+    if (storeInfo.placeUrl && storeInfo.placeUrl.trim()) {
+      console.log('📍 플레이스 URL 발견, 자동 크롤링 시작:', storeInfo.placeUrl);
+
+      try {
+        // 1. 캐시 확인
+        const { data: cachedPlace } = await supabase
+          .from('place_crawl_cache')
+          .select('*')
+          .eq('place_url', storeInfo.placeUrl)
+          .single();
+
+        if (cachedPlace) {
+          console.log('✅ 캐시에서 플레이스 정보 발견:', cachedPlace.place_name);
+          // 캐시된 정보 사용
+          finalStoreInfo.companyName = cachedPlace.place_name || storeInfo.companyName;
+          finalStoreInfo.companyAddress = cachedPlace.place_address || storeInfo.companyAddress;
+          finalStoreInfo.businessHours = cachedPlace.business_hours || storeInfo.businessHours;
+          finalStoreInfo.mainMenu = cachedPlace.main_menu || storeInfo.mainMenu;
+          crawlResult = { fromCache: true, data: cachedPlace };
+
+          // 크롤링 카운트 증가
+          await supabase
+            .from('place_crawl_cache')
+            .update({ 
+              crawl_count: cachedPlace.crawl_count + 1,
+              last_crawled_at: new Date().toISOString()
+            })
+            .eq('id', cachedPlace.id);
+
+        } else {
+          console.log('🔄 새로운 플레이스, 크롤링 실행 중...');
+          // 2. 새로운 플레이스 크롤링
+          const chatgptBlog = require('./api/chatgpt-blog');
+          
+          // 크롤링 실행
+          const placeInfo = await new Promise((resolve, reject) => {
+            const mockReq = {
+              body: {
+                step: 'crawl',
+                data: {
+                  placeUrl: storeInfo.placeUrl,
+                  companyName: storeInfo.companyName || '',
+                  companyAddress: storeInfo.companyAddress || '',
+                  businessHours: storeInfo.businessHours || '',
+                  mainMenu: storeInfo.mainMenu || '',
+                  landmarks: storeInfo.landmarks || '',
+                  keywords: storeInfo.keywords || ''
+                }
+              }
+            };
+
+            const mockRes = {
+              status: (code) => mockRes,
+              json: (data) => {
+                if (data.success) {
+                  resolve(data.data);
+                } else {
+                  reject(new Error(data.error || '크롤링 실패'));
+                }
+              }
+            };
+
+            chatgptBlog(mockReq, mockRes);
+          });
+
+          console.log('✅ 크롤링 완료:', placeInfo.name);
+
+          // 3. 캐시에 저장
+          const { data: savedCache, error: cacheError } = await supabase
+            .from('place_crawl_cache')
+            .insert({
+              place_url: storeInfo.placeUrl,
+              place_id: placeInfo.place_id || null,
+              place_name: placeInfo.name,
+              place_address: placeInfo.address,
+              business_hours: placeInfo.hours,
+              main_menu: placeInfo.mainMenu ? placeInfo.mainMenu.join(', ') : null,
+              phone_number: placeInfo.phone || null,
+              crawl_data: placeInfo,
+              crawl_count: 1,
+              last_crawled_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (cacheError) {
+            console.error('❌ 캐시 저장 실패:', cacheError);
+          } else {
+            console.log('✅ 캐시 저장 성공:', savedCache.id);
+          }
+
+          // 크롤링된 정보로 업데이트
+          finalStoreInfo.companyName = placeInfo.name || storeInfo.companyName;
+          finalStoreInfo.companyAddress = placeInfo.address || storeInfo.companyAddress;
+          finalStoreInfo.businessHours = placeInfo.hours || storeInfo.businessHours;
+          finalStoreInfo.mainMenu = placeInfo.mainMenu ? placeInfo.mainMenu.join(', ') : storeInfo.mainMenu;
+          crawlResult = { fromCache: false, data: placeInfo };
+        }
+
+      } catch (crawlError) {
+        console.error('⚠️ 크롤링 실패, 사용자 입력 정보 사용:', crawlError.message);
+        // 크롤링 실패 시 사용자가 입력한 정보 그대로 사용
+      }
+    }
+
+    // profiles 테이블 업데이트
     const updateData = {
-      store_place_url: storeInfo.placeUrl || null,
-      store_name: storeInfo.companyName || null,
-      store_address: storeInfo.companyAddress || null,
-      store_business_hours: storeInfo.businessHours || null,
-      store_main_menu: storeInfo.mainMenu || null,
-      store_landmarks: storeInfo.landmarks || null,
-      store_keywords: storeInfo.keywords || null,
+      store_place_url: finalStoreInfo.placeUrl || null,
+      store_name: finalStoreInfo.companyName || null,
+      store_address: finalStoreInfo.companyAddress || null,
+      store_business_hours: finalStoreInfo.businessHours || null,
+      store_main_menu: finalStoreInfo.mainMenu || null,
+      store_landmarks: finalStoreInfo.landmarks || null,
+      store_keywords: finalStoreInfo.keywords || null,
     };
 
     const { data, error } = await supabase
@@ -2630,9 +2740,68 @@ app.post("/api/store-info", async (req, res) => {
       return res.status(500).json({ error: "가게 정보 저장 실패", details: error.message });
     }
 
-    res.json({ success: true, data });
+    res.json({ 
+      success: true, 
+      data,
+      crawlResult: crawlResult // 크롤링 결과 정보 포함
+    });
   } catch (error) {
     console.error("가게 정보 저장 오류:", error);
+    res.status(500).json({ error: "서버 오류", details: error.message });
+  }
+});
+
+// 플레이스 크롤링 캐시 조회 (내 URL)
+app.get("/api/place-cache", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { placeUrl } = req.query;
+    
+    if (!placeUrl) {
+      return res.status(400).json({ error: "placeUrl이 필요합니다" });
+    }
+
+    const { data, error } = await supabase
+      .from('place_crawl_cache')
+      .select('*')
+      .eq('place_url', placeUrl)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+      console.error("캐시 조회 실패:", error);
+      return res.status(500).json({ error: "캐시 조회 실패", details: error.message });
+    }
+
+    res.json({ success: true, data: data || null });
+  } catch (error) {
+    console.error("캐시 조회 오류:", error);
+    res.status(500).json({ error: "서버 오류", details: error.message });
+  }
+});
+
+// 어드민: 모든 플레이스 크롤링 캐시 조회
+app.get("/api/admin/place-cache", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { data, error } = await supabase
+      .from('place_crawl_cache')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("캐시 목록 조회 실패:", error);
+      return res.status(500).json({ error: "캐시 목록 조회 실패", details: error.message });
+    }
+
+    res.json({ success: true, data: data || [] });
+  } catch (error) {
+    console.error("캐시 목록 조회 오류:", error);
     res.status(500).json({ error: "서버 오류", details: error.message });
   }
 });

@@ -822,6 +822,42 @@
           <div class="pagination" id="pagination" style="display: none"></div>
         </div>
       </section>
+
+      <!-- 플레이스 크롤링 기록 -->
+      <section class="card" style="margin-top: 24px;">
+        <div class="card-header">
+          <div class="title">
+            <i class="fas fa-database" style="color: var(--accent);"></i>
+            플레이스 크롤링 캐시
+          </div>
+          <button class="btn" onclick="loadPlaceCache()">
+            <i class="fas fa-sync"></i> 새로고침
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table id="placeCacheTable">
+              <thead>
+                <tr>
+                  <th>가게명</th>
+                  <th>주소</th>
+                  <th>영업시간</th>
+                  <th>크롤링 횟수</th>
+                  <th>마지막 크롤링</th>
+                  <th>생성일</th>
+                </tr>
+              </thead>
+              <tbody id="placeCacheBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- 등급 변경 모달 -->
@@ -1659,6 +1695,85 @@
           closeLevelModal();
         }
       });
+
+      // ==================== 플레이스 크롤링 캐시 ====================
+
+      // 플레이스 캐시 로드
+      async function loadPlaceCache() {
+        const tbody = document.getElementById('placeCacheBody');
+        
+        try {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+              </td>
+            </tr>
+          `;
+
+          const response = await fetch('/api/admin/place-cache');
+          if (!response.ok) {
+            throw new Error('플레이스 캐시 로드 실패');
+          }
+
+          const result = await response.json();
+          
+          if (!result.success || !result.data || result.data.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                  <i class="fas fa-inbox"></i> 크롤링된 플레이스가 없습니다
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          tbody.innerHTML = result.data.map(place => `
+            <tr>
+              <td><strong>${place.place_name || '-'}</strong></td>
+              <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${place.place_address || '-'}
+              </td>
+              <td>${place.business_hours || '-'}</td>
+              <td style="text-align: center;">
+                <span class="badge ${place.crawl_count > 1 ? 'premium' : 'seed'}">
+                  ${place.crawl_count}회
+                </span>
+              </td>
+              <td>${formatDate(place.last_crawled_at)}</td>
+              <td>${formatDate(place.created_at)}</td>
+            </tr>
+          `).join('');
+
+        } catch (error) {
+          console.error('플레이스 캐시 로드 오류:', error);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #e74c3c;">
+                <i class="fas fa-exclamation-triangle"></i> 로드 실패: ${error.message}
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      // 날짜 포맷
+      function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+      }
+
+      // 페이지 로드 시 플레이스 캐시 자동 로드
+      setTimeout(() => {
+        loadPlaceCache();
+      }, 1000);
     </script>
   </body>
 </html>
