@@ -967,6 +967,10 @@
                 <span id="detail-store-hours">-</span>
               </div>
               <div class="info-item">
+                <label>가게 전화번호</label>
+                <span id="detail-store-phone">-</span>
+              </div>
+              <div class="info-item">
                 <label>대표메뉴</label>
                 <span id="detail-store-menu">-</span>
               </div>
@@ -1293,6 +1297,7 @@
           document.getElementById('detail-store-name').textContent = member.store_name || '-';
           document.getElementById('detail-store-address').textContent = member.store_address || '-';
           document.getElementById('detail-store-hours').textContent = member.store_business_hours || '-';
+          document.getElementById('detail-store-phone').textContent = member.store_phone_number || '-';
           document.getElementById('detail-store-menu').textContent = member.store_main_menu || '-';
           document.getElementById('detail-store-landmarks').textContent = member.store_landmarks || '-';
           document.getElementById('detail-store-keywords').textContent = member.store_keywords || '-';

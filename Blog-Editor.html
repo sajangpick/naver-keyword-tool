@@ -233,6 +233,57 @@
             font-size: 1.5rem;
         }
 
+        /* AI 키워드 버튼 스타일 */
+        .ai-keyword-btn {
+            margin-top: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .ai-keyword-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-keyword-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 키워드 태그 스타일 */
+        .keyword-tag {
+            display: inline-block;
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .keyword-tag:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .keyword-tag.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            font-weight: 600;
+        }
+
         /* 탭 스타일링 */
         .tab-navigation {
             display: flex;
@@ -316,12 +367,17 @@
             <div class="tab-content active" id="our-store-tab">
                 <!-- 안내 문구 -->
                 <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #856404; font-size: 14px;">
+                    <p style="margin: 0; color: #856404; font-size: 14px; margin-bottom: 10px;">
                         💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
                     </p>
-                    <button type="button" id="saveStoreInfoBtn" class="btn" style="margin-top: 10px; background: #28a745;">
-                        📌 가게 정보 저장하기 (다음에 자동 입력됨)
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="loadStoreInfoBtn" class="btn" style="flex: 1; background: #17a2b8;">
+                            📥 이전 정보 불러오기
+                        </button>
+                        <button type="button" id="saveStoreInfoBtn" class="btn" style="flex: 1; background: #28a745;">
+                            📌 가게 정보 저장하기
+                        </button>
+                    </div>
                 </div>
 
           <form id="blogForm">
@@ -373,6 +429,17 @@
             </div>
 
             <div class="form-group">
+                    <label for="phoneNumber">전화번호</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                        placeholder="예: 010-1234-5678 또는 051-123-4567"
+              />
+                    <small style="color: #666; font-size: 12px;">가게 전화번호를 입력해주세요 (블로그 글에 포함됩니다)</small>
+            </div>
+
+            <div class="form-group">
                     <label for="mainMenu">대표메뉴</label>
                     <textarea 
                         id="mainMenu" 
@@ -401,7 +468,20 @@
                         name="keywords" 
                         placeholder="예: 30년전통, 신선한고기, 가족식당, 부산맛집"
                     />
+                    <button type="button" id="aiKeywordBtn" class="ai-keyword-btn">
+                        🤖 AI 키워드 추천받기
+                    </button>
                     <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
+                    
+                    <!-- AI 추천 키워드 영역 -->
+                    <div id="aiKeywordArea" style="display: none; margin-top: 15px;">
+                        <div style="background: #f0f8ff; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px;">
+                            <p style="margin: 0 0 10px 0; color: #2c5f2d; font-weight: 600;">
+                                🎯 AI 추천 키워드 (클릭해서 선택/해제)
+                            </p>
+                            <div id="aiKeywordTags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn" id="generateBtn">
@@ -454,6 +534,17 @@
                 </div>
 
                     <div class="form-group">
+                        <label for="phoneNumber2">전화번호</label>
+                        <input
+                            type="tel"
+                            id="phoneNumber2"
+                            name="phoneNumber"
+                            placeholder="예: 010-1234-5678 또는 051-123-4567"
+                        />
+                        <small style="color: #666; font-size: 12px;">가게 전화번호를 입력해주세요 (블로그 글에 포함됩니다)</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="mainMenu2">대표메뉴</label>
                         <textarea 
                             id="mainMenu2" 
@@ -482,7 +573,20 @@
                             name="keywords" 
                             placeholder="예: 30년전통, 신선한고기, 가족식당, 부산맛집"
                         />
+                        <button type="button" id="aiKeywordBtn2" class="ai-keyword-btn">
+                            🤖 AI 키워드 추천받기
+                        </button>
                         <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
+                        
+                        <!-- AI 추천 키워드 영역 -->
+                        <div id="aiKeywordArea2" style="display: none; margin-top: 15px;">
+                            <div style="background: #f0f8ff; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px;">
+                                <p style="margin: 0 0 10px 0; color: #2c5f2d; font-weight: 600;">
+                                    🎯 AI 추천 키워드 (클릭해서 선택/해제)
+                                </p>
+                                <div id="aiKeywordTags2" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                            </div>
+                        </div>
               </div>
 
                     <div class="form-group">
@@ -545,6 +649,17 @@
               </div>
 
                     <div class="form-group">
+                        <label for="phoneNumber3">전화번호</label>
+                        <input 
+                            type="tel" 
+                            id="phoneNumber3" 
+                            name="phoneNumber" 
+                            placeholder="예: 010-1234-5678 또는 051-123-4567"
+                        />
+                        <small style="color: #666; font-size: 12px;">가게 전화번호를 입력해주세요 (블로그 글에 포함됩니다)</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="mainMenu3">대표메뉴</label>
                         <textarea 
                             id="mainMenu3" 
@@ -573,7 +688,20 @@
                             name="keywords" 
                             placeholder="예: 30년전통, 신선한고기, 가족식당, 부산맛집"
                         />
+                        <button type="button" id="aiKeywordBtn3" class="ai-keyword-btn">
+                            🤖 AI 키워드 추천받기
+                        </button>
                         <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
+                        
+                        <!-- AI 추천 키워드 영역 -->
+                        <div id="aiKeywordArea3" style="display: none; margin-top: 15px;">
+                            <div style="background: #f0f8ff; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px;">
+                                <p style="margin: 0 0 10px 0; color: #2c5f2d; font-weight: 600;">
+                                    🎯 AI 추천 키워드 (클릭해서 선택/해제)
+                                </p>
+                                <div id="aiKeywordTags3" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                            </div>
+                        </div>
             </div>
 
                     <div class="form-group">
@@ -681,10 +809,9 @@
             return false;
         }
 
-        // 페이지 로드 시 인증 확인 및 가게 정보 자동 입력
+        // 페이지 로드 시 인증 확인
         window.addEventListener('load', async function() {
             await ensureAuthenticated();
-            await loadStoreInfo(); // 가게 정보 자동 입력
             setupPlaceUrlHandler(); // 플레이스 URL 핸들러 설정
         });
 
@@ -718,6 +845,7 @@
                 if (data.store_name) document.getElementById('companyName').value = data.store_name;
                 if (data.store_address) document.getElementById('companyAddress').value = data.store_address;
                 if (data.store_business_hours) document.getElementById('businessHours').value = data.store_business_hours;
+                if (data.store_phone_number) document.getElementById('phoneNumber').value = data.store_phone_number;
                 if (data.store_main_menu) document.getElementById('mainMenu').value = data.store_main_menu;
                 if (data.store_landmarks) document.getElementById('landmarks').value = data.store_landmarks;
                 if (data.store_keywords) document.getElementById('keywords').value = data.store_keywords;
@@ -726,6 +854,7 @@
                 if (data.store_name) document.getElementById('companyName2').value = data.store_name;
                 if (data.store_address) document.getElementById('companyAddress2').value = data.store_address;
                 if (data.store_business_hours) document.getElementById('businessHours2').value = data.store_business_hours;
+                if (data.store_phone_number) document.getElementById('phoneNumber2').value = data.store_phone_number;
                 if (data.store_main_menu) document.getElementById('mainMenu2').value = data.store_main_menu;
                 if (data.store_landmarks) document.getElementById('landmarks2').value = data.store_landmarks;
                 if (data.store_keywords) document.getElementById('keywords2').value = data.store_keywords;
@@ -734,6 +863,7 @@
                 if (data.store_name) document.getElementById('companyName3').value = data.store_name;
                 if (data.store_address) document.getElementById('companyAddress3').value = data.store_address;
                 if (data.store_business_hours) document.getElementById('businessHours3').value = data.store_business_hours;
+                if (data.store_phone_number) document.getElementById('phoneNumber3').value = data.store_phone_number;
                 if (data.store_main_menu) document.getElementById('mainMenu3').value = data.store_main_menu;
                 if (data.store_landmarks) document.getElementById('landmarks3').value = data.store_landmarks;
                 if (data.store_keywords) document.getElementById('keywords3').value = data.store_keywords;
@@ -808,6 +938,7 @@
                                 companyName: '',
                                 companyAddress: '',
                                 businessHours: '',
+                                phone: '',
                                 mainMenu: '',
                                 landmarks: '',
                                 keywords: ''
@@ -826,6 +957,7 @@
                     if (placeInfo.name) document.getElementById('companyName').value = placeInfo.name;
                     if (placeInfo.address) document.getElementById('companyAddress').value = placeInfo.address;
                     if (placeInfo.hours) document.getElementById('businessHours').value = placeInfo.hours;
+                    if (placeInfo.phone) document.getElementById('phoneNumber').value = placeInfo.phone;
                     if (placeInfo.mainMenu && placeInfo.mainMenu.length > 0) {
                         document.getElementById('mainMenu').value = placeInfo.mainMenu.join(', ');
                     }
@@ -846,6 +978,148 @@
             });
         }
 
+        // AI 키워드 추천 함수
+        async function recommendKeywords(tabNumber = '') {
+            const btnId = tabNumber ? `aiKeywordBtn${tabNumber}` : 'aiKeywordBtn';
+            const areaId = tabNumber ? `aiKeywordArea${tabNumber}` : 'aiKeywordArea';
+            const tagsId = tabNumber ? `aiKeywordTags${tabNumber}` : 'aiKeywordTags';
+            const companyNameId = tabNumber ? `companyName${tabNumber}` : 'companyName';
+            const companyAddressId = tabNumber ? `companyAddress${tabNumber}` : 'companyAddress';
+            const mainMenuId = tabNumber ? `mainMenu${tabNumber}` : 'mainMenu';
+            const landmarksId = tabNumber ? `landmarks${tabNumber}` : 'landmarks';
+            const keywordsId = tabNumber ? `keywords${tabNumber}` : 'keywords';
+
+            const btn = document.getElementById(btnId);
+            const area = document.getElementById(areaId);
+            const tagsContainer = document.getElementById(tagsId);
+            const keywordsInput = document.getElementById(keywordsId);
+
+            // 현재 입력된 정보 수집
+            const companyName = document.getElementById(companyNameId).value.trim();
+            const companyAddress = document.getElementById(companyAddressId).value.trim();
+            const mainMenu = document.getElementById(mainMenuId).value.trim();
+            const landmarks = document.getElementById(landmarksId).value.trim();
+
+            if (!companyName || !companyAddress || !mainMenu) {
+                alert('업체명, 업체주소, 대표메뉴를 먼저 입력해주세요.');
+                return;
+            }
+
+            try {
+                // 버튼 비활성화
+                btn.disabled = true;
+                btn.textContent = '🤖 AI 분석 중...';
+
+                // API 호출
+                const response = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'recommend-keywords',
+                        data: {
+                            companyName,
+                            companyAddress,
+                            mainMenu,
+                            landmarks
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('키워드 추천 실패');
+                }
+
+                const result = await response.json();
+                const keywords = result.data.keywords || [];
+
+                if (keywords.length === 0) {
+                    throw new Error('추천된 키워드가 없습니다');
+                }
+
+                // 키워드 태그 생성
+                tagsContainer.innerHTML = '';
+                keywords.forEach(keyword => {
+                    const tag = document.createElement('span');
+                    tag.className = 'keyword-tag';
+                    tag.textContent = keyword;
+                    tag.dataset.keyword = keyword;
+                    
+                    // 클릭 이벤트 (선택/해제 토글)
+                    tag.addEventListener('click', function() {
+                        this.classList.toggle('selected');
+                        updateKeywordsInput(tagsId, keywordsId);
+                    });
+
+                    tagsContainer.appendChild(tag);
+                });
+
+                // 추천 영역 표시
+                area.style.display = 'block';
+
+            } catch (error) {
+                console.error('키워드 추천 오류:', error);
+                alert('❌ 키워드 추천에 실패했습니다.\n' + error.message);
+            } finally {
+                // 버튼 복구
+                btn.disabled = false;
+                btn.textContent = '🤖 AI 키워드 추천받기';
+            }
+        }
+
+        // 선택된 키워드를 input에 반영
+        function updateKeywordsInput(tagsId, keywordsId) {
+            const tagsContainer = document.getElementById(tagsId);
+            const keywordsInput = document.getElementById(keywordsId);
+            
+            const selectedTags = tagsContainer.querySelectorAll('.keyword-tag.selected');
+            const selectedKeywords = Array.from(selectedTags).map(tag => tag.dataset.keyword);
+            
+            keywordsInput.value = selectedKeywords.join(', ');
+        }
+
+        // AI 키워드 추천 버튼 이벤트 (우리매장 탭)
+        document.getElementById('aiKeywordBtn').addEventListener('click', async function() {
+            await recommendKeywords('');
+        });
+
+        // AI 키워드 추천 버튼 이벤트 (체험단리뷰 탭)
+        document.getElementById('aiKeywordBtn2').addEventListener('click', async function() {
+            await recommendKeywords('2');
+        });
+
+        // AI 키워드 추천 버튼 이벤트 (방문후기 탭)
+        document.getElementById('aiKeywordBtn3').addEventListener('click', async function() {
+            await recommendKeywords('3');
+        });
+
+        // 가게 정보 불러오기 버튼 이벤트
+        document.getElementById('loadStoreInfoBtn').addEventListener('click', async function() {
+            try {
+                // 로그인 확인
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (!userData.id) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                }
+
+                // 버튼 비활성화
+                this.disabled = true;
+                this.textContent = '불러오는 중...';
+
+                // 가게 정보 불러오기
+                await loadStoreInfo();
+                alert('✅ 이전에 저장한 가게 정보를 불러왔습니다!');
+
+            } catch (error) {
+                console.error('가게 정보 불러오기 오류:', error);
+                alert('❌ 가게 정보 불러오기에 실패했습니다.\n' + error.message);
+            } finally {
+                // 버튼 복구
+                this.disabled = false;
+                this.textContent = '📥 이전 정보 불러오기';
+            }
+        });
+
         // 가게 정보 저장 버튼 이벤트
         document.getElementById('saveStoreInfoBtn').addEventListener('click', async function() {
             try {
@@ -862,6 +1136,7 @@
                     companyName: document.getElementById('companyName').value,
                     companyAddress: document.getElementById('companyAddress').value,
                     businessHours: document.getElementById('businessHours').value,
+                    phoneNumber: document.getElementById('phoneNumber').value,
                     mainMenu: document.getElementById('mainMenu').value,
                     landmarks: document.getElementById('landmarks').value,
                     keywords: document.getElementById('keywords').value,
@@ -884,7 +1159,7 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    alert('✅ 가게 정보가 저장되었습니다!\n다음에 이 페이지를 열면 자동으로 입력됩니다.');
+                    alert('✅ 가게 정보가 저장되었습니다!\n"📥 이전 정보 불러오기" 버튼으로 언제든 불러올 수 있습니다.');
                 } else {
                     throw new Error(result.error || '저장 실패');
                 }
@@ -1047,6 +1322,7 @@
             const companyName = formData.get("companyName");
             const companyAddress = formData.get("companyAddress");
             const businessHours = formData.get("businessHours");
+            const phoneNumber = formData.get("phoneNumber") || "";
             const mainMenu = formData.get("mainMenu");
             const landmarks = formData.get("landmarks") || "";
             const keywords = formData.get("keywords") || "";
@@ -1081,6 +1357,7 @@
                             companyName,
                             companyAddress,
                             businessHours,
+                            phone: phoneNumber,
                             mainMenu,
                             landmarks,
                             keywords
@@ -1168,6 +1445,7 @@
             const companyName = formData.get("companyName");
             const companyAddress = formData.get("companyAddress");
             const businessHours = formData.get("businessHours");
+            const phoneNumber = formData.get("phoneNumber") || "";
             const mainMenu = formData.get("mainMenu");
             const landmarks = formData.get("landmarks") || "";
             const keywords = formData.get("keywords") || "";
@@ -1206,6 +1484,7 @@
                                 companyName,
                                 companyAddress,
                                 businessHours,
+                                phoneNumber,
                                 mainMenu,
                                 landmarks,
                                 keywords
@@ -1246,6 +1525,7 @@
             const companyName = formData.get("companyName");
             const companyAddress = formData.get("companyAddress");
             const businessHours = formData.get("businessHours");
+            const phoneNumber = formData.get("phoneNumber") || "";
             const mainMenu = formData.get("mainMenu");
             const landmarks = formData.get("landmarks") || "";
             const keywords = formData.get("keywords") || "";
@@ -1284,6 +1564,7 @@
                                 companyName,
                                 companyAddress,
                                 businessHours,
+                                phoneNumber,
                                 mainMenu,
                                 landmarks,
                                 keywords
