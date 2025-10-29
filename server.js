@@ -587,8 +587,8 @@ app.post("/auth/logout", (req, res) => {
 // ==================== Supabase 테스트 API ====================
 
 // Supabase 연결 테스트 (로컬에서 데이터 확인)
-const testSupabaseHandler = require("./api/test-supabase");
-app.get("/api/test-supabase", testSupabaseHandler);
+// const testSupabaseHandler = require("./api/test-supabase");
+// app.get("/api/test-supabase", testSupabaseHandler);
 
 // Supabase CRUD (데이터 추가/수정/삭제)
 const supabaseCrudHandler = require("./api/supabase-crud");
