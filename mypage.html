@@ -1375,26 +1375,44 @@
         }
 
         // 설정 수집
+        const storeName = document.getElementById('editStoreName').value;
         const settings = {
+          action: 'create_monitoring',
           userId: currentUser.id,
-          storeUrl: storeUrl,
+          placeUrl: storeUrl,
+          placeName: storeName || '내 가게',
           alertLowRating: document.getElementById('alertLowRating').checked,
           alertHighRating: document.getElementById('alertHighRating').checked,
           alertKeywords: document.getElementById('alertKeywords').checked,
           keywordsList: document.getElementById('alertKeywordsList').value
         };
 
-        // API 호출 (준비중)
-        // TODO: API 구현 후 연동
-        console.log('저장할 설정:', settings);
+        // API 호출
+        const response = await fetch('/api/review-monitoring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        });
 
-        // 임시로 localStorage에 저장
-        localStorage.setItem('review_monitoring_settings', JSON.stringify(settings));
+        const result = await response.json();
 
-        alert('✅ 리뷰 모니터링 설정이 저장되었습니다!\n\n플레이스 URL을 입력하면 자동으로 리뷰를 수집하기 시작합니다.');
+        if (!result.success) {
+          throw new Error(result.error || '설정 저장 실패');
+        }
 
-        // 모니터링 활성화
-        await toggleMonitoring(true);
+        alert(`✅ 리뷰 모니터링 설정이 저장되었습니다!
+
+${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업데이트되었습니다!'}
+
+자동으로 리뷰를 수집하고, 긴급 리뷰 발생 시 카카오톡으로 알림을 받습니다.`);
+
+        // 모니터링 활성화 UI 업데이트
+        document.getElementById('monitoringStatus').style.display = 'block';
+        document.getElementById('monitoringInactive').style.display = 'none';
+        document.getElementById('lastCrawled').textContent = '방금 전';
+
+        // 최근 리뷰 로드
+        await loadRecentReviews();
 
       } catch (error) {
         console.error('모니터링 설정 저장 오류:', error);

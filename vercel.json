@@ -11,5 +11,11 @@
       "source": "/auth/:path*",
       "destination": "https://naver-keyword-tool.onrender.com/auth/:path*"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/review-monitoring",
+      "schedule": "0 9,14,20 * * *"
+    }
   ]
 }
