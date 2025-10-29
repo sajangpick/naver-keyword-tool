@@ -27,7 +27,9 @@ export default async function handler(req, res) {
       ownerTips, 
       action, 
       replyStyle,
-      selectedPromoPoints 
+      selectedPromoPoints,
+      promotionData,
+      hasPromotion
     } = req.body;
 
     if (!reviewText) {
@@ -39,7 +41,7 @@ export default async function handler(req, res) {
 
     // 액션: 홍보 포인트 추천
     if (action === 'recommend-promo-points') {
-      const promoPoints = await recommendPromoPoints(reviewText, placeInfo, ownerTips);
+      const promoPoints = await recommendPromoPoints(reviewText, placeInfo, ownerTips, promotionData);
       return res.status(200).json({
         success: true,
         data: { promoPoints }
@@ -52,7 +54,8 @@ export default async function handler(req, res) {
       placeInfo, 
       ownerTips, 
       replyStyle || 'promo',
-      selectedPromoPoints
+      selectedPromoPoints,
+      promotionData
     );
 
     return res.status(200).json({
@@ -72,7 +75,34 @@ export default async function handler(req, res) {
 /**
  * AI 홍보 포인트 추천
  */
-async function recommendPromoPoints(reviewText, placeInfo, ownerTips) {
+async function recommendPromoPoints(reviewText, placeInfo, ownerTips, promotionData = null) {
+  // 프로모션 정보 프롬프트 생성
+  let promotionPrompt = '';
+  if (promotionData) {
+    promotionPrompt = '\n[🎯 가게의 특별한 스토리]\n';
+    if (promotionData.signature_menu) {
+      promotionPrompt += `- 시그니처 메뉴: ${promotionData.signature_menu}\n`;
+    }
+    if (promotionData.special_ingredients) {
+      promotionPrompt += `- 재료/조리법: ${promotionData.special_ingredients}\n`;
+    }
+    if (promotionData.atmosphere_facilities) {
+      promotionPrompt += `- 분위기/시설: ${promotionData.atmosphere_facilities}\n`;
+    }
+    if (promotionData.owner_story) {
+      promotionPrompt += `- 사장님 이야기: ${promotionData.owner_story}\n`;
+    }
+    if (promotionData.recommended_situations) {
+      promotionPrompt += `- 추천 상황: ${promotionData.recommended_situations}\n`;
+    }
+    if (promotionData.sns_photo_points) {
+      promotionPrompt += `- SNS 포인트: ${promotionData.sns_photo_points}\n`;
+    }
+    if (promotionData.special_events) {
+      promotionPrompt += `- 특별 서비스: ${promotionData.special_events}\n`;
+    }
+  }
+
   const systemPrompt = `당신은 네이버 플레이스 리뷰 답글 작성 전문가입니다.
 리뷰 내용을 분석하여, 답글에 추가하면 좋을 홍보 포인트를 추천해주세요.
 
@@ -104,6 +134,7 @@ ${placeInfo ? `[식당 정보]
 ${ownerTips ? `[사장님 추천 포인트]
 ${ownerTips}
 ` : ''}
+${promotionPrompt}
 
 위 정보를 바탕으로 답글에 자연스럽게 추가하면 좋을 홍보 포인트를 5-8개 추천해주세요.
 각 포인트는 짧고 명확하게 (5-10자 이내).
@@ -136,7 +167,35 @@ ${ownerTips}
 /**
  * 답글 생성 (스타일별)
  */
-async function generateReply(reviewText, placeInfo, ownerTips, replyStyle, selectedPromoPoints) {
+async function generateReply(reviewText, placeInfo, ownerTips, replyStyle, selectedPromoPoints, promotionData = null) {
+  // 프로모션 정보 프롬프트 생성
+  let promotionPrompt = '';
+  if (promotionData) {
+    promotionPrompt = '\n[🎯 우리 가게만의 특별함]\n';
+    if (promotionData.signature_menu) {
+      promotionPrompt += `- 시그니처 메뉴: ${promotionData.signature_menu}\n`;
+    }
+    if (promotionData.special_ingredients) {
+      promotionPrompt += `- 재료/조리법: ${promotionData.special_ingredients}\n`;
+    }
+    if (promotionData.atmosphere_facilities) {
+      promotionPrompt += `- 분위기/시설: ${promotionData.atmosphere_facilities}\n`;
+    }
+    if (promotionData.owner_story) {
+      promotionPrompt += `- 사장님 이야기: ${promotionData.owner_story}\n`;
+    }
+    if (promotionData.recommended_situations) {
+      promotionPrompt += `- 추천 상황: ${promotionData.recommended_situations}\n`;
+    }
+    if (promotionData.sns_photo_points) {
+      promotionPrompt += `- SNS 포인트: ${promotionData.sns_photo_points}\n`;
+    }
+    if (promotionData.special_events) {
+      promotionPrompt += `- 특별 서비스: ${promotionData.special_events}\n`;
+    }
+    promotionPrompt += '\n위 정보를 답글에 자연스럽게 녹여주세요.\n';
+  }
+
   // 스타일별 시스템 프롬프트
   const stylePrompts = {
     promo: `당신은 네이버 플레이스 리뷰 답글 작성 전문가입니다. (홍보형 스타일)
@@ -219,7 +278,7 @@ ${placeInfo ? `[식당 정보]
 ${ownerTips ? `[사장님 추천 포인트]
 ${ownerTips}
 ` : ''}
-
+${promotionPrompt}
 ${selectedPromoPoints && selectedPromoPoints.length > 0 ? `[선택된 홍보 포인트] (답글에 자연스럽게 포함해주세요)
 ${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 ` : ''}

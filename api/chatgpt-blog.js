@@ -662,12 +662,40 @@ JSON 형식으로 답변해주세요:
 /**
  * 4단계: 블로그 글 생성 (다양성 강화)
  */
-async function generateBlogPost(placeInfo, menuAnalysis, selectedTopic, userId) {
+async function generateBlogPost(placeInfo, menuAnalysis, selectedTopic, userId, promotionData = null) {
     const context = getCurrentContext();
     const blogStyle = await getUserBlogStyle(userId);
     const previousAnalysis = await analyzePreviousBlogs(userId);
 
     const stylePrompt = blogStyleToPrompt(blogStyle);
+
+    // 프로모션 정보 프롬프트 생성
+    let promotionPrompt = '';
+    if (promotionData) {
+        promotionPrompt = '\n[🎯 내 가게 알리기 - 심도 있는 정보]\n';
+        if (promotionData.signature_menu) {
+            promotionPrompt += `- 시그니처 메뉴 스토리: ${promotionData.signature_menu}\n`;
+        }
+        if (promotionData.special_ingredients) {
+            promotionPrompt += `- 재료/조리법의 특별함: ${promotionData.special_ingredients}\n`;
+        }
+        if (promotionData.atmosphere_facilities) {
+            promotionPrompt += `- 분위기/편의시설: ${promotionData.atmosphere_facilities}\n`;
+        }
+        if (promotionData.owner_story) {
+            promotionPrompt += `- 사장님/셰프 이야기: ${promotionData.owner_story}\n`;
+        }
+        if (promotionData.recommended_situations) {
+            promotionPrompt += `- 추천 상황/고객층: ${promotionData.recommended_situations}\n`;
+        }
+        if (promotionData.sns_photo_points) {
+            promotionPrompt += `- SNS/인스타 포인트: ${promotionData.sns_photo_points}\n`;
+        }
+        if (promotionData.special_events) {
+            promotionPrompt += `- 이벤트/특별 서비스: ${promotionData.special_events}\n`;
+        }
+        promotionPrompt += '\n✨ 위 정보를 활용하여 가게의 특별함과 차별성을 구체적으로 표현해주세요.\n';
+    }
 
     const prompt = `
 [역할] ⭐⭐⭐ 매우 중요!
@@ -695,7 +723,7 @@ ${stylePrompt}
 - 주요 강점: ${placeInfo.strengths}
 - 주요 고객층: ${placeInfo.targetCustomers}
 - 가게 분위기: ${placeInfo.atmosphere}
-
+${promotionPrompt}
 [대표 메뉴 분석]
 ${JSON.stringify(menuAnalysis, null, 2)}
 
@@ -842,13 +870,41 @@ function extractDiversityKeywords(blogContent) {
 /**
  * 체험단 리뷰 생성 (다양성 강화)
  */
-async function generateReviewTeamPost(storeInfo, existingBlog, userId) {
+async function generateReviewTeamPost(storeInfo, existingBlog, userId, promotionData = null) {
     const context = getCurrentContext();
     const blogStyle = await getUserBlogStyle(userId);
     const previousAnalysis = await analyzePreviousBlogs(userId);
     const writingAngle = getRandomAngle();
 
     const stylePrompt = blogStyleToPrompt(blogStyle);
+
+    // 프로모션 정보 프롬프트 생성
+    let promotionPrompt = '';
+    if (promotionData) {
+        promotionPrompt = '\n[🎯 가게의 특별한 스토리]\n';
+        if (promotionData.signature_menu) {
+            promotionPrompt += `- 시그니처 메뉴: ${promotionData.signature_menu}\n`;
+        }
+        if (promotionData.special_ingredients) {
+            promotionPrompt += `- 재료/조리법: ${promotionData.special_ingredients}\n`;
+        }
+        if (promotionData.atmosphere_facilities) {
+            promotionPrompt += `- 분위기/시설: ${promotionData.atmosphere_facilities}\n`;
+        }
+        if (promotionData.owner_story) {
+            promotionPrompt += `- 사장님 이야기: ${promotionData.owner_story}\n`;
+        }
+        if (promotionData.recommended_situations) {
+            promotionPrompt += `- 추천 상황: ${promotionData.recommended_situations}\n`;
+        }
+        if (promotionData.sns_photo_points) {
+            promotionPrompt += `- SNS 포인트: ${promotionData.sns_photo_points}\n`;
+        }
+        if (promotionData.special_events) {
+            promotionPrompt += `- 특별 서비스: ${promotionData.special_events}\n`;
+        }
+        promotionPrompt += '\n위 정보를 리뷰에 자연스럽게 녹여서 작성해주세요.\n';
+    }
 
     const prompt = `
 [역할]
@@ -868,6 +924,7 @@ ${stylePrompt}
 - 대표메뉴: ${storeInfo.mainMenu}
 - 주변 랜드마크: ${storeInfo.landmarks || '없음'}
 - 키워드: ${storeInfo.keywords || '없음'}
+${promotionPrompt}
 
 [현재 상황]
 - 계절: ${context.season}
@@ -1047,13 +1104,41 @@ ${landmarks ? `- 주변 랜드마크: ${landmarks}` : ''}
 /**
  * 방문 후기 생성 (다양성 강화)
  */
-async function generateVisitReviewPost(storeInfo, existingBlog, userId) {
+async function generateVisitReviewPost(storeInfo, existingBlog, userId, promotionData = null) {
     const context = getCurrentContext();
     const blogStyle = await getUserBlogStyle(userId);
     const previousAnalysis = await analyzePreviousBlogs(userId);
     const writingAngle = getRandomAngle();
 
     const stylePrompt = blogStyleToPrompt(blogStyle);
+
+    // 프로모션 정보 프롬프트 생성
+    let promotionPrompt = '';
+    if (promotionData) {
+        promotionPrompt = '\n[🎯 가게의 특별한 점]\n';
+        if (promotionData.signature_menu) {
+            promotionPrompt += `- 시그니처 메뉴: ${promotionData.signature_menu}\n`;
+        }
+        if (promotionData.special_ingredients) {
+            promotionPrompt += `- 재료/조리법: ${promotionData.special_ingredients}\n`;
+        }
+        if (promotionData.atmosphere_facilities) {
+            promotionPrompt += `- 분위기/시설: ${promotionData.atmosphere_facilities}\n`;
+        }
+        if (promotionData.owner_story) {
+            promotionPrompt += `- 사장님 이야기: ${promotionData.owner_story}\n`;
+        }
+        if (promotionData.recommended_situations) {
+            promotionPrompt += `- 추천 상황: ${promotionData.recommended_situations}\n`;
+        }
+        if (promotionData.sns_photo_points) {
+            promotionPrompt += `- SNS 포인트: ${promotionData.sns_photo_points}\n`;
+        }
+        if (promotionData.special_events) {
+            promotionPrompt += `- 특별 서비스: ${promotionData.special_events}\n`;
+        }
+        promotionPrompt += '\n위 정보를 방문 후기에 자연스럽게 녹여서 작성해주세요.\n';
+    }
 
     const prompt = `
 [역할]
@@ -1073,6 +1158,7 @@ ${stylePrompt}
 - 대표메뉴: ${storeInfo.mainMenu}
 - 주변 랜드마크: ${storeInfo.landmarks || '없음'}
 - 키워드: ${storeInfo.keywords || '없음'}
+${promotionPrompt}
 
 [현재 상황]
 - 계절: ${context.season}
@@ -1198,7 +1284,7 @@ module.exports = async function handler(req, res) {
             case 'generate-review-team':
                 {
                     const startTime = Date.now();
-                    const reviewResult = await generateReviewTeamPost(data.storeInfo, data.existingBlog, data.userId);
+                    const reviewResult = await generateReviewTeamPost(data.storeInfo, data.existingBlog, data.userId, data.promotionData);
                     const generationTime = Date.now() - startTime;
 
                     // DB 저장
@@ -1259,7 +1345,7 @@ module.exports = async function handler(req, res) {
             case 'generate-visit-review':
                 {
                     const startTime = Date.now();
-                    const reviewResult = await generateVisitReviewPost(data.storeInfo, data.existingBlog, data.userId);
+                    const reviewResult = await generateVisitReviewPost(data.storeInfo, data.existingBlog, data.userId, data.promotionData);
                     const generationTime = Date.now() - startTime;
 
                     // DB 저장
@@ -1320,7 +1406,7 @@ module.exports = async function handler(req, res) {
             case 'generate':
                 {
                     const startTime = Date.now();
-                    const blogResult = await generateBlogPost(data.placeInfo, data.menuAnalysis, data.selectedTopic, data.userId);
+                    const blogResult = await generateBlogPost(data.placeInfo, data.menuAnalysis, data.selectedTopic, data.userId, data.promotionData);
                     const generationTime = Date.now() - startTime;
 
                     // DB 저장

@@ -904,6 +904,10 @@
       // 선택된 홍보 포인트를 저장할 변수
       let selectedPromoPoints = [];
 
+      // 프로모션 데이터 전역 변수
+      let globalPromotionData = null;
+      let globalHasPromotion = false;
+
       // 공통 유틸리티 함수
       function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
         if (!el) return;
@@ -1113,7 +1117,8 @@
             return;
           }
 
-          const response = await fetch(`/api/store-info?userId=${userData.id}`);
+          // 통합 정보 API 호출
+          const response = await fetch(`/api/store-info-all?userId=${userData.id}`);
           if (!response.ok) {
             throw new Error('조회 실패');
           }
@@ -1124,11 +1129,21 @@
             return;
           }
 
-          const data = result.data;
+          const data = result.data.basic; // 기본 정보
           if (data.store_place_url) placeUrl.value = data.store_place_url;
           if (data.store_keywords) ownerTips.value = data.store_keywords;
 
-          alert('✅ 저장된 가게 정보를 불러왔습니다!');
+          // 프로모션 정보 저장
+          globalPromotionData = result.data.promotion;
+          globalHasPromotion = result.hasPromotion;
+
+          // 프로모션 알림
+          let message = '✅ 저장된 가게 정보를 불러왔습니다!';
+          if (globalHasPromotion && globalPromotionData) {
+            message += `\n\n🎉 내 가게 알리기 정보도 자동 적용됩니다!\n작성 항목: ${result.filledCount} / ${result.totalCount}`;
+          }
+
+          alert(message);
         } catch (error) {
           console.error('가게 정보 불러오기 오류:', error);
           alert('❌ 가게 정보 불러오기에 실패했습니다.\n' + error.message);
@@ -1290,6 +1305,12 @@
           // 선택된 홍보 포인트가 있으면 함께 전달
           if (selectedPromoPoints.length > 0) {
             requestBody.selectedPromoPoints = selectedPromoPoints;
+          }
+
+          // 프로모션 정보 추가
+          if (globalHasPromotion && globalPromotionData) {
+            requestBody.promotionData = globalPromotionData;
+            requestBody.hasPromotion = true;
           }
 
           const replyController = new AbortController();

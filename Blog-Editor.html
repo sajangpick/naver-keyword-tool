@@ -775,6 +775,10 @@
         const blogContent = document.getElementById('blogContent');
         const blogText = document.getElementById('blogText');
 
+        // 전역 변수: 프로모션 데이터
+        let globalPromotionData = null;
+        let globalHasPromotion = false;
+
         // 인증 확인
         async function ensureAuthenticated() {
             // 🔧 로컬 개발 환경에서는 인증 건너뛰기
@@ -809,13 +813,48 @@
             return false;
         }
 
+        // 프로모션 정보 알림 표시
+        function showPromotionNotification(filledCount, totalCount) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: linear-gradient(135deg, #2196F3, #1976D2);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+                z-index: 9999;
+                font-size: 14px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-bullhorn"></i>
+                    <div>
+                        <div style="font-weight: 700;">내 가게 알리기 자동 적용!</div>
+                        <div style="font-size: 12px; opacity: 0.9;">작성 항목: ${filledCount} / ${totalCount}</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            // 3초 후 자동 제거
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
         // 페이지 로드 시 인증 확인
         window.addEventListener('load', async function() {
             await ensureAuthenticated();
             setupPlaceUrlHandler(); // 플레이스 URL 핸들러 설정
+            await loadStoreInfo(); // 통합 가게 정보 로드 (기본 + 프로모션)
         });
 
-        // 가게 정보 자동 입력
+        // 통합 가게 정보 자동 입력 (기본 정보 + 프로모션 정보)
         async function loadStoreInfo() {
             try {
                 // 로그인 확인
@@ -825,8 +864,8 @@
                     return;
                 }
 
-                // API 호출
-                const response = await fetch(`/api/store-info?userId=${userData.id}`);
+                // 통합 정보 API 호출
+                const response = await fetch(`/api/store-info-all?userId=${userData.id}`);
                 if (!response.ok) {
                     console.error('가게 정보 조회 실패:', response.statusText);
                     return;
@@ -838,7 +877,16 @@
                     return;
                 }
 
-                const data = result.data;
+                const data = result.data.basic; // 기본 정보
+                
+                // 프로모션 정보 전역 변수에 저장
+                globalPromotionData = result.data.promotion;
+                globalHasPromotion = result.hasPromotion;
+
+                // 프로모션 정보 알림
+                if (globalHasPromotion && globalPromotionData) {
+                    showPromotionNotification(result.filledCount, result.totalCount);
+                }
                 
                 // 우리매장 탭 자동 입력
                 if (data.store_place_url) document.getElementById('placeUrl').value = data.store_place_url;
@@ -1273,7 +1321,9 @@
                             userId: userId,  // 사용자 ID 추가
                             placeInfo: globalPlaceInfo,
                             menuAnalysis: globalMenuAnalysis,
-                            selectedTopic: topic
+                            selectedTopic: topic,
+                            promotionData: globalPromotionData,  // 프로모션 정보 추가
+                            hasPromotion: globalHasPromotion
                         }
                     })
                 });
@@ -1489,7 +1539,9 @@
                                 landmarks,
                                 keywords
                             },
-                            existingBlog: existingBlog
+                            existingBlog: existingBlog,
+                            promotionData: globalPromotionData,  // 프로모션 정보 추가
+                            hasPromotion: globalHasPromotion
                         }
                     })
                 });
@@ -1569,7 +1621,9 @@
                                 landmarks,
                                 keywords
                             },
-                            existingBlog: existingBlog
+                            existingBlog: existingBlog,
+                            promotionData: globalPromotionData,  // 프로모션 정보 추가
+                            hasPromotion: globalHasPromotion
                         }
                     })
                 });
