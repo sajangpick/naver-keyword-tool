@@ -2617,102 +2617,46 @@ app.post("/api/store-info", async (req, res) => {
 
       try {
         // 1. 캐시 확인
-        const { data: cachedPlace } = await supabase
+        const { data: cachedPlace, error: cacheError } = await supabase
           .from('place_crawl_cache')
           .select('*')
           .eq('place_url', storeInfo.placeUrl)
           .single();
 
-        if (cachedPlace) {
+        if (cachedPlace && !cacheError) {
           console.log('✅ 캐시에서 플레이스 정보 발견:', cachedPlace.place_name);
-          // 캐시된 정보 사용
-          finalStoreInfo.companyName = cachedPlace.place_name || storeInfo.companyName;
-          finalStoreInfo.companyAddress = cachedPlace.place_address || storeInfo.companyAddress;
-          finalStoreInfo.businessHours = cachedPlace.business_hours || storeInfo.businessHours;
-          finalStoreInfo.mainMenu = cachedPlace.main_menu || storeInfo.mainMenu;
+          // 캐시된 정보 사용 (사용자가 입력한 정보가 있으면 우선 사용)
+          if (!storeInfo.companyName && cachedPlace.place_name) {
+            finalStoreInfo.companyName = cachedPlace.place_name;
+          }
+          if (!storeInfo.companyAddress && cachedPlace.place_address) {
+            finalStoreInfo.companyAddress = cachedPlace.place_address;
+          }
+          if (!storeInfo.businessHours && cachedPlace.business_hours) {
+            finalStoreInfo.businessHours = cachedPlace.business_hours;
+          }
+          if (!storeInfo.mainMenu && cachedPlace.main_menu) {
+            finalStoreInfo.mainMenu = cachedPlace.main_menu;
+          }
           crawlResult = { fromCache: true, data: cachedPlace };
 
           // 크롤링 카운트 증가
           await supabase
             .from('place_crawl_cache')
             .update({ 
-              crawl_count: cachedPlace.crawl_count + 1,
+              crawl_count: (cachedPlace.crawl_count || 0) + 1,
               last_crawled_at: new Date().toISOString()
             })
             .eq('id', cachedPlace.id);
 
         } else {
-          console.log('🔄 새로운 플레이스, 크롤링 실행 중...');
-          // 2. 새로운 플레이스 크롤링
-          const chatgptBlog = require('./api/chatgpt-blog');
-          
-          // 크롤링 실행
-          const placeInfo = await new Promise((resolve, reject) => {
-            const mockReq = {
-              body: {
-                step: 'crawl',
-                data: {
-                  placeUrl: storeInfo.placeUrl,
-                  companyName: storeInfo.companyName || '',
-                  companyAddress: storeInfo.companyAddress || '',
-                  businessHours: storeInfo.businessHours || '',
-                  mainMenu: storeInfo.mainMenu || '',
-                  landmarks: storeInfo.landmarks || '',
-                  keywords: storeInfo.keywords || ''
-                }
-              }
-            };
-
-            const mockRes = {
-              status: (code) => mockRes,
-              json: (data) => {
-                if (data.success) {
-                  resolve(data.data);
-                } else {
-                  reject(new Error(data.error || '크롤링 실패'));
-                }
-              }
-            };
-
-            chatgptBlog(mockReq, mockRes);
-          });
-
-          console.log('✅ 크롤링 완료:', placeInfo.name);
-
-          // 3. 캐시에 저장
-          const { data: savedCache, error: cacheError } = await supabase
-            .from('place_crawl_cache')
-            .insert({
-              place_url: storeInfo.placeUrl,
-              place_id: placeInfo.place_id || null,
-              place_name: placeInfo.name,
-              place_address: placeInfo.address,
-              business_hours: placeInfo.hours,
-              main_menu: placeInfo.mainMenu ? placeInfo.mainMenu.join(', ') : null,
-              phone_number: placeInfo.phone || null,
-              crawl_data: placeInfo,
-              crawl_count: 1,
-              last_crawled_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (cacheError) {
-            console.error('❌ 캐시 저장 실패:', cacheError);
-          } else {
-            console.log('✅ 캐시 저장 성공:', savedCache.id);
-          }
-
-          // 크롤링된 정보로 업데이트
-          finalStoreInfo.companyName = placeInfo.name || storeInfo.companyName;
-          finalStoreInfo.companyAddress = placeInfo.address || storeInfo.companyAddress;
-          finalStoreInfo.businessHours = placeInfo.hours || storeInfo.businessHours;
-          finalStoreInfo.mainMenu = placeInfo.mainMenu ? placeInfo.mainMenu.join(', ') : storeInfo.mainMenu;
-          crawlResult = { fromCache: false, data: placeInfo };
+          console.log('⏭️ 캐시 없음, 사용자 입력 정보로 저장합니다.');
+          // 캐시가 없으면 크롤링은 건너뛰고 사용자가 입력한 정보만 저장
+          crawlResult = { fromCache: false, skipped: true };
         }
 
       } catch (crawlError) {
-        console.error('⚠️ 크롤링 실패, 사용자 입력 정보 사용:', crawlError.message);
+        console.error('⚠️ 크롤링 체크 실패, 사용자 입력 정보 사용:', crawlError.message);
         // 크롤링 실패 시 사용자가 입력한 정보 그대로 사용
       }
     }

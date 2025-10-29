@@ -738,6 +738,14 @@
                 if (data.store_landmarks) document.getElementById('landmarks3').value = data.store_landmarks;
                 if (data.store_keywords) document.getElementById('keywords3').value = data.store_keywords;
 
+                // 플레이스 URL이 있으면 크롤링 버튼 표시
+                if (data.store_place_url) {
+                    const crawlBtn = document.getElementById('crawlPlaceBtn');
+                    if (crawlBtn) {
+                        crawlBtn.style.display = 'inline-block';
+                    }
+                }
+
                 console.log('✅ 가게 정보 자동 입력 완료');
             } catch (error) {
                 console.error('가게 정보 로드 오류:', error);
@@ -749,8 +757,16 @@
             const placeUrlInput = document.getElementById('placeUrl');
             const crawlBtn = document.getElementById('crawlPlaceBtn');
 
+            if (!placeUrlInput || !crawlBtn) {
+                console.error('❌ 플레이스 URL 입력 필드 또는 버튼을 찾을 수 없습니다.');
+                return;
+            }
+
+            console.log('✅ 플레이스 URL 핸들러 설정 완료');
+
             // URL 입력 시 버튼 표시
             placeUrlInput.addEventListener('input', function() {
+                console.log('📝 URL 입력:', this.value);
                 if (this.value.trim()) {
                     crawlBtn.style.display = 'inline-block';
                 } else {
@@ -759,8 +775,11 @@
             });
 
             // 크롤링 버튼 클릭
-            crawlBtn.addEventListener('click', async function() {
+            crawlBtn.addEventListener('click', async function(e) {
+                e.preventDefault(); // 폼 제출 방지
+                
                 const placeUrl = placeUrlInput.value.trim();
+                console.log('🔍 버튼 클릭, URL:', placeUrl);
                 
                 if (!placeUrl) {
                     alert('플레이스 URL을 입력해주세요.');
