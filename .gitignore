@@ -27,6 +27,10 @@ data/
 *.db-shm
 *.db-wal
 
+# 디버그 산출물 (재생성 가능)
+debug-page.html
+debug-screenshot.png
+
 # IDE 설정
 .vscode/
 .idea/naver-keyword-tool/

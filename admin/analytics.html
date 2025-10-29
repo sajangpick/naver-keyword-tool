@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>사용자 분석 - 사장픽 관리자</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --bg: #f7f9fb;
+        --panel: #ffffff;
+        --muted: #6b7280;
+        --text: #111827;
+        --accent: var(--naver-green);
+        --border: #e5e7eb;
+        --blue: #3b82f6;
+        --purple: #8b5cf6;
+        --orange: #f59e0b;
+        --red: #ef4444;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
+      body {
+        margin: 0;
+        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
+          Noto Sans KR, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      /* 헤더 */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        font-size: 28px;
+        margin: 0;
+        color: var(--text);
+      }
+
+      .breadcrumb {
+        font-size: 14px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .breadcrumb a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: var(--naver-green-dark);
+      }
+
+      .btn-secondary {
+        background: white;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .btn-secondary:hover {
+        background: var(--bg);
+      }
+
+      /* 시간 선택 */
+      .time-selector {
+        display: flex;
+        gap: 8px;
+        background: white;
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+
+      .time-btn {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--muted);
+        transition: all 0.2s;
+      }
+
+      .time-btn.active {
+        background: var(--accent);
+        color: white;
+      }
+
+      .time-btn:hover:not(.active) {
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      /* 통계 카드 */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+      }
+
+      .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+      }
+
+      .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+      }
+
+      .stat-title {
+        font-size: 14px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+
+      .stat-icon.green {
+        background: rgba(3, 199, 90, 0.1);
+        color: var(--accent);
+      }
+
+      .stat-icon.blue {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--blue);
+      }
+
+      .stat-icon.purple {
+        background: rgba(139, 92, 246, 0.1);
+        color: var(--purple);
+      }
+
+      .stat-icon.orange {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--orange);
+      }
+
+      .stat-icon.red {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--red);
+      }
+
+      .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      /* 패널 */
+      .panel {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border);
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .panel-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      /* 그리드 레이아웃 */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+      }
+
+      /* 차트 컨테이너 */
+      .chart-container {
+        position: relative;
+        height: 300px;
+        margin-top: 20px;
+      }
+
+      /* 테이블 */
+      .table-container {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th {
+        text-align: left;
+        padding: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+      }
+
+      td {
+        padding: 16px 12px;
+        font-size: 14px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr:hover {
+        background: var(--bg);
+      }
+
+      /* 로딩 */
+      .loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px;
+        color: var(--muted);
+      }
+
+      .loading i {
+        font-size: 32px;
+        margin-bottom: 12px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* 빈 상태 */
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--muted);
+      }
+
+      .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      /* 반응형 */
+      @media (max-width: 1200px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+        
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .chart-container {
+          height: 250px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- 헤더 -->
+      <div class="header">
+        <div>
+          <h1>📈 사용자 분석</h1>
+          <div class="breadcrumb">
+            <a href="/admin/index.html">관리자</a> / 사용자 분석
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="time-selector">
+            <button class="time-btn" data-days="1">1일</button>
+            <button class="time-btn active" data-days="7">7일</button>
+            <button class="time-btn" data-days="30">30일</button>
+          </div>
+          <button class="btn btn-secondary" onclick="refreshData()">
+            <i class="fas fa-sync-alt"></i> 새로고침
+          </button>
+        </div>
+      </div>
+
+      <!-- 통계 카드 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon green">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-title">활성 사용자</div>
+          </div>
+          <div class="stat-value" id="activeUsers">-</div>
+          <div class="stat-label">Active Users</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon blue">
+              <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="stat-title">신규 가입</div>
+          </div>
+          <div class="stat-value" id="newSignups">-</div>
+          <div class="stat-label">New Signups</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon purple">
+              <i class="fas fa-pen"></i>
+            </div>
+            <div class="stat-title">블로그 생성</div>
+          </div>
+          <div class="stat-value" id="blogsCreated">-</div>
+          <div class="stat-label">Blogs Created</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon orange">
+              <i class="fas fa-comment"></i>
+            </div>
+            <div class="stat-title">리뷰 답글</div>
+          </div>
+          <div class="stat-value" id="reviewsReplied">-</div>
+          <div class="stat-label">Reviews Replied</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon red">
+              <i class="fas fa-spider"></i>
+            </div>
+            <div class="stat-title">크롤링 사용</div>
+          </div>
+          <div class="stat-value" id="crawlingUsed">-</div>
+          <div class="stat-label">Crawling Used</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon blue">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-title">평균 세션 시간</div>
+          </div>
+          <div class="stat-value" id="avgSession">-</div>
+          <div class="stat-label">Average Session</div>
+        </div>
+      </div>
+
+      <!-- DAU 차트 -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">📊 일간 활성 사용자 (DAU)</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="dauChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 시간대별 활동 & 퍼널 -->
+      <div class="grid-2">
+        <!-- 시간대별 활동 -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">⏰ 시간대별 활동</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="hourlyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 퍼널 전환율 -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">🎯 사용자 퍼널</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="funnelChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 기능별 사용 통계 -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">🔧 기능별 사용 통계</h2>
+        </div>
+        <div class="table-container">
+          <table id="featureTable">
+            <thead>
+              <tr>
+                <th>기능</th>
+                <th>사용 횟수</th>
+                <th>사용자 수</th>
+                <th>평균 사용/인당</th>
+              </tr>
+            </thead>
+            <tbody id="featureBody">
+              <tr>
+                <td colspan="4" class="loading">
+                  <i class="fas fa-spinner"></i>
+                  <div>데이터를 불러오는 중...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 인기 페이지 -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">📄 인기 페이지 Top 10</h2>
+        </div>
+        <div class="table-container">
+          <table id="pagesTable">
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>페이지</th>
+                <th>조회수</th>
+                <th>순 사용자</th>
+              </tr>
+            </thead>
+            <tbody id="pagesBody">
+              <tr>
+                <td colspan="4" class="loading">
+                  <i class="fas fa-spinner"></i>
+                  <div>데이터를 불러오는 중...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/assets/auth-state.js"></script>
+
+    <script>
+      const supabase = window.supabase;
+      let currentDays = 7;
+      let dauChart, hourlyChart, funnelChart;
+
+      // 페이지 로드 시
+      document.addEventListener('DOMContentLoaded', async () => {
+        // 관리자 권한 확인
+        const user = await checkAuth();
+        if (!user) {
+          alert('관리자 권한이 필요합니다.');
+          window.location.href = '/login.html';
+          return;
+        }
+
+        // 데이터 로드
+        await loadAllData();
+
+        // 시간 선택 버튼
+        document.querySelectorAll('.time-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentDays = parseInt(e.target.dataset.days);
+            loadAllData();
+          });
+        });
+      });
+
+      // 관리자 권한 확인
+      async function checkAuth() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('membership_tier')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile || profile.membership_tier !== 'Admin') {
+          return null;
+        }
+
+        return user;
+      }
+
+      // 모든 데이터 로드
+      async function loadAllData() {
+        await Promise.all([
+          loadOverview(),
+          loadDauChart(),
+          loadHourlyActivity(),
+          loadFunnelConversion(),
+          loadFeatureUsage(),
+          loadPopularPages()
+        ]);
+      }
+
+      // 개요 통계
+      async function loadOverview() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const response = await fetch(`/api/admin/analytics?type=overview&days=${currentDays}`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+
+          if (!response.ok) throw new Error('Failed to load overview');
+
+          const data = await response.json();
+
+          document.getElementById('activeUsers').textContent = data.activeUsers.toLocaleString();
+          document.getElementById('newSignups').textContent = data.newSignups.toLocaleString();
+          document.getElementById('blogsCreated').textContent = data.blogsCreated.toLocaleString();
+          document.getElementById('reviewsReplied').textContent = data.reviewsReplied.toLocaleString();
+          document.getElementById('crawlingUsed').textContent = data.crawlingUsed.toLocaleString();
+          
+          const minutes = Math.floor(data.avgSessionDuration / 60);
+          const seconds = data.avgSessionDuration % 60;
+          document.getElementById('avgSession').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        } catch (error) {
+          console.error('개요 로드 실패:', error);
+        }
+      }
+
+      // DAU 차트
+      async function loadDauChart() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const response = await fetch(`/api/admin/analytics?type=dau-mau&days=${currentDays}`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+
+          if (!response.ok) throw new Error('Failed to load DAU');
+
+          const data = await response.json();
+
+          const ctx = document.getElementById('dauChart').getContext('2d');
+          
+          if (dauChart) dauChart.destroy();
+          
+          dauChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: data.dailyStats.map(d => d.date),
+              datasets: [{
+                label: 'DAU',
+                data: data.dailyStats.map(d => d.dau),
+                borderColor: '#03c75a',
+                backgroundColor: 'rgba(3, 199, 90, 0.1)',
+                tension: 0.4,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+              }
+            }
+          });
+
+        } catch (error) {
+          console.error('DAU 차트 로드 실패:', error);
+        }
+      }
+
+      // 시간대별 활동
+      async function loadHourlyActivity() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const response = await fetch(`/api/admin/analytics?type=hourly-activity&days=${currentDays}`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+
+          if (!response.ok) throw new Error('Failed to load hourly activity');
+
+          const data = await response.json();
+
+          const ctx = document.getElementById('hourlyChart').getContext('2d');
+          
+          if (hourlyChart) hourlyChart.destroy();
+          
+          hourlyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.map(d => d.hour + '시'),
+              datasets: [{
+                label: '사용자 수',
+                data: data.map(d => d.user_count),
+                backgroundColor: '#3b82f6'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+              }
+            }
+          });
+
+        } catch (error) {
+          console.error('시간대별 활동 로드 실패:', error);
+        }
+      }
+
+      // 퍼널 전환율
+      async function loadFunnelConversion() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const response = await fetch(`/api/admin/analytics?type=funnel`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+
+          if (!response.ok) throw new Error('Failed to load funnel');
+
+          const data = await response.json();
+
+          const ctx = document.getElementById('funnelChart').getContext('2d');
+          
+          if (funnelChart) funnelChart.destroy();
+          
+          const stepNames = {
+            signup: '회원가입',
+            first_use: '첫 사용',
+            second_visit: '재방문',
+            premium: '프리미엄'
+          };
+          
+          funnelChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.map(d => stepNames[d.step] || d.step),
+              datasets: [{
+                label: '사용자 수',
+                data: data.map(d => d.users_count),
+                backgroundColor: ['#03c75a', '#3b82f6', '#8b5cf6', '#f59e0b']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              indexAxis: 'y',
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                x: { beginAtZero: true, ticks: { precision: 0 } }
+              }
+            }
+          });
+
+        } catch (error) {
+          console.error('퍼널 로드 실패:', error);
+        }
+      }
+
+      // 기능 사용 통계
+      async function loadFeatureUsage() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const response = await fetch(`/api/admin/analytics?type=feature-usage&days=${currentDays}`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+
+          if (!response.ok) throw new Error('Failed to load feature usage');
+
+          const data = await response.json();
+          const tbody = document.getElementById('featureBody');
+
+          if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-info-circle"></i><div>데이터가 없습니다</div></td></tr>';
+            return;
+          }
+
+          const featureNames = {
+            blog_created: '블로그 생성',
+            review_replied: '리뷰 답글',
+            crawling_used: '크롤링 사용'
+          };
+
+          tbody.innerHTML = data.map(item => {
+            const avgPerUser = item.unique_users > 0 
+              ? (item.usage_count / item.unique_users).toFixed(1) 
+              : 0;
+            
+            return `
+              <tr>
+                <td>${featureNames[item.event_name] || item.event_name}</td>
+                <td>${item.usage_count.toLocaleString()}</td>
+                <td>${item.unique_users.toLocaleString()}</td>
+                <td>${avgPerUser}</td>
+              </tr>
+            `;
+          }).join('');
+
+        } catch (error) {
+          console.error('기능 사용 통계 로드 실패:', error);
+          document.getElementById('featureBody').innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-exclamation-circle"></i><div>데이터 로드 실패</div></td></tr>';
+        }
+      }
+
+      // 인기 페이지
+      async function loadPopularPages() {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const response = await fetch(`/api/admin/analytics?type=popular-pages&days=${currentDays}`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+
+          if (!response.ok) throw new Error('Failed to load popular pages');
+
+          const data = await response.json();
+          const tbody = document.getElementById('pagesBody');
+
+          if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-info-circle"></i><div>데이터가 없습니다</div></td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = data.map((page, index) => `
+            <tr>
+              <td>${index + 1}</td>
+              <td><code>${page.path}</code></td>
+              <td>${page.views.toLocaleString()}</td>
+              <td>${page.uniqueUsers.toLocaleString()}</td>
+            </tr>
+          `).join('');
+
+        } catch (error) {
+          console.error('인기 페이지 로드 실패:', error);
+          document.getElementById('pagesBody').innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-exclamation-circle"></i><div>데이터 로드 실패</div></td></tr>';
+        }
+      }
+
+      // 데이터 새로고침
+      async function refreshData() {
+        await loadAllData();
+        alert('✅ 데이터를 새로고침했습니다.');
+      }
+    </script>
+
+    <!-- 추적 및 모니터링 스크립트 -->
+    <script src="/assets/analytics.js"></script>
+    <script src="/assets/error-logger.js"></script>
+    <script src="/assets/performance-tracker.js"></script>
+  </body>
+</html>
+
