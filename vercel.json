@@ -2,6 +2,16 @@
   "version": 2,
   "framework": null,
   "installCommand": "pnpm install --no-frozen-lockfile",
+  
+  "//": "========================================",
+  "//": "⚠️ 경고: 아래 rewrites 설정 절대 삭제 금지!",
+  "//": "========================================",
+  "//": "이유: Vercel은 serverless 환경이라 Express 서버 실행 불가",
+  "//": "해결: Render 서버로 모든 API 요청을 프록시",
+  "//": "이 설정을 제거하면 사이트 전체가 작동 중단됩니다!",
+  "//": "참고: CRITICAL_WARNINGS.md, docs/AI_LOG.md (871-910줄)",
+  "//": "========================================",
+  
   "rewrites": [
     {
       "source": "/api/:path*",

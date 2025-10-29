@@ -5,6 +5,22 @@
 
 ---
 
+## 🚨 먼저 읽어야 할 중요 문서!
+
+**배포 구조 변경을 제안하기 전에:**
+
+👉 **[CRITICAL_WARNINGS.md](../CRITICAL_WARNINGS.md)** 필독! (2분)  
+👉 **[docs/DEPLOY_ARCHITECTURE.md](./DEPLOY_ARCHITECTURE.md)** 필독! (3분)
+
+**절대 제안하면 안 되는 것:**
+- ❌ "Vercel Functions로 통합하자" → 이미 실패함 (2025-10-22)
+- ❌ "Render 제거하자" → 사이트 전체 중단
+- ❌ "vercel.json 간소화" → API 호출 실패
+
+**현재 배포 구조는 변경 금지입니다!**
+
+---
+
 ## ✅ 작업 전 체크리스트 (필수!)
 
 **다음 항목을 모두 확인한 후 사용자에게 보고하세요:**
