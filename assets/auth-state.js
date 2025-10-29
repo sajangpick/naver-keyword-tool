@@ -58,6 +58,7 @@
     try {
       localStorage.setItem(STORAGE_KEYS.data, JSON.stringify(userData));
       localStorage.setItem(STORAGE_KEYS.status, "true");
+      console.log("[auth] ✅ 세션 저장 완료:", { email: userData.email, id: userData.id });
     } catch (error) {
       console.warn("[auth] Failed to persist session", error);
     }
@@ -73,6 +74,7 @@
       const {
         data: { session },
       } = await supabaseClient.auth.getSession();
+      console.log("[auth] 세션 동기화:", { hasSession: !!session });
       if (session) {
         persistSession(session);
       } else {

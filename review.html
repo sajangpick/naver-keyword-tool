@@ -402,6 +402,32 @@
         display: none;
       }
 
+      /* 홍보 포인트 태그 스타일 */
+      .promo-tag {
+        display: inline-block;
+        padding: 8px 16px;
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 20px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+
+      .promo-tag:hover {
+        border-color: #2196F3;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+      }
+
+      .promo-tag.selected {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        color: white;
+        border-color: #2196F3;
+        font-weight: 600;
+      }
+
       .place-info-status {
         background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
         border: 2px solid #81c784;
@@ -698,6 +724,21 @@
         </div>
 
         <div class="review-content">
+          <!-- 가게 정보 저장/불러오기 안내 -->
+          <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+            <p style="margin: 0; color: #856404; font-size: 14px; margin-bottom: 10px;">
+              💡 <strong>알림:</strong> 가게 정보를 한 번 저장하면 다음부터 자동으로 불러와집니다!
+            </p>
+            <div style="display: flex; gap: 10px;">
+              <button type="button" id="loadStoreInfoBtn" class="btn" style="flex: 1; background: #17a2b8; color: white;">
+                📥 저장된 정보 불러오기
+              </button>
+              <button type="button" id="saveStoreInfoBtn" class="btn" style="flex: 1; background: #28a745; color: white;">
+                📌 가게 정보 저장하기
+              </button>
+            </div>
+          </div>
+
           <!-- 네이버 플레이스 URL 입력 -->
           <div class="form-group">
             <label for="placeUrl">
@@ -727,10 +768,24 @@
               class="textarea-field owner-tips"
               placeholder="강조하고 싶은 메뉴, 분위기, 특징 등을 자유롭게 작성해주세요.&#10;&#10;예시:&#10;- 시그니처 메뉴: 냉면, 갈비탕&#10;- 분위기: 가족 모임에 좋은 넓은 홀&#10;- 특징: 직접 만든 육수, 주차 가능&#10;- 추천: 고기와 냉면의 조합이 일품"
             ></textarea>
+            <button type="button" id="aiPromoBtn" class="btn" style="margin-top: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+              <i class="fa-solid fa-magic"></i>
+              🤖 AI 홍보 포인트 자동 추천
+            </button>
             <small style="color: #6b7280; display: block; margin-top: 8px;">
               <i class="fa-solid fa-star" style="color: #fbbf24;"></i>
-              <strong>💡 Tip:</strong> 식당 정보가 자세할수록 고객의 마음을 움직이는 감성적인 답글이 생성됩니다!
+              <strong>💡 Tip:</strong> AI가 리뷰를 분석해서 답글에 추가하면 좋을 홍보 포인트를 추천해드립니다!
             </small>
+
+            <!-- AI 추천 홍보 포인트 영역 -->
+            <div id="aiPromoArea" style="display: none; margin-top: 15px;">
+              <div style="background: #f0f8ff; border: 2px solid #2196F3; border-radius: 10px; padding: 15px;">
+                <p style="margin: 0 0 10px 0; color: #1976D2; font-weight: 600;">
+                  🎯 AI 추천 홍보 포인트 (클릭해서 선택/해제)
+                </p>
+                <div id="aiPromoTags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+              </div>
+            </div>
           </div>
 
           <!-- 리뷰 원문 입력 -->
@@ -745,11 +800,37 @@
             ></textarea>
           </div>
 
-          <div class="button-group">
-            <button class="btn primary" id="replyBtn" style="width: 100%;">
-              <i class="fa-solid fa-wand-magic-sparkles"></i>
-              답글 생성하기
+          <!-- 답글 스타일 선택 안내 -->
+          <div style="background: #e7f3ff; border: 1px solid #2196F3; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+            <p style="margin: 0 0 10px 0; color: #1976D2; font-weight: 600;">
+              <i class="fa-solid fa-palette"></i> 답글 스타일을 선택하세요 (잠재 고객에게 보이는 홍보 효과를 고려)
+            </p>
+            <p style="margin: 0; color: #1565c0; font-size: 14px;">
+              💡 리뷰 답글은 처음 방문을 고려하는 다른 사람들이 읽습니다!
+            </p>
+          </div>
+
+          <div class="button-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            <button class="btn" id="replyPromoBtn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
+              <i class="fa-solid fa-bullhorn"></i>
+              📢 홍보형 (추천!)
             </button>
+            <button class="btn" id="replyProfessionalBtn" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none;">
+              <i class="fa-solid fa-award"></i>
+              💼 전문가형
+            </button>
+            <button class="btn" id="replyFriendlyBtn" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; border: none;">
+              <i class="fa-solid fa-heart"></i>
+              💚 친근형
+            </button>
+          </div>
+
+          <div style="background: #fff9e6; border: 1px solid #ffc107; border-radius: 8px; padding: 12px; margin-top: 15px;">
+            <p style="margin: 0; color: #856404; font-size: 13px; line-height: 1.6;">
+              <strong>📢 홍보형:</strong> 다른 메뉴, 주차, 예약 등 추가 정보를 적극 언급 (방문 유도 최대화)<br>
+              <strong>💼 전문가형:</strong> 재료, 조리법 설명으로 전문성과 신뢰감 강조<br>
+              <strong>💚 친근형:</strong> 따뜻하고 부드러운 톤으로 단골 고객 만들기
+            </p>
           </div>
 
           <!-- 식당 정보 상태 표시 영역 -->
@@ -805,13 +886,23 @@
       const placeUrl = document.getElementById("placeUrl");
       const ownerTips = document.getElementById("ownerTips");
       const reviewText = document.getElementById("reviewText");
-      const replyBtn = document.getElementById("replyBtn");
+      const replyPromoBtn = document.getElementById("replyPromoBtn");
+      const replyProfessionalBtn = document.getElementById("replyProfessionalBtn");
+      const replyFriendlyBtn = document.getElementById("replyFriendlyBtn");
       const reviewOutput = document.getElementById("reviewOutput");
       const placeInfoStatus = document.getElementById("placeInfoStatus");
       const placeInfoText = document.getElementById("placeInfoText");
+      const loadStoreInfoBtn = document.getElementById("loadStoreInfoBtn");
+      const saveStoreInfoBtn = document.getElementById("saveStoreInfoBtn");
+      const aiPromoBtn = document.getElementById("aiPromoBtn");
+      const aiPromoArea = document.getElementById("aiPromoArea");
+      const aiPromoTags = document.getElementById("aiPromoTags");
 
       // 크롤링된 식당 정보를 저장할 변수
       let placeInfo = null;
+      
+      // 선택된 홍보 포인트를 저장할 변수
+      let selectedPromoPoints = [];
 
       // 공통 유틸리티 함수
       function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
@@ -971,8 +1062,184 @@
         reviewOutput.textContent = errorMessage;
       }
 
-      // 답글 생성 버튼 클릭
-      replyBtn.addEventListener("click", async () => {
+      // 가게 정보 저장 기능
+      async function saveStoreInfo() {
+        try {
+          const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+          if (!userData.id) {
+            alert('로그인이 필요합니다.');
+            return;
+          }
+
+          const storeInfo = {
+            placeUrl: placeUrl.value.trim(),
+            companyName: '', // review.html에는 업체명 필드가 없으므로 빈 값
+            companyAddress: '',
+            businessHours: '',
+            phoneNumber: '',
+            mainMenu: '',
+            landmarks: '',
+            keywords: ownerTips.value.trim() // 사장님 추천 포인트를 keywords로 저장
+          };
+
+          const response = await fetch('/api/store-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userData.id, storeInfo })
+          });
+
+          if (!response.ok) {
+            throw new Error('저장 실패');
+          }
+
+          const result = await response.json();
+          if (result.success) {
+            alert('✅ 가게 정보가 저장되었습니다!');
+          } else {
+            throw new Error(result.error || '저장 실패');
+          }
+        } catch (error) {
+          console.error('가게 정보 저장 오류:', error);
+          alert('❌ 가게 정보 저장에 실패했습니다.\n' + error.message);
+        }
+      }
+
+      // 가게 정보 불러오기 기능
+      async function loadStoreInfo() {
+        try {
+          const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+          if (!userData.id) {
+            alert('로그인이 필요합니다.');
+            return;
+          }
+
+          const response = await fetch(`/api/store-info?userId=${userData.id}`);
+          if (!response.ok) {
+            throw new Error('조회 실패');
+          }
+
+          const result = await response.json();
+          if (!result.success || !result.data) {
+            alert('저장된 가게 정보가 없습니다.');
+            return;
+          }
+
+          const data = result.data;
+          if (data.store_place_url) placeUrl.value = data.store_place_url;
+          if (data.store_keywords) ownerTips.value = data.store_keywords;
+
+          alert('✅ 저장된 가게 정보를 불러왔습니다!');
+        } catch (error) {
+          console.error('가게 정보 불러오기 오류:', error);
+          alert('❌ 가게 정보 불러오기에 실패했습니다.\n' + error.message);
+        }
+      }
+
+      // 가게 정보 저장 버튼
+      saveStoreInfoBtn.addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = '저장 중...';
+        try {
+          await saveStoreInfo();
+        } finally {
+          this.disabled = false;
+          this.textContent = '📌 가게 정보 저장하기';
+        }
+      });
+
+      // 가게 정보 불러오기 버튼
+      loadStoreInfoBtn.addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = '불러오는 중...';
+        try {
+          await loadStoreInfo();
+        } finally {
+          this.disabled = false;
+          this.textContent = '📥 저장된 정보 불러오기';
+        }
+      });
+
+      // AI 홍보 포인트 추천 버튼
+      aiPromoBtn.addEventListener('click', async function() {
+        const review = reviewText.value.trim();
+        if (!review) {
+          alert('리뷰 원문을 먼저 입력해주세요.');
+          return;
+        }
+
+        this.disabled = true;
+        this.textContent = '🤖 AI 분석 중...';
+
+        try {
+          // 플레이스 정보가 없으면 먼저 크롤링 시도
+          const url = placeUrl.value.trim();
+          if (url && !placeInfo) {
+            try {
+              placeInfo = await crawlPlaceUrl(url);
+            } catch (e) {
+              console.warn('크롤링 실패, 계속 진행:', e);
+            }
+          }
+
+          const response = await fetch('/api/generate-reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reviewText: review,
+              placeInfo: placeInfo,
+              ownerTips: ownerTips.value.trim(),
+              action: 'recommend-promo-points'
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('홍보 포인트 추천 실패');
+          }
+
+          const result = await response.json();
+          const promoPoints = result.data?.promoPoints || [];
+
+          if (promoPoints.length === 0) {
+            throw new Error('추천된 홍보 포인트가 없습니다');
+          }
+
+          // 홍보 포인트 태그 생성
+          aiPromoTags.innerHTML = '';
+          promoPoints.forEach(point => {
+            const tag = document.createElement('span');
+            tag.className = 'promo-tag';
+            tag.textContent = point;
+            tag.dataset.point = point;
+            
+            tag.addEventListener('click', function() {
+              this.classList.toggle('selected');
+              updateSelectedPromoPoints();
+            });
+
+            aiPromoTags.appendChild(tag);
+          });
+
+          aiPromoArea.style.display = 'block';
+          alert('✅ AI가 홍보 포인트를 추천했습니다! 원하는 항목을 선택하세요.');
+
+        } catch (error) {
+          console.error('홍보 포인트 추천 오류:', error);
+          alert('❌ 홍보 포인트 추천에 실패했습니다.\n' + error.message);
+        } finally {
+          this.disabled = false;
+          this.textContent = '🤖 AI 홍보 포인트 자동 추천';
+        }
+      });
+
+      // 선택된 홍보 포인트 업데이트
+      function updateSelectedPromoPoints() {
+        const selectedTags = aiPromoTags.querySelectorAll('.promo-tag.selected');
+        selectedPromoPoints = Array.from(selectedTags).map(tag => tag.dataset.point);
+        console.log('선택된 홍보 포인트:', selectedPromoPoints);
+      }
+
+      // 답글 생성 공통 함수 (스타일별)
+      async function generateReply(style, buttonElement) {
         const text = reviewText.value.trim();
         const url = placeUrl.value.trim();
         const tips = ownerTips.value.trim();
@@ -982,7 +1249,7 @@
           return;
         }
 
-        setLoading(replyBtn, true, "생성 중...");
+        setLoading(buttonElement, true, "생성 중...");
         reviewOutput.textContent = "";
         hidePlaceInfoStatus();
 
@@ -1001,32 +1268,34 @@
                 showPlaceInfoStatus("⚠️ 식당 정보를 가져올 수 없습니다. 입력하신 정보로 답글 생성 중", "warning");
               }
               placeInfo = null;
-              // 크롤링 실패해도 답글 생성은 계속 진행
             }
           } else if (!url && !placeInfo) {
             showPlaceInfoStatus("💭 답글 생성 중", "loading");
           }
 
-          // 2단계: 답글 생성 (식당 정보 포함)
+          // 2단계: 답글 생성 (스타일 포함)
           const requestBody = {
             reviewText: text,
+            replyStyle: style // 'promo', 'professional', 'friendly'
           };
 
-          // 식당 정보가 있으면 함께 전달
           if (placeInfo) {
             requestBody.placeInfo = placeInfo;
           }
 
-          // 사장님 추천 정보가 있으면 함께 전달
           if (tips) {
             requestBody.ownerTips = tips;
           }
 
-          // 답글 생성 API 호출 (타임아웃 15초)
-          let res;
+          // 선택된 홍보 포인트가 있으면 함께 전달
+          if (selectedPromoPoints.length > 0) {
+            requestBody.selectedPromoPoints = selectedPromoPoints;
+          }
+
           const replyController = new AbortController();
           const replyTimeoutId = setTimeout(() => replyController.abort(), 15000);
           
+          let res;
           try {
             res = await fetch(`/api/generate-reply`, {
               method: "POST",
@@ -1038,21 +1307,18 @@
           } catch (fetchError) {
             clearTimeout(replyTimeoutId);
             
-            // 타임아웃 에러
             if (fetchError.name === 'AbortError') {
               throw new Error("답글 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
             }
             
-            // 네트워크 에러 (서버 미실행 등)
-            throw new Error("서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.\n\n💡 터미널에서 'node server.js' 또는 'npm start'로 서버를 실행해주세요.");
+            throw new Error("서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.");
           }
 
           const data = await readJsonSafely(res);
 
           if (!res.ok || data.success === false) {
-            // HTTP 에러 상태 코드에 따른 메시지
             if (res.status === 405) {
-              throw new Error("서버가 실행되지 않았습니다.\n\n💡 터미널에서 'node server.js' 또는 'npm start'로 서버를 실행해주세요.");
+              throw new Error("서버가 실행되지 않았습니다.");
             } else if (res.status === 500) {
               throw new Error(data.error || "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
             } else if (res.status === 400) {
@@ -1064,33 +1330,42 @@
 
           showOutput(data.data?.reply || data.reply || data);
           
-          // 성공 메시지 표시 (DB 저장 상태도 함께 표시)
-          const dbStatus = data.metadata?.dbSaveStatus || "not_attempted";
-          let successMessage = "";
+          // 성공 메시지 표시
+          const styleNames = {
+            'promo': '홍보형',
+            'professional': '전문가형',
+            'friendly': '친근형'
+          };
+          const styleName = styleNames[style] || style;
           
-          if (dbStatus === "success") {
-            successMessage = "✅ 완료! 답글이 생성되고 DB에 저장되었습니다.";
-          } else if (dbStatus === "failed") {
-            successMessage = "⚠️ 답글은 생성되었으나 DB 저장 실패 (답글은 사용 가능합니다)";
-          } else if (url && placeInfo) {
-            successMessage = "✅ 완료! 식당 정보와 사장님 추천이 반영된 답글입니다.";
-          } else if (tips) {
-            successMessage = "✅ 완료! 사장님 추천 포인트가 반영된 답글입니다.";
+          let successMessage = `✅ ${styleName} 답글이 생성되었습니다!`;
+          if (selectedPromoPoints.length > 0) {
+            successMessage += ` (홍보 포인트 ${selectedPromoPoints.length}개 반영)`;
           }
           
-          if (successMessage) {
-            showPlaceInfoStatus(successMessage, dbStatus === "failed" ? "warning" : "success");
-            setTimeout(() => hidePlaceInfoStatus(), 5000); // 5초 후 자동 숨김
-          } else {
-            hidePlaceInfoStatus(); // 메시지 없으면 즉시 숨김
-          }
+          showPlaceInfoStatus(successMessage, "success");
+          setTimeout(() => hidePlaceInfoStatus(), 5000);
+          
         } catch (e) {
           console.error("답글 생성 오류:", e);
           showError(e);
           hidePlaceInfoStatus();
         } finally {
-          setLoading(replyBtn, false);
+          setLoading(buttonElement, false);
         }
+      }
+
+      // 3개의 답글 스타일 버튼 이벤트
+      replyPromoBtn.addEventListener("click", async () => {
+        await generateReply('promo', replyPromoBtn);
+      });
+
+      replyProfessionalBtn.addEventListener("click", async () => {
+        await generateReply('professional', replyProfessionalBtn);
+      });
+
+      replyFriendlyBtn.addEventListener("click", async () => {
+        await generateReply('friendly', replyFriendlyBtn);
       });
 
       // 페이지 로드 시 초기화

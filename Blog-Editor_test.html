@@ -95,6 +95,57 @@
             transition: transform 0.2s ease;
         }
 
+        /* AI 키워드 버튼 스타일 */
+        .ai-keyword-btn {
+            margin-top: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .ai-keyword-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-keyword-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 키워드 태그 스타일 */
+        .keyword-tag {
+            display: inline-block;
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .keyword-tag:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .keyword-tag.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            font-weight: 600;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
         }
@@ -348,7 +399,20 @@
                         name="keywords" 
                         placeholder="예: 30년전통, 신선한고기, 가족식당, 부산맛집"
                     />
+                    <button type="button" id="aiKeywordBtn" class="ai-keyword-btn">
+                        🤖 AI 키워드 추천받기
+                    </button>
                     <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
+                    
+                    <!-- AI 추천 키워드 영역 -->
+                    <div id="aiKeywordArea" style="display: none; margin-top: 15px;">
+                        <div style="background: #f0f8ff; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px;">
+                            <p style="margin: 0 0 10px 0; color: #2c5f2d; font-weight: 600;">
+                                🎯 AI 추천 키워드 (클릭해서 선택/해제)
+                            </p>
+                            <div id="aiKeywordTags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn" id="generateBtn">
@@ -586,6 +650,99 @@
         const topicsList = document.getElementById('topicsList');
         const blogContent = document.getElementById('blogContent');
         const blogText = document.getElementById('blogText');
+
+        // AI 키워드 추천 함수
+        async function recommendKeywords() {
+            const btn = document.getElementById('aiKeywordBtn');
+            const area = document.getElementById('aiKeywordArea');
+            const tagsContainer = document.getElementById('aiKeywordTags');
+            const keywordsInput = document.getElementById('keywords');
+
+            // 현재 입력된 정보 수집
+            const companyName = document.getElementById('companyName').value.trim();
+            const companyAddress = document.getElementById('companyAddress').value.trim();
+            const mainMenu = document.getElementById('mainMenu').value.trim();
+            const landmarks = document.getElementById('landmarks').value.trim();
+
+            if (!companyName || !companyAddress || !mainMenu) {
+                alert('업체명, 업체주소, 대표메뉴를 먼저 입력해주세요.');
+                return;
+            }
+
+            try {
+                // 버튼 비활성화
+                btn.disabled = true;
+                btn.textContent = '🤖 AI 분석 중...';
+
+                // API 호출
+                const response = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'recommend-keywords',
+                        data: {
+                            companyName,
+                            companyAddress,
+                            mainMenu,
+                            landmarks
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('키워드 추천 실패');
+                }
+
+                const result = await response.json();
+                const keywords = result.data.keywords || [];
+
+                if (keywords.length === 0) {
+                    throw new Error('추천된 키워드가 없습니다');
+                }
+
+                // 키워드 태그 생성
+                tagsContainer.innerHTML = '';
+                keywords.forEach(keyword => {
+                    const tag = document.createElement('span');
+                    tag.className = 'keyword-tag';
+                    tag.textContent = keyword;
+                    tag.dataset.keyword = keyword;
+                    
+                    // 클릭 이벤트 (선택/해제 토글)
+                    tag.addEventListener('click', function() {
+                        this.classList.toggle('selected');
+                        updateKeywordsInput();
+                    });
+
+                    tagsContainer.appendChild(tag);
+                });
+
+                // 추천 영역 표시
+                area.style.display = 'block';
+
+            } catch (error) {
+                console.error('키워드 추천 오류:', error);
+                alert('❌ 키워드 추천에 실패했습니다.\n' + error.message);
+            } finally {
+                // 버튼 복구
+                btn.disabled = false;
+                btn.textContent = '🤖 AI 키워드 추천받기';
+            }
+        }
+
+        // 선택된 키워드를 input에 반영
+        function updateKeywordsInput() {
+            const tagsContainer = document.getElementById('aiKeywordTags');
+            const keywordsInput = document.getElementById('keywords');
+            
+            const selectedTags = tagsContainer.querySelectorAll('.keyword-tag.selected');
+            const selectedKeywords = Array.from(selectedTags).map(tag => tag.dataset.keyword);
+            
+            keywordsInput.value = selectedKeywords.join(', ');
+        }
+
+        // AI 키워드 추천 버튼 이벤트
+        document.getElementById('aiKeywordBtn').addEventListener('click', recommendKeywords);
 
         // 탭 기능
         const tabBtns = document.querySelectorAll('.tab-btn');

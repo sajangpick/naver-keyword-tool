@@ -302,6 +302,108 @@ function getCurrentContext() {
 }
 
 // ============================================
+// 캐시 관련 함수
+// ============================================
+
+/**
+ * 캐시에서 플레이스 정보 조회
+ */
+async function getPlaceFromCache(placeUrl) {
+    if (!supabase || !placeUrl) return null;
+
+    try {
+        const { data, error } = await supabase
+            .from('place_crawl_cache')
+            .select('*')
+            .eq('place_url', placeUrl)
+            .single();
+
+        if (error || !data) {
+            console.log('[캐시] 캐시 없음:', placeUrl);
+            return null;
+        }
+
+        // 캐시 만료 확인 (24시간)
+        const lastCrawled = new Date(data.last_crawled_at);
+        const now = new Date();
+        const hoursDiff = (now - lastCrawled) / (1000 * 60 * 60);
+
+        if (hoursDiff > 24) {
+            console.log('[캐시] 캐시 만료 (24시간 경과):', hoursDiff.toFixed(1), '시간');
+            return null;
+        }
+
+        console.log('[캐시] 캐시 적중! (경과:', hoursDiff.toFixed(1), '시간)');
+        
+        // crawl_data에서 placeInfo 추출
+        return data.crawl_data;
+
+    } catch (error) {
+        console.error('[캐시 조회] 오류:', error);
+        return null;
+    }
+}
+
+/**
+ * 캐시에 플레이스 정보 저장
+ */
+async function savePlaceToCache(placeUrl, placeInfo) {
+    if (!supabase || !placeUrl) return;
+
+    try {
+        // 기존 캐시 확인
+        const { data: existing } = await supabase
+            .from('place_crawl_cache')
+            .select('id, crawl_count')
+            .eq('place_url', placeUrl)
+            .single();
+
+        if (existing) {
+            // 업데이트 (crawl_count 증가)
+            const { error } = await supabase
+                .from('place_crawl_cache')
+                .update({
+                    place_name: placeInfo.name,
+                    place_address: placeInfo.address,
+                    business_hours: placeInfo.hours,
+                    main_menu: placeInfo.mainMenu.join(', '),
+                    phone_number: placeInfo.phone,
+                    crawl_data: placeInfo,
+                    crawl_count: existing.crawl_count + 1,
+                    last_crawled_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id);
+
+            if (error) throw error;
+            console.log('[캐시 저장] 업데이트 완료 (count:', existing.crawl_count + 1, ')');
+        } else {
+            // 새로 삽입
+            const { error } = await supabase
+                .from('place_crawl_cache')
+                .insert({
+                    place_url: placeUrl,
+                    place_name: placeInfo.name,
+                    place_address: placeInfo.address,
+                    business_hours: placeInfo.hours,
+                    main_menu: placeInfo.mainMenu.join(', '),
+                    phone_number: placeInfo.phone,
+                    crawl_data: placeInfo,
+                    crawl_count: 1,
+                    last_crawled_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
+            console.log('[캐시 저장] 새로 저장 완료');
+        }
+
+    } catch (error) {
+        console.error('[캐시 저장] 오류:', error);
+        // 캐시 저장 실패는 치명적이지 않으므로 계속 진행
+    }
+}
+
+// ============================================
 // 기존 함수들 (다양성 로직 추가)
 // ============================================
 
@@ -309,8 +411,17 @@ function getCurrentContext() {
  * 1단계: 플레이스 정보 크롤링/구조화 (다양성 강화)
  */
 async function crawlOrStructurePlaceInfo(url, userInput, userId) {
+    // 캐시 확인 (URL이 있는 경우만)
     if (url) {
-        console.log('[크롤링] URL 제공됨, 하지만 현재는 사용자 입력 사용:', url);
+        console.log('[크롤링] URL 제공됨:', url);
+        
+        const cachedData = await getPlaceFromCache(url);
+        if (cachedData) {
+            console.log('[캐시] 캐시 데이터 사용 ✅');
+            return cachedData;
+        }
+        
+        console.log('[캐시] 캐시 없음, 새로 처리...');
     }
 
     const placeInfo = {
@@ -385,6 +496,11 @@ JSON 형식으로 답변해주세요:
         placeInfo.strengths = placeInfo.keywords.join(', ');
         placeInfo.targetCustomers = '다양한 연령대의 고객';
         placeInfo.atmosphere = '편안하고 따뜻한 분위기';
+    }
+
+    // 캐시에 저장 (URL이 있는 경우만)
+    if (url) {
+        await savePlaceToCache(url, placeInfo);
     }
 
     return placeInfo;
@@ -550,18 +666,20 @@ async function generateBlogPost(placeInfo, menuAnalysis, selectedTopic, userId) 
     const context = getCurrentContext();
     const blogStyle = await getUserBlogStyle(userId);
     const previousAnalysis = await analyzePreviousBlogs(userId);
-    const writingAngle = getRandomAngle();
 
     const stylePrompt = blogStyleToPrompt(blogStyle);
 
     const prompt = `
-[역할]
-당신은 ${placeInfo.name}의 사장입니다. 손님들과 소통하고 우리 가게를 알리기 위해 블로그 글을 작성하려고 합니다.
+[역할] ⭐⭐⭐ 매우 중요!
+당신은 ${placeInfo.name}의 사장입니다. 
+처음부터 끝까지 일관되게 "사장님 입장"에서만 작성하세요.
+손님에게 우리 가게를 소개하고 초대하는 따뜻한 글을 작성합니다.
 
-[글쓰기 관점] ⭐ 중요!
-${writingAngle.name}: ${writingAngle.description}
-- 톤: ${writingAngle.tone}
-- 초점: ${writingAngle.focus}
+[필수 작성 규칙] ⚠️
+- "저희 가게", "우리 가게" 같은 사장님 표현 사용
+- "손님 여러분", "방문해 주세요" 같은 초대 표현 사용
+- 절대 손님/방문객 시점으로 작성하지 마세요
+- "다녀왔어요", "먹어봤어요" 같은 손님 표현 금지
 
 [블로그 스타일] ⭐ 사용자 맞춤 설정
 ${stylePrompt}
@@ -604,34 +722,37 @@ ${previousAnalysis.commonExpressions.join('\n')}
 
 [작성 가이드라인]
 
-1. **톤 & 매너**
-   - ${writingAngle.tone} 톤 사용
+1. **톤 & 매너** (사장님 입장)
+   - 따뜻하고 친근한 사장님의 목소리
    - 과도한 마케팅 느낌 배제
-   - 진정성 있는 스토리텔링
-   - 손님을 존중하는 겸손한 태도
+   - 진정성 있는 가게 이야기
+   - 손님을 초대하는 겸손하고 환대하는 태도
 
 2. **글 구조** (2000자 내외)
 
-   **서론 (300자)**
-   - ${writingAngle.name}의 관점에서 자연스러운 도입
-   - 독자의 관심을 끄는 독특한 시작
-   - 오늘 계절(${context.season})이나 날씨 언급
+   **서론 (300자)** - 사장님의 인사
+   - "안녕하세요, ${placeInfo.name} 사장 ○○입니다" 같은 자연스러운 인사
+   - 계절(${context.season})이나 날씨 언급하며 따뜻한 시작
+   - 오늘 소개할 내용에 대한 간단한 소개
    
-   **본론 (1000자)**
-   - ${writingAngle.focus}에 집중
-   - 구체적인 사례나 경험 공유
-   - 대표 메뉴 상세 설명
-   - 손님들과의 소중한 인연
+   **본론 (1000자)** - 가게와 메뉴 소개
+   - 우리 가게의 특별한 점, 자랑하고 싶은 점
+   - 대표 메뉴를 만드는 정성과 노하우
+   - 손님들과의 소중한 인연과 에피소드
+   - 계절 메뉴나 추천 메뉴 소개
    
-   **결론 (700자)**
-   - 앞으로의 계획이나 다짐
+   **결론 (700자)** - 초대와 안내
+   - 손님 여러분을 기다리는 마음
    - 방문 안내 (위치, 영업시간, 전화번호)
-   - 감사 인사
+   - 📍 위치: ${placeInfo.address}
+   - ⏰ 영업시간: ${placeInfo.hours}
+   - 📞 문의: ${placeInfo.phone || '전화번호 없음'}
+   - 감사 인사와 다음 방문 기대
 
 3. **필수 포함 요소**
    - 가게 이름 최소 3회 자연스럽게 언급
    - 대표 메뉴 구체적으로 소개
-   - 실제 가게 정보 (주소, 전화번호, 영업시간) 포함
+   - 글 마지막에 반드시 위치, 영업시간, 전화번호 포함 (이모티콘 포함)
    - 평점과 리뷰 수 자연스럽게 언급
 
 4. **스타일링**
@@ -655,7 +776,8 @@ ${previousAnalysis.commonExpressions.join('\n')}
    - 최근 사용한 표현 반복
 
 [중요한 지침] ⭐⭐⭐
-- 반드시 "${writingAngle.name}" 관점을 유지하세요
+- 처음부터 끝까지 사장님 시점만 유지하세요
+- 절대 손님 시점으로 바뀌면 안 됩니다
 - 이전 글들과 완전히 다른 느낌으로 작성하세요
 - 같은 패턴의 시작을 피하고 독특하게 시작하세요
 
@@ -667,7 +789,7 @@ ${previousAnalysis.commonExpressions.join('\n')}
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-                { role: "system", content: `당신은 가게 사장님입니다. ${writingAngle.name}의 관점에서 따뜻하고 진정성 있는 블로그 글을 작성하세요. 매번 다른 스타일과 시작으로 글을 쓰세요.` },
+                { role: "system", content: `당신은 ${placeInfo.name}의 사장님입니다. 처음부터 끝까지 일관되게 사장님의 입장에서만 작성하세요. "저희 가게", "우리 가게"처럼 사장님 표현을 사용하고, 손님을 초대하는 따뜻한 글을 쓰세요. 절대 손님/방문객 시점으로 작성하지 마세요.` },
                 { role: "user", content: prompt }
             ],
             temperature: 0.95,  // 최대 다양성
@@ -683,7 +805,7 @@ ${previousAnalysis.commonExpressions.join('\n')}
 
         return {
             content: blogContent,
-            writingAngle: writingAngle.name,
+            writingAngle: '사장님 시점',
             diversityKeywords: diversityKeywords,
             context: context
         };
@@ -742,6 +864,7 @@ ${stylePrompt}
 - 가게명: ${storeInfo.companyName}
 - 위치: ${storeInfo.companyAddress}
 - 영업시간: ${storeInfo.businessHours}
+- 전화번호: ${storeInfo.phoneNumber || '미입력'}
 - 대표메뉴: ${storeInfo.mainMenu}
 - 주변 랜드마크: ${storeInfo.landmarks || '없음'}
 - 키워드: ${storeInfo.keywords || '없음'}
@@ -779,7 +902,10 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 체험단 리뷰�
    - 가게 이름 3-5회 언급
    - 대표 메뉴 상세 리뷰
    - 실제 방문 경험
-   - 주소, 영업시간, 가격대
+   - 글 마지막에 반드시 위치, 영업시간, 전화번호 포함
+   - 📍 위치: ${storeInfo.companyAddress}
+   - ⏰ 영업시간: ${storeInfo.businessHours}
+   - 📞 문의: ${storeInfo.phoneNumber || '전화번호 없음'}
 
 4. **해시태그** (10개 내외)
 
@@ -816,6 +942,109 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 체험단 리뷰�
 }
 
 /**
+ * AI 키워드 추천 (12개, 다양하고 세부적인 키워드)
+ */
+async function recommendKeywordsForStore(data) {
+    const { companyName, companyAddress, mainMenu, landmarks } = data;
+
+    // 주소에서 지역 정보 추출
+    const addressParts = companyAddress.split(' ');
+    const city = addressParts[0] || '';
+    const district = addressParts[1] || '';
+    const neighborhood = addressParts[2] || '';
+
+    const prompt = `
+[역할]
+당신은 네이버 블로그 SEO 전문가입니다. 음식점의 블로그 포스팅을 위한 최적의 키워드를 추천해주세요.
+
+[가게 정보]
+- 가게명: ${companyName}
+- 위치: ${companyAddress}
+- 지역: ${city} ${district} ${neighborhood}
+- 대표메뉴: ${mainMenu}
+${landmarks ? `- 주변 랜드마크: ${landmarks}` : ''}
+
+[키워드 추천 가이드라인]
+1. **총 12개**의 키워드를 추천해주세요
+2. **다양한 카테고리**를 포함해야 합니다:
+   - 지역 키워드 (2-3개): 시/구/동 조합, 역 근처, 랜드마크 근처
+   - 업종 키워드 (2-3개): 음식 종류, 전문점
+   - 특징 키워드 (2-3개): 분위기, 가격대, 서비스
+   - 상황 키워드 (2-3개): 데이트, 회식, 혼밥, 가족외식
+   - SEO 키워드 (2-3개): 맛집, 추천, 후기, 리뷰
+
+3. **구체적이고 세부적인** 키워드를 만들어주세요
+   예: "부산맛집" 보다는 "부산해운대맛집", "해운대역근처맛집"
+   예: "맛집" 보다는 "가족외식맛집", "데이트맛집"
+
+4. **검색 의도**를 반영해주세요
+   - 사람들이 실제로 검색할 법한 키워드
+   - 지역+음식종류 조합
+   - 상황+지역 조합
+
+[출력 형식]
+키워드만 쉼표로 구분하여 나열해주세요. 설명이나 번호는 붙이지 마세요.
+예: 부산맛집, 해운대맛집, 해운대역근처맛집, 가족외식맛집, ...
+
+이제 12개의 키워드를 추천해주세요:
+`;
+
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: "당신은 네이버 블로그 SEO 전문가입니다. 검색 상위 노출에 최적화된 키워드를 추천합니다." },
+                { role: "user", content: prompt }
+            ],
+            temperature: 0.8,
+            max_tokens: 500
+        });
+
+        const keywordsText = completion.choices[0].message.content.trim();
+        
+        // 쉼표로 구분된 키워드를 배열로 변환
+        let keywords = keywordsText
+            .split(',')
+            .map(k => k.trim())
+            .filter(k => k.length > 0);
+
+        // 12개가 아니면 조정
+        if (keywords.length > 12) {
+            keywords = keywords.slice(0, 12);
+        } else if (keywords.length < 12) {
+            // 부족하면 기본 키워드 추가
+            const defaultKeywords = [
+                `${city}맛집`,
+                `${district}맛집`,
+                `${companyName}`,
+                `${companyName}후기`,
+                '추천맛집',
+                '가족외식',
+                '데이트맛집',
+                '맛집추천'
+            ];
+            
+            for (const kw of defaultKeywords) {
+                if (keywords.length >= 12) break;
+                if (!keywords.includes(kw)) {
+                    keywords.push(kw);
+                }
+            }
+        }
+
+        console.log('[키워드 추천] 생성된 키워드:', keywords);
+
+        return {
+            keywords: keywords.slice(0, 12)
+        };
+
+    } catch (error) {
+        console.error('[키워드 추천] 오류:', error);
+        throw new Error('키워드 추천에 실패했습니다: ' + error.message);
+    }
+}
+
+/**
  * 방문 후기 생성 (다양성 강화)
  */
 async function generateVisitReviewPost(storeInfo, existingBlog, userId) {
@@ -840,6 +1069,7 @@ ${stylePrompt}
 - 가게명: ${storeInfo.companyName}
 - 위치: ${storeInfo.companyAddress}
 - 영업시간: ${storeInfo.businessHours}
+- 전화번호: ${storeInfo.phoneNumber || '미입력'}
 - 대표메뉴: ${storeInfo.mainMenu}
 - 주변 랜드마크: ${storeInfo.landmarks || '없음'}
 - 키워드: ${storeInfo.keywords || '없음'}
@@ -959,6 +1189,10 @@ module.exports = async function handler(req, res) {
 
             case 'recommend':
                 result = await recommendBlogTopics(data.placeInfo, data.menuAnalysis, data.userId);
+                break;
+
+            case 'recommend-keywords':
+                result = await recommendKeywordsForStore(data);
                 break;
 
             case 'generate-review-team':
