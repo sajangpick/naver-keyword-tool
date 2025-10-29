@@ -8,10 +8,10 @@
 (function() {
   'use strict';
   
-  // Supabase 클라이언트 (common-header.js에서 이미 초기화됨)
-  const supabase = window.supabase;
+  // Supabase 클라이언트 (mypage.html에서 초기화됨)
+  const supabase = window.supabaseClient || window.supabase;
   
-  if (!supabase) {
+  if (!supabase || typeof supabase.from !== 'function') {
     console.warn('⚠️ Supabase 클라이언트가 초기화되지 않았습니다.');
     return;
   }

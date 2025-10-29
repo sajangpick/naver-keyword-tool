@@ -928,6 +928,10 @@
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
         
         supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+        
+        // ✅ 전역 변수로도 저장 (다른 스크립트에서 사용 가능)
+        window.supabaseClient = supabase;
+        
         console.log('✅ Supabase 초기화 완료');
       } catch (error) {
         console.error('❌ Supabase 초기화 실패:', error);
