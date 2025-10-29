@@ -10,6 +10,16 @@
  */
 
 const OpenAI = require('openai');
+const { createClient } = require('@supabase/supabase-js');
+
+// Supabase 클라이언트 초기화
+let supabase = null;
+if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+}
 
 // OpenAI 클라이언트 초기화
 const openai = new OpenAI({
@@ -417,8 +427,150 @@ module.exports = async function handler(req, res) {
 
             case 'generate':
                 // 4단계: 블로그 글 생성
+                const startTime = Date.now();
                 result = await generateBlogPost(data.placeInfo, data.menuAnalysis, data.selectedTopic);
-                break;
+                const generationTime = Date.now() - startTime;
+
+                // ==================== DB 저장 로직 ====================
+                let savedBlogId = null;
+                let dbSaveStatus = 'not_attempted';
+                let dbError = null;
+
+                if (supabase) {
+                    try {
+                        console.log('📦 블로그 DB 저장 시작...');
+
+                        // 1. places 테이블에 가게 정보 저장 (있으면 재사용)
+                        let savedPlaceId = null;
+                        if (data.placeInfo && data.placeInfo.name) {
+                            // place_id가 있으면 저장, 없으면 스킵
+                            if (data.placeInfo.placeId) {
+                                const placeData = {
+                                    place_id: data.placeInfo.placeId,
+                                    place_name: data.placeInfo.name,
+                                    category: data.placeInfo.category || null,
+                                    road_address: data.placeInfo.address || null,
+                                    phone: data.placeInfo.phone || null,
+                                    rating: data.placeInfo.rating || null,
+                                    visitor_reviews: data.placeInfo.reviewCount || 0,
+                                    business_hours: data.placeInfo.hours || null,
+                                    last_crawled_at: new Date().toISOString()
+                                };
+
+                                const { error: placeError } = await supabase
+                                    .from('places')
+                                    .upsert(placeData, {
+                                        onConflict: 'place_id',
+                                        ignoreDuplicates: false
+                                    });
+
+                                if (placeError) {
+                                    console.error('❌ places 저장 실패:', placeError);
+                                } else {
+                                    savedPlaceId = data.placeInfo.placeId;
+                                    console.log('✅ places 저장 성공:', savedPlaceId);
+                                }
+                            }
+                        }
+
+                        // 2. 사용자 ID 가져오기 (로컬 개발 시 테스트 계정 사용)
+                        let userId = data.userId || null;
+                        
+                        if (!userId) {
+                            // 테스트 회원(김사장) 사용
+                            const { data: testUser, error: userError } = await supabase
+                                .from('profiles')
+                                .select('id')
+                                .eq('name', '김사장')
+                                .single();
+
+                            if (!userError && testUser) {
+                                userId = testUser.id;
+                            } else {
+                                // 첫 번째 회원 사용
+                                const { data: firstUser } = await supabase
+                                    .from('profiles')
+                                    .select('id')
+                                    .limit(1)
+                                    .single();
+                                
+                                if (firstUser) {
+                                    userId = firstUser.id;
+                                }
+                            }
+                        }
+
+                        if (!userId) {
+                            throw new Error('사용자 ID를 찾을 수 없습니다.');
+                        }
+
+                        // 3. blog_posts 테이블에 블로그 저장
+                        const blogData = {
+                            user_id: userId,
+                            place_id: savedPlaceId || null,
+                            
+                            // 가게 정보
+                            store_name: data.placeInfo?.name || null,
+                            store_address: data.placeInfo?.address || null,
+                            store_business_hours: data.placeInfo?.hours || null,
+                            store_main_menu: data.placeInfo?.mainMenu?.join(', ') || null,
+                            naver_place_url: data.placeUrl || null,
+                            
+                            // 블로그 내용
+                            blog_type: 'our_store',  // 현재는 우리매장만 지원
+                            blog_title: data.selectedTopic?.title || null,
+                            blog_content: result,  // 생성된 블로그 전문
+                            
+                            // JSON 데이터
+                            selected_topic: data.selectedTopic || null,
+                            place_info: data.placeInfo || null,
+                            menu_analysis: data.menuAnalysis || null,
+                            
+                            // AI 정보
+                            ai_model: 'gpt-4o',
+                            generation_time_ms: generationTime,
+                            
+                            // 상태
+                            status: 'draft',
+                            is_used: false
+                        };
+
+                        const { data: blogResult, error: blogError } = await supabase
+                            .from('blog_posts')
+                            .insert(blogData)
+                            .select();
+
+                        if (blogError) {
+                            console.error('❌ blog_posts 저장 실패:', blogError);
+                            dbSaveStatus = 'failed';
+                            dbError = blogError.message;
+                        } else {
+                            savedBlogId = blogResult[0]?.id;
+                            console.log('✅ blog_posts 저장 성공:', savedBlogId);
+                            dbSaveStatus = 'success';
+                        }
+
+                    } catch (dbErr) {
+                        console.error('❌ DB 저장 중 오류:', dbErr);
+                        dbSaveStatus = 'failed';
+                        dbError = dbErr.message;
+                    }
+                } else {
+                    console.log('⚠️ Supabase 클라이언트가 초기화되지 않아 DB 저장을 건너뜁니다.');
+                }
+                // ==================== DB 저장 로직 끝 ====================
+
+                // 응답에 DB 저장 정보 포함
+                return res.status(200).json({
+                    success: true,
+                    data: result,
+                    metadata: {
+                        blogId: savedBlogId,
+                        dbSaveStatus: dbSaveStatus,
+                        dbError: dbError,
+                        generationTime: generationTime
+                    }
+                });
 
             default:
                 throw new Error('잘못된 단계입니다.');

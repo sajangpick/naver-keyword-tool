@@ -879,12 +879,17 @@
                 showLoading("선택된 주제로 블로그 글을 생성하고 있습니다...");
                 updateStep(3); // 4단계: 글 생성
 
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
                 const generateResponse = await fetch('/api/chatgpt-blog', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         step: 'generate',
                         data: {
+                            userId: userId,  // 사용자 ID 추가
                             placeInfo: globalPlaceInfo,
                             menuAnalysis: globalMenuAnalysis,
                             selectedTopic: topic
