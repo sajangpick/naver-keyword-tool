@@ -2969,6 +2969,217 @@ app.get("/api/regions", (req, res) => {
   });
 });
 
+// ==================== 회원 관리 API (관리자 전용) ====================
+
+// 회원 목록 조회 (관리자만)
+app.get('/api/admin/members', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { user_type, search, page = 1, limit = 20 } = req.query;
+    
+    // 기본 쿼리
+    let query = supabase
+      .from('profiles')
+      .select('*', { count: 'exact' });
+    
+    // 필터링
+    if (user_type) {
+      query = query.eq('user_type', user_type);
+    }
+    
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+    
+    // 페이징
+    const offset = (page - 1) * limit;
+    query = query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    // 실행
+    const { data, error, count } = await query;
+    
+    if (error) {
+      console.error('회원 목록 조회 오류:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+    
+    res.json({
+      success: true,
+      members: data,
+      total: count,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    
+  } catch (error) {
+    console.error('회원 목록 조회 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
+// 회원 등급 변경 (관리자만)
+app.put('/api/admin/members/:id', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { id } = req.params;
+    const { membership_level, reset_usage } = req.body;
+    
+    // 유효성 검사
+    const validLevels = [
+      'seed', 'power', 'big_power', 'premium',
+      'elite', 'expert', 'master', 'platinum',
+      'admin'
+    ];
+    
+    if (!validLevels.includes(membership_level)) {
+      return res.status(400).json({
+        success: false,
+        error: '유효하지 않은 등급입니다'
+      });
+    }
+    
+    // 업데이트할 데이터
+    const updateData = {
+      membership_level,
+      updated_at: new Date().toISOString()
+    };
+    
+    // 사용량 초기화 옵션
+    if (reset_usage) {
+      updateData.monthly_review_count = 0;
+      updateData.monthly_blog_count = 0;
+    }
+    
+    // 실행
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('회원 등급 변경 오류:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+    
+    res.json({
+      success: true,
+      member: data
+    });
+    
+  } catch (error) {
+    console.error('회원 등급 변경 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
+// 회원 상세 조회 (관리자만)
+app.get('/api/admin/members/:id', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { id } = req.params;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('회원 조회 오류:', error);
+      return res.status(404).json({ 
+        success: false, 
+        error: '회원을 찾을 수 없습니다' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      member: data
+    });
+    
+  } catch (error) {
+    console.error('회원 조회 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
+// 회원 삭제 (관리자만)
+app.delete('/api/admin/members/:id', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { id } = req.params;
+    
+    // 삭제 (ON DELETE CASCADE로 연관 데이터도 자동 삭제)
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('회원 삭제 오류:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: '회원이 삭제되었습니다'
+    });
+    
+  } catch (error) {
+    console.error('회원 삭제 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
 // ==================== 에러 핸들러 ====================
 
 // 404 에러 핸들러
@@ -2995,6 +3206,10 @@ app.use("*", (req, res) => {
       "GET /api/test-keys",
       "GET /auth/kakao/login",
       "GET /auth/kakao/callback",
+      "GET /api/admin/members",
+      "PUT /api/admin/members/:id",
+      "GET /api/admin/members/:id",
+      "DELETE /api/admin/members/:id",
     ];
   }
   res.status(404).json(payload);

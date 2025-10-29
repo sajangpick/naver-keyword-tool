@@ -1131,50 +1131,35 @@
         await loadMembers();
       });
 
-      // ==================== A안: Supabase 직접 호출 ====================
+      // ==================== B안: Server API 호출 ====================
 
       async function loadMembers(userType = currentFilter, search = currentSearch, page = currentPage) {
         try {
           showLoading(true);
           hideError();
 
-          // Supabase 쿼리 구성
-          let query = supabase
-            .from('profiles')
-            .select('*', { count: 'exact' });
+          // B안: API 호출
+          const params = new URLSearchParams({ page, limit: 20 });
+          if (userType) params.append('user_type', userType);
+          if (search) params.append('search', search);
 
-          // 필터링
-          if (userType) {
-            query = query.eq('user_type', userType);
-          }
+          const response = await fetch(`/api/admin/members?${params}`);
+          const result = await response.json();
 
-          if (search) {
-            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
-          }
-
-          // 정렬 및 페이징
-          const offset = (page - 1) * 20;
-          query = query
-            .order('created_at', { ascending: false })
-            .range(offset, offset + 19);
-
-          // 실행
-          const { data, error, count } = await query;
-
-          if (error) throw new Error(error.message);
+          if (!result.success) throw new Error(result.error);
 
           // 통계 업데이트
-          updateStats(data, count);
+          updateStats(result.members, result.total);
 
           // 테이블 렌더링
-          renderMembers(data);
+          renderMembers(result.members);
 
           // 페이지네이션
-          if (count > 20) {
-            renderPagination(page, count, 20);
+          if (result.total > 20) {
+            renderPagination(result.page, result.total, result.limit);
           }
 
-          console.log(`✅ 회원 ${data.length}명 로드 완료 (전체: ${count}명)`);
+          console.log(`✅ 회원 ${result.members.length}명 로드 완료 (전체: ${result.total}명)`);
 
         } catch (error) {
           console.error('❌ 회원 로드 실패:', error);
@@ -1208,32 +1193,19 @@
           showLoading(true);
           closeLevelModal();
 
-          const updateData = {
-            membership_level: newLevel,
-            updated_at: new Date().toISOString()
-          };
+          // B안: API 호출
+          const response = await fetch(`/api/admin/members/${memberId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              membership_level: newLevel,
+              reset_usage: resetUsage 
+            })
+          });
 
-          // 등급에 따라 user_type 자동 설정
-          if (newLevel === 'admin') {
-            updateData.user_type = 'admin';
-          } else if (['seed', 'power', 'big_power', 'premium'].includes(newLevel)) {
-            updateData.user_type = 'owner';
-          } else if (['elite', 'expert', 'master', 'platinum'].includes(newLevel)) {
-            updateData.user_type = 'agency';
-          }
+          const result = await response.json();
 
-          if (resetUsage) {
-            updateData.monthly_review_count = 0;
-            updateData.monthly_blog_count = 0;
-          }
-
-          // A안: Supabase 직접 호출
-          const { error } = await supabase
-            .from('profiles')
-            .update(updateData)
-            .eq('id', memberId);
-
-          if (error) throw new Error(error.message);
+          if (!result.success) throw new Error(result.error);
 
           alert(`${memberName} 회원의 등급이 변경되었습니다.`);
           await loadMembers();
@@ -1254,13 +1226,14 @@
         try {
           showLoading(true);
 
-          // A안: Supabase 직접 호출
-          const { error } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', memberId);
+          // B안: API 호출
+          const response = await fetch(`/api/admin/members/${memberId}`, {
+            method: 'DELETE'
+          });
 
-          if (error) throw new Error(error.message);
+          const result = await response.json();
+
+          if (!result.success) throw new Error(result.error);
 
           alert(`${memberName} 회원이 삭제되었습니다.`);
           await loadMembers();
@@ -1274,6 +1247,7 @@
       }
 
       // ==================== 회원 상세보기 ====================
+      // 주의: 상세보기는 아직 Supabase 직접 호출 사용 (향후 API로 전환 가능)
 
       async function showMemberDetail(memberId) {
         try {

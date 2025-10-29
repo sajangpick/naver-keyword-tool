@@ -1139,16 +1139,160 @@
             }
         });
 
-        // 체험단 리뷰 폼 제출 (시뮬레이션)
+        // 체험단 리뷰 폼 제출
         reviewTeamForm.addEventListener("submit", async function (e) {
             e.preventDefault();
-            alert("체험단 리뷰 생성 기능은 준비 중입니다.");
+
+            const formData = new FormData(this);
+            const companyName = formData.get("companyName");
+            const companyAddress = formData.get("companyAddress");
+            const businessHours = formData.get("businessHours");
+            const mainMenu = formData.get("mainMenu");
+            const landmarks = formData.get("landmarks") || "";
+            const keywords = formData.get("keywords") || "";
+            const existingBlog = formData.get("existingBlog");
+
+            // 유효성 검사
+            if (!companyName || !companyAddress || !businessHours || !mainMenu) {
+                alert("업체명, 업체주소, 영업시간, 대표메뉴를 모두 입력해주세요.");
+                return;
+            }
+
+            if (!existingBlog || existingBlog.trim().length < 100) {
+                alert("기존 블로그 글을 입력해주세요. (최소 100자 이상)");
+                return;
+            }
+
+            try {
+                generateReviewTeamBtn.disabled = true;
+                generateReviewTeamBtn.textContent = "생성 중...";
+                resultSection.classList.add('show');
+                
+                showLoading("체험단 리뷰를 생성하고 있습니다...");
+
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
+                const response = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'generate-review-team',
+                        data: {
+                            userId: userId,
+                            storeInfo: {
+                                companyName,
+                                companyAddress,
+                                businessHours,
+                                mainMenu,
+                                landmarks,
+                                keywords
+                            },
+                            existingBlog: existingBlog
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '체험단 리뷰 생성 실패');
+                }
+
+                const result = await response.json();
+                const blogContentText = result.data;
+                console.log('생성된 체험단 리뷰:', blogContentText);
+                
+                showSuccess();
+                blogContent.style.display = 'block';
+                blogText.textContent = blogContentText;
+                blogTopics.style.display = 'none';
+
+            } catch (error) {
+                console.error("체험단 리뷰 생성 오류:", error);
+                showError("체험단 리뷰 생성 중 오류가 발생했습니다: " + error.message);
+            } finally {
+                generateReviewTeamBtn.disabled = false;
+                generateReviewTeamBtn.textContent = "체험단 리뷰 생성하기";
+            }
         });
 
-        // 방문 후기 폼 제출 (시뮬레이션)
+        // 방문 후기 폼 제출
         visitReviewForm.addEventListener("submit", async function (e) {
             e.preventDefault();
-            alert("방문 후기 생성 기능은 준비 중입니다.");
+
+            const formData = new FormData(this);
+            const companyName = formData.get("companyName");
+            const companyAddress = formData.get("companyAddress");
+            const businessHours = formData.get("businessHours");
+            const mainMenu = formData.get("mainMenu");
+            const landmarks = formData.get("landmarks") || "";
+            const keywords = formData.get("keywords") || "";
+            const existingBlog = formData.get("existingBlog");
+
+            // 유효성 검사
+            if (!companyName || !companyAddress || !businessHours || !mainMenu) {
+                alert("업체명, 업체주소, 영업시간, 대표메뉴를 모두 입력해주세요.");
+                return;
+            }
+
+            if (!existingBlog || existingBlog.trim().length < 100) {
+                alert("기존 블로그 글을 입력해주세요. (최소 100자 이상)");
+                return;
+            }
+
+            try {
+                generateVisitReviewBtn.disabled = true;
+                generateVisitReviewBtn.textContent = "생성 중...";
+                resultSection.classList.add('show');
+                
+                showLoading("방문 후기를 생성하고 있습니다...");
+
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
+                const response = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'generate-visit-review',
+                        data: {
+                            userId: userId,
+                            storeInfo: {
+                                companyName,
+                                companyAddress,
+                                businessHours,
+                                mainMenu,
+                                landmarks,
+                                keywords
+                            },
+                            existingBlog: existingBlog
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '방문 후기 생성 실패');
+                }
+
+                const result = await response.json();
+                const blogContentText = result.data;
+                console.log('생성된 방문 후기:', blogContentText);
+                
+                showSuccess();
+                blogContent.style.display = 'block';
+                blogText.textContent = blogContentText;
+                blogTopics.style.display = 'none';
+
+            } catch (error) {
+                console.error("방문 후기 생성 오류:", error);
+                showError("방문 후기 생성 중 오류가 발생했습니다: " + error.message);
+            } finally {
+                generateVisitReviewBtn.disabled = false;
+                generateVisitReviewBtn.textContent = "방문 후기 생성하기";
+            }
       });
     </script>
   </body>
