@@ -12,8 +12,8 @@ const app = express();
 app.set("trust proxy", true);
 
 // 환경변수에서 설정 읽기 (Render/Vercel/로컬 모두 호환)
-// PORT가 지정되어 있으면 해당 포트 사용, 없으면 3000 사용
-const PORT = Number(process.env.PORT) || 3000;
+// PORT가 지정되어 있으면 해당 포트 사용, 없으면 3001 사용 (3000 충돌 방지)
+const PORT = Number(process.env.PORT) || 3001;
 
 // 네이버 API 설정
 const NAVER_API = {
@@ -2561,6 +2561,146 @@ app.get("/api/config", (req, res) => {
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
   });
+});
+
+// ==================== 가게 정보 관리 API ====================
+
+// 내 가게 정보 조회
+app.get("/api/store-info", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    // 임시: localStorage userId 사용 (추후 세션 인증으로 변경)
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(400).json({ error: "userId가 필요합니다" });
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("store_place_url, store_name, store_address, store_business_hours, store_main_menu, store_landmarks, store_keywords")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("가게 정보 조회 실패:", error);
+      return res.status(500).json({ error: "가게 정보 조회 실패", details: error.message });
+    }
+
+    res.json({ success: true, data: data || {} });
+  } catch (error) {
+    console.error("가게 정보 조회 오류:", error);
+    res.status(500).json({ error: "서버 오류", details: error.message });
+  }
+});
+
+// 내 가게 정보 저장/수정
+app.post("/api/store-info", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { userId, storeInfo } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: "userId가 필요합니다" });
+    }
+
+    const updateData = {
+      store_place_url: storeInfo.placeUrl || null,
+      store_name: storeInfo.companyName || null,
+      store_address: storeInfo.companyAddress || null,
+      store_business_hours: storeInfo.businessHours || null,
+      store_main_menu: storeInfo.mainMenu || null,
+      store_landmarks: storeInfo.landmarks || null,
+      store_keywords: storeInfo.keywords || null,
+    };
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(updateData)
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("가게 정보 저장 실패:", error);
+      return res.status(500).json({ error: "가게 정보 저장 실패", details: error.message });
+    }
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("가게 정보 저장 오류:", error);
+    res.status(500).json({ error: "서버 오류", details: error.message });
+  }
+});
+
+// 어드민: 특정 회원의 가게 정보 조회
+app.get("/api/admin/store-info/:userId", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { userId } = req.params;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, name, business_name, store_place_url, store_name, store_address, store_business_hours, store_main_menu, store_landmarks, store_keywords")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("회원 가게 정보 조회 실패:", error);
+      return res.status(500).json({ error: "회원 가게 정보 조회 실패", details: error.message });
+    }
+
+    res.json({ success: true, data: data || {} });
+  } catch (error) {
+    console.error("회원 가게 정보 조회 오류:", error);
+    res.status(500).json({ error: "서버 오류", details: error.message });
+  }
+});
+
+// 어드민: 특정 회원의 가게 정보 수정
+app.put("/api/admin/store-info/:userId", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { userId } = req.params;
+    const { storeInfo } = req.body;
+
+    const updateData = {
+      store_place_url: storeInfo.placeUrl || null,
+      store_name: storeInfo.companyName || null,
+      store_address: storeInfo.companyAddress || null,
+      store_business_hours: storeInfo.businessHours || null,
+      store_main_menu: storeInfo.mainMenu || null,
+      store_landmarks: storeInfo.landmarks || null,
+      store_keywords: storeInfo.keywords || null,
+    };
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(updateData)
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("회원 가게 정보 수정 실패:", error);
+      return res.status(500).json({ error: "회원 가게 정보 수정 실패", details: error.message });
+    }
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("회원 가게 정보 수정 오류:", error);
+    res.status(500).json({ error: "서버 오류", details: error.message });
+  }
 });
 
 // 블로그 스타일 옵션 조회

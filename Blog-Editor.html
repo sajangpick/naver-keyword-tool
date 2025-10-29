@@ -20,10 +20,10 @@
         box-sizing: border-box;
       }
 
-        body {
+      body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
-            min-height: 100vh;
+        background: var(--bg);
+        min-height: 100vh;
             padding: 20px;
             padding-top: 160px; /* 헤더 공간 확보 (공통 헤더 높이만큼) */
         }
@@ -37,20 +37,20 @@
         overflow: hidden;
         }
 
-        .header {
+        .page-header {
             background: linear-gradient(135deg, var(--naver-green) 0%, var(--naver-green-dark) 100%);
         color: white;
             padding: 40px;
         text-align: center;
       }
 
-        .header h1 {
+        .page-header h1 {
         font-size: 2.5rem;
         margin-bottom: 10px;
         font-weight: 700;
       }
 
-        .header p {
+        .page-header p {
         font-size: 1.1rem;
         opacity: 0.9;
       }
@@ -274,12 +274,12 @@
             display: block;
         }
 
-        @media (max-width: 768px) {
+            @media (max-width: 768px) {
             .container {
                 margin: 10px;
             }
 
-            .header h1 {
+            .page-header h1 {
                 font-size: 2rem;
             }
 
@@ -299,7 +299,7 @@
     <!-- 공통 헤더는 common-header.js가 자동 주입합니다 -->
 
     <div class="container">
-        <div class="header">
+        <div class="page-header">
             <h1>AI 블로그 생성기</h1>
             <p>ChatGPT AI가 프롬프트 설계서를 기반으로 블로그를 생성합니다</p>
       </div>
@@ -314,6 +314,16 @@
         <div class="form-section">
             <!-- 우리매장 탭 -->
             <div class="tab-content active" id="our-store-tab">
+                <!-- 안내 문구 -->
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #856404; font-size: 14px;">
+                        💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
+                    </p>
+                    <button type="button" id="saveStoreInfoBtn" class="btn" style="margin-top: 10px; background: #28a745;">
+                        📌 가게 정보 저장하기 (다음에 자동 입력됨)
+                    </button>
+                </div>
+
           <form id="blogForm">
             <div class="form-group">
                     <label for="placeUrl">플레이스 URL (선택)</label>
@@ -327,47 +337,43 @@
             </div>
 
             <div class="form-group">
-                    <label for="companyName">업체명 *</label>
+                    <label for="companyName">업체명</label>
               <input
                 type="text"
                         id="companyName" 
                         name="companyName" 
-                required
                         placeholder="예: 동흥안가"
               />
                     <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
             </div>
 
             <div class="form-group">
-                    <label for="companyAddress">업체주소 *</label>
+                    <label for="companyAddress">업체주소</label>
               <input
                 type="text"
                         id="companyAddress" 
                         name="companyAddress" 
-                        required 
                         placeholder="예: 부산광역시 해운대구 우동 1394-84"
                     />
                     <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
             </div>
 
             <div class="form-group">
-                    <label for="businessHours">영업시간 *</label>
+                    <label for="businessHours">영업시간</label>
               <input
                 type="text"
                 id="businessHours"
                 name="businessHours"
-                        required 
                         placeholder="예: 11:30-22:00 (매일, 15:00-17:00 브레이크타임)"
               />
                     <small style="color: #666; font-size: 12px;">영업시간과 휴무일을 입력해주세요</small>
             </div>
 
             <div class="form-group">
-                    <label for="mainMenu">대표메뉴 *</label>
+                    <label for="mainMenu">대표메뉴</label>
                     <textarea 
                         id="mainMenu" 
                         name="mainMenu" 
-                        required 
                         placeholder="예: 삼겹살, 목살, 갈비"
                     ></textarea>
                     <small style="color: #666; font-size: 12px;">가게의 대표 메뉴들을 입력해주세요 (쉼표로 구분)</small>
@@ -403,49 +409,52 @@
 
             <!-- 체험단리뷰 탭 -->
             <div class="tab-content" id="review-team-tab">
+                <!-- 안내 문구 -->
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #856404; font-size: 14px;">
+                        💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
+                    </p>
+                </div>
+
                 <form id="reviewTeamForm">
                     <div class="form-group">
-                        <label for="companyName2">업체명 *</label>
+                        <label for="companyName2">업체명</label>
                   <input
                             type="text" 
                             id="companyName2" 
                             name="companyName" 
-                    required
                             placeholder="예: 동흥안가"
                   />
                         <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
                 </div>
 
                     <div class="form-group">
-                        <label for="companyAddress2">업체주소 *</label>
+                        <label for="companyAddress2">업체주소</label>
                   <input
                             type="text" 
                             id="companyAddress2" 
                             name="companyAddress" 
-                    required
                             placeholder="예: 부산광역시 해운대구 우동 1394-84"
                   />
                         <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
                 </div>
 
                     <div class="form-group">
-                        <label for="businessHours2">영업시간 *</label>
+                        <label for="businessHours2">영업시간</label>
                   <input
                             type="text" 
                             id="businessHours2" 
                             name="businessHours" 
-                    required
                             placeholder="예: 11:30-22:00 (매일, 15:00-17:00 브레이크타임)"
                   />
                         <small style="color: #666; font-size: 12px;">영업시간과 휴무일을 입력해주세요</small>
                 </div>
 
                     <div class="form-group">
-                        <label for="mainMenu2">대표메뉴 *</label>
+                        <label for="mainMenu2">대표메뉴</label>
                         <textarea 
                             id="mainMenu2" 
                             name="mainMenu" 
-                            required 
                             placeholder="예: 삼겹살, 목살, 갈비"
                         ></textarea>
                         <small style="color: #666; font-size: 12px;">가게의 대표 메뉴들을 입력해주세요 (쉼표로 구분)</small>
@@ -474,11 +483,10 @@
               </div>
 
                     <div class="form-group">
-                        <label for="existingBlog2">기존 블로그 글 *</label>
+                        <label for="existingBlog2">기존 블로그 글</label>
                         <textarea 
                             id="existingBlog2" 
                             name="existingBlog" 
-                            required 
                             placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 체험단 리뷰를 작성합니다."
                         ></textarea>
                         <small style="color: #666; font-size: 12px;">기존 블로그 글의 스타일을 참고하여 체험단 리뷰 형태로 작성합니다</small>
@@ -492,49 +500,52 @@
 
             <!-- 방문후기 탭 -->
             <div class="tab-content" id="visit-review-tab">
+                <!-- 안내 문구 -->
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #856404; font-size: 14px;">
+                        💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
+                    </p>
+                </div>
+
                 <form id="visitReviewForm">
                     <div class="form-group">
-                        <label for="companyName3">업체명 *</label>
+                        <label for="companyName3">업체명</label>
                         <input 
                             type="text" 
                             id="companyName3" 
                             name="companyName" 
-                            required 
                             placeholder="예: 동흥안가"
                         />
                         <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="companyAddress3">업체주소 *</label>
+                        <label for="companyAddress3">업체주소</label>
                         <input 
                             type="text" 
                             id="companyAddress3" 
                             name="companyAddress" 
-                            required 
                             placeholder="예: 부산광역시 해운대구 우동 1394-84"
                         />
                         <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
               </div>
 
                     <div class="form-group">
-                        <label for="businessHours3">영업시간 *</label>
+                        <label for="businessHours3">영업시간</label>
                         <input 
                             type="text" 
                             id="businessHours3" 
                             name="businessHours" 
-                            required 
                             placeholder="예: 11:30-22:00 (매일, 15:00-17:00 브레이크타임)"
                         />
                         <small style="color: #666; font-size: 12px;">영업시간과 휴무일을 입력해주세요</small>
               </div>
 
                     <div class="form-group">
-                        <label for="mainMenu3">대표메뉴 *</label>
+                        <label for="mainMenu3">대표메뉴</label>
                         <textarea 
                             id="mainMenu3" 
                             name="mainMenu" 
-                            required 
                             placeholder="예: 삼겹살, 목살, 갈비"
                         ></textarea>
                         <small style="color: #666; font-size: 12px;">가게의 대표 메뉴들을 입력해주세요 (쉼표로 구분)</small>
@@ -563,11 +574,10 @@
             </div>
 
                     <div class="form-group">
-                        <label for="existingBlog3">기존 블로그 글 *</label>
+                        <label for="existingBlog3">기존 블로그 글</label>
                         <textarea 
                             id="existingBlog3" 
                             name="existingBlog" 
-                            required 
                             placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 방문 후기를 작성합니다."
                         ></textarea>
                         <small style="color: #666; font-size: 12px;">기존 블로그 글의 스타일을 참고하여 방문 후기 형태로 작성합니다</small>
@@ -636,6 +646,21 @@
 
         // 인증 확인
         async function ensureAuthenticated() {
+            // 🔧 로컬 개발 환경에서는 인증 건너뛰기
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('🔧 로컬 개발 모드: 인증 건너뛰기');
+                // 로컬 개발용 임시 사용자 데이터 설정
+                if (!localStorage.getItem('userData')) {
+                    localStorage.setItem('userData', JSON.stringify({
+                        id: 'dev-user-001',
+                        name: '개발자',
+                        email: 'dev@test.com'
+                    }));
+                }
+                localStorage.setItem('isLoggedIn', 'true');
+                return true;
+            }
+
             if (localStorage.getItem("isLoggedIn") === "true") {
                 return true;
             }
@@ -653,9 +678,119 @@
             return false;
         }
 
-        // 페이지 로드 시 인증 확인
+        // 페이지 로드 시 인증 확인 및 가게 정보 자동 입력
         window.addEventListener('load', async function() {
             await ensureAuthenticated();
+            await loadStoreInfo(); // 가게 정보 자동 입력
+        });
+
+        // 가게 정보 자동 입력
+        async function loadStoreInfo() {
+            try {
+                // 로그인 확인
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (!userData.id) {
+                    console.log('로그인되지 않음');
+                    return;
+                }
+
+                // API 호출
+                const response = await fetch(`/api/store-info?userId=${userData.id}`);
+                if (!response.ok) {
+                    console.error('가게 정보 조회 실패:', response.statusText);
+                    return;
+                }
+
+                const result = await response.json();
+                if (!result.success || !result.data) {
+                    console.log('저장된 가게 정보 없음');
+                    return;
+                }
+
+                const data = result.data;
+                
+                // 우리매장 탭 자동 입력
+                if (data.store_place_url) document.getElementById('placeUrl').value = data.store_place_url;
+                if (data.store_name) document.getElementById('companyName').value = data.store_name;
+                if (data.store_address) document.getElementById('companyAddress').value = data.store_address;
+                if (data.store_business_hours) document.getElementById('businessHours').value = data.store_business_hours;
+                if (data.store_main_menu) document.getElementById('mainMenu').value = data.store_main_menu;
+                if (data.store_landmarks) document.getElementById('landmarks').value = data.store_landmarks;
+                if (data.store_keywords) document.getElementById('keywords').value = data.store_keywords;
+
+                // 체험단리뷰 탭 자동 입력
+                if (data.store_name) document.getElementById('companyName2').value = data.store_name;
+                if (data.store_address) document.getElementById('companyAddress2').value = data.store_address;
+                if (data.store_business_hours) document.getElementById('businessHours2').value = data.store_business_hours;
+                if (data.store_main_menu) document.getElementById('mainMenu2').value = data.store_main_menu;
+                if (data.store_landmarks) document.getElementById('landmarks2').value = data.store_landmarks;
+                if (data.store_keywords) document.getElementById('keywords2').value = data.store_keywords;
+
+                // 방문후기 탭 자동 입력
+                if (data.store_name) document.getElementById('companyName3').value = data.store_name;
+                if (data.store_address) document.getElementById('companyAddress3').value = data.store_address;
+                if (data.store_business_hours) document.getElementById('businessHours3').value = data.store_business_hours;
+                if (data.store_main_menu) document.getElementById('mainMenu3').value = data.store_main_menu;
+                if (data.store_landmarks) document.getElementById('landmarks3').value = data.store_landmarks;
+                if (data.store_keywords) document.getElementById('keywords3').value = data.store_keywords;
+
+                console.log('✅ 가게 정보 자동 입력 완료');
+            } catch (error) {
+                console.error('가게 정보 로드 오류:', error);
+            }
+        }
+
+        // 가게 정보 저장 버튼 이벤트
+        document.getElementById('saveStoreInfoBtn').addEventListener('click', async function() {
+            try {
+                // 로그인 확인
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (!userData.id) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                }
+
+                // 현재 입력된 정보 수집
+                const storeInfo = {
+                    placeUrl: document.getElementById('placeUrl').value,
+                    companyName: document.getElementById('companyName').value,
+                    companyAddress: document.getElementById('companyAddress').value,
+                    businessHours: document.getElementById('businessHours').value,
+                    mainMenu: document.getElementById('mainMenu').value,
+                    landmarks: document.getElementById('landmarks').value,
+                    keywords: document.getElementById('keywords').value,
+                };
+
+                // 저장 버튼 비활성화
+                this.disabled = true;
+                this.textContent = '저장 중...';
+
+                // API 호출
+                const response = await fetch('/api/store-info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userData.id, storeInfo })
+                });
+
+                if (!response.ok) {
+                    throw new Error('저장 실패');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ 가게 정보가 저장되었습니다!\n다음에 이 페이지를 열면 자동으로 입력됩니다.');
+                } else {
+                    throw new Error(result.error || '저장 실패');
+                }
+
+            } catch (error) {
+                console.error('가게 정보 저장 오류:', error);
+                alert('❌ 가게 정보 저장에 실패했습니다.\n' + error.message);
+            } finally {
+                // 버튼 복구
+                this.disabled = false;
+                this.textContent = '📌 가게 정보 저장하기 (다음에 자동 입력됨)';
+            }
         });
 
         // 탭 기능

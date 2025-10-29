@@ -428,11 +428,19 @@
         color: #9ca3af;
         letter-spacing: 0.08em;
         text-transform: uppercase;
+        transition: color 0.2s ease;
+      }
+      .auth-user__label:hover {
+        color: var(--naver-green);
       }
       .auth-user__email {
         font-size: 14px;
         font-weight: 600;
         color: #1f2937;
+        transition: color 0.2s ease;
+      }
+      .auth-user__email:hover {
+        color: var(--naver-green);
       }
       .auth-user__logout {
         height: 32px;
@@ -634,8 +642,8 @@
               <div class="auth-user" id="authUser" style="display: none;">
                 <div class="auth-user__avatar" id="userAvatar">U</div>
                 <div class="auth-user__meta">
-                  <span class="auth-user__label">로그인 계정</span>
-                  <span class="auth-user__email" id="userEmail"></span>
+                  <a href="/mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
+                  <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
                 </div>
                 <button class="auth-user__logout" id="logoutBtn" type="button">
                   <i class="fa-solid fa-right-from-bracket"></i>

@@ -1,4 +1,4 @@
-(function () {
+(async function () {
   if (window.authState?.supabase) {
     return; // already initialized
   }
@@ -7,11 +7,28 @@
     return;
   }
 
-  const SUPABASE_URL =
-    window.SUPABASE_URL || "https://ptuzlubgggbgsophfcna.supabase.co";
-  const SUPABASE_ANON_KEY =
-    window.SUPABASE_ANON_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE";
+  // ✅ 보안: 서버 API에서 환경변수를 안전하게 가져옵니다
+  let SUPABASE_URL = window.SUPABASE_URL;
+  let SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+
+  // window에 설정되지 않았으면 서버에서 가져오기
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    try {
+      const response = await fetch('/api/config');
+      const config = await response.json();
+      SUPABASE_URL = config.supabaseUrl;
+      SUPABASE_ANON_KEY = config.supabaseAnonKey;
+    } catch (error) {
+      console.error("[auth] 환경변수를 가져오는데 실패했습니다:", error);
+      return;
+    }
+  }
+
+  // 환경변수가 여전히 없으면 에러
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error("[auth] Supabase 환경변수가 설정되지 않았습니다.");
+    return;
+  }
 
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
