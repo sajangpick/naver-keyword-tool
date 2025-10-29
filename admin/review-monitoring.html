@@ -326,12 +326,14 @@
                                 <th>상태</th>
                                 <th>마지막 크롤링</th>
                                 <th>수집 리뷰</th>
+                                <th>발송 제한</th>
+                                <th>오늘 발송</th>
                                 <th>알림 설정</th>
                             </tr>
                         </thead>
                         <tbody id="monitoringTableBody">
                             <tr>
-                                <td colspan="7" class="loading">데이터 로딩 중...</td>
+                                <td colspan="9" class="loading">데이터 로딩 중...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -500,7 +502,7 @@
                 if (monitoringData.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" class="empty-state">
+                            <td colspan="9" class="empty-state">
                                 <div>📭 등록된 모니터링이 없습니다</div>
                             </td>
                         </tr>
@@ -516,6 +518,29 @@
                     const lastCrawled = m.last_crawled_at ? formatDate(m.last_crawled_at) : '없음';
                     const reviewCount = m.last_review_count || 0;
                     
+                    // 발송 제한 셀렉트
+                    const alertLimit = m.daily_alert_limit !== undefined ? m.daily_alert_limit : 2;
+                    const limitSelect = `
+                        <select 
+                            class="alert-limit-select" 
+                            data-user-id="${m.user_id}"
+                            onchange="updateAlertLimit(this)"
+                            style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; cursor: pointer;"
+                        >
+                            <option value="0" ${alertLimit === 0 ? 'selected' : ''}>알림 끄기</option>
+                            <option value="1" ${alertLimit === 1 ? 'selected' : ''}>1일 1회</option>
+                            <option value="2" ${alertLimit === 2 ? 'selected' : ''}>1일 2회</option>
+                        </select>
+                    `;
+                    
+                    // 오늘 발송 횟수
+                    const alertCount = m.alert_count_today || 0;
+                    const countDisplay = `
+                        <span style="padding: 4px 8px; background: #f0f0f0; border-radius: 4px; font-size: 13px; font-weight: 500;">
+                            ${alertCount} / ${alertLimit}
+                        </span>
+                    `;
+                    
                     const alerts = [];
                     if (m.alert_on_low_rating) alerts.push('저평점');
                     if (m.alert_on_high_rating) alerts.push('고평점');
@@ -530,6 +555,8 @@
                             <td>${status}</td>
                             <td>${lastCrawled}</td>
                             <td>${reviewCount}개</td>
+                            <td>${limitSelect}</td>
+                            <td>${countDisplay}</td>
                             <td>${alertSettings}</td>
                         </tr>
                     `;
@@ -539,11 +566,46 @@
                 console.error('모니터링 리스트 로드 오류:', error);
                 document.getElementById('monitoringTableBody').innerHTML = `
                     <tr>
-                        <td colspan="7" style="text-align: center; color: #e74c3c;">
+                        <td colspan="9" style="text-align: center; color: #e74c3c;">
                             데이터 로드 실패: ${error.message}
                         </td>
                     </tr>
                 `;
+            }
+        }
+        
+        // 발송 제한 설정 업데이트
+        async function updateAlertLimit(selectElement) {
+            const userId = selectElement.dataset.userId;
+            const newLimit = parseInt(selectElement.value);
+            
+            const limitText = newLimit === 0 ? '알림 끄기' : `1일 ${newLimit}회`;
+            
+            if (!confirm(`발송 제한을 '${limitText}'로 변경하시겠습니까?`)) {
+                // 취소하면 원래 값으로 되돌림
+                await loadMonitoringList();
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('review_monitoring')
+                    .update({
+                        daily_alert_limit: newLimit
+                    })
+                    .eq('user_id', userId);
+                
+                if (error) throw error;
+                
+                alert('✅ 발송 제한이 변경되었습니다!');
+                
+                // 테이블 새로고침
+                await loadMonitoringList();
+                
+            } catch (error) {
+                console.error('발송 제한 변경 실패:', error);
+                alert('❌ 변경 실패: ' + error.message);
+                await loadMonitoringList();
             }
         }
 

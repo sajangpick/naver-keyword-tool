@@ -11,6 +11,17 @@
 const { createClient } = require('@supabase/supabase-js');
 const { sendUrgentReviewAlert, sendHighRatingAlert } = require('./kakao-alimtalk');
 
+// Puppeteer 설정 (환경별)
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === "production";
+
+let chromium, puppeteer;
+if (isVercel) {
+    chromium = require("@sparticuz/chromium");
+    puppeteer = require("puppeteer-core");
+} else {
+    puppeteer = require("puppeteer");
+}
+
 // Supabase 클라이언트
 let supabase = null;
 if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -43,41 +54,93 @@ function extractPlaceId(url) {
 }
 
 /**
- * 네이버 플레이스 리뷰 크롤링
- * (기존 chatgpt-blog.js의 크롤링 로직 활용)
+ * 네이버 플레이스 리뷰 크롤링 (4종 전체)
+ * @param {string} placeUrl - 플레이스 URL
+ * @param {boolean} isFirstCrawl - 최초 크롤링 여부 (true면 알림 안 보냄)
  */
-async function crawlPlaceReviews(placeUrl) {
+async function crawlPlaceReviews(placeUrl, isFirstCrawl = false) {
+    let browser = null;
+    
     try {
-        // TODO: 실제 크롤링 구현
-        // 현재는 더미 데이터 반환
+        console.log(`[크롤링 시작] ${placeUrl} (최초: ${isFirstCrawl})`);
         
-        console.log('[크롤링] 플레이스 URL:', placeUrl);
+        // 플레이스 ID 추출
+        const placeId = extractPlaceId(placeUrl);
+        if (!placeId) {
+            throw new Error('유효하지 않은 플레이스 URL');
+        }
         
-        // 실제로는 puppeteer로 크롤링
-        // 지금은 테스트용 더미 데이터
-        const dummyReviews = [
-            {
-                type: 'visitor',
-                external_id: 'dummy_' + Date.now() + '_1',
-                rating: 2,
-                content: '음식은 맛있는데 직원이 불친절했어요. 다시는 안 갈 것 같습니다.',
-                reviewer_name: '김철수',
-                reviewed_at: new Date().toISOString()
-            },
-            {
-                type: 'visitor',
-                external_id: 'dummy_' + Date.now() + '_2',
-                rating: 5,
-                content: '정말 맛있어요! 사장님도 친절하시고 분위기도 좋아요. 강추합니다!',
-                reviewer_name: '이영희',
-                reviewed_at: new Date().toISOString()
-            }
-        ];
+        // 브라우저 실행
+        let launchOptions;
+        if (isVercel) {
+            const executablePath = await chromium.executablePath();
+            launchOptions = {
+                args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+                defaultViewport: { width: 412, height: 915 },
+                executablePath,
+                headless: chromium.headless,
+            };
+        } else {
+            launchOptions = {
+                args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+                defaultViewport: { width: 412, height: 915 },
+                headless: true,
+            };
+        }
+        
+        browser = await puppeteer.launch(launchOptions);
+        const page = await browser.newPage();
+        await page.setUserAgent(
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
+        );
+        page.setDefaultTimeout(30000);
+        
+        // 4종 크롤링 (실패해도 계속 진행)
+        const allReviews = [];
+        
+        // 1. 방문자 리뷰
+        try {
+            const visitorReviews = await crawlVisitorReviews(page, placeId);
+            allReviews.push(...visitorReviews);
+            console.log(`✅ 방문자 리뷰: ${visitorReviews.length}개`);
+        } catch (error) {
+            console.error('❌ 방문자 리뷰 크롤링 실패:', error.message);
+        }
+        
+        // 2. 블로그 리뷰
+        try {
+            const blogReviews = await crawlBlogReviews(page, placeId);
+            allReviews.push(...blogReviews);
+            console.log(`✅ 블로그 리뷰: ${blogReviews.length}개`);
+        } catch (error) {
+            console.error('❌ 블로그 리뷰 크롤링 실패:', error.message);
+        }
+        
+        // 3. 영수증 리뷰
+        try {
+            const receiptReviews = await crawlReceiptReviews(page, placeId);
+            allReviews.push(...receiptReviews);
+            console.log(`✅ 영수증 리뷰: ${receiptReviews.length}개`);
+        } catch (error) {
+            console.error('❌ 영수증 리뷰 크롤링 실패:', error.message);
+        }
+        
+        // 4. 새소식
+        try {
+            const news = await crawlPlaceNews(page, placeId);
+            allReviews.push(...news);
+            console.log(`✅ 새소식: ${news.length}개`);
+        } catch (error) {
+            console.error('❌ 새소식 크롤링 실패:', error.message);
+        }
+        
+        console.log(`[크롤링 완료] 총 ${allReviews.length}개 수집`);
         
         return {
             success: true,
-            reviews: dummyReviews,
-            total: dummyReviews.length
+            reviews: allReviews,
+            total: allReviews.length,
+            isFirstCrawl
         };
         
     } catch (error) {
@@ -85,8 +148,235 @@ async function crawlPlaceReviews(placeUrl) {
         return {
             success: false,
             error: error.message,
-            reviews: []
+            reviews: [],
+            isFirstCrawl
         };
+    } finally {
+        if (browser) {
+            await browser.close();
+        }
+    }
+}
+
+/**
+ * 1. 방문자 리뷰 크롤링
+ */
+async function crawlVisitorReviews(page, placeId) {
+    try {
+        const url = `https://m.place.naver.com/restaurant/${placeId}/review/visitor`;
+        console.log('[방문자 리뷰 크롤링]', url);
+        
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForTimeout(2000);
+        
+        const reviews = await page.evaluate((pid) => {
+            const items = document.querySelectorAll('.list_review > li, .place_section_content li, .YeINN');
+            const results = [];
+            
+            items.forEach((el, index) => {
+                try {
+                    // 평점
+                    const stars = el.querySelectorAll('.star_score .star_fill, .rating_star.active, .c-stars__item.active');
+                    const rating = stars ? stars.length : 0;
+                    
+                    // 내용
+                    const contentEl = el.querySelector('.review_text, .review_content, .place_section_content, .zPfVt');
+                    const content = contentEl ? contentEl.textContent.trim() : '';
+                    
+                    // 작성자
+                    const authorEl = el.querySelector('.reviewer_name, .user_name, .YzBgS');
+                    const reviewer_name = authorEl ? authorEl.textContent.trim() : '익명';
+                    
+                    // 날짜
+                    const timeEl = el.querySelector('.review_time, .date, .time');
+                    const timeText = timeEl ? timeEl.textContent.trim() : '';
+                    
+                    if (content && content.length > 5) {
+                        results.push({
+                            type: 'visitor',
+                            external_id: `visitor_${pid}_${Date.now()}_${index}`,
+                            rating: rating || 0,
+                            content: content.substring(0, 500),
+                            reviewer_name: reviewer_name || '익명',
+                            reviewed_at: new Date().toISOString()
+                        });
+                    }
+                } catch (err) {
+                    console.error('파싱 오류:', err);
+                }
+            });
+            
+            return results;
+        }, placeId);
+        
+        console.log(`[방문자 리뷰] ${reviews.length}개 수집`);
+        return reviews;
+        
+    } catch (error) {
+        console.error('[방문자 리뷰 크롤링 실패]', error);
+        return [];
+    }
+}
+
+/**
+ * 2. 블로그 리뷰 크롤링
+ */
+async function crawlBlogReviews(page, placeId) {
+    try {
+        const url = `https://m.place.naver.com/restaurant/${placeId}/review/ugc`;
+        console.log('[블로그 리뷰 크롤링]', url);
+        
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForTimeout(2000);
+        
+        const reviews = await page.evaluate((pid) => {
+            const items = document.querySelectorAll('.list_review > li, .place_section_content .item, .UORsJ');
+            const results = [];
+            
+            items.forEach((el, index) => {
+                try {
+                    // 블로그는 평점 없음
+                    const rating = 0;
+                    
+                    // 내용
+                    const contentEl = el.querySelector('.review_text, .content, .zPfVt');
+                    const content = contentEl ? contentEl.textContent.trim() : '';
+                    
+                    // 작성자 (블로그 제목)
+                    const titleEl = el.querySelector('.title, .blog_title, .YzBgS');
+                    const reviewer_name = titleEl ? titleEl.textContent.trim() : '블로그';
+                    
+                    if (content && content.length > 10) {
+                        results.push({
+                            type: 'blog',
+                            external_id: `blog_${pid}_${Date.now()}_${index}`,
+                            rating: 0,
+                            content: content.substring(0, 500),
+                            reviewer_name: reviewer_name || '블로그',
+                            reviewed_at: new Date().toISOString()
+                        });
+                    }
+                } catch (err) {
+                    console.error('파싱 오류:', err);
+                }
+            });
+            
+            return results;
+        }, placeId);
+        
+        console.log(`[블로그 리뷰] ${reviews.length}개 수집`);
+        return reviews;
+        
+    } catch (error) {
+        console.error('[블로그 리뷰 크롤링 실패]', error);
+        return [];
+    }
+}
+
+/**
+ * 3. 영수증 리뷰 크롤링
+ */
+async function crawlReceiptReviews(page, placeId) {
+    try {
+        const url = `https://m.place.naver.com/restaurant/${placeId}/review/receipt`;
+        console.log('[영수증 리뷰 크롤링]', url);
+        
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForTimeout(2000);
+        
+        const reviews = await page.evaluate((pid) => {
+            const items = document.querySelectorAll('.list_review > li, .place_section_content li, .YeINN');
+            const results = [];
+            
+            items.forEach((el, index) => {
+                try {
+                    // 평점
+                    const stars = el.querySelectorAll('.star_score .star_fill, .c-stars__item.active');
+                    const rating = stars ? stars.length : 0;
+                    
+                    // 내용
+                    const contentEl = el.querySelector('.review_text, .content, .zPfVt');
+                    const content = contentEl ? contentEl.textContent.trim() : '';
+                    
+                    // 작성자
+                    const authorEl = el.querySelector('.reviewer_name, .user, .YzBgS');
+                    const reviewer_name = authorEl ? authorEl.textContent.trim() : '영수증리뷰';
+                    
+                    if (content && content.length > 5) {
+                        results.push({
+                            type: 'receipt',
+                            external_id: `receipt_${pid}_${Date.now()}_${index}`,
+                            rating: rating || 0,
+                            content: content.substring(0, 500),
+                            reviewer_name: reviewer_name || '영수증리뷰',
+                            reviewed_at: new Date().toISOString()
+                        });
+                    }
+                } catch (err) {
+                    console.error('파싱 오류:', err);
+                }
+            });
+            
+            return results;
+        }, placeId);
+        
+        console.log(`[영수증 리뷰] ${reviews.length}개 수집`);
+        return reviews;
+        
+    } catch (error) {
+        console.error('[영수증 리뷰 크롤링 실패]', error);
+        return [];
+    }
+}
+
+/**
+ * 4. 새소식 크롤링
+ */
+async function crawlPlaceNews(page, placeId) {
+    try {
+        const url = `https://m.place.naver.com/restaurant/${placeId}/feed`;
+        console.log('[새소식 크롤링]', url);
+        
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForTimeout(2000);
+        
+        const news = await page.evaluate((pid) => {
+            const items = document.querySelectorAll('.place_section_content .item, .feed_item, .UORsJ');
+            const results = [];
+            
+            items.forEach((el, index) => {
+                try {
+                    // 새소식은 평점 없음
+                    const rating = 0;
+                    
+                    // 내용
+                    const contentEl = el.querySelector('.text, .content, .zPfVt');
+                    const content = contentEl ? contentEl.textContent.trim() : '';
+                    
+                    if (content && content.length > 10) {
+                        results.push({
+                            type: 'news',
+                            external_id: `news_${pid}_${Date.now()}_${index}`,
+                            rating: 0,
+                            content: content.substring(0, 500),
+                            reviewer_name: '사장님',
+                            reviewed_at: new Date().toISOString()
+                        });
+                    }
+                } catch (err) {
+                    console.error('파싱 오류:', err);
+                }
+            });
+            
+            return results;
+        }, placeId);
+        
+        console.log(`[새소식] ${news.length}개 수집`);
+        return news;
+        
+    } catch (error) {
+        console.error('[새소식 크롤링 실패]', error);
+        return [];
     }
 }
 
@@ -137,8 +427,9 @@ function detectKeywords(content, keywords) {
 
 /**
  * 리뷰 저장 및 알림 발송
+ * @param {boolean} skipAlert - true면 알림 발송 건너뜀 (최초 크롤링)
  */
-async function processNewReview(userId, monitoringId, monitoring, review) {
+async function processNewReview(userId, monitoringId, monitoring, review, skipAlert = false) {
     try {
         // 긴급 여부 판별
         const isUrgent = review.rating <= 2;
@@ -194,11 +485,12 @@ async function processNewReview(userId, monitoringId, monitoring, review) {
             console.log('[키워드 감지 알림 발송 예정]', detectedKeywords);
         }
         
-        // 카카오톡 알림 발송
-        if (shouldSendAlert) {
+        // 카카오톡 알림 발송 (skipAlert이면 건너뜀)
+        if (shouldSendAlert && !skipAlert) {
             const alertData = {
                 id: alert.id,
                 place_name: monitoring.place_name || '내 가게',
+                place_url: monitoring.place_url,
                 rating: review.rating,
                 content: review.content,
                 reviewer_name: review.reviewer_name,
@@ -210,6 +502,10 @@ async function processNewReview(userId, monitoringId, monitoring, review) {
             } else if (isHighRating) {
                 await sendHighRatingAlert(userId, alertData);
             }
+        }
+        
+        if (skipAlert) {
+            console.log('[알림 건너뜀] 최초 크롤링');
         }
         
         return { success: true, alert };
@@ -229,8 +525,9 @@ async function crawlSingleMonitoring(monitoring) {
     try {
         console.log(`\n[크롤링 시작] ${monitoring.place_name || monitoring.place_url}`);
         
-        // 1. 리뷰 크롤링
-        const crawlResult = await crawlPlaceReviews(monitoring.place_url);
+        // 1. 리뷰 크롤링 (isFirstCrawl 플래그 전달)
+        const isFirstCrawl = monitoring.isFirstCrawl || false;
+        const crawlResult = await crawlPlaceReviews(monitoring.place_url, isFirstCrawl);
         
         if (!crawlResult.success) {
             throw new Error(crawlResult.error);
@@ -242,11 +539,15 @@ async function crawlSingleMonitoring(monitoring) {
         // 3. 새 리뷰 처리 (저장 + 알림)
         let processedCount = 0;
         for (const review of newReviews) {
+            // ⚠️ isFirstCrawl이면 알림 안 보냄!
+            const skipAlert = crawlResult.isFirstCrawl;
+            
             const result = await processNewReview(
                 monitoring.user_id,
                 monitoring.id,
                 monitoring,
-                review
+                review,
+                skipAlert  // 추가!
             );
             if (result.success) processedCount++;
         }
@@ -513,8 +814,12 @@ module.exports = async (req, res) => {
                     
                     if (error) throw error;
                     
-                    // 최초 크롤링 실행
-                    setTimeout(() => crawlSingleMonitoring(data), 1000);
+                    // ✅ 최초 크롤링 실행 (isFirstCrawl = true, 알림 안 보냄)
+                    setTimeout(async () => {
+                        const monitoringWithFlag = { ...data, isFirstCrawl: true };
+                        await crawlSingleMonitoring(monitoringWithFlag);
+                        console.log(`[최초 크롤링 완료] ${data.place_name}`);
+                    }, 1000);
                     
                     res.json({ success: true, monitoring: data, created: true });
                 }

@@ -20,6 +20,83 @@ const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
 const KAKAO_SENDER_KEY = process.env.KAKAO_SENDER_KEY;  // 발신 프로필 키
 
 /**
+ * 발송 제한 체크 및 카운트 관리
+ * @param {string} userId - 사용자 ID
+ * @returns {object} { canSend: boolean, reason: string }
+ */
+async function checkAndUpdateAlertLimit(userId) {
+    try {
+        if (!supabase) {
+            console.error('[발송 제한] Supabase 클라이언트 없음');
+            return { canSend: false, reason: 'no_supabase' };
+        }
+        
+        // 1. 현재 설정 조회
+        const { data: monitoring, error } = await supabase
+            .from('review_monitoring')
+            .select('daily_alert_limit, alert_count_today, last_alert_date')
+            .eq('user_id', userId)
+            .single();
+        
+        if (error || !monitoring) {
+            console.log('[발송 제한] 모니터링 설정 없음:', error?.message);
+            return { canSend: false, reason: 'no_monitoring' };
+        }
+        
+        // 2. 발송 제한이 0이면 알림 끄기
+        if (monitoring.daily_alert_limit === 0) {
+            console.log('[발송 제한] 알림 꺼짐 (limit=0)');
+            return { canSend: false, reason: 'alert_disabled' };
+        }
+        
+        // 3. 날짜 체크 (자정 지나면 초기화)
+        const today = new Date().toISOString().split('T')[0];
+        const lastDate = monitoring.last_alert_date 
+            ? new Date(monitoring.last_alert_date).toISOString().split('T')[0]
+            : null;
+        
+        let currentCount = monitoring.alert_count_today || 0;
+        
+        if (lastDate !== today) {
+            // 날짜 바뀜 → 초기화
+            console.log('[발송 제한] 날짜 변경, 카운트 초기화');
+            currentCount = 0;
+            
+            await supabase
+                .from('review_monitoring')
+                .update({
+                    alert_count_today: 0,
+                    last_alert_date: today
+                })
+                .eq('user_id', userId);
+        }
+        
+        // 4. 한도 체크
+        if (currentCount >= monitoring.daily_alert_limit) {
+            console.log(`[발송 제한] 오늘 한도 초과 (${currentCount}/${monitoring.daily_alert_limit})`);
+            return { canSend: false, reason: 'daily_limit_exceeded' };
+        }
+        
+        // 5. 발송 가능 → 카운트 +1
+        console.log(`[발송 제한] 발송 가능 (${currentCount + 1}/${monitoring.daily_alert_limit})`);
+        
+        await supabase
+            .from('review_monitoring')
+            .update({
+                alert_count_today: currentCount + 1,
+                last_alert_date: today
+            })
+            .eq('user_id', userId);
+        
+        return { canSend: true, reason: 'ok' };
+        
+    } catch (error) {
+        console.error('[발송 제한 체크 실패]', error);
+        return { canSend: false, reason: 'error' };
+    }
+}
+
+/**
  * 카카오 알림톡 발송
  * 
  * @param {string} phone - 수신자 전화번호 (01012345678)
@@ -136,21 +213,31 @@ function getButtonName(templateCode) {
  */
 async function sendUrgentReviewAlert(userId, review) {
     try {
+        console.log('[알림톡] 긴급 리뷰 발송 시도:', review.id);
+        
+        // ✅ 발송 제한 체크 (맨 앞에 추가!)
+        const limitCheck = await checkAndUpdateAlertLimit(userId);
+        if (!limitCheck.canSend) {
+            console.log(`[알림톡 건너뜀] ${limitCheck.reason}`);
+            return { success: false, reason: limitCheck.reason };
+        }
+        
         // 사용자 전화번호 가져오기
         const { data: profile, error } = await supabase
             .from('profiles')
-            .select('phone')
+            .select('phone, phone_number')
             .eq('id', userId)
             .single();
 
-        if (error || !profile?.phone) {
+        const phoneNumber = profile?.phone_number || profile?.phone;
+        if (error || !phoneNumber) {
             console.error('전화번호를 찾을 수 없습니다:', userId);
             return { success: false, error: 'Phone number not found' };
         }
 
         // 알림톡 발송
         const result = await sendAlimtalk(
-            profile.phone,
+            phoneNumber,
             'review_urgent_001',
             {
                 place_name: review.place_name,
@@ -185,18 +272,29 @@ async function sendUrgentReviewAlert(userId, review) {
  */
 async function sendHighRatingAlert(userId, review) {
     try {
+        console.log('[알림톡] 고평점 리뷰 발송 시도:', review.id);
+        
+        // ✅ 발송 제한 체크
+        const limitCheck = await checkAndUpdateAlertLimit(userId);
+        if (!limitCheck.canSend) {
+            console.log(`[알림톡 건너뜀] ${limitCheck.reason}`);
+            return { success: false, reason: limitCheck.reason };
+        }
+        
         const { data: profile } = await supabase
             .from('profiles')
-            .select('phone')
+            .select('phone, phone_number')
             .eq('id', userId)
             .single();
 
-        if (!profile?.phone) {
+        const phoneNumber = profile?.phone_number || profile?.phone;
+        if (!phoneNumber) {
+            console.error('전화번호를 찾을 수 없습니다:', userId);
             return { success: false, error: 'Phone number not found' };
         }
 
         const result = await sendAlimtalk(
-            profile.phone,
+            phoneNumber,
             'review_high_001',
             {
                 place_name: review.place_name,
