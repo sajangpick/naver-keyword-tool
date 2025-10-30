@@ -546,36 +546,58 @@
 
     <script>
       let currentHours = 24;
+      let supabase = null; // 전역 변수로 선언
       
-      // Supabase 클라이언트 초기화
-      const supabase = window.supabase;
+      // auth-state.js 로드 대기 헬퍼 함수
+      async function waitForAuth() {
+        let attempts = 0;
+        while (!window.authState?.supabase && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        if (!window.authState?.supabase) {
+          throw new Error('Supabase 초기화 실패');
+        }
+        return window.authState.supabase;
+      }
 
       // 페이지 로드 시 데이터 가져오기
       document.addEventListener('DOMContentLoaded', async () => {
-        // 관리자 권한 확인
-        const user = await checkAuth();
-        if (!user) {
-          alert('관리자 권한이 필요합니다.');
-          window.location.href = '/login.html';
-          return;
-        }
+        try {
+          // Supabase 초기화 대기
+          supabase = await waitForAuth();
+          
+          // 관리자 권한 확인
+          const user = await checkAuth();
+          if (!user) {
+            alert('관리자 권한이 필요합니다. 로그인 페이지로 이동합니다.');
+            window.location.href = '/login.html';
+            return;
+          }
 
-        // 데이터 로드
-        await loadAllData();
+          // 데이터 로드
+          await loadAllData();
 
-        // 시간 선택 버튼 이벤트
-        document.querySelectorAll('.time-btn').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentHours = parseInt(e.target.dataset.hours);
-            await loadAllData();
+          // 시간 선택 버튼 이벤트
+          document.querySelectorAll('.time-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+              e.target.classList.add('active');
+              currentHours = parseInt(e.target.dataset.hours);
+              await loadAllData();
+            });
           });
-        });
+        } catch (error) {
+          console.error('초기화 오류:', error);
+          alert('페이지 초기화 중 오류가 발생했습니다.');
+          window.location.href = '/login.html';
+        }
       });
 
       // 관리자 권한 확인
       async function checkAuth() {
+        if (!supabase) return null;
+        
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return null;
 

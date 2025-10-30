@@ -207,6 +207,7 @@ app.use("/css", express.static(path.join(__dirname, "css")));
 app.use("/js", express.static(path.join(__dirname, "js")));
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use("/admin", express.static(path.join(__dirname, "admin")));
 
 // 주요 HTML 라우트 화이트리스트 서빙
 function sendHtml(res, file) {

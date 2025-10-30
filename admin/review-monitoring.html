@@ -400,9 +400,8 @@
 
     <script>
         // Supabase 초기화
-        const supabaseUrl = 'https://lpqhtnwhqnymgqetpxrd.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcWh0bndocW55bWdxZXRweHJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg2ODU0NDUsImV4cCI6MjA0NDI2MTQ0NX0.YxzRlhWG8p1iN3m36Bn-83ab-b4ce2ea94967';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        // Supabase 클라이언트 초기화 (auth-state.js에서 가져오기)
+        const supabase = window.authState?.supabase;
 
         let currentTab = 'monitoring';
         let monitoringData = [];

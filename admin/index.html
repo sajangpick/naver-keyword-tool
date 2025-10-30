@@ -506,7 +506,7 @@
     <script src="/assets/auth-state.js"></script>
 
     <script>
-      const supabase = window.supabase;
+      const supabase = window.authState?.supabase;
 
       // 페이지 로드 시 실행
       document.addEventListener('DOMContentLoaded', async () => {

@@ -684,7 +684,7 @@
     <script src="/assets/auth-state.js"></script>
 
     <script>
-      const supabase = window.supabase;
+      const supabase = window.authState?.supabase;
       let currentFilters = {
         severity: 'all',
         type: 'all',

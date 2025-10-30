@@ -541,7 +541,7 @@
     <script src="/assets/auth-state.js"></script>
 
     <script>
-      const supabase = window.supabase;
+      const supabase = window.authState?.supabase;
       let currentDays = 7;
       let dauChart, hourlyChart, funnelChart;
 
