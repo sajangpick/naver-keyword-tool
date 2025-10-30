@@ -1358,17 +1358,35 @@
         const container = document.getElementById('detail-reviews-container');
         
         try {
-          // A안: Supabase 직접 호출
-          const { data: reviews, error } = await supabase
-            .from('review_responses')
-            .select('*')
-            .eq('user_id', memberId)
-            .order('created_at', { ascending: false })
-            .limit(10);
+          console.log('🔍 리뷰 내역 조회 시작:', memberId);
+          
+          // 타임아웃 추가 (10초)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('요청 시간 초과 (10초)')), 10000)
+          );
+          
+          // Supabase 쿼리를 Promise로 감싸기
+          const queryPromise = (async () => {
+            return await supabase
+              .from('review_responses')
+              .select('*')
+              .eq('user_id', memberId)
+              .order('created_at', { ascending: false })
+              .limit(10);
+          })();
+          
+          // Race between timeout and query
+          const { data: reviews, error } = await Promise.race([queryPromise, timeoutPromise]);
+          
+          console.log('📊 리뷰 데이터:', reviews, '에러:', error);
 
-          if (error) throw new Error(error.message);
+          if (error) {
+            console.error('❌ Supabase 에러:', error);
+            throw new Error(error.message);
+          }
 
           if (!reviews || reviews.length === 0) {
+            console.log('ℹ️ 리뷰 데이터 없음');
             container.innerHTML = `
               <div class="activity-empty">
                 <i class="fas fa-inbox"></i>
@@ -1378,11 +1396,12 @@
             return;
           }
 
+          console.log('✅ 리뷰 데이터 로드 성공:', reviews.length + '개');
           container.innerHTML = reviews.map(review => `
             <div class="activity-item">
               <div class="activity-header">
                 <div class="activity-title">
-                  ${review.place_name || '식당명 없음'}
+                  ${review.place_id || '플레이스 정보 없음'}
                 </div>
                 <div class="activity-date">
                   ${new Date(review.created_at).toLocaleString('ko-KR', { 
@@ -1395,11 +1414,11 @@
                 </div>
               </div>
               <div class="activity-content">
-                ${review.customer_review || '-'}
+                ${review.customer_review ? review.customer_review.substring(0, 100) + '...' : '-'}
               </div>
               <div class="activity-meta">
-                <span><i class="fas fa-star"></i> ${review.review_rating || '-'}점</span>
-                ${review.response_text ? '<span><i class="fas fa-check-circle"></i> 답글 생성됨</span>' : '<span><i class="fas fa-clock"></i> 답글 대기</span>'}
+                <span><i class="fas fa-comment"></i> 리뷰 답글</span>
+                ${review.ai_response ? '<span><i class="fas fa-check-circle"></i> 답글 생성됨</span>' : '<span><i class="fas fa-clock"></i> 답글 대기</span>'}
               </div>
             </div>
           `).join('');
@@ -1410,6 +1429,9 @@
             <div class="activity-empty">
               <i class="fas fa-exclamation-triangle"></i>
               <div>리뷰 내역을 불러오는 중 오류가 발생했습니다</div>
+              <div style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                ${error.message || '알 수 없는 오류'}
+              </div>
             </div>
           `;
         }
@@ -1419,17 +1441,35 @@
         const container = document.getElementById('detail-blogs-container');
         
         try {
-          // A안: Supabase 직접 호출
-          const { data: blogs, error } = await supabase
-            .from('blog_posts')
-            .select('*')
-            .eq('user_id', memberId)
-            .order('created_at', { ascending: false })
-            .limit(10);
+          console.log('🔍 블로그 내역 조회 시작:', memberId);
+          
+          // 타임아웃 추가 (10초)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('요청 시간 초과 (10초)')), 10000)
+          );
+          
+          // Supabase 쿼리를 Promise로 감싸기
+          const queryPromise = (async () => {
+            return await supabase
+              .from('blog_posts')
+              .select('*')
+              .eq('user_id', memberId)
+              .order('created_at', { ascending: false })
+              .limit(10);
+          })();
+          
+          // Race between timeout and query
+          const { data: blogs, error } = await Promise.race([queryPromise, timeoutPromise]);
+          
+          console.log('📊 블로그 데이터:', blogs, '에러:', error);
 
-          if (error) throw new Error(error.message);
+          if (error) {
+            console.error('❌ Supabase 에러:', error);
+            throw new Error(error.message);
+          }
 
           if (!blogs || blogs.length === 0) {
+            console.log('ℹ️ 블로그 데이터 없음');
             container.innerHTML = `
               <div class="activity-empty">
                 <i class="fas fa-inbox"></i>
@@ -1439,6 +1479,7 @@
             return;
           }
 
+          console.log('✅ 블로그 데이터 로드 성공:', blogs.length + '개');
           container.innerHTML = blogs.map(blog => {
             const statusText = blog.status === 'published' ? '발행됨' : 
                               blog.status === 'scheduled' ? '예약됨' : '임시저장';
@@ -1479,6 +1520,9 @@
             <div class="activity-empty">
               <i class="fas fa-exclamation-triangle"></i>
               <div>블로그 내역을 불러오는 중 오류가 발생했습니다</div>
+              <div style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                ${error.message || '알 수 없는 오류'}
+              </div>
             </div>
           `;
         }
