@@ -192,10 +192,24 @@
     const isAdmin = await checkAdminAuth();
     
     if (!isAdmin) {
-      alert('관리자 권한이 필요합니다.\n로그인 페이지로 이동합니다.');
+      // 중복 alert 방지
+      if (window.__adminAuthChecked) {
+        return false;
+      }
+      window.__adminAuthChecked = true;
+      
       // 현재 페이지 URL을 redirect 파라미터로 전달
       const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/login.html?redirect=${currentUrl}`;
+      
+      // confirm으로 변경 (더 안전)
+      const shouldRedirect = confirm('관리자 권한이 필요합니다.\n로그인 페이지로 이동하시겠습니까?');
+      
+      if (shouldRedirect) {
+        window.location.replace(`/login.html?redirect=${currentUrl}`);
+      } else {
+        window.location.replace('/');
+      }
+      
       return false;
     }
     
