@@ -387,7 +387,7 @@
                         type="url" 
                         id="placeUrl" 
                         name="placeUrl" 
-                        placeholder="예: https://map.naver.com/p/entry/place/..."
+                        placeholder="예: https://map.naver.com 또는 https://m.place.naver.com"
                     />
                     <button type="button" id="crawlPlaceBtn" style="margin-top: 8px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; display: none;">
                         🔍 이 플레이스 정보 가져오기
@@ -964,9 +964,16 @@
                     return;
                 }
 
-                // URL 유효성 검사
-                if (!placeUrl.includes('map.naver.com') && !placeUrl.includes('naver.me')) {
-                    alert('네이버 플레이스 URL을 입력해주세요.');
+                // URL 유효성 검사 (데스크톱, 모바일, 단축 URL 모두 허용)
+                const isMapNaver = placeUrl.includes('map.naver.com');
+                const isMobilePlace = placeUrl.includes('m.place.naver.com');
+                const isPlace = placeUrl.includes('place.naver.com');
+                const isNaverMe = placeUrl.includes('naver.me');
+                
+                console.log('URL 검사:', { isMapNaver, isMobilePlace, isPlace, isNaverMe });
+                
+                if (!isMapNaver && !isMobilePlace && !isPlace && !isNaverMe) {
+                    alert('네이버 플레이스 URL을 입력해주세요.\n예: map.naver.com, m.place.naver.com, naver.me');
                     return;
                 }
 
@@ -1048,8 +1055,9 @@
             const mainMenu = document.getElementById(mainMenuId).value.trim();
             const landmarks = document.getElementById(landmarksId).value.trim();
 
-            if (!companyName || !companyAddress || !mainMenu) {
-                alert('업체명, 업체주소, 대표메뉴를 먼저 입력해주세요.');
+            // 최소한 업체명만 입력되어 있으면 OK
+            if (!companyName) {
+                alert('최소한 업체명은 입력해주세요.');
                 return;
             }
 
@@ -1328,12 +1336,23 @@
                     })
                 });
 
+                const generateText = await generateResponse.text();
+                console.log('생성 응답:', generateText);
+
                 if (!generateResponse.ok) {
-                    const errorData = await generateResponse.json();
-                    throw new Error(errorData.error || '블로그 생성 실패');
+                    try {
+                        const errorData = JSON.parse(generateText);
+                        throw new Error(errorData.error || '블로그 생성 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${generateText.substring(0, 200)}`);
+                    }
                 }
 
-                const generateResult = await generateResponse.json();
+                const generateResult = JSON.parse(generateText);
+                if (!generateResult.success) {
+                    throw new Error(generateResult.error || '블로그 생성 실패');
+                }
+
                 const blogContentText = generateResult.data;
                 const metadata = generateResult.metadata || {};
                 
@@ -1373,13 +1392,13 @@
             const companyAddress = formData.get("companyAddress");
             const businessHours = formData.get("businessHours");
             const phoneNumber = formData.get("phoneNumber") || "";
-            const mainMenu = formData.get("mainMenu");
+            const mainMenu = formData.get("mainMenu") || "";
             const landmarks = formData.get("landmarks") || "";
             const keywords = formData.get("keywords") || "";
 
-        // 유효성 검사
-            if (!companyName || !companyAddress || !businessHours || !mainMenu) {
-                alert("업체명, 업체주소, 영업시간, 대표메뉴를 모두 입력해주세요.");
+        // 최소한 업체명만 입력되어 있으면 OK
+            if (!companyName) {
+                alert("최소한 업체명은 입력해주세요. 더 많은 정보를 입력할수록 블로그 질이 좋아집니다!");
           return;
         }
 
@@ -1415,12 +1434,23 @@
                     })
                 });
 
+                const crawlText = await crawlResponse.text();
+                console.log('크롤링 응답:', crawlText);
+
                 if (!crawlResponse.ok) {
-                    const errorData = await crawlResponse.json();
-                    throw new Error(errorData.error || '플레이스 정보 분석 실패');
+                    try {
+                        const errorData = JSON.parse(crawlText);
+                        throw new Error(errorData.error || '플레이스 정보 분석 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${crawlText.substring(0, 200)}`);
+                    }
                 }
 
-                const crawlResult = await crawlResponse.json();
+                const crawlResult = JSON.parse(crawlText);
+                if (!crawlResult.success) {
+                    throw new Error(crawlResult.error || '플레이스 정보 분석 실패');
+                }
+
                 globalPlaceInfo = crawlResult.data;
                 console.log('플레이스 정보:', globalPlaceInfo);
 
@@ -1440,12 +1470,23 @@
                     })
                 });
 
+                const analyzeText = await analyzeResponse.text();
+                console.log('분석 응답:', analyzeText);
+
                 if (!analyzeResponse.ok) {
-                    const errorData = await analyzeResponse.json();
-                    throw new Error(errorData.error || '메뉴 분석 실패');
+                    try {
+                        const errorData = JSON.parse(analyzeText);
+                        throw new Error(errorData.error || '메뉴 분석 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${analyzeText.substring(0, 200)}`);
+                    }
                 }
 
-                const analyzeResult = await analyzeResponse.json();
+                const analyzeResult = JSON.parse(analyzeText);
+                if (!analyzeResult.success) {
+                    throw new Error(analyzeResult.error || '메뉴 분석 실패');
+                }
+
                 globalMenuAnalysis = analyzeResult.data;
                 console.log('메뉴 분석:', globalMenuAnalysis);
 
@@ -1466,12 +1507,23 @@
                     })
                 });
 
+                const recommendText = await recommendResponse.text();
+                console.log('추천 응답:', recommendText);
+
                 if (!recommendResponse.ok) {
-                    const errorData = await recommendResponse.json();
-                    throw new Error(errorData.error || '주제 추천 실패');
+                    try {
+                        const errorData = JSON.parse(recommendText);
+                        throw new Error(errorData.error || '주제 추천 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${recommendText.substring(0, 200)}`);
+                    }
                 }
 
-                const recommendResult = await recommendResponse.json();
+                const recommendResult = JSON.parse(recommendText);
+                if (!recommendResult.success) {
+                    throw new Error(recommendResult.error || '주제 추천 실패');
+                }
+
                 const topics = recommendResult.data.topics;
                 console.log('추천 주제:', topics);
 
@@ -1493,17 +1545,17 @@
 
             const formData = new FormData(this);
             const companyName = formData.get("companyName");
-            const companyAddress = formData.get("companyAddress");
-            const businessHours = formData.get("businessHours");
+            const companyAddress = formData.get("companyAddress") || "";
+            const businessHours = formData.get("businessHours") || "";
             const phoneNumber = formData.get("phoneNumber") || "";
-            const mainMenu = formData.get("mainMenu");
+            const mainMenu = formData.get("mainMenu") || "";
             const landmarks = formData.get("landmarks") || "";
             const keywords = formData.get("keywords") || "";
-            const existingBlog = formData.get("existingBlog");
+            const existingBlog = formData.get("existingBlog") || "";
 
-            // 유효성 검사
-            if (!companyName || !companyAddress || !businessHours || !mainMenu) {
-                alert("업체명, 업체주소, 영업시간, 대표메뉴를 모두 입력해주세요.");
+            // 최소한 업체명만 입력되어 있으면 OK
+            if (!companyName) {
+                alert("최소한 업체명은 입력해주세요. 더 많은 정보를 입력할수록 블로그 질이 좋아집니다!");
                 return;
             }
 
@@ -1543,12 +1595,24 @@
                     })
                 });
 
+                // 응답 텍스트를 먼저 받아서 확인
+                const responseText = await response.text();
+                console.log('체험단 리뷰 응답:', responseText);
+
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || '체험단 리뷰 생성 실패');
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        throw new Error(errorData.error || '체험단 리뷰 생성 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${responseText.substring(0, 200)}`);
+                    }
                 }
 
-                const result = await response.json();
+                const result = JSON.parse(responseText);
+                if (!result.success) {
+                    throw new Error(result.error || '체험단 리뷰 생성 실패');
+                }
+
                 const blogContentText = result.data;
                 console.log('생성된 체험단 리뷰:', blogContentText);
                 
@@ -1572,17 +1636,17 @@
 
             const formData = new FormData(this);
             const companyName = formData.get("companyName");
-            const companyAddress = formData.get("companyAddress");
-            const businessHours = formData.get("businessHours");
+            const companyAddress = formData.get("companyAddress") || "";
+            const businessHours = formData.get("businessHours") || "";
             const phoneNumber = formData.get("phoneNumber") || "";
-            const mainMenu = formData.get("mainMenu");
+            const mainMenu = formData.get("mainMenu") || "";
             const landmarks = formData.get("landmarks") || "";
             const keywords = formData.get("keywords") || "";
-            const existingBlog = formData.get("existingBlog");
+            const existingBlog = formData.get("existingBlog") || "";
 
-            // 유효성 검사
-            if (!companyName || !companyAddress || !businessHours || !mainMenu) {
-                alert("업체명, 업체주소, 영업시간, 대표메뉴를 모두 입력해주세요.");
+            // 최소한 업체명만 입력되어 있으면 OK
+            if (!companyName) {
+                alert("최소한 업체명은 입력해주세요. 더 많은 정보를 입력할수록 블로그 질이 좋아집니다!");
                 return;
             }
 
@@ -1622,12 +1686,24 @@
                     })
                 });
 
+                // 응답 텍스트를 먼저 받아서 확인
+                const responseText = await response.text();
+                console.log('방문 후기 응답:', responseText);
+
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || '방문 후기 생성 실패');
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        throw new Error(errorData.error || '방문 후기 생성 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${responseText.substring(0, 200)}`);
+                    }
                 }
 
-                const result = await response.json();
+                const result = JSON.parse(responseText);
+                if (!result.success) {
+                    throw new Error(result.error || '방문 후기 생성 실패');
+                }
+
                 const blogContentText = result.data;
                 console.log('생성된 방문 후기:', blogContentText);
                 

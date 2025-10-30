@@ -425,21 +425,21 @@ async function crawlOrStructurePlaceInfo(url, userInput, userId) {
     }
 
     const placeInfo = {
-        name: userInput.companyName,
-        address: userInput.companyAddress,
+        name: userInput.companyName || '업체명 미입력',
+        address: userInput.companyAddress || '주소 미입력',
         phone: userInput.phone || '',
         rating: 0,
         reviewCount: 0,
         category: userInput.category || '음식점',
         description: userInput.keywords || '',
-        hours: userInput.businessHours,
-        mainMenu: userInput.mainMenu.split(',').map(m => m.trim()),
-        landmarks: userInput.landmarks ? userInput.landmarks.split(',').map(l => l.trim()) : [],
-        keywords: userInput.keywords ? userInput.keywords.split(',').map(k => k.trim()) : [],
+        hours: userInput.businessHours || '영업시간 미입력',
+        mainMenu: userInput.mainMenu ? userInput.mainMenu.split(',').map(m => m.trim()).filter(m => m) : [],
+        landmarks: userInput.landmarks ? userInput.landmarks.split(',').map(l => l.trim()).filter(l => l) : [],
+        keywords: userInput.keywords ? userInput.keywords.split(',').map(k => k.trim()).filter(k => k) : [],
         strengths: '',
         targetCustomers: '',
         atmosphere: '',
-        region: userInput.companyAddress.split(' ').slice(0, 2).join(' ')
+        region: userInput.companyAddress ? userInput.companyAddress.split(' ').slice(0, 2).join(' ') : '지역 미입력'
     };
 
     // 사용자 스타일 및 이전 블로그 분석
@@ -451,16 +451,16 @@ async function crawlOrStructurePlaceInfo(url, userInput, userId) {
     // ChatGPT를 사용하여 정보 보강 (다양성 강화)
     try {
         const prompt = `
-다음은 가게의 기본 정보입니다:
+다음은 가게의 기본 정보입니다 (일부 정보가 없을 수 있습니다):
 
 - 가게명: ${placeInfo.name}
 - 주소: ${placeInfo.address}
 - 영업시간: ${placeInfo.hours}
-- 대표메뉴: ${placeInfo.mainMenu.join(', ')}
-- 주변 랜드마크: ${placeInfo.landmarks.join(', ')}
-- 키워드: ${placeInfo.keywords.join(', ')}
+- 대표메뉴: ${placeInfo.mainMenu.length > 0 ? placeInfo.mainMenu.join(', ') : '미입력'}
+- 주변 랜드마크: ${placeInfo.landmarks.length > 0 ? placeInfo.landmarks.join(', ') : '미입력'}
+- 키워드: ${placeInfo.keywords.length > 0 ? placeInfo.keywords.join(', ') : '미입력'}
 
-위 정보를 바탕으로 다음을 추론해주세요:
+위 정보를 바탕으로 다음을 추론해주세요 (정보가 부족하면 일반적인 내용으로 채워주세요):
 
 1. 가게의 주요 강점 3가지 (문장으로)
 2. 예상 주요 고객층 (연령대, 방문 목적 등)
@@ -517,8 +517,8 @@ async function analyzeMainMenu(placeInfo, userId) {
 - 가게명: ${placeInfo.name}
 - 위치: ${placeInfo.address}
 - 카테고리: ${placeInfo.category}
-- 대표 메뉴: ${placeInfo.mainMenu.join(', ')}
-- 가게 특징: ${placeInfo.keywords.join(', ')}
+- 대표 메뉴: ${placeInfo.mainMenu.length > 0 ? placeInfo.mainMenu.join(', ') : '미입력 (일반적인 메뉴로 추론)'}
+- 가게 특징: ${placeInfo.keywords.length > 0 ? placeInfo.keywords.join(', ') : '미입력 (업종 특성 참고)'}
 
 위 정보를 바탕으로 다음을 분석해주세요:
 
@@ -771,16 +771,16 @@ ${previousAnalysis.commonExpressions.join('\n')}
    
    **결론 (700자)** - 초대와 안내
    - 손님 여러분을 기다리는 마음
-   - 방문 안내 (위치, 영업시간, 전화번호)
-   - 📍 위치: ${placeInfo.address}
-   - ⏰ 영업시간: ${placeInfo.hours}
-   - 📞 문의: ${placeInfo.phone || '전화번호 없음'}
+   - 방문 안내 (입력된 정보만 포함, 없으면 생략)
+   - 📍 위치: ${placeInfo.address !== '주소 미입력' ? placeInfo.address : '(미입력)'}
+   - ⏰ 영업시간: ${placeInfo.hours !== '영업시간 미입력' ? placeInfo.hours : '(미입력)'}
+   - 📞 문의: ${placeInfo.phone || '(미입력)'}
    - 감사 인사와 다음 방문 기대
 
 3. **필수 포함 요소**
    - 가게 이름 최소 3회 자연스럽게 언급
-   - 대표 메뉴 구체적으로 소개
-   - 글 마지막에 반드시 위치, 영업시간, 전화번호 포함 (이모티콘 포함)
+   - 대표 메뉴가 있으면 구체적으로 소개 (없으면 일반적인 메뉴 추론)
+   - 글 마지막에 입력된 정보(위치, 영업시간, 전화번호) 포함 (이모티콘 포함, 미입력인 경우 자연스럽게 표시)
    - 평점과 리뷰 수 자연스럽게 언급
 
 4. **스타일링**
@@ -874,7 +874,6 @@ async function generateReviewTeamPost(storeInfo, existingBlog, userId, promotion
     const context = getCurrentContext();
     const blogStyle = await getUserBlogStyle(userId);
     const previousAnalysis = await analyzePreviousBlogs(userId);
-    const writingAngle = getRandomAngle();
 
     const stylePrompt = blogStyleToPrompt(blogStyle);
 
@@ -907,23 +906,28 @@ async function generateReviewTeamPost(storeInfo, existingBlog, userId, promotion
     }
 
     const prompt = `
-[역할]
-당신은 ${storeInfo.companyName}을(를) 체험한 블로거입니다. 체험단으로 방문하여 솔직하고 자세한 리뷰를 작성합니다.
+[역할] ⭐⭐⭐ 매우 중요!
+당신은 ${storeInfo.companyName}의 사장입니다.
+"체험단 분들을 초대하고 싶어서" 체험단 리뷰 형식으로 글을 작성합니다.
+하지만 실제로는 사장님이 직접 쓰는 것이므로, 사장님 입장에서 손님들에게 소개하는 글입니다.
 
-[글쓰기 관점] ⭐
-${writingAngle.name}: ${writingAngle.description}
+[필수 작성 규칙] ⚠️
+- "저희 가게에 체험단 분들을 초대하고 싶어요" 같은 사장님 표현 사용
+- "이런 분들에게 추천드립니다" 같은 초대 표현 사용
+- 절대 "체험해보고 왔어요", "다녀왔습니다" 같은 손님 표현 금지
+- "저희 가게", "우리 가게" 같은 사장님 시점 유지
 
 [블로그 스타일]
 ${stylePrompt}
 
-[가게 정보]
+[가게 정보] (일부 정보가 없을 수 있으며, 그럴 경우 일반적인 내용으로 자연스럽게 작성)
 - 가게명: ${storeInfo.companyName}
-- 위치: ${storeInfo.companyAddress}
-- 영업시간: ${storeInfo.businessHours}
+- 위치: ${storeInfo.companyAddress || '미입력 (가게명으로 추론)'}
+- 영업시간: ${storeInfo.businessHours || '미입력 (일반적인 영업시간으로 추론)'}
 - 전화번호: ${storeInfo.phoneNumber || '미입력'}
-- 대표메뉴: ${storeInfo.mainMenu}
-- 주변 랜드마크: ${storeInfo.landmarks || '없음'}
-- 키워드: ${storeInfo.keywords || '없음'}
+- 대표메뉴: ${storeInfo.mainMenu || '미입력 (가게 특성으로 추론)'}
+- 주변 랜드마크: ${storeInfo.landmarks || '미입력'}
+- 키워드: ${storeInfo.keywords || '미입력'}
 ${promotionPrompt}
 
 [현재 상황]
@@ -932,7 +936,7 @@ ${promotionPrompt}
 - 날짜: ${context.date}
 
 [기존 블로그 글 - 스타일 참고용]
-${existingBlog}
+${existingBlog || '(없음 - 기본 스타일로 작성)'}
 
 ${previousAnalysis.commonExpressions.length > 0 ? `
 [피해야 할 표현]
@@ -941,32 +945,51 @@ ${previousAnalysis.commonExpressions.join(', ')}
 ` : ''}
 
 [미션]
-위 기존 블로그 글의 스타일(톤, 문체, 구조)을 학습하되,
-${writingAngle.name} 관점에서 ${storeInfo.companyName}의 체험단 리뷰를 작성해주세요.
+체험단 분들을 초대하고 싶은 사장님의 마음으로,
+${storeInfo.companyName}를 소개하는 글을 작성해주세요.
+정보가 부족한 부분은 가게명과 업종을 참고하여 자연스럽게 채워주세요.
 
 [작성 가이드라인]
 
-1. **톤 & 매너**
-   - 기존 블로그의 말투와 문체를 참고하되, ${writingAngle.tone} 톤 유지
-   - 이전 글과 다른 시작으로 작성
+1. **톤 & 매너** (사장님 입장)
+   - "저희 가게에 체험단 분들을 초대하고 싶습니다" 같은 사장님 표현
+   - 따뜻하고 친근한 사장님의 목소리
+   - 절대 손님 시점 금지
    
 2. **글 구조** (1500-2000자)
-   **서론 (200-300자)**: 체험단 방문 계기
-   **본론 (1000-1200자)**: 매장, 메뉴, 서비스, 특별한 점
-   **결론 (300-500자)**: 만족도, 추천 대상, 재방문 의사
+   **서론 (200-300자)**: 체험단 초대 인사 (사장님 시점)
+   - "안녕하세요, ${storeInfo.companyName} 사장입니다"
+   - "체험단 분들을 초대하고 싶어 글을 씁니다"
+   
+   **본론 (1000-1200자)**: 가게 자랑과 메뉴 소개 (사장님 시점)
+   - "저희 가게는 이런 점이 특별합니다"
+   - "이런 메뉴를 준비했습니다"
+   
+   **결론 (300-500자)**: 초대와 기대 (사장님 시점)
+   - "많은 분들의 방문을 기다립니다"
+   - "체험단 분들의 솔직한 리뷰 부탁드립니다"
 
 3. **필수 포함 요소**
    - 가게 이름 3-5회 언급
-   - 대표 메뉴 상세 리뷰
-   - 실제 방문 경험
-   - 글 마지막에 반드시 위치, 영업시간, 전화번호 포함
-   - 📍 위치: ${storeInfo.companyAddress}
-   - ⏰ 영업시간: ${storeInfo.businessHours}
-   - 📞 문의: ${storeInfo.phoneNumber || '전화번호 없음'}
+   - 대표 메뉴가 있으면 상세 소개 (없으면 추론)
+   - 글 마지막에 입력된 정보 포함 (없는 정보는 생략 가능)
+   - 📍 위치: ${storeInfo.companyAddress || '(미입력)'}
+   - ⏰ 영업시간: ${storeInfo.businessHours || '(미입력)'}
+   - 📞 문의: ${storeInfo.phoneNumber || '(미입력)'}
 
 4. **해시태그** (10개 내외)
+   - 체험단, 리뷰어모집, 블로거초대 등 포함
 
-이제 체험단 리뷰를 작성해주세요.
+5. **금지 사항** ⚠️
+   - "체험해보고 왔어요", "다녀왔습니다" 같은 손님 표현 절대 금지
+   - "먹어봤어요", "방문했어요" 같은 과거 경험 표현 금지
+
+[중요한 지침] ⭐⭐⭐
+- 처음부터 끝까지 사장님 시점만 유지하세요
+- 체험단을 초대하는 글이지만, 작성자는 사장님입니다
+- 절대 손님이 체험하고 온 것처럼 작성하면 안 됩니다
+
+이제 체험단 초대 글을 작성해주세요.
 마크다운 형식은 사용하지 말고, 일반 텍스트로 작성해주세요.
 `;
 
@@ -974,7 +997,7 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 체험단 리뷰�
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-                { role: "system", content: `당신은 솔직하고 상세한 리뷰를 작성하는 블로거입니다. ${writingAngle.name}의 관점에서 작성하되, 매번 다른 스타일로 시작하세요.` },
+                { role: "system", content: `당신은 ${storeInfo.companyName}의 사장님입니다. 체험단을 초대하는 글을 사장님 입장에서 작성합니다. 절대 손님이 체험하고 온 것처럼 작성하지 마세요. "저희 가게", "우리 가게" 같은 사장님 표현을 사용하세요.` },
                 { role: "user", content: prompt }
             ],
             temperature: 0.95,
@@ -988,12 +1011,13 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 체험단 리뷰�
 
         return {
             content: blogContent,
-            writingAngle: writingAngle.name,
+            writingAngle: '사장님 시점 (체험단 초대)',
             diversityKeywords: diversityKeywords
         };
 
     } catch (error) {
         console.error('[체험단 리뷰 생성] 오류:', error);
+        console.error('[체험단 리뷰 생성] 오류 상세:', error.response?.data || error.message);
         throw new Error('체험단 리뷰 생성에 실패했습니다: ' + error.message);
     }
 }
@@ -1150,14 +1174,14 @@ ${writingAngle.name}: ${writingAngle.description}
 [블로그 스타일]
 ${stylePrompt}
 
-[가게 정보]
+[가게 정보] (일부 정보가 없을 수 있으며, 그럴 경우 일반적인 내용으로 자연스럽게 작성)
 - 가게명: ${storeInfo.companyName}
-- 위치: ${storeInfo.companyAddress}
-- 영업시간: ${storeInfo.businessHours}
+- 위치: ${storeInfo.companyAddress || '미입력 (가게명으로 추론)'}
+- 영업시간: ${storeInfo.businessHours || '미입력 (일반적인 영업시간으로 추론)'}
 - 전화번호: ${storeInfo.phoneNumber || '미입력'}
-- 대표메뉴: ${storeInfo.mainMenu}
-- 주변 랜드마크: ${storeInfo.landmarks || '없음'}
-- 키워드: ${storeInfo.keywords || '없음'}
+- 대표메뉴: ${storeInfo.mainMenu || '미입력 (가게 특성으로 추론)'}
+- 주변 랜드마크: ${storeInfo.landmarks || '미입력'}
+- 키워드: ${storeInfo.keywords || '미입력'}
 ${promotionPrompt}
 
 [현재 상황]
@@ -1166,7 +1190,7 @@ ${promotionPrompt}
 - 날짜: ${context.date}
 
 [기존 블로그 글 - 스타일 참고용]
-${existingBlog}
+${existingBlog || '(없음 - 기본 스타일로 작성)'}
 
 ${previousAnalysis.commonExpressions.length > 0 ? `
 [피해야 할 표현]
@@ -1177,6 +1201,7 @@ ${previousAnalysis.commonExpressions.join(', ')}
 [미션]
 위 기존 블로그 글의 스타일을 학습하되,
 ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 작성해주세요.
+정보가 부족한 부분은 가게명과 업종을 참고하여 자연스럽게 채워주세요.
 
 [작성 가이드라인]
 
@@ -1192,8 +1217,8 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
 3. **필수 포함 요소**
    - 가게 이름 2-3회 언급
    - 구체적인 디테일
-   - 주소, 영업시간
-   - 메뉴 가격대
+   - 입력된 정보(주소, 영업시간, 전화번호)가 있으면 포함 (없으면 생략 가능)
+   - 메뉴 정보가 있으면 가격대 추론
 
 4. **해시태그** (8-10개)
 
@@ -1283,124 +1308,172 @@ module.exports = async function handler(req, res) {
 
             case 'generate-review-team':
                 {
-                    const startTime = Date.now();
-                    const reviewResult = await generateReviewTeamPost(data.storeInfo, data.existingBlog, data.userId, data.promotionData);
-                    const generationTime = Date.now() - startTime;
+                    try {
+                        const startTime = Date.now();
+                        console.log('[체험단 리뷰] 생성 시작:', {
+                            userId: data.userId,
+                            companyName: data.storeInfo?.companyName,
+                            hasExistingBlog: !!data.existingBlog,
+                            hasPromotion: !!data.promotionData
+                        });
 
-                    // DB 저장
-                    let blogId = null;
-                    let dbStatus = 'not_attempted';
-                    let dbError = null;
+                        const reviewResult = await generateReviewTeamPost(data.storeInfo, data.existingBlog, data.userId, data.promotionData);
+                        const generationTime = Date.now() - startTime;
 
-                    if (supabase && data.userId) {
-                        try {
-                            const blogData = {
-                                user_id: data.userId,
-                                store_name: data.storeInfo?.companyName || null,
-                                store_address: data.storeInfo?.companyAddress || null,
-                                store_business_hours: data.storeInfo?.businessHours || null,
-                                store_main_menu: data.storeInfo?.mainMenu || null,
-                                blog_type: 'review_team',
-                                blog_title: `${data.storeInfo?.companyName} 체험단 리뷰`,
-                                blog_content: reviewResult.content,
-                                writing_angle: reviewResult.writingAngle,
-                                diversity_keywords: reviewResult.diversityKeywords,
-                                ai_model: 'gpt-4o',
-                                generation_time_ms: generationTime,
-                                status: 'draft',
-                                is_used: false
-                            };
-
-                            const { data: blogResult, error: blogError } = await supabase
-                                .from('blog_posts')
-                                .insert(blogData)
-                                .select();
-
-                            if (blogError) {
-                                dbStatus = 'failed';
-                                dbError = blogError.message;
-                            } else {
-                                blogId = blogResult[0]?.id;
-                                dbStatus = 'success';
-                            }
-                        } catch (dbErr) {
-                            dbStatus = 'failed';
-                            dbError = dbErr.message;
-                        }
-                    }
-
-                    return res.status(200).json({
-                        success: true,
-                        data: reviewResult.content,
-                        metadata: {
-                            blogId,
-                            dbSaveStatus: dbStatus,
-                            dbError,
+                        console.log('[체험단 리뷰] 생성 완료:', {
                             generationTime,
+                            contentLength: reviewResult.content.length,
                             writingAngle: reviewResult.writingAngle
+                        });
+
+                        // DB 저장
+                        let blogId = null;
+                        let dbStatus = 'not_attempted';
+                        let dbError = null;
+
+                        if (supabase && data.userId) {
+                            try {
+                                const blogData = {
+                                    user_id: data.userId,
+                                    store_name: data.storeInfo?.companyName || null,
+                                    store_address: data.storeInfo?.companyAddress || null,
+                                    store_business_hours: data.storeInfo?.businessHours || null,
+                                    store_main_menu: data.storeInfo?.mainMenu || null,
+                                    blog_type: 'review_team',
+                                    blog_title: `${data.storeInfo?.companyName} 체험단 초대`,
+                                    blog_content: reviewResult.content,
+                                    writing_angle: reviewResult.writingAngle,
+                                    diversity_keywords: reviewResult.diversityKeywords,
+                                    ai_model: 'gpt-4o',
+                                    generation_time_ms: generationTime,
+                                    status: 'draft',
+                                    is_used: false
+                                };
+
+                                const { data: blogResult, error: blogError } = await supabase
+                                    .from('blog_posts')
+                                    .insert(blogData)
+                                    .select();
+
+                                if (blogError) {
+                                    dbStatus = 'failed';
+                                    dbError = blogError.message;
+                                    console.error('[체험단 리뷰] DB 저장 실패:', blogError);
+                                } else {
+                                    blogId = blogResult[0]?.id;
+                                    dbStatus = 'success';
+                                    console.log('[체험단 리뷰] DB 저장 성공:', blogId);
+                                }
+                            } catch (dbErr) {
+                                dbStatus = 'failed';
+                                dbError = dbErr.message;
+                                console.error('[체험단 리뷰] DB 저장 오류:', dbErr);
+                            }
                         }
-                    });
+
+                        return res.status(200).json({
+                            success: true,
+                            data: reviewResult.content,
+                            metadata: {
+                                blogId,
+                                dbSaveStatus: dbStatus,
+                                dbError,
+                                generationTime,
+                                writingAngle: reviewResult.writingAngle
+                            }
+                        });
+                    } catch (error) {
+                        console.error('[체험단 리뷰] 전체 오류:', error);
+                        return res.status(500).json({
+                            success: false,
+                            error: `체험단 리뷰 생성 실패: ${error.message}`
+                        });
+                    }
                 }
 
             case 'generate-visit-review':
                 {
-                    const startTime = Date.now();
-                    const reviewResult = await generateVisitReviewPost(data.storeInfo, data.existingBlog, data.userId, data.promotionData);
-                    const generationTime = Date.now() - startTime;
+                    try {
+                        const startTime = Date.now();
+                        console.log('[방문 후기] 생성 시작:', {
+                            userId: data.userId,
+                            companyName: data.storeInfo?.companyName,
+                            hasExistingBlog: !!data.existingBlog,
+                            hasPromotion: !!data.promotionData
+                        });
 
-                    // DB 저장
-                    let blogId = null;
-                    let dbStatus = 'not_attempted';
-                    let dbError = null;
+                        const reviewResult = await generateVisitReviewPost(data.storeInfo, data.existingBlog, data.userId, data.promotionData);
+                        const generationTime = Date.now() - startTime;
 
-                    if (supabase && data.userId) {
-                        try {
-                            const blogData = {
-                                user_id: data.userId,
-                                store_name: data.storeInfo?.companyName || null,
-                                store_address: data.storeInfo?.companyAddress || null,
-                                store_business_hours: data.storeInfo?.businessHours || null,
-                                store_main_menu: data.storeInfo?.mainMenu || null,
-                                blog_type: 'visit_review',
-                                blog_title: `${data.storeInfo?.companyName} 방문 후기`,
-                                blog_content: reviewResult.content,
-                                writing_angle: reviewResult.writingAngle,
-                                diversity_keywords: reviewResult.diversityKeywords,
-                                ai_model: 'gpt-4o',
-                                generation_time_ms: generationTime,
-                                status: 'draft',
-                                is_used: false
-                            };
-
-                            const { data: blogResult, error: blogError } = await supabase
-                                .from('blog_posts')
-                                .insert(blogData)
-                                .select();
-
-                            if (blogError) {
-                                dbStatus = 'failed';
-                                dbError = blogError.message;
-                            } else {
-                                blogId = blogResult[0]?.id;
-                                dbStatus = 'success';
-                            }
-                        } catch (dbErr) {
-                            dbStatus = 'failed';
-                            dbError = dbErr.message;
-                        }
-                    }
-
-                    return res.status(200).json({
-                        success: true,
-                        data: reviewResult.content,
-                        metadata: {
-                            blogId,
-                            dbSaveStatus: dbStatus,
-                            dbError,
+                        console.log('[방문 후기] 생성 완료:', {
                             generationTime,
+                            contentLength: reviewResult.content.length,
                             writingAngle: reviewResult.writingAngle
+                        });
+
+                        // DB 저장
+                        let blogId = null;
+                        let dbStatus = 'not_attempted';
+                        let dbError = null;
+
+                        if (supabase && data.userId) {
+                            try {
+                                const blogData = {
+                                    user_id: data.userId,
+                                    store_name: data.storeInfo?.companyName || null,
+                                    store_address: data.storeInfo?.companyAddress || null,
+                                    store_business_hours: data.storeInfo?.businessHours || null,
+                                    store_main_menu: data.storeInfo?.mainMenu || null,
+                                    blog_type: 'visit_review',
+                                    blog_title: `${data.storeInfo?.companyName} 방문 후기`,
+                                    blog_content: reviewResult.content,
+                                    writing_angle: reviewResult.writingAngle,
+                                    diversity_keywords: reviewResult.diversityKeywords,
+                                    ai_model: 'gpt-4o',
+                                    generation_time_ms: generationTime,
+                                    status: 'draft',
+                                    is_used: false
+                                };
+
+                                const { data: blogResult, error: blogError } = await supabase
+                                    .from('blog_posts')
+                                    .insert(blogData)
+                                    .select();
+
+                                if (blogError) {
+                                    dbStatus = 'failed';
+                                    dbError = blogError.message;
+                                    console.error('[방문 후기] DB 저장 실패:', blogError);
+                                } else {
+                                    blogId = blogResult[0]?.id;
+                                    dbStatus = 'success';
+                                    console.log('[방문 후기] DB 저장 성공:', blogId);
+                                }
+                            } catch (dbErr) {
+                                dbStatus = 'failed';
+                                dbError = dbErr.message;
+                                console.error('[방문 후기] DB 저장 오류:', dbErr);
+                            }
                         }
-                    });
+
+                        return res.status(200).json({
+                            success: true,
+                            data: reviewResult.content,
+                            metadata: {
+                                blogId,
+                                dbSaveStatus: dbStatus,
+                                dbError,
+                                generationTime,
+                                writingAngle: reviewResult.writingAngle
+                            }
+                        });
+                    } catch (error) {
+                        console.error('[방문 후기] 전체 오류:', error);
+                        return res.status(500).json({
+                            success: false,
+                            error: `방문 후기 생성 실패: ${error.message}`
+                        });
+                    }
                 }
 
             case 'generate':
