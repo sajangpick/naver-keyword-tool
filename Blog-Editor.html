@@ -386,12 +386,9 @@
                         type="url" 
                         id="placeUrl" 
                         name="placeUrl" 
-                        placeholder="예: https://map.naver.com 또는 https://m.place.naver.com"
+                        placeholder="예: https://map.naver.com/... (참고용, 직접 입력해주세요)"
                     />
-                    <button type="button" id="crawlPlaceBtn" style="margin-top: 8px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; display: none;">
-                        🔍 이 플레이스 정보 가져오기
-                    </button>
-                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">다른 플레이스 URL을 입력하면 "정보 가져오기" 버튼을 눌러주세요</small>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">💡 플레이스 URL은 참고용입니다. 아래 정보를 직접 입력해주세요!</small>
             </div>
 
             <div class="form-group">
@@ -732,7 +729,6 @@
         // 페이지 로드 시 인증 확인
         window.addEventListener('load', async function() {
             await ensureAuthenticated();
-            setupPlaceUrlHandler(); // 플레이스 URL 핸들러 설정
             await loadStoreInfo(); // 통합 가게 정보 로드 (기본 + 프로모션)
         });
 
@@ -812,121 +808,10 @@
                 if (cleanedData.landmarks) document.getElementById('landmarks2').value = cleanedData.landmarks;
                 if (cleanedData.keywords) document.getElementById('keywords2').value = cleanedData.keywords;
 
-                // 플레이스 URL이 있으면 크롤링 버튼 표시
-                if (data.store_place_url) {
-                    const crawlBtn = document.getElementById('crawlPlaceBtn');
-                    if (crawlBtn) {
-                        crawlBtn.style.display = 'inline-block';
-                    }
-                }
-
                 console.log('✅ 가게 정보 자동 입력 완료');
             } catch (error) {
                 console.error('가게 정보 로드 오류:', error);
             }
-        }
-
-        // 플레이스 URL 핸들러 설정
-        function setupPlaceUrlHandler() {
-            const placeUrlInput = document.getElementById('placeUrl');
-            const crawlBtn = document.getElementById('crawlPlaceBtn');
-
-            if (!placeUrlInput || !crawlBtn) {
-                console.error('❌ 플레이스 URL 입력 필드 또는 버튼을 찾을 수 없습니다.');
-                return;
-            }
-
-            console.log('✅ 플레이스 URL 핸들러 설정 완료');
-
-            // URL 입력 시 버튼 표시
-            placeUrlInput.addEventListener('input', function() {
-                console.log('📝 URL 입력:', this.value);
-                if (this.value.trim()) {
-                    crawlBtn.style.display = 'inline-block';
-                } else {
-                    crawlBtn.style.display = 'none';
-                }
-            });
-
-            // 크롤링 버튼 클릭
-            crawlBtn.addEventListener('click', async function(e) {
-                e.preventDefault(); // 폼 제출 방지
-                
-                const placeUrl = placeUrlInput.value.trim();
-                console.log('🔍 버튼 클릭, URL:', placeUrl);
-                
-                if (!placeUrl) {
-                    alert('플레이스 URL을 입력해주세요.');
-                    return;
-                }
-
-                // URL 유효성 검사 (데스크톱, 모바일, 단축 URL 모두 허용)
-                const isMapNaver = placeUrl.includes('map.naver.com');
-                const isMobilePlace = placeUrl.includes('m.place.naver.com');
-                const isPlace = placeUrl.includes('place.naver.com');
-                const isNaverMe = placeUrl.includes('naver.me');
-                
-                console.log('URL 검사:', { isMapNaver, isMobilePlace, isPlace, isNaverMe });
-                
-                if (!isMapNaver && !isMobilePlace && !isPlace && !isNaverMe) {
-                    alert('네이버 플레이스 URL을 입력해주세요.\n예: map.naver.com, m.place.naver.com, naver.me');
-                    return;
-                }
-
-                try {
-                    // 버튼 비활성화
-                    crawlBtn.disabled = true;
-                    crawlBtn.textContent = '🔄 정보 가져오는 중...';
-
-                    // 크롤링 API 호출
-                    const response = await fetch('/api/chatgpt-blog', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            step: 'crawl',
-                            data: {
-                                placeUrl: placeUrl,
-                                companyName: '',
-                                companyAddress: '',
-                                businessHours: '',
-                                phone: '',
-                                mainMenu: '',
-                                landmarks: '',
-                                keywords: ''
-                            }
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('플레이스 정보를 가져올 수 없습니다.');
-                    }
-
-                    const result = await response.json();
-                    const placeInfo = result.data;
-
-                    // 폼 필드 업데이트
-                    if (placeInfo.name) document.getElementById('companyName').value = placeInfo.name;
-                    if (placeInfo.address) document.getElementById('companyAddress').value = placeInfo.address;
-                    if (placeInfo.hours) document.getElementById('businessHours').value = placeInfo.hours;
-                    if (placeInfo.phone) document.getElementById('phoneNumber').value = placeInfo.phone;
-                    if (placeInfo.mainMenu && placeInfo.mainMenu.length > 0) {
-                        document.getElementById('mainMenu').value = placeInfo.mainMenu.join(', ');
-                    }
-                    
-                    alert('✅ 플레이스 정보를 성공적으로 가져왔습니다!\n필요시 수정 후 블로그를 생성하세요.');
-                    
-                    // 버튼 숨기기
-                    crawlBtn.style.display = 'none';
-
-                } catch (error) {
-                    console.error('크롤링 오류:', error);
-                    alert('❌ ' + error.message);
-                } finally {
-                    // 버튼 복구
-                    crawlBtn.disabled = false;
-                    crawlBtn.textContent = '🔍 이 플레이스 정보 가져오기';
-                }
-            });
         }
 
         // AI 키워드 추천 함수
