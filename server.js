@@ -3037,7 +3037,7 @@ app.get('/api/admin/members', async (req, res) => {
   }
 });
 
-// 회원 등급 변경 (관리자만)
+// 회원 등급 및 유형 변경 (관리자만)
 app.put('/api/admin/members/:id', async (req, res) => {
   try {
     if (!supabase) {
@@ -3048,9 +3048,18 @@ app.put('/api/admin/members/:id', async (req, res) => {
     }
 
     const { id } = req.params;
-    const { membership_level, reset_usage } = req.body;
+    const { user_type, membership_level, reset_usage } = req.body;
     
-    // 유효성 검사
+    // 회원 유형 유효성 검사
+    const validUserTypes = ['owner', 'agency', 'admin'];
+    if (user_type && !validUserTypes.includes(user_type)) {
+      return res.status(400).json({
+        success: false,
+        error: '유효하지 않은 회원 유형입니다'
+      });
+    }
+    
+    // 등급 유효성 검사
     const validLevels = [
       'seed', 'power', 'big_power', 'premium',
       'elite', 'expert', 'master', 'platinum',
@@ -3070,6 +3079,11 @@ app.put('/api/admin/members/:id', async (req, res) => {
       updated_at: new Date().toISOString()
     };
     
+    // 회원 유형도 변경하는 경우
+    if (user_type) {
+      updateData.user_type = user_type;
+    }
+    
     // 사용량 초기화 옵션
     if (reset_usage) {
       updateData.monthly_review_count = 0;
@@ -3085,7 +3099,7 @@ app.put('/api/admin/members/:id', async (req, res) => {
       .single();
     
     if (error) {
-      console.error('회원 등급 변경 오류:', error);
+      console.error('회원 정보 변경 오류:', error);
       return res.status(500).json({ 
         success: false, 
         error: error.message 
@@ -3098,7 +3112,7 @@ app.put('/api/admin/members/:id', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('회원 등급 변경 실패:', error);
+    console.error('회원 정보 변경 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
