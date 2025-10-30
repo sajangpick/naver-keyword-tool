@@ -743,11 +743,12 @@
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('membership_tier')
-          .eq('user_id', user.id)
+          .select('membership_level, user_type')
+          .eq('id', user.id)
           .single();
 
-        if (!profile || profile.membership_tier !== 'Admin') {
+        // user_type이 'admin' 또는 membership_level이 'admin'인 경우 관리자
+        if (!profile || (profile.user_type !== 'admin' && profile.membership_level !== 'admin')) {
           return null;
         }
 

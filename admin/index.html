@@ -546,14 +546,19 @@
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('membership_tier')
-          .eq('user_id', user.id)
+          .select('membership_level, user_type')
+          .eq('id', user.id)
           .single();
 
-        if (!profile || profile.membership_tier !== 'Admin') {
+        console.log('👤 로그인 사용자:', { user_id: user.id, profile });
+
+        // user_type이 'admin' 또는 membership_level이 'admin'인 경우 관리자
+        if (!profile || (profile.user_type !== 'admin' && profile.membership_level !== 'admin')) {
+          console.log('❌ 관리자 권한 없음:', profile);
           return null;
         }
 
+        console.log('✅ 관리자 권한 확인됨');
         return user;
       }
 

@@ -381,20 +381,6 @@
 
           <form id="blogForm">
             <div class="form-group">
-                    <label for="placeUrl">플레이스 URL (선택)</label>
-              <input
-                        type="url" 
-                        id="placeUrl" 
-                        name="placeUrl" 
-                        placeholder="예: https://map.naver.com 또는 https://m.place.naver.com"
-                    />
-                    <button type="button" id="crawlPlaceBtn" style="margin-top: 8px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; display: none;">
-                        🔍 이 플레이스 정보 가져오기
-                    </button>
-                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">플레이스 URL을 입력하면 자동으로 정보를 가져옵니다!</small>
-            </div>
-
-            <div class="form-group">
                     <label for="companyName">업체명</label>
               <input
                 type="text"
@@ -607,7 +593,7 @@
 
         <div class="result-section" id="resultSection">
             <div class="step-indicator">
-                <div class="step" id="step1">1. 플레이스 크롤링</div>
+                <div class="step" id="step1">1. 가게 정보 분석</div>
                 <div class="step" id="step2">2. 메뉴 분석</div>
                 <div class="step" id="step3">3. 주제 추천</div>
                 <div class="step" id="step4">4. 글 생성</div>
@@ -732,7 +718,6 @@
         // 페이지 로드 시 인증 확인
         window.addEventListener('load', async function() {
             await ensureAuthenticated();
-            setupPlaceUrlHandler(); // 플레이스 URL 핸들러 설정
             await loadStoreInfo(); // 통합 가게 정보 로드 (기본 + 프로모션)
         });
 
@@ -781,7 +766,6 @@
                 
                 // 정제된 데이터
                 const cleanedData = {
-                    placeUrl: cleanValue(data.store_place_url),
                     name: cleanValue(data.store_name),
                     address: cleanValue(data.store_address),
                     hours: cleanValue(data.store_business_hours),
@@ -794,7 +778,6 @@
                 console.log('✅ 가게 정보 로드 완료 (정제됨):', cleanedData);
                 
                 // 우리매장 탭 자동 입력 (정제된 값만)
-                if (cleanedData.placeUrl) document.getElementById('placeUrl').value = cleanedData.placeUrl;
                 if (cleanedData.name) document.getElementById('companyName').value = cleanedData.name;
                 if (cleanedData.address) document.getElementById('companyAddress').value = cleanedData.address;
                 if (cleanedData.hours) document.getElementById('businessHours').value = cleanedData.hours;
@@ -818,102 +801,6 @@
             }
         }
 
-        // 플레이스 URL 핸들러 설정
-        function setupPlaceUrlHandler() {
-            const placeUrlInput = document.getElementById('placeUrl');
-            const crawlBtn = document.getElementById('crawlPlaceBtn');
-
-            if (!placeUrlInput || !crawlBtn) {
-                console.error('❌ 플레이스 URL 입력 필드 또는 버튼을 찾을 수 없습니다.');
-                return;
-            }
-
-            console.log('✅ 플레이스 URL 핸들러 설정 완료');
-
-            // URL 입력 시 버튼 표시
-            placeUrlInput.addEventListener('input', function() {
-                console.log('📝 URL 입력:', this.value);
-                if (this.value.trim()) {
-                    crawlBtn.style.display = 'inline-block';
-                } else {
-                    crawlBtn.style.display = 'none';
-                }
-            });
-
-            // 크롤링 버튼 클릭
-            crawlBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                
-                const placeUrl = placeUrlInput.value.trim();
-                console.log('🔍 버튼 클릭, URL:', placeUrl);
-                
-                if (!placeUrl) {
-                    alert('플레이스 URL을 입력해주세요.');
-                    return;
-                }
-
-                // URL 유효성 검사
-                const isMapNaver = placeUrl.includes('map.naver.com');
-                const isMobilePlace = placeUrl.includes('m.place.naver.com');
-                const isPlace = placeUrl.includes('place.naver.com');
-                const isNaverMe = placeUrl.includes('naver.me');
-                
-                console.log('URL 검사:', { isMapNaver, isMobilePlace, isPlace, isNaverMe });
-                
-                if (!isMapNaver && !isMobilePlace && !isPlace && !isNaverMe) {
-                    alert('네이버 플레이스 URL을 입력해주세요.\n예: map.naver.com, m.place.naver.com, naver.me');
-                    return;
-                }
-
-                try {
-                    crawlBtn.disabled = true;
-                    crawlBtn.textContent = '🔄 정보 가져오는 중...';
-
-                    const response = await fetch('/api/place-crawl', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ placeUrl: placeUrl })
-                    });
-
-                    const responseText = await response.text();
-                    console.log('크롤링 응답:', responseText);
-
-                    if (!response.ok) {
-                        throw new Error('플레이스 정보를 가져올 수 없습니다.');
-                    }
-
-                    const result = JSON.parse(responseText);
-                    if (!result.success) {
-                        throw new Error(result.error || '크롤링 실패');
-                    }
-
-                    const data = result.data;
-                    console.log('크롤링 성공:', data);
-
-                    // 폼 필드 자동 입력
-                    if (data.basic?.name) document.getElementById('companyName').value = data.basic.name;
-                    if (data.contact?.address) document.getElementById('companyAddress').value = data.contact.address;
-                    if (data.business?.hours) document.getElementById('businessHours').value = data.business.hours;
-                    if (data.contact?.phone) document.getElementById('phoneNumber').value = data.contact.phone;
-                    if (data.menu && data.menu.length > 0) {
-                        const menuNames = data.menu.map(m => m.name || m).filter(n => n);
-                        if (menuNames.length > 0) {
-                            document.getElementById('mainMenu').value = menuNames.join(', ');
-                        }
-                    }
-                    
-                    alert('✅ 플레이스 정보를 성공적으로 가져왔습니다!\n필요시 수정 후 블로그를 생성하세요.');
-                    crawlBtn.style.display = 'none';
-
-                } catch (error) {
-                    console.error('크롤링 오류:', error);
-                    alert('❌ ' + error.message + '\n\n정보를 직접 입력해주세요.');
-                } finally {
-                    crawlBtn.disabled = false;
-                    crawlBtn.textContent = '🔍 이 플레이스 정보 가져오기';
-                }
-            });
-        }
 
         // AI 키워드 추천 함수
         async function recommendKeywords(tabNumber = '') {
@@ -1065,7 +952,6 @@
 
                 // 현재 입력된 정보 수집
                 const storeInfo = {
-                    placeUrl: document.getElementById('placeUrl').value,
                     companyName: document.getElementById('companyName').value,
                     companyAddress: document.getElementById('companyAddress').value,
                     businessHours: document.getElementById('businessHours').value,
@@ -1103,7 +989,7 @@
             } finally {
                 // 버튼 복구
                 this.disabled = false;
-                this.textContent = '📌 가게 정보 저장하기 (다음에 자동 입력됨)';
+                this.textContent = '📌 가게 정보 저장하기';
             }
         });
 
@@ -1264,7 +1150,6 @@
         e.preventDefault();
 
         const formData = new FormData(this);
-            const placeUrl = formData.get("placeUrl");
             const companyName = formData.get("companyName");
             const companyAddress = formData.get("companyAddress");
             const businessHours = formData.get("businessHours");
@@ -1284,8 +1169,8 @@
                 generateBtn.textContent = "분석 중...";
                 resultSection.classList.add('show');
                 
-                // Step 1: 플레이스 크롤링/구조화
-                showLoading("플레이스 정보를 분석하고 있습니다...");
+                // Step 1: 가게 정보 구조화
+                showLoading("가게 정보를 분석하고 있습니다...");
                 updateStep(0);
 
                 // 사용자 ID 가져오기
@@ -1299,7 +1184,7 @@
                         step: 'crawl',
                         data: {
                             userId,
-                            placeUrl,
+                            placeUrl: null,  // 플레이스 URL 사용 안 함
                             companyName,
                             companyAddress,
                             businessHours,
@@ -1317,7 +1202,7 @@
                 if (!crawlResponse.ok) {
                     try {
                         const errorData = JSON.parse(crawlText);
-                        throw new Error(errorData.error || '플레이스 정보 분석 실패');
+                        throw new Error(errorData.error || '가게 정보 분석 실패');
                     } catch (parseError) {
                         throw new Error(`서버 오류: ${crawlText.substring(0, 200)}`);
                     }
@@ -1325,11 +1210,11 @@
 
                 const crawlResult = JSON.parse(crawlText);
                 if (!crawlResult.success) {
-                    throw new Error(crawlResult.error || '플레이스 정보 분석 실패');
+                    throw new Error(crawlResult.error || '가게 정보 분석 실패');
                 }
 
                 globalPlaceInfo = crawlResult.data;
-                console.log('플레이스 정보:', globalPlaceInfo);
+                console.log('가게 정보:', globalPlaceInfo);
 
                 // Step 2: 메뉴 분석
                 showLoading("대표 메뉴를 분석하고 있습니다...");
