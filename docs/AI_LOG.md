@@ -5549,3 +5549,28 @@ Supabase (DB)
 - 크롤링 로직은 더미 데이터로 작동합니다 (실제 구현 필요 시 Puppeteer 사용)
 
 ---
+
+## 2025-10-30: 리뷰 모니터링 시스템 완성 + Supabase 연동 수정
+
+**작업 내용**:
+- ✅ 리뷰 모니터링 4종 크롤링 구현 (방문자/블로그/영수증/새소식)
+- ✅ 발송 제한 로직 구현 (1일 0/1/2회 제한)
+- ✅ `mypage.html` Supabase 라이브러리 추가
+- ✅ `window.supabaseClient` 전역 변수 설정으로 TypeError 해결
+- ✅ `assets/analytics.js`, `assets/performance-tracker.js` 수정
+- ✅ Render + Vercel 배포 성공
+
+**수정 파일**: 
+- `mypage.html`, `server.js`, `api/review-monitoring.js`, `api/kakao-alimtalk.js`
+- `assets/analytics.js`, `assets/performance-tracker.js`
+- `admin/review-monitoring.html`
+
+**현재 상태**: 
+- ✅ DB 저장 성공 (모니터링 등록됨)
+- ⚠️ 크롤링 수동 실행 필요 (자동 실행 안 됨)
+
+**다음 작업**: 브라우저 Console에서 수동 크롤링 실행 필요
+
+**상세 기록**: `admin/docs/리뷰모니터링_개발가이드.md` 하단 참고
+
+---

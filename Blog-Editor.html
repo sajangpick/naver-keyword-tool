@@ -359,7 +359,6 @@
         <div class="tab-navigation">
             <button class="tab-btn active" data-tab="our-store">우리매장</button>
             <button class="tab-btn" data-tab="review-team">체험단리뷰</button>
-            <button class="tab-btn" data-tab="visit-review">방문후기</button>
         </div>
 
         <div class="form-section">
@@ -604,121 +603,6 @@
             </button>
           </form>
         </div>
-
-            <!-- 방문후기 탭 -->
-            <div class="tab-content" id="visit-review-tab">
-                <!-- 안내 문구 -->
-                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #856404; font-size: 14px;">
-                        💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
-                    </p>
-                </div>
-
-                <form id="visitReviewForm">
-                    <div class="form-group">
-                        <label for="companyName3">업체명</label>
-                        <input 
-                            type="text" 
-                            id="companyName3" 
-                            name="companyName" 
-                            placeholder="예: 동흥안가"
-                        />
-                        <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="companyAddress3">업체주소</label>
-                        <input 
-                            type="text" 
-                            id="companyAddress3" 
-                            name="companyAddress" 
-                            placeholder="예: 부산광역시 해운대구 우동 1394-84"
-                        />
-                        <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
-              </div>
-
-                    <div class="form-group">
-                        <label for="businessHours3">영업시간</label>
-                        <input 
-                            type="text" 
-                            id="businessHours3" 
-                            name="businessHours" 
-                            placeholder="예: 11:30-22:00 (매일, 15:00-17:00 브레이크타임)"
-                        />
-                        <small style="color: #666; font-size: 12px;">영업시간과 휴무일을 입력해주세요</small>
-              </div>
-
-                    <div class="form-group">
-                        <label for="phoneNumber3">전화번호</label>
-                        <input 
-                            type="tel" 
-                            id="phoneNumber3" 
-                            name="phoneNumber" 
-                            placeholder="예: 010-1234-5678 또는 051-123-4567"
-                        />
-                        <small style="color: #666; font-size: 12px;">가게 전화번호를 입력해주세요 (블로그 글에 포함됩니다)</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="mainMenu3">대표메뉴</label>
-                        <textarea 
-                            id="mainMenu3" 
-                            name="mainMenu" 
-                            placeholder="예: 삼겹살, 목살, 갈비"
-                        ></textarea>
-                        <small style="color: #666; font-size: 12px;">가게의 대표 메뉴들을 입력해주세요 (쉼표로 구분)</small>
-              </div>
-
-                    <div class="form-group">
-                        <label for="landmarks3">주변 랜드마크</label>
-                        <input 
-                            type="text" 
-                            id="landmarks3" 
-                            name="landmarks" 
-                            placeholder="예: 해운대해수욕장, 센텀시티, 해운대역"
-                        />
-                        <small style="color: #666; font-size: 12px;">주변 유명한 장소나 랜드마크를 입력해주세요 (쉼표로 구분)</small>
-            </div>
-
-                    <div class="form-group">
-                        <label for="keywords3">키워드</label>
-                        <input 
-                            type="text" 
-                            id="keywords3" 
-                            name="keywords" 
-                            placeholder="예: 30년전통, 신선한고기, 가족식당, 부산맛집"
-                        />
-                        <button type="button" id="aiKeywordBtn3" class="ai-keyword-btn">
-                            🤖 AI 키워드 추천받기
-                        </button>
-                        <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
-                        
-                        <!-- AI 추천 키워드 영역 -->
-                        <div id="aiKeywordArea3" style="display: none; margin-top: 15px;">
-                            <div style="background: #f0f8ff; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px;">
-                                <p style="margin: 0 0 10px 0; color: #2c5f2d; font-weight: 600;">
-                                    🎯 AI 추천 키워드 (클릭해서 선택/해제)
-                                </p>
-                                <div id="aiKeywordTags3" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                            </div>
-                        </div>
-            </div>
-
-                    <div class="form-group">
-                        <label for="existingBlog3">기존 블로그 글 (선택사항)</label>
-                        <textarea 
-                            id="existingBlog3" 
-                            name="existingBlog" 
-                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 방문 후기를 작성합니다. (선택사항: 입력하지 않아도 생성 가능)"
-                        ></textarea>
-                        <small style="color: #666; font-size: 12px;">💡 선택사항: 기존 블로그 글을 입력하면 그 스타일을 참고하고, 없으면 기본 스타일로 작성합니다</small>
-          </div>
-
-                    <button type="submit" class="btn" id="generateVisitReviewBtn">
-                        방문 후기 생성하기
-                    </button>
-                </form>
-            </div>
           </div>
 
         <div class="result-section" id="resultSection">
@@ -762,10 +646,8 @@
       // DOM 요소들
         const blogForm = document.getElementById('blogForm');
         const reviewTeamForm = document.getElementById('reviewTeamForm');
-        const visitReviewForm = document.getElementById('visitReviewForm');
         const generateBtn = document.getElementById('generateBtn');
         const generateReviewTeamBtn = document.getElementById('generateReviewTeamBtn');
-        const generateVisitReviewBtn = document.getElementById('generateVisitReviewBtn');
         const resultSection = document.getElementById('resultSection');
         const loadingDiv = document.getElementById('loadingDiv');
         const errorDiv = document.getElementById('errorDiv');
@@ -879,6 +761,15 @@
 
                 const data = result.data.basic; // 기본 정보
                 
+                // ✅ "미입력", "정보 없음" 문자열 필터링 함수
+                function cleanValue(value) {
+                    if (!value || typeof value !== 'string') return '';
+                    const trimmed = value.trim();
+                    // "미입력", "정보 없음" 등의 문자열 제거
+                    if (trimmed.includes('미입력') || trimmed.includes('정보 없음')) return '';
+                    return trimmed;
+                }
+                
                 // 프로모션 정보 전역 변수에 저장
                 globalPromotionData = result.data.promotion;
                 globalHasPromotion = result.hasPromotion;
@@ -888,33 +779,38 @@
                     showPromotionNotification(result.filledCount, result.totalCount);
                 }
                 
-                // 우리매장 탭 자동 입력
-                if (data.store_place_url) document.getElementById('placeUrl').value = data.store_place_url;
-                if (data.store_name) document.getElementById('companyName').value = data.store_name;
-                if (data.store_address) document.getElementById('companyAddress').value = data.store_address;
-                if (data.store_business_hours) document.getElementById('businessHours').value = data.store_business_hours;
-                if (data.store_phone_number) document.getElementById('phoneNumber').value = data.store_phone_number;
-                if (data.store_main_menu) document.getElementById('mainMenu').value = data.store_main_menu;
-                if (data.store_landmarks) document.getElementById('landmarks').value = data.store_landmarks;
-                if (data.store_keywords) document.getElementById('keywords').value = data.store_keywords;
+                // 정제된 데이터
+                const cleanedData = {
+                    placeUrl: cleanValue(data.store_place_url),
+                    name: cleanValue(data.store_name),
+                    address: cleanValue(data.store_address),
+                    hours: cleanValue(data.store_business_hours),
+                    phone: cleanValue(data.store_phone_number),
+                    menu: cleanValue(data.store_main_menu),
+                    landmarks: cleanValue(data.store_landmarks),
+                    keywords: cleanValue(data.store_keywords)
+                };
+                
+                console.log('✅ 가게 정보 로드 완료 (정제됨):', cleanedData);
+                
+                // 우리매장 탭 자동 입력 (정제된 값만)
+                if (cleanedData.placeUrl) document.getElementById('placeUrl').value = cleanedData.placeUrl;
+                if (cleanedData.name) document.getElementById('companyName').value = cleanedData.name;
+                if (cleanedData.address) document.getElementById('companyAddress').value = cleanedData.address;
+                if (cleanedData.hours) document.getElementById('businessHours').value = cleanedData.hours;
+                if (cleanedData.phone) document.getElementById('phoneNumber').value = cleanedData.phone;
+                if (cleanedData.menu) document.getElementById('mainMenu').value = cleanedData.menu;
+                if (cleanedData.landmarks) document.getElementById('landmarks').value = cleanedData.landmarks;
+                if (cleanedData.keywords) document.getElementById('keywords').value = cleanedData.keywords;
 
-                // 체험단리뷰 탭 자동 입력
-                if (data.store_name) document.getElementById('companyName2').value = data.store_name;
-                if (data.store_address) document.getElementById('companyAddress2').value = data.store_address;
-                if (data.store_business_hours) document.getElementById('businessHours2').value = data.store_business_hours;
-                if (data.store_phone_number) document.getElementById('phoneNumber2').value = data.store_phone_number;
-                if (data.store_main_menu) document.getElementById('mainMenu2').value = data.store_main_menu;
-                if (data.store_landmarks) document.getElementById('landmarks2').value = data.store_landmarks;
-                if (data.store_keywords) document.getElementById('keywords2').value = data.store_keywords;
-
-                // 방문후기 탭 자동 입력
-                if (data.store_name) document.getElementById('companyName3').value = data.store_name;
-                if (data.store_address) document.getElementById('companyAddress3').value = data.store_address;
-                if (data.store_business_hours) document.getElementById('businessHours3').value = data.store_business_hours;
-                if (data.store_phone_number) document.getElementById('phoneNumber3').value = data.store_phone_number;
-                if (data.store_main_menu) document.getElementById('mainMenu3').value = data.store_main_menu;
-                if (data.store_landmarks) document.getElementById('landmarks3').value = data.store_landmarks;
-                if (data.store_keywords) document.getElementById('keywords3').value = data.store_keywords;
+                // 체험단리뷰 탭 자동 입력 (정제된 값만)
+                if (cleanedData.name) document.getElementById('companyName2').value = cleanedData.name;
+                if (cleanedData.address) document.getElementById('companyAddress2').value = cleanedData.address;
+                if (cleanedData.hours) document.getElementById('businessHours2').value = cleanedData.hours;
+                if (cleanedData.phone) document.getElementById('phoneNumber2').value = cleanedData.phone;
+                if (cleanedData.menu) document.getElementById('mainMenu2').value = cleanedData.menu;
+                if (cleanedData.landmarks) document.getElementById('landmarks2').value = cleanedData.landmarks;
+                if (cleanedData.keywords) document.getElementById('keywords2').value = cleanedData.keywords;
 
                 // 플레이스 URL이 있으면 크롤링 버튼 표시
                 if (data.store_place_url) {
@@ -1141,11 +1037,6 @@
         // AI 키워드 추천 버튼 이벤트 (체험단리뷰 탭)
         document.getElementById('aiKeywordBtn2').addEventListener('click', async function() {
             await recommendKeywords('2');
-        });
-
-        // AI 키워드 추천 버튼 이벤트 (방문후기 탭)
-        document.getElementById('aiKeywordBtn3').addEventListener('click', async function() {
-            await recommendKeywords('3');
         });
 
         // 가게 정보 불러오기 버튼 이벤트
@@ -1629,97 +1520,6 @@
                 generateReviewTeamBtn.textContent = "체험단 리뷰 생성하기";
             }
         });
-
-        // 방문 후기 폼 제출
-        visitReviewForm.addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const companyName = formData.get("companyName");
-            const companyAddress = formData.get("companyAddress") || "";
-            const businessHours = formData.get("businessHours") || "";
-            const phoneNumber = formData.get("phoneNumber") || "";
-            const mainMenu = formData.get("mainMenu") || "";
-            const landmarks = formData.get("landmarks") || "";
-            const keywords = formData.get("keywords") || "";
-            const existingBlog = formData.get("existingBlog") || "";
-
-            // 최소한 업체명만 입력되어 있으면 OK
-            if (!companyName) {
-                alert("최소한 업체명은 입력해주세요. 더 많은 정보를 입력할수록 블로그 질이 좋아집니다!");
-                return;
-            }
-
-            // 기존 블로그 글은 선택사항 (입력하면 스타일 참고, 없으면 기본 스타일로 생성)
-
-            try {
-                generateVisitReviewBtn.disabled = true;
-                generateVisitReviewBtn.textContent = "생성 중...";
-                resultSection.classList.add('show');
-                
-                showLoading("방문 후기를 생성하고 있습니다...");
-
-                // 사용자 ID 가져오기
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                const userId = userData.id || null;
-
-                const response = await fetch('/api/chatgpt-blog', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        step: 'generate-visit-review',
-                        data: {
-                            userId: userId,
-                            storeInfo: {
-                                companyName,
-                                companyAddress,
-                                businessHours,
-                                phoneNumber,
-                                mainMenu,
-                                landmarks,
-                                keywords
-                            },
-                            existingBlog: existingBlog,
-                            promotionData: globalPromotionData,  // 프로모션 정보 추가
-                            hasPromotion: globalHasPromotion
-                        }
-                    })
-                });
-
-                // 응답 텍스트를 먼저 받아서 확인
-                const responseText = await response.text();
-                console.log('방문 후기 응답:', responseText);
-
-                if (!response.ok) {
-                    try {
-                        const errorData = JSON.parse(responseText);
-                        throw new Error(errorData.error || '방문 후기 생성 실패');
-                    } catch (parseError) {
-                        throw new Error(`서버 오류: ${responseText.substring(0, 200)}`);
-                    }
-                }
-
-                const result = JSON.parse(responseText);
-                if (!result.success) {
-                    throw new Error(result.error || '방문 후기 생성 실패');
-                }
-
-                const blogContentText = result.data;
-                console.log('생성된 방문 후기:', blogContentText);
-                
-                showSuccess();
-                blogContent.style.display = 'block';
-                blogText.textContent = blogContentText;
-                blogTopics.style.display = 'none';
-
-            } catch (error) {
-                console.error("방문 후기 생성 오류:", error);
-                showError("방문 후기 생성 중 오류가 발생했습니다: " + error.message);
-            } finally {
-                generateVisitReviewBtn.disabled = false;
-                generateVisitReviewBtn.textContent = "방문 후기 생성하기";
-            }
-      });
     </script>
 
     <!-- 추적 및 모니터링 스크립트 -->

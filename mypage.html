@@ -1308,17 +1308,38 @@
 
         const data = result.data;
         
-        // 폼에 자동 입력
-        if (data.store_place_url) document.getElementById('editStoreUrl').value = data.store_place_url;
-        if (data.store_name) document.getElementById('editStoreName').value = data.store_name;
-        if (data.store_address) document.getElementById('editStoreAddress').value = data.store_address;
-        if (data.store_business_hours) document.getElementById('editStoreHours').value = data.store_business_hours;
-        if (data.store_phone_number) document.getElementById('editStorePhone').value = data.store_phone_number;
-        if (data.store_main_menu) document.getElementById('editStoreMenu').value = data.store_main_menu;
-        if (data.store_landmarks) document.getElementById('editStoreLandmarks').value = data.store_landmarks;
-        if (data.store_keywords) document.getElementById('editStoreKeywords').value = data.store_keywords;
-
-        console.log('✅ 가게 정보 로드 완료');
+        // ✅ "미입력" 문자열 필터링 함수
+        function cleanValue(value) {
+          if (!value || typeof value !== 'string') return '';
+          const trimmed = value.trim();
+          // "미입력", "정보 없음" 등의 문자열 제거
+          if (trimmed.includes('미입력') || trimmed.includes('정보 없음')) return '';
+          return trimmed;
+        }
+        
+        // 폼에 자동 입력 (정제된 값만 입력)
+        const cleanedData = {
+          storeUrl: cleanValue(data.store_place_url),
+          storeName: cleanValue(data.store_name),
+          storeAddress: cleanValue(data.store_address),
+          storeHours: cleanValue(data.store_business_hours),
+          storePhone: cleanValue(data.store_phone_number),
+          storeMenu: cleanValue(data.store_main_menu),
+          storeLandmarks: cleanValue(data.store_landmarks),
+          storeKeywords: cleanValue(data.store_keywords)
+        };
+        
+        console.log('✅ 가게 정보 로드 완료 (정제됨):', cleanedData);
+        
+        // 빈 문자열이 아닌 경우만 입력
+        if (cleanedData.storeUrl) document.getElementById('editStoreUrl').value = cleanedData.storeUrl;
+        if (cleanedData.storeName) document.getElementById('editStoreName').value = cleanedData.storeName;
+        if (cleanedData.storeAddress) document.getElementById('editStoreAddress').value = cleanedData.storeAddress;
+        if (cleanedData.storeHours) document.getElementById('editStoreHours').value = cleanedData.storeHours;
+        if (cleanedData.storePhone) document.getElementById('editStorePhone').value = cleanedData.storePhone;
+        if (cleanedData.storeMenu) document.getElementById('editStoreMenu').value = cleanedData.storeMenu;
+        if (cleanedData.storeLandmarks) document.getElementById('editStoreLandmarks').value = cleanedData.storeLandmarks;
+        if (cleanedData.storeKeywords) document.getElementById('editStoreKeywords').value = cleanedData.storeKeywords;
 
         // 리뷰 모니터링 설정도 로드
         loadMonitoringSettings();

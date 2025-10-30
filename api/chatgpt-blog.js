@@ -424,22 +424,57 @@ async function crawlOrStructurePlaceInfo(url, userInput, userId) {
         console.log('[캐시] 캐시 없음, 새로 처리...');
     }
 
+    // ✅ 입력값 정제 함수 (빈 문자열, "미입력" 문자열 제거)
+    function cleanInput(value, defaultValue = '') {
+        if (!value || typeof value !== 'string') return defaultValue;
+        const trimmed = value.trim();
+        // "미입력", "업체명 미입력" 등의 문자열 제거
+        if (!trimmed || trimmed.includes('미입력')) return defaultValue;
+        return trimmed;
+    }
+
+    function cleanArrayInput(value) {
+        if (!value || typeof value !== 'string') return [];
+        return value
+            .split(',')
+            .map(item => item.trim())
+            .filter(item => item && !item.includes('미입력') && item.length > 0);
+    }
+
+    const companyName = cleanInput(userInput.companyName);
+    const companyAddress = cleanInput(userInput.companyAddress);
+    const businessHours = cleanInput(userInput.businessHours);
+    const phone = cleanInput(userInput.phone);
+    const mainMenuArray = cleanArrayInput(userInput.mainMenu);
+    const landmarksArray = cleanArrayInput(userInput.landmarks);
+    const keywordsArray = cleanArrayInput(userInput.keywords);
+
+    console.log('[크롤링] 정제된 입력값:', {
+        companyName: companyName || '(없음)',
+        companyAddress: companyAddress || '(없음)',
+        businessHours: businessHours || '(없음)',
+        phone: phone || '(없음)',
+        mainMenuCount: mainMenuArray.length,
+        landmarksCount: landmarksArray.length,
+        keywordsCount: keywordsArray.length
+    });
+
     const placeInfo = {
-        name: userInput.companyName || '업체명 미입력',
-        address: userInput.companyAddress || '주소 미입력',
-        phone: userInput.phone || '',
+        name: companyName || '정보 없음',
+        address: companyAddress || '정보 없음',
+        phone: phone || '',
         rating: 0,
         reviewCount: 0,
-        category: userInput.category || '음식점',
-        description: userInput.keywords || '',
-        hours: userInput.businessHours || '영업시간 미입력',
-        mainMenu: userInput.mainMenu ? userInput.mainMenu.split(',').map(m => m.trim()).filter(m => m) : [],
-        landmarks: userInput.landmarks ? userInput.landmarks.split(',').map(l => l.trim()).filter(l => l) : [],
-        keywords: userInput.keywords ? userInput.keywords.split(',').map(k => k.trim()).filter(k => k) : [],
+        category: cleanInput(userInput.category) || '음식점',
+        description: keywordsArray.join(', ') || '',
+        hours: businessHours || '정보 없음',
+        mainMenu: mainMenuArray,
+        landmarks: landmarksArray,
+        keywords: keywordsArray,
         strengths: '',
         targetCustomers: '',
         atmosphere: '',
-        region: userInput.companyAddress ? userInput.companyAddress.split(' ').slice(0, 2).join(' ') : '지역 미입력'
+        region: companyAddress ? companyAddress.split(' ').slice(0, 2).join(' ') : '정보 없음'
     };
 
     // 사용자 스타일 및 이전 블로그 분석
