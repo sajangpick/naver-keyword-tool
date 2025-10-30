@@ -399,9 +399,10 @@
     </div>
 
     <script>
-        // Supabase 초기화
-        // Supabase 클라이언트 초기화 (auth-state.js에서 가져오기)
-        const supabase = window.authState?.supabase;
+        // Supabase 직접 초기화 (admin 페이지용)
+        const SUPABASE_URL = 'https://ptuzlubgggbgsophfcna.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentTab = 'monitoring';
         let monitoringData = [];
