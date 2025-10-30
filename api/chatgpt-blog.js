@@ -409,6 +409,9 @@ async function savePlaceToCache(placeUrl, placeInfo) {
 
 /**
  * 1단계: 플레이스 정보 크롤링/구조화 (다양성 강화)
+ * 
+ * 참고: 실제 Puppeteer 크롤링은 /api/place-crawl 엔드포인트에서 처리
+ *       여기서는 사용자 입력값을 받아서 구조화만 수행
  */
 async function crawlOrStructurePlaceInfo(url, userInput, userId) {
     // 캐시 확인 (URL이 있는 경우만)
@@ -421,7 +424,7 @@ async function crawlOrStructurePlaceInfo(url, userInput, userId) {
             return cachedData;
         }
         
-        console.log('[캐시] 캐시 없음, 새로 처리...');
+        console.log('[캐시] 캐시 없음, 사용자 입력값으로 진행...');
     }
 
     // ✅ 입력값 정제 함수 (빈 문자열, "미입력" 문자열 제거)
