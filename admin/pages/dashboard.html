@@ -254,6 +254,19 @@
       // 대시보드 데이터 로드
       async function loadDashboard() {
         try {
+          // Supabase 초기화 대기
+          let retries = 0;
+          while (!window.supabase && retries < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+          
+          if (!window.supabase) {
+            console.error('❌ Supabase 초기화 실패');
+            alert('페이지 로드 실패. 새로고침 해주세요.');
+            return;
+          }
+          
           // 관리자 권한 확인
           const isAdmin = await AdminUtils.requireAdmin();
           if (!isAdmin) return;

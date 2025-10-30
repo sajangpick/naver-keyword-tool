@@ -143,26 +143,44 @@
   async function checkAdminAuth() {
     try {
       if (!window.supabase) {
-        console.error('Supabase가 초기화되지 않았습니다.');
+        console.error('❌ Supabase가 초기화되지 않았습니다.');
         return false;
       }
 
-      const { data: { user } } = await window.supabase.auth.getUser();
+      const { data: { user }, error: userError } = await window.supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ 사용자 정보 조회 실패:', userError);
+        return false;
+      }
       
       if (!user) {
+        console.log('⚠️ 로그인되지 않음');
         return false;
       }
 
-      const { data: profile } = await window.supabase
+      console.log('✅ 로그인된 사용자:', user.email);
+
+      const { data: profile, error: profileError } = await window.supabase
         .from('profiles')
         .select('user_type, membership_level')
         .eq('id', user.id)
         .single();
 
+      if (profileError) {
+        console.error('❌ 프로필 조회 실패:', profileError);
+        return false;
+      }
+
+      console.log('✅ 프로필:', profile);
+
       // user_type이 'admin' 또는 membership_level이 'admin'인 경우
-      return profile && (profile.user_type === 'admin' || profile.membership_level === 'admin');
+      const isAdmin = profile && (profile.user_type === 'admin' || profile.membership_level === 'admin');
+      console.log(`🔐 관리자 권한: ${isAdmin ? 'O' : 'X'}`);
+      
+      return isAdmin;
     } catch (error) {
-      console.error('권한 확인 실패:', error);
+      console.error('❌ 권한 확인 실패:', error);
       return false;
     }
   }
