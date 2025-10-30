@@ -192,8 +192,10 @@
     const isAdmin = await checkAdminAuth();
     
     if (!isAdmin) {
-      alert('관리자 권한이 필요합니다.');
-      window.location.href = '/login.html';
+      alert('관리자 권한이 필요합니다.\n로그인 페이지로 이동합니다.');
+      // 현재 페이지 URL을 redirect 파라미터로 전달
+      const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login.html?redirect=${currentUrl}`;
       return false;
     }
     
