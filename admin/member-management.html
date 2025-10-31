@@ -3,49 +3,23 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>회원 관리 - 사장픽</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>회원 관리 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
     />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
     <style>
-      :root {
-        --naver-green: #03c75a;
-        --naver-green-dark: #02b14f;
-        --bg: #f7f9fb;
-        --panel: #ffffff;
-        --muted: #6b7280;
-        --text: #111827;
-        --accent: var(--naver-green);
-        --border: #e5e7eb;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
-          Noto Sans KR, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-
+      /* 회원 관리 전용 스타일 */
       .container {
         max-width: 1400px;
         margin: 0 auto;
         padding: 24px;
-      }
-
-      h1 {
-        font-size: 28px;
-        margin: 0 0 8px;
-        color: var(--text);
       }
 
       .subtitle {
@@ -1051,7 +1025,8 @@
     </div>
 
     <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
 
     <script>
       // ==================== 설정 ====================
@@ -1063,40 +1038,12 @@
       // Supabase 클라이언트 초기화
       let supabase;
       
-      // 환경변수 로드
-      async function initSupabase() {
-        try {
-          let supabaseUrl, supabaseAnonKey;
-          
-          // 방법 1: /api/config에서 가져오기 (서버 실행 중일 때)
-          try {
-            const response = await fetch('/api/config');
-            if (response.ok) {
-              const config = await response.json();
-              supabaseUrl = config.supabaseUrl;
-              supabaseAnonKey = config.supabaseAnonKey;
-            }
-          } catch (e) {
-            console.warn('API 호출 실패, 직접 설정 사용:', e);
-          }
-          
-          // 방법 2: API 실패 시 직접 설정 (임시)
-          if (!supabaseUrl || !supabaseAnonKey) {
-            // Supabase 대시보드에서 가져온 실제 키
-            supabaseUrl = 'https://ptuzlubgggbgsophfcna.supabase.co';
-            supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
-          }
-          
-          supabase = window.supabase.createClient(
-            supabaseUrl,
-            supabaseAnonKey
-          );
-          
+      async function ensureSupabase() {
+        if (!supabase) {
+          supabase = await AdminBootstrap.getSupabaseClient();
           console.log('✅ Supabase 초기화 완료');
-        } catch (error) {
-          console.error('❌ Supabase 초기화 실패:', error);
-          showError('Supabase 초기화 실패. 관리자에게 문의하세요.');
         }
+        return supabase;
       }
 
       // 회원 등급 제한 정보
@@ -1140,7 +1087,7 @@
       // ==================== 초기화 ====================
 
       window.addEventListener('load', async function() {
-        await initSupabase();
+        await ensureSupabase();
         await loadMembers();
       });
 
@@ -1267,6 +1214,7 @@
 
       async function showMemberDetail(memberId) {
         try {
+          await ensureSupabase();
           // 회원 정보 조회 (가게 정보 포함)
           const { data: member, error: memberError } = await supabase
             .from('profiles')
@@ -1358,6 +1306,7 @@
         const container = document.getElementById('detail-reviews-container');
         
         try {
+          await ensureSupabase();
           console.log('🔍 리뷰 내역 조회 시작:', memberId);
           
           // 타임아웃 추가 (10초)
@@ -1441,6 +1390,7 @@
         const container = document.getElementById('detail-blogs-container');
         
         try {
+          await ensureSupabase();
           console.log('🔍 블로그 내역 조회 시작:', memberId);
           
           // 타임아웃 추가 (10초)
@@ -1809,6 +1759,19 @@
       setTimeout(() => {
         loadPlaceCache();
       }, 1000);
+    </script>
+
+    <!-- 공통 관리자 스크립트 -->
+    <script src="/admin/assets/admin-sidebar.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-header.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
+
+    <script>
+      // 관리자 권한 체크
+      (async function() {
+        const isAdmin = await AdminUtils.requireAdmin();
+        if (!isAdmin) return;
+      })();
     </script>
 
     <!-- 추적 및 모니터링 스크립트 -->

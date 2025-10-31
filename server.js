@@ -612,6 +612,12 @@ const placeDetailCrawlHandler = require("./api/place-detail-crawl");
 app.post("/api/place-detail-crawl", placeDetailCrawlHandler);
 app.get("/api/place-detail-crawl", placeDetailCrawlHandler);
 
+// ==================== 관리자 통계 API ====================
+const adminAnalyticsHandler = require("./api/admin/analytics");
+const adminDashboardHandler = require("./api/admin/dashboard");
+app.get("/api/admin/analytics", adminAnalyticsHandler);
+app.get("/api/admin/dashboard", adminDashboardHandler);
+
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);

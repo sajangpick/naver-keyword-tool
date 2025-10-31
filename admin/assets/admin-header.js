@@ -114,14 +114,29 @@
   // 사용자 정보 로드
   async function loadUserInfo() {
     try {
-      // Supabase에서 사용자 정보 가져오기
-      if (typeof window.supabase === 'undefined') {
-        console.warn('⚠️ Supabase not initialized');
+      // AdminBootstrap이 제공하는 Supabase 클라이언트를 우선 사용
+      let supabaseClient = null;
+
+      if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+        try {
+          supabaseClient = await window.AdminBootstrap.getSupabaseClient();
+        } catch (_) {
+          // fallthrough to other checks
+        }
+      }
+
+      // fallback: 전역에 이미 준비된 클라이언트 사용
+      if (!supabaseClient && window.supabase && window.supabase.auth && typeof window.supabase.auth.getUser === 'function') {
+        supabaseClient = window.supabase;
+      }
+
+      if (!supabaseClient || !supabaseClient.auth || typeof supabaseClient.auth.getUser !== 'function') {
+        console.warn('⚠️ Supabase client not ready (skip header user info)');
         return;
       }
 
-      const { data: { user } } = await window.supabase.auth.getUser();
-      
+      const { data: { user } = { user: null } } = await supabaseClient.auth.getUser();
+
       if (user) {
         const userNameEl = document.querySelector('#adminUserInfo .user-name');
         if (userNameEl) {

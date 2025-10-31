@@ -4,45 +4,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>사용자 분석 - 사장픽 관리자</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+    
+    <!-- Font Awesome -->
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
     />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
     <style>
+      /* 사용자 분석 전용 스타일 */
       :root {
-        --naver-green: #03c75a;
-        --naver-green-dark: #02b14f;
-        --bg: #f7f9fb;
-        --panel: #ffffff;
-        --muted: #6b7280;
-        --text: #111827;
-        --accent: var(--naver-green);
-        --border: #e5e7eb;
         --blue: #3b82f6;
         --purple: #8b5cf6;
         --orange: #f59e0b;
         --red: #ef4444;
       }
       
-      * {
-        box-sizing: border-box;
-      }
-      
-      body {
-        margin: 0;
-        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
-          Noto Sans KR, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-
       .container {
         max-width: 1600px;
         margin: 0 auto;
@@ -536,61 +519,78 @@
       </div>
     </div>
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    
+    <!-- Admin Bootstrap (Supabase 필수) -->
+    <script src="/admin/assets/admin-bootstrap.js?v=20251030" defer></script>
+    
+    <!-- 공통 관리자 스크립트 (Bootstrap 필수) -->
+    <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-sidebar.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-header.js?v=20251030" defer></script>
 
-    <script>
-      // Supabase 직접 초기화 (admin 페이지용)
-      const SUPABASE_URL = 'https://ptuzlubgggbgsophfcna.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      let currentDays = 7;
-      let dauChart, hourlyChart, funnelChart;
+    <!-- 추적 및 모니터링 스크립트 -->
+    <script src="/assets/analytics.js"></script>
+    <script src="/assets/error-logger.js"></script>
+    <script src="/assets/performance-tracker.js"></script>
 
-      // 페이지 로드 시
-      document.addEventListener('DOMContentLoaded', async () => {
-        // 관리자 권한 확인
-        const user = await checkAuth();
-        if (!user) {
-          alert('관리자 권한이 필요합니다.');
-          window.location.href = '/login.html';
-          return;
-        }
-
-        // 데이터 로드
-        await loadAllData();
-
-        // 시간 선택 버튼
-        document.querySelectorAll('.time-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentDays = parseInt(e.target.dataset.days);
-            loadAllData();
-          });
+    <script type="module">
+      // AdminUtils가 로드될 때까지 대기 (모듈/디퍼 순서 차이 해결)
+      function waitForAdminUtils(timeout = 5000) {
+        if (window.AdminUtils) return Promise.resolve(window.AdminUtils);
+        return new Promise(resolve => {
+          const start = Date.now();
+          const timer = setInterval(() => {
+            if (window.AdminUtils) {
+              clearInterval(timer);
+              resolve(window.AdminUtils);
+              return;
+            }
+            if (Date.now() - start > timeout) {
+              clearInterval(timer);
+              resolve(null);
+            }
+          }, 30);
         });
-      });
+      }
+      let supabaseClient;
+      let currentDays = 7;
+      let dauChart;
+      let hourlyChart;
+      let funnelChart;
 
-      // 관리자 권한 확인
-      async function checkAuth() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('membership_level, user_type')
-          .eq('id', user.id)
-          .single();
-
-        // user_type이 'admin' 또는 membership_level이 'admin'인 경우 관리자
-        if (!profile || (profile.user_type !== 'admin' && profile.membership_level !== 'admin')) {
-          return null;
-        }
-
-        return user;
+      async function getSupabase() {
+        if (supabaseClient) return supabaseClient;
+        supabaseClient = await AdminBootstrap.getSupabaseClient();
+        return supabaseClient;
       }
 
-      // 모든 데이터 로드
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          await getSupabase();
+          await waitForAdminUtils();
+
+          const isAdmin = window.AdminUtils ? await AdminUtils.requireAdmin() : false;
+          if (!isAdmin) {
+            return;
+          }
+
+          await loadAllData();
+
+          document.querySelectorAll('.time-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+              e.target.classList.add('active');
+              currentDays = parseInt(e.target.dataset.days, 10);
+              await loadAllData();
+            });
+          });
+        } catch (error) {
+          console.error('페이지 초기화 실패:', error);
+        }
+      });
+
       async function loadAllData() {
         await Promise.all([
           loadOverview(),
@@ -602,9 +602,9 @@
         ]);
       }
 
-      // 개요 통계
       async function loadOverview() {
         try {
+          const supabase = await getSupabase();
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) return;
 
@@ -621,7 +621,7 @@
           document.getElementById('blogsCreated').textContent = data.blogsCreated.toLocaleString();
           document.getElementById('reviewsReplied').textContent = data.reviewsReplied.toLocaleString();
           document.getElementById('crawlingUsed').textContent = data.crawlingUsed.toLocaleString();
-          
+
           const minutes = Math.floor(data.avgSessionDuration / 60);
           const seconds = data.avgSessionDuration % 60;
           document.getElementById('avgSession').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -631,9 +631,9 @@
         }
       }
 
-      // DAU 차트
       async function loadDauChart() {
         try {
+          const supabase = await getSupabase();
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) return;
 
@@ -646,9 +646,9 @@
           const data = await response.json();
 
           const ctx = document.getElementById('dauChart').getContext('2d');
-          
+
           if (dauChart) dauChart.destroy();
-          
+
           dauChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -679,9 +679,9 @@
         }
       }
 
-      // 시간대별 활동
       async function loadHourlyActivity() {
         try {
+          const supabase = await getSupabase();
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) return;
 
@@ -694,13 +694,13 @@
           const data = await response.json();
 
           const ctx = document.getElementById('hourlyChart').getContext('2d');
-          
+
           if (hourlyChart) hourlyChart.destroy();
-          
+
           hourlyChart = new Chart(ctx, {
             type: 'bar',
             data: {
-              labels: data.map(d => d.hour + '시'),
+              labels: data.map(d => `${d.hour}시`),
               datasets: [{
                 label: '사용자 수',
                 data: data.map(d => d.user_count),
@@ -724,9 +724,9 @@
         }
       }
 
-      // 퍼널 전환율
       async function loadFunnelConversion() {
         try {
+          const supabase = await getSupabase();
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) return;
 
@@ -739,16 +739,16 @@
           const data = await response.json();
 
           const ctx = document.getElementById('funnelChart').getContext('2d');
-          
+
           if (funnelChart) funnelChart.destroy();
-          
+
           const stepNames = {
             signup: '회원가입',
             first_use: '첫 사용',
             second_visit: '재방문',
             premium: '프리미엄'
           };
-          
+
           funnelChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -777,9 +777,9 @@
         }
       }
 
-      // 기능 사용 통계
       async function loadFeatureUsage() {
         try {
+          const supabase = await getSupabase();
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) return;
 
@@ -804,10 +804,10 @@
           };
 
           tbody.innerHTML = data.map(item => {
-            const avgPerUser = item.unique_users > 0 
-              ? (item.usage_count / item.unique_users).toFixed(1) 
+            const avgPerUser = item.unique_users > 0
+              ? (item.usage_count / item.unique_users).toFixed(1)
               : 0;
-            
+
             return `
               <tr>
                 <td>${featureNames[item.event_name] || item.event_name}</td>
@@ -824,9 +824,9 @@
         }
       }
 
-      // 인기 페이지
       async function loadPopularPages() {
         try {
+          const supabase = await getSupabase();
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) return;
 
@@ -859,17 +859,33 @@
         }
       }
 
-      // 데이터 새로고침
       async function refreshData() {
         await loadAllData();
         alert('✅ 데이터를 새로고침했습니다.');
       }
+
+      window.refreshData = refreshData;
     </script>
 
-    <!-- 추적 및 모니터링 스크립트 -->
-    <script src="/assets/analytics.js"></script>
-    <script src="/assets/error-logger.js"></script>
-    <script src="/assets/performance-tracker.js"></script>
+    <!-- 관리자 권한 체크 (AdminUtils 로드 보장 후 실행) -->
+    <script type="module">
+      // 관리자 권한 체크 (AdminUtils 로드 보장 후 실행)
+      const waitForAdminUtilsReady = () => new Promise(resolve => {
+        if (window.AdminUtils) return resolve();
+        const start = Date.now();
+        const timer = setInterval(() => {
+          if (window.AdminUtils || Date.now() - start > 5000) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, 30);
+      });
+
+      await waitForAdminUtilsReady();
+      if (window.AdminUtils) {
+        await window.AdminUtils.requireAdmin();
+      }
+    </script>
   </body>
 </html>
 

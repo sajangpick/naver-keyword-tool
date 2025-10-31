@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>데이터베이스 뷰어</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>데이터베이스 뷰어 - 사장픽 관리자</title>
+  
+  <!-- Font Awesome -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    rel="stylesheet"
+  />
+  
+  <!-- 공통 스타일 -->
+  <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+  
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/admin/assets/admin-bootstrap.js?v=20251030" defer></script>
+  
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f7fa;
-      padding: 20px;
-    }
+    /* DB 뷰어 전용 스타일 */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -201,6 +210,19 @@
     
     // 페이지 로드 시 실행
     loadData();
+  </script>
+
+  <!-- 공통 관리자 스크립트 -->
+  <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
+  <script src="/admin/assets/admin-sidebar.js?v=20251030" defer></script>
+  <script src="/admin/assets/admin-header.js?v=20251030" defer></script>
+
+  <script>
+    // 관리자 권한 체크
+    (async function() {
+      const isAdmin = await AdminUtils.requireAdmin();
+      if (!isAdmin) return;
+    })();
   </script>
 </body>
 </html>

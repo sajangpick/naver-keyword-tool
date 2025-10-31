@@ -6,6 +6,91 @@
 (function() {
   'use strict';
 
+  const SUPABASE_NOT_READY_MESSAGE = 'Supabase가 초기화되지 않았습니다.';
+
+  async function waitForAdminBootstrap(timeout = 10000) {
+    if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+      return window.AdminBootstrap;
+    }
+
+    return new Promise(resolve => {
+      const start = Date.now();
+      const timer = setInterval(() => {
+        if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+          clearInterval(timer);
+          resolve(window.AdminBootstrap);
+          return;
+        }
+
+        if (Date.now() - start > timeout) {
+          clearInterval(timer);
+          resolve(null);
+        }
+      }, 30);
+    });
+  }
+
+  async function waitForSession(supabase, timeout = 5000) {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('❌ 세션 조회 실패:', error);
+      return null;
+    }
+
+    if (session) {
+      return session;
+    }
+
+    return new Promise(resolve => {
+      let subscription;
+      const timer = setTimeout(() => {
+        if (subscription && typeof subscription.unsubscribe === 'function') {
+          subscription.unsubscribe();
+        }
+        resolve(null);
+      }, timeout);
+
+      const { data: { subscription: authSubscription } = {} } = supabase.auth.onAuthStateChange((event, newSession) => {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && newSession) {
+          clearTimeout(timer);
+          if (subscription && typeof subscription.unsubscribe === 'function') {
+            subscription.unsubscribe();
+          }
+          resolve(newSession);
+        }
+      });
+
+      subscription = authSubscription;
+    });
+  }
+
+  async function getSupabaseClient() {
+    await waitForAdminBootstrap();
+
+    if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+      try {
+        const client = await window.AdminBootstrap.getSupabaseClient();
+        if (client) {
+          window.supabaseClient = client;
+          return client;
+        }
+      } catch (error) {
+        console.error('Supabase 초기화 실패:', error);
+        throw error;
+      }
+    }
+
+    if (window.supabaseClient) {
+      return window.supabaseClient;
+    }
+
+    if (window.supabase && typeof window.supabase.auth === 'object') {
+      return window.supabase;
+    }
+
+    throw new Error(SUPABASE_NOT_READY_MESSAGE);
+  }
+
   // ==================== 날짜/시간 포맷 ====================
   
   /**
@@ -98,12 +183,8 @@
    */
   async function adminFetch(endpoint, options = {}) {
     try {
-      // Supabase 세션 가져오기
-      if (!window.supabase) {
-        throw new Error('Supabase가 초기화되지 않았습니다.');
-      }
-
-      const { data: { session } } = await window.supabase.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         throw new Error('로그인이 필요합니다.');
@@ -142,26 +223,24 @@
    */
   async function checkAdminAuth() {
     try {
-      if (!window.supabase) {
-        console.error('❌ Supabase가 초기화되지 않았습니다.');
-        return false;
+      const supabase = await getSupabaseClient();
+      const session = await waitForSession(supabase);
+
+      if (!session || !session.user) {
+        console.log('⌛ 세션 대기 중');
+        return null;
       }
 
-      const { data: { user }, error: userError } = await window.supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('❌ 사용자 정보 조회 실패:', userError);
-        return false;
-      }
-      
+      const user = session.user;
+
       if (!user) {
-        console.log('⚠️ 로그인되지 않음');
+        console.log('⚠️ 사용자 정보 없음');
         return false;
       }
 
       console.log('✅ 로그인된 사용자:', user.email);
 
-      const { data: profile, error: profileError } = await window.supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_type, membership_level')
         .eq('id', user.id)
@@ -180,6 +259,10 @@
       
       return isAdmin;
     } catch (error) {
+      if (error && error.message === SUPABASE_NOT_READY_MESSAGE) {
+        return null;
+      }
+
       console.error('❌ 권한 확인 실패:', error);
       return false;
     }
@@ -188,32 +271,34 @@
   /**
    * 관리자 권한 체크 및 리다이렉트
    */
-  async function requireAdmin() {
-    const isAdmin = await checkAdminAuth();
-    
-    if (!isAdmin) {
-      // 중복 alert 방지
-      if (window.__adminAuthChecked) {
+  async function requireAdmin({ redirect = true, maxRetries = 50, retryDelay = 100 } = {}) {
+    let attempts = 0;
+
+    while (attempts <= maxRetries) {
+      const authStatus = await checkAdminAuth();
+
+      if (authStatus === true) {
+        return true;
+      }
+
+      if (authStatus === false) {
+        if (redirect) {
+          const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.replace(`/login.html?redirect=${currentUrl}`);
+        }
         return false;
       }
-      window.__adminAuthChecked = true;
-      
-      // 현재 페이지 URL을 redirect 파라미터로 전달
-      const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
-      
-      // confirm으로 변경 (더 안전)
-      const shouldRedirect = confirm('관리자 권한이 필요합니다.\n로그인 페이지로 이동하시겠습니까?');
-      
-      if (shouldRedirect) {
-        window.location.replace(`/login.html?redirect=${currentUrl}`);
-      } else {
-        window.location.replace('/');
-      }
-      
-      return false;
+
+      attempts += 1;
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
-    
-    return true;
+
+    if (redirect && window.location.pathname !== '/login.html') {
+      const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.replace(`/login.html?redirect=${currentUrl}`);
+    }
+
+    return false;
   }
 
   // ==================== 알림 ====================

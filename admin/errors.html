@@ -4,44 +4,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>에러 로그 - 사장픽 관리자</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+    
+    <!-- Font Awesome -->
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
     />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
     <style>
+      /* 에러 로그 전용 스타일 */
       :root {
-        --naver-green: #03c75a;
-        --naver-green-dark: #02b14f;
-        --bg: #f7f9fb;
-        --panel: #ffffff;
-        --muted: #6b7280;
-        --text: #111827;
-        --accent: var(--naver-green);
-        --border: #e5e7eb;
         --danger: #ef4444;
         --warning: #f59e0b;
         --info: #3b82f6;
         --success: #10b981;
       }
       
-      * {
-        box-sizing: border-box;
-      }
-      
-      body {
-        margin: 0;
-        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
-          Noto Sans KR, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-
       .container {
         max-width: 1600px;
         margin: 0 auto;
@@ -680,13 +661,16 @@
     </div>
 
     <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js?v=20251030" defer></script>
 
-    <script>
-      // Supabase 직접 초기화 (admin 페이지용)
-      const SUPABASE_URL = 'https://ptuzlubgggbgsophfcna.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <!-- 공통 관리자 스크립트 -->
+    <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-sidebar.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-header.js?v=20251030" defer></script>
+
+    <script type="module">
+      let supabaseClient;
       let currentFilters = {
         severity: 'all',
         type: 'all',
@@ -694,70 +678,57 @@
       };
       let allErrors = [];
 
-      // 페이지 로드 시
-      document.addEventListener('DOMContentLoaded', async () => {
-        // 관리자 권한 확인
-        const user = await checkAuth();
-        if (!user) {
-          alert('관리자 권한이 필요합니다.');
-          window.location.href = '/login.html';
-          return;
-        }
-
-        // 데이터 로드
-        await loadErrors();
-
-        // 필터 버튼 이벤트
-        document.querySelectorAll('[data-severity]').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            document.querySelectorAll('[data-severity]').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentFilters.severity = e.target.dataset.severity;
-            filterErrors();
-          });
-        });
-
-        document.querySelectorAll('[data-type]').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentFilters.type = e.target.dataset.type;
-            filterErrors();
-          });
-        });
-
-        document.querySelectorAll('[data-source]').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            document.querySelectorAll('[data-source]').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentFilters.source = e.target.dataset.source;
-            filterErrors();
-          });
-        });
-      });
-
-      // 관리자 권한 확인
-      async function checkAuth() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('membership_level, user_type')
-          .eq('id', user.id)
-          .single();
-
-        // user_type이 'admin' 또는 membership_level이 'admin'인 경우 관리자
-        if (!profile || (profile.user_type !== 'admin' && profile.membership_level !== 'admin')) {
-          return null;
-        }
-
-        return user;
+      async function getSupabase() {
+        if (supabaseClient) return supabaseClient;
+        supabaseClient = await AdminBootstrap.getSupabaseClient();
+        return supabaseClient;
       }
 
-      // 에러 로드
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          await getSupabase();
+
+          const isAdmin = await AdminUtils.requireAdmin();
+          if (!isAdmin) {
+            return;
+          }
+
+          await loadErrors();
+
+          document.querySelectorAll('[data-severity]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              document.querySelectorAll('[data-severity]').forEach(b => b.classList.remove('active'));
+              e.target.classList.add('active');
+              currentFilters.severity = e.target.dataset.severity;
+              filterErrors();
+            });
+          });
+
+          document.querySelectorAll('[data-type]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
+              e.target.classList.add('active');
+              currentFilters.type = e.target.dataset.type;
+              filterErrors();
+            });
+          });
+
+          document.querySelectorAll('[data-source]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              document.querySelectorAll('[data-source]').forEach(b => b.classList.remove('active'));
+              e.target.classList.add('active');
+              currentFilters.source = e.target.dataset.source;
+              filterErrors();
+            });
+          });
+        } catch (error) {
+          console.error('페이지 초기화 실패:', error);
+        }
+      });
+
       async function loadErrors() {
         try {
+          const supabase = await getSupabase();
           const startTime = new Date();
           startTime.setHours(startTime.getHours() - 24);
 
@@ -771,11 +742,8 @@
           if (error) throw error;
 
           allErrors = data || [];
-          
-          // 통계 업데이트
+
           updateStats(allErrors);
-          
-          // 에러 목록 표시
           filterErrors();
 
         } catch (error) {
@@ -784,7 +752,6 @@
         }
       }
 
-      // 통계 업데이트
       function updateStats(errors) {
         const critical = errors.filter(e => e.severity === 'critical').length;
         const high = errors.filter(e => e.severity === 'high').length;
@@ -797,7 +764,6 @@
         document.getElementById('lowCount').textContent = low;
       }
 
-      // 에러 필터링
       function filterErrors() {
         let filtered = allErrors;
 
@@ -816,7 +782,6 @@
         displayErrors(filtered);
       }
 
-      // 에러 목록 표시
       function displayErrors(errors) {
         const errorList = document.getElementById('errorList');
 
@@ -827,7 +792,7 @@
 
         errorList.innerHTML = errors.map(error => {
           const timeAgo = getTimeAgo(new Date(error.created_at));
-          
+
           return `
             <div class="error-item" onclick='showErrorDetails(${JSON.stringify(error)})'>
               <div class="error-header">
@@ -864,10 +829,9 @@
         }).join('');
       }
 
-      // 에러 상세 표시
       function showErrorDetails(error) {
         document.getElementById('modalMessage').textContent = error.error_message;
-        
+
         document.getElementById('modalBadges').innerHTML = `
           <span class="badge badge-${error.severity}">${error.severity.toUpperCase()}</span>
           <span class="badge badge-${error.error_type}">${error.error_type}</span>
@@ -915,12 +879,10 @@
         document.getElementById('errorModal').classList.add('active');
       }
 
-      // 모달 닫기
       function closeModal() {
         document.getElementById('errorModal').classList.remove('active');
       }
 
-      // 시간 경과
       function getTimeAgo(date) {
         const now = new Date();
         const diff = now - date;
@@ -935,17 +897,16 @@
         return '방금 전';
       }
 
-      // 데이터 새로고침
       async function refreshData() {
         await loadErrors();
         alert('✅ 데이터를 새로고침했습니다.');
       }
 
-      // 해결된 에러 삭제
       async function clearResolvedErrors() {
         if (!confirm('해결된 에러를 모두 삭제하시겠습니까?')) return;
 
         try {
+          const supabase = await getSupabase();
           const { error } = await supabase
             .from('error_logs')
             .delete()
@@ -961,12 +922,16 @@
         }
       }
 
-      // 모달 외부 클릭 시 닫기
       document.getElementById('errorModal').addEventListener('click', (e) => {
         if (e.target.id === 'errorModal') {
           closeModal();
         }
       });
+
+      window.showErrorDetails = showErrorDetails;
+      window.closeModal = closeModal;
+      window.refreshData = refreshData;
+      window.clearResolvedErrors = clearResolvedErrors;
     </script>
 
     <!-- 추적 및 모니터링 스크립트 -->

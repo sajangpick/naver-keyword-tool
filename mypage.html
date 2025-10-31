@@ -955,8 +955,18 @@
         }
 
         const user = JSON.parse(userDataStr);
-        if (!user || !user.id) {
-          showError('로그인이 필요합니다.');
+        
+        // UUID 형식 검증 (정규식: 8-4-4-4-12)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        if (!user || !user.id || !uuidRegex.test(user.id)) {
+          console.error('❌ 유효하지 않은 사용자 ID:', user?.id);
+          showError('로그인 정보가 유효하지 않습니다. 다시 로그인해주세요.');
+          
+          // 잘못된 로그인 정보 제거
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('userData');
+          
           setTimeout(() => {
             window.location.href = '/login.html';
           }, 2000);

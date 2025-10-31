@@ -3,40 +3,23 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>플레이스 순위 리포트</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>플레이스 순위 리포트 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
     />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js?v=20251030" defer></script>
+    
     <style>
-      :root {
-        /* Align with sajangpick.co.kr */
-        --naver-green: #03c75a;
-        --naver-green-dark: #02b14f;
-        --bg: #f7f9fb;
-        --panel: #ffffff;
-        --muted: #6b7280;
-        --text: #111827;
-        --accent: var(--naver-green);
-        --border: #e5e7eb;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
-          Noto Sans KR, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
-
+      /* 순위 리포트 전용 스타일 */
       .wrap {
         max-width: 1200px;
         margin: 0 auto;
@@ -1061,6 +1044,19 @@
         loadKeywordMonitoring();
         alert('새로고침 완료!');
       }
+    </script>
+
+    <!-- 공통 관리자 스크립트 -->
+    <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-sidebar.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-header.js?v=20251030" defer></script>
+
+    <script>
+      // 관리자 권한 체크
+      (async function() {
+        const isAdmin = await AdminUtils.requireAdmin();
+        if (!isAdmin) return;
+      })();
     </script>
   </body>
 </html>

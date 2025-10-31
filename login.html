@@ -355,19 +355,35 @@
       // 페이지 로드 시 Supabase 세션 확인
       (async () => {
         try {
+          // 카카오 로그인 콜백인 경우 로딩 표시
+          const hashParams = new URLSearchParams(window.location.hash.slice(1));
+          if (hashParams.has('access_token')) {
+            showLoading();
+          }
+          
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             setLoggedInFromSession(session);
             redirectAfterLogin();
+          } else {
+            hideLoading();
           }
-        } catch (_) {}
+        } catch (error) {
+          console.error('세션 확인 오류:', error);
+          hideLoading();
+        }
       })();
 
       // 로그인 상태 변화 감지
       supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN") {
+        console.log('Auth state changed:', event, session ? '세션 있음' : '세션 없음');
+        
+        if (event === "SIGNED_IN" && session) {
+          showLoading();
           setLoggedInFromSession(session);
           redirectAfterLogin();
+        } else if (event === "SIGNED_OUT") {
+          hideLoading();
         }
       });
 
