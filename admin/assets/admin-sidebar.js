@@ -75,7 +75,7 @@
     {
       icon: '🎁',
       title: '토큰 설정',
-      path: '/admin/pages/token-settings.html',
+      path: '/admin/pages/subscription-settings.html',
       badge: null
     },
     {
@@ -87,7 +87,7 @@
     {
       icon: '⚙️',
       title: '회원 맞춤 설정',
-      path: '/admin/pages/member-customization.html',
+      path: '/admin/pages/member-subscription-customization.html',
       badge: null
     },
     {
