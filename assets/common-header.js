@@ -86,6 +86,7 @@
             <a class="app" href="/review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
             <a class="app" href="/Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
             <a class="app" href="/ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
+            <a class="app" href="/news-board.html"><div class="app-icon"><i class="fa-solid fa-newspaper" style="font-size:20px"></i></div><div class="app-label">정보게시판</div></a>
           </div>
           <div class="auth-buttons" id="authButtons">
             <div class="auth-user" id="authUser" style="display:none;">

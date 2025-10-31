@@ -374,6 +374,173 @@
       margin-bottom: 12px;
     }
 
+    /* 토큰 정보 스타일 */
+    .token-status-card {
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .token-plan {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .plan-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .plan-badge {
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .token-meter {
+      margin-bottom: 20px;
+    }
+
+    .meter-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .meter-label {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .meter-value {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .meter-bar {
+      width: 100%;
+      height: 20px;
+      background: #e0e7ff;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .meter-percent {
+      text-align: right;
+      margin-top: 5px;
+      font-size: 14px;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .token-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .token-stat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: white;
+      border-radius: 10px;
+    }
+
+    .token-stat i {
+      font-size: 20px;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      display: block;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .token-usage-history {
+      margin-top: 25px;
+    }
+
+    .usage-list {
+      background: white;
+      border: 1px solid #e0e7ff;
+      border-radius: 10px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .usage-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f4ff;
+    }
+
+    .usage-item:last-child {
+      border-bottom: none;
+    }
+
+    .usage-api {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .usage-tokens {
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .usage-time {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .btn-upgrade {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: transform 0.2s;
+    }
+
+    .btn-upgrade:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
     @media (max-width: 768px) {
       .content-grid {
         grid-template-columns: 1fr;
@@ -481,6 +648,71 @@
 
       <!-- 컨텐츠 그리드 -->
       <div class="content-grid">
+        <!-- 0. 토큰 정보 -->
+        <section class="section" id="tokenSection">
+          <h3 class="section-title">
+            <i class="fas fa-coins"></i>
+            내 토큰 정보
+          </h3>
+          
+          <!-- 토큰 현황 카드 -->
+          <div class="token-status-card">
+            <div class="token-plan">
+              <span class="plan-name" id="currentPlan">씨앗</span>
+              <span class="plan-badge" id="planBadge">무료</span>
+            </div>
+            
+            <div class="token-meter">
+              <div class="meter-info">
+                <span class="meter-label">이번 달 사용량</span>
+                <span class="meter-value">
+                  <span id="tokensUsed">0</span> / <span id="tokensLimit">100</span> 토큰
+                </span>
+              </div>
+              <div class="meter-bar">
+                <div class="meter-fill" id="tokenMeterFill" style="width: 0%"></div>
+              </div>
+              <div class="meter-percent" id="usagePercent">0%</div>
+            </div>
+            
+            <div class="token-stats">
+              <div class="token-stat">
+                <i class="fas fa-battery-three-quarters"></i>
+                <div>
+                  <span class="stat-label">남은 토큰</span>
+                  <span class="stat-value" id="tokensRemaining">100</span>
+                </div>
+              </div>
+              <div class="token-stat">
+                <i class="fas fa-calendar-alt"></i>
+                <div>
+                  <span class="stat-label">갱신일까지</span>
+                  <span class="stat-value" id="daysLeft">30일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 최근 사용 내역 -->
+          <div class="token-usage-history">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">
+              <i class="fas fa-history"></i> 최근 사용 내역
+            </h4>
+            <div id="recentUsageList" class="usage-list">
+              <div style="text-align: center; color: #999; padding: 20px;">
+                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+              </div>
+            </div>
+          </div>
+          
+          <!-- 업그레이드 버튼 -->
+          <div id="upgradeSection" style="display: none;">
+            <button class="btn btn-upgrade" onclick="goToUpgrade()">
+              <i class="fas fa-rocket"></i> 더 많은 토큰이 필요하신가요? 업그레이드 하기
+            </button>
+          </div>
+        </section>
+
         <!-- 1. 내 가게 정보 -->
         <section class="section">
           <h3 class="section-title">
@@ -977,7 +1209,8 @@
         await Promise.all([
           loadUserProfile(user.id),
           loadRecentReviews(user.id),
-          loadRecentBlogs(user.id)
+          loadRecentBlogs(user.id),
+          loadTokenInfo(user.id)  // 토큰 정보 추가
         ]);
 
         // 추가 데이터 로드 (블로그 관련)
@@ -1302,6 +1535,164 @@
       } catch (error) {
         console.error('❌ 가게 정보 저장 실패:', error);
         alert('가게 정보 저장 실패: ' + error.message);
+      }
+    }
+
+    // 토큰 정보 로드
+    async function loadTokenInfo(userId) {
+      try {
+        // 서버 API를 통해 토큰 정보 가져오기
+        const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('토큰 정보 로드 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const { profile, cycle, recentUsage } = result.data;
+          
+          // 플랜 정보 표시
+          const planNames = {
+            'seed': '씨앗',
+            'power': '파워',
+            'bigpower': '빅파워',
+            'premium': '프리미엄',
+            'elite': '엘리트',
+            'expert': '전문가',
+            'master': '마스터'
+          };
+          
+          const planBadges = {
+            'seed': '무료',
+            'power': '베이직',
+            'bigpower': '프로',
+            'premium': 'VIP',
+            'elite': '엘리트',
+            'expert': '전문가',
+            'master': '마스터'
+          };
+          
+          document.getElementById('currentPlan').textContent = 
+            planNames[profile.membership_level] || '씨앗';
+          document.getElementById('planBadge').textContent = 
+            planBadges[profile.membership_level] || '무료';
+          
+          if (cycle) {
+            // 토큰 사용량 표시
+            const tokensUsed = cycle.tokens_used || 0;
+            const tokensLimit = cycle.monthly_token_limit || 100;
+            const tokensRemaining = cycle.tokens_remaining || tokensLimit;
+            const usagePercent = tokensLimit > 0 ? 
+              Math.round((tokensUsed / tokensLimit) * 100) : 0;
+            
+            document.getElementById('tokensUsed').textContent = tokensUsed;
+            document.getElementById('tokensLimit').textContent = tokensLimit;
+            document.getElementById('tokensRemaining').textContent = tokensRemaining;
+            document.getElementById('usagePercent').textContent = usagePercent + '%';
+            document.getElementById('daysLeft').textContent = 
+              cycle.days_remaining ? `${cycle.days_remaining}일` : '30일';
+            
+            // 미터 바 업데이트
+            const meterFill = document.getElementById('tokenMeterFill');
+            if (meterFill) {
+              meterFill.style.width = Math.min(usagePercent, 100) + '%';
+              
+              // 사용량에 따른 색상 변경
+              if (usagePercent >= 90) {
+                meterFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+              } else if (usagePercent >= 70) {
+                meterFill.style.background = 'linear-gradient(90deg, #f59e0b, #ea580c)';
+              }
+            }
+            
+            // 80% 이상 사용시 업그레이드 버튼 표시
+            if (usagePercent >= 80) {
+              const upgradeSection = document.getElementById('upgradeSection');
+              if (upgradeSection) {
+                upgradeSection.style.display = 'block';
+              }
+            }
+          }
+          
+          // 최근 사용 내역 표시
+          if (recentUsage && recentUsage.length > 0) {
+            const usageList = document.getElementById('recentUsageList');
+            if (usageList) {
+              usageList.innerHTML = recentUsage.slice(0, 5).map(usage => {
+                const apiLabels = {
+                  'chatgpt': 'ChatGPT',
+                  'blog': '블로그 작성',
+                  'reply': '리뷰 답글',
+                  'claude': 'Claude',
+                  'news': '뉴스 추천'
+                };
+                
+                const timeAgo = getTimeAgo(new Date(usage.used_at));
+                
+                return `
+                  <div class="usage-item">
+                    <div>
+                      <span class="usage-api">${apiLabels[usage.api_type] || usage.api_type}</span>
+                      <span class="usage-time">${timeAgo}</span>
+                    </div>
+                    <span class="usage-tokens">-${usage.tokens_used} 토큰</span>
+                  </div>
+                `;
+              }).join('');
+              
+              if (recentUsage.length === 0) {
+                usageList.innerHTML = `
+                  <div style="text-align: center; color: #999; padding: 20px;">
+                    <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
+                  </div>
+                `;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ 토큰 정보 로드 실패:', error);
+        
+        // 기본값 표시
+        document.getElementById('currentPlan').textContent = '씨앗';
+        document.getElementById('planBadge').textContent = '무료';
+        document.getElementById('tokensUsed').textContent = '0';
+        document.getElementById('tokensLimit').textContent = '100';
+        document.getElementById('tokensRemaining').textContent = '100';
+        document.getElementById('usagePercent').textContent = '0%';
+      }
+    }
+    
+    // 시간 표시 헬퍼 함수
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diff = Math.floor((now - date) / 1000); // 초 단위
+      
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+      if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
+      return date.toLocaleDateString('ko-KR');
+    }
+    
+    // 업그레이드 페이지로 이동
+    function goToUpgrade() {
+      window.location.href = '/payment.html?plan=power';
+    }
+    
+    // 토큰 정보 새로고침
+    async function refreshTokenInfo() {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        await loadTokenInfo(user.id);
       }
     }
 

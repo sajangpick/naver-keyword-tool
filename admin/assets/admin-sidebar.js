@@ -58,6 +58,39 @@
       badge: null
     },
     {
+      icon: '📰',
+      title: '뉴스 관리',
+      path: '/admin/news-management.html',
+      badge: null
+    },
+    {
+      section: '구독 및 청구'
+    },
+    {
+      icon: '💰',
+      title: '가격 설정',
+      path: '/admin/pages/subscription-settings.html',
+      badge: null
+    },
+    {
+      icon: '🎁',
+      title: '토큰 설정',
+      path: '/admin/pages/token-settings.html',
+      badge: null
+    },
+    {
+      icon: '📊',
+      title: '토큰 대시보드',
+      path: '/admin/pages/token-dashboard.html',
+      badge: 'NEW'
+    },
+    {
+      icon: '⚙️',
+      title: '회원 맞춤 설정',
+      path: '/admin/pages/member-customization.html',
+      badge: null
+    },
+    {
       section: '기타'
     },
     {

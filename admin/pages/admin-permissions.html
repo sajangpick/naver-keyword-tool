@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>관리자 권한 제어 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 24px;
+      }
+
+      .admin-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        background: white;
+      }
+
+      .admin-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .admin-card-header h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .admin-card-header .badge {
+        padding: 4px 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #374151;
+      }
+
+      .permission-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        gap: 12px;
+      }
+
+      .permission-item:not(:last-child) {
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      .permission-toggle {
+        display: flex;
+        gap: 8px;
+      }
+
+      .permission-toggle button {
+        flex: 1;
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .permission-toggle button.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .permission-toggle button:first-child {
+        border-radius: 4px 0 0 4px;
+      }
+
+      .permission-toggle button:last-child {
+        border-radius: 0 4px 4px 0;
+      }
+
+      .permission-label {
+        flex: 1;
+      }
+
+      .permission-label .label-name {
+        font-weight: 600;
+        color: #111827;
+        font-size: 14px;
+      }
+
+      .permission-label .label-desc {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+
+      .error {
+        padding: 16px;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        color: #dc2626;
+        margin-bottom: 16px;
+      }
+
+      .success {
+        padding: 16px;
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        color: #16a34a;
+        margin-bottom: 16px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .btn.danger {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+
+      .btn.danger:hover {
+        background: #fef2f2;
+      }
+
+      .admin-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .admin-actions button {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 사이드바 -->
+    <div id="sidebar"></div>
+
+    <!-- 헤더 -->
+    <div id="header"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+      <div class="container">
+        <!-- 페이지 타이틀 -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
+            <i class="fas fa-lock" style="color: var(--accent);"></i>
+            관리자 권한 제어
+          </h1>
+        </div>
+        <div class="subtitle">오너 관리자가 일반 관리자의 기능 접근 권한을 제어합니다</div>
+
+        <!-- 상태 메시지 -->
+        <div id="statusMessage" style="display: none;"></div>
+
+        <!-- 일반 관리자 목록 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-users-cog" style="color: var(--accent);"></i>
+              관리자 목록
+            </div>
+            <button class="btn primary" onclick="loadAdmins()">
+              <i class="fas fa-sync"></i> 새로고침
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="adminsContainer" class="admin-grid">
+              <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
+
+    <script>
+      // ==================== 설정 ====================
+      
+      let supabase;
+      let currentAdmin = null;
+
+      // 기능별 권한 정의
+      const PERMISSION_FEATURES = [
+        {
+          key: 'dashboard_view',
+          name: '📊 대시보드',
+          description: '분석 및 통계 대시보드 조회',
+          category: '조회'
+        },
+        {
+          key: 'members_view',
+          name: '👥 회원 목록',
+          description: '회원 정보 조회',
+          category: '조회'
+        },
+        {
+          key: 'members_edit',
+          name: '✏️ 회원 수정',
+          description: '회원 등급, 유형, 역할 변경',
+          category: '편집'
+        },
+        {
+          key: 'members_delete',
+          name: '🗑️ 회원 삭제',
+          description: '회원 삭제',
+          category: '편집'
+        },
+        {
+          key: 'news_view',
+          name: '📰 뉴스 조회',
+          description: '뉴스 게시판 조회',
+          category: '조회'
+        },
+        {
+          key: 'news_edit',
+          name: '📝 뉴스 작성/수정',
+          description: '뉴스 게시판 관리',
+          category: '편집'
+        },
+        {
+          key: 'news_delete',
+          name: '🗑️ 뉴스 삭제',
+          description: '뉴스 게시판 삭제',
+          category: '편집'
+        },
+        {
+          key: 'analytics_view',
+          name: '📈 분석',
+          description: '분석 대시보드 조회',
+          category: '조회'
+        },
+        {
+          key: 'performance_view',
+          name: '⚡ 성능',
+          description: '성능 모니터링 조회',
+          category: '조회'
+        },
+        {
+          key: 'review_monitoring_view',
+          name: '👁️ 리뷰 모니터링 조회',
+          description: '리뷰 모니터링 조회',
+          category: '조회'
+        },
+        {
+          key: 'review_monitoring_edit',
+          name: '⚙️ 리뷰 모니터링 편집',
+          description: '리뷰 모니터링 설정 변경',
+          category: '편집'
+        },
+        {
+          key: 'errors_view',
+          name: '⚠️ 오류 로그',
+          description: '오류 로그 조회',
+          category: '조회'
+        },
+        {
+          key: 'rank_report_view',
+          name: '🏆 순위 리포트',
+          description: '순위 리포트 조회',
+          category: '조회'
+        }
+      ];
+
+      // ==================== 초기화 ====================
+
+      window.addEventListener('load', async function() {
+        supabase = await AdminBootstrap.getSupabaseClient();
+        await AdminBootstrap.initializeHeader();
+        await AdminBootstrap.initializeSidebar();
+        await loadAdmins();
+      });
+
+      // ==================== 관리자 로드 ====================
+
+      async function loadAdmins() {
+        try {
+          const container = document.getElementById('adminsContainer');
+          container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>';
+
+          // 일반 관리자 목록 조회
+          const { data: admins, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_type', 'admin')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          if (!admins || admins.length === 0) {
+            container.innerHTML = '<div class="loading">일반 관리자가 없습니다</div>';
+            return;
+          }
+
+          // 각 일반 관리자의 권한 로드
+          const adminsWithPermissions = await Promise.all(
+            admins.map(async admin => {
+              const permResponse = await fetch(`/api/admin/permissions/${admin.id}`);
+              const permData = await permResponse.json();
+              return {
+                ...admin,
+                permissions: permData.permissions?.permissions || {}
+              };
+            })
+          );
+
+          renderAdmins(adminsWithPermissions);
+
+        } catch (error) {
+          console.error('❌ 관리자 로드 실패:', error);
+          showMessage('관리자 로드 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== UI 렌더링 ====================
+
+      function renderAdmins(admins) {
+        const container = document.getElementById('adminsContainer');
+        
+        container.innerHTML = admins.map(admin => `
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <h3>
+                ${admin.role === 'owner' ? '👨‍💼' : '👔'}
+                ${admin.name || '(이름 없음)'}
+              </h3>
+              <span class="badge">${admin.role === 'owner' ? '오너' : '일반'}</span>
+            </div>
+
+            <div style="margin-bottom: 12px; font-size: 12px; color: #6b7280;">
+              ${admin.email}
+            </div>
+
+            <div id="permissions-${admin.id}">
+              ${PERMISSION_FEATURES.map(feature => `
+                <div class="permission-item">
+                  <div class="permission-label">
+                    <div class="label-name">${feature.name}</div>
+                    <div class="label-desc">${feature.description}</div>
+                  </div>
+                  <div class="permission-toggle">
+                    <button 
+                      class="allow-btn ${(admin.permissions[feature.key] !== false) ? 'active' : ''}"
+                      onclick="togglePermission('${admin.id}', '${feature.key}', true)"
+                      title="허용">
+                      ✓ 허용
+                    </button>
+                    <button 
+                      class="deny-btn ${(admin.permissions[feature.key] === false) ? 'active' : ''}"
+                      onclick="togglePermission('${admin.id}', '${feature.key}', false)"
+                      title="불가">
+                      ✕ 불가
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="admin-actions">
+              <button class="btn primary" onclick="savePermissions('${admin.id}', '${admin.name}')">
+                <i class="fas fa-save"></i> 저장
+              </button>
+              <button class="btn" onclick="resetPermissions('${admin.id}')">
+                <i class="fas fa-undo"></i> 초기화
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // ==================== 권한 관리 ====================
+
+      function togglePermission(adminId, featureKey, allowed) {
+        const container = document.getElementById(`permissions-${adminId}`);
+        const feature = PERMISSION_FEATURES.find(f => f.key === featureKey);
+        
+        // 버튼 상태 업데이트
+        const buttons = container.querySelectorAll(`[onclick*="togglePermission('${adminId}', '${featureKey}"]`);
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        if (allowed) {
+          buttons[0].classList.add('active');
+        } else {
+          buttons[1].classList.add('active');
+        }
+      }
+
+      async function savePermissions(adminId, adminName) {
+        try {
+          // 현재 권한 상태 수집
+          const permissions = {};
+          PERMISSION_FEATURES.forEach(feature => {
+            const container = document.getElementById(`permissions-${adminId}`);
+            const buttons = container.querySelectorAll(`[onclick*="togglePermission('${adminId}', '${feature.key}"]`);
+            const denyBtn = buttons[1];
+            permissions[feature.key] = !denyBtn.classList.contains('active');
+          });
+
+          // API 호출
+          const response = await fetch('/api/admin/permissions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              general_admin_id: adminId,
+              owner_admin_id: currentAdmin.id, // 오너 관리자 ID (로그인한 사용자)
+              permissions: permissions
+            })
+          });
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+
+          showMessage(`${adminName} 관리자의 권한이 저장되었습니다`, 'success');
+          await loadAdmins();
+
+        } catch (error) {
+          console.error('❌ 권한 저장 실패:', error);
+          showMessage('권한 저장 실패: ' + error.message, 'error');
+        }
+      }
+
+      function resetPermissions(adminId) {
+        if (!confirm('권한 설정을 초기화하시겠습니까?')) return;
+        
+        const container = document.getElementById(`permissions-${adminId}`);
+        container.querySelectorAll('.allow-btn').forEach(btn => btn.classList.add('active'));
+        container.querySelectorAll('.deny-btn').forEach(btn => btn.classList.remove('active'));
+      }
+
+      // ==================== 메시지 ====================
+
+      function showMessage(message, type) {
+        const container = document.getElementById('statusMessage');
+        container.className = type;
+        container.textContent = message;
+        container.style.display = 'block';
+
+        setTimeout(() => {
+          container.style.display = 'none';
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

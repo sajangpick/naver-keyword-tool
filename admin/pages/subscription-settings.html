@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>구독 설정 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+      }
+
+      .setting-item {
+        background: #f9fafb;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .setting-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .setting-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        background: var(--accent);
+        color: white;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      input[type="number"] {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(52, 144, 220, 0.1);
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .btn.danger {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .btn-group .btn {
+        flex: 1;
+      }
+
+      .info-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+
+      .error {
+        padding: 16px;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        color: #dc2626;
+        margin-bottom: 16px;
+      }
+
+      .success {
+        padding: 16px;
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        color: #16a34a;
+        margin-bottom: 16px;
+      }
+
+      .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--accent);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .tab-btn {
+        padding: 12px 16px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        transition: all 0.2s;
+      }
+
+      .tab-btn.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 사이드바 -->
+    <div id="sidebar"></div>
+
+    <!-- 헤더 -->
+    <div id="header"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+      <div class="container">
+        <!-- 페이지 타이틀 -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
+            <i class="fas fa-sliders-h" style="color: var(--accent);"></i>
+            구독 설정
+          </h1>
+        </div>
+        <div class="subtitle">구독 요금과 토큰 한도를 설정합니다</div>
+
+        <!-- 상태 메시지 -->
+        <div id="statusMessage" style="display: none;"></div>
+
+        <!-- 탭 -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('pricing')">
+            <i class="fas fa-tag"></i> 가격 설정
+          </button>
+          <button class="tab-btn" onclick="switchTab('tokens')">
+            <i class="fas fa-coins"></i> 토큰 한도
+          </button>
+        </div>
+
+        <!-- 가격 설정 탭 -->
+        <div id="pricing-tab" class="tab-content active">
+          <section class="card">
+            <div class="card-header">
+              <div class="title">
+                <i class="fas fa-tag" style="color: var(--accent);"></i>
+                식당 대표 가격 설정
+              </div>
+              <button class="btn primary" onclick="savePricing('owner')">
+                <i class="fas fa-save"></i> 저장
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="settings-grid" id="owner-pricing">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <div class="title">
+                <i class="fas fa-tag" style="color: var(--accent);"></i>
+                대행사 가격 설정
+              </div>
+              <button class="btn primary" onclick="savePricing('agency')">
+                <i class="fas fa-save"></i> 저장
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="settings-grid" id="agency-pricing">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 토큰 한도 탭 -->
+        <div id="tokens-tab" class="tab-content">
+          <section class="card">
+            <div class="card-header">
+              <div class="title">
+                <i class="fas fa-coins" style="color: var(--accent);"></i>
+                식당 대표 토큰 한도
+              </div>
+              <button class="btn primary" onclick="saveTokens('owner')">
+                <i class="fas fa-save"></i> 저장
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="settings-grid" id="owner-tokens">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <div class="title">
+                <i class="fas fa-coins" style="color: var(--accent);"></i>
+                대행사 토큰 한도
+              </div>
+              <button class="btn primary" onclick="saveTokens('agency')">
+                <i class="fas fa-save"></i> 저장
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="settings-grid" id="agency-tokens">
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
+
+    <script>
+      // ==================== 설정 ====================
+      
+      let supabase;
+      let pricingData = {};
+      let tokenData = {};
+
+      // ==================== 초기화 ====================
+
+      window.addEventListener('load', async function() {
+        supabase = await AdminBootstrap.getSupabaseClient();
+        await AdminBootstrap.initializeHeader();
+        await AdminBootstrap.initializeSidebar();
+        await loadPricingConfig();
+        await loadTokenConfig();
+      });
+
+      // ==================== 탭 전환 ====================
+
+      function switchTab(tab) {
+        // 탭 버튼 활성화
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.closest('.tab-btn').classList.add('active');
+
+        // 탭 콘텐츠 활성화
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(tab + '-tab').classList.add('active');
+      }
+
+      // ==================== 가격 설정 로드 ====================
+
+      async function loadPricingConfig() {
+        try {
+          const response = await fetch('/api/subscription/pricing-config');
+          const result = await response.json();
+
+          if (!result.success) throw new Error(result.error);
+
+          pricingData = result.pricing;
+          renderPricingUI();
+        } catch (error) {
+          console.error('❌ 가격 설정 로드 실패:', error);
+          showMessage('가격 설정 로드 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 가격 UI 렌더링 ====================
+
+      function renderPricingUI() {
+        const ownerItems = [
+          { key: 'owner_seed_price', label: '씨앗', unit: '원' },
+          { key: 'owner_power_price', label: '파워', unit: '원' },
+          { key: 'owner_bigpower_price', label: '빅파워', unit: '원' },
+          { key: 'owner_premium_price', label: '프리미엄', unit: '원' }
+        ];
+
+        const agencyItems = [
+          { key: 'agency_elite_price', label: '엘리트', unit: '원' },
+          { key: 'agency_expert_price', label: '전문가', unit: '원' },
+          { key: 'agency_master_price', label: '마스터', unit: '원' },
+          { key: 'agency_premium_price', label: '프리미엄', unit: '원' }
+        ];
+
+        document.getElementById('owner-pricing').innerHTML = ownerItems.map(item => `
+          <div class="setting-item">
+            <div class="setting-label">
+              ${item.label}
+              <span class="setting-badge">기본 가격</span>
+            </div>
+            <div class="input-group">
+              <input type="number" id="pricing-${item.key}" value="${pricingData[item.key] || 0}" min="0" />
+              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
+            </div>
+            <div class="info-text">월 구독료</div>
+          </div>
+        `).join('');
+
+        document.getElementById('agency-pricing').innerHTML = agencyItems.map(item => `
+          <div class="setting-item">
+            <div class="setting-label">
+              ${item.label}
+              <span class="setting-badge">기본 가격</span>
+            </div>
+            <div class="input-group">
+              <input type="number" id="pricing-${item.key}" value="${pricingData[item.key] || 0}" min="0" />
+              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
+            </div>
+            <div class="info-text">월 구독료</div>
+          </div>
+        `).join('');
+      }
+
+      // ==================== 가격 저장 ====================
+
+      async function savePricing(type) {
+        try {
+          const updateData = {};
+
+          if (type === 'owner') {
+            updateData.owner_seed_price = parseInt(document.getElementById('pricing-owner_seed_price').value) || 0;
+            updateData.owner_power_price = parseInt(document.getElementById('pricing-owner_power_price').value) || 0;
+            updateData.owner_bigpower_price = parseInt(document.getElementById('pricing-owner_bigpower_price').value) || 0;
+            updateData.owner_premium_price = parseInt(document.getElementById('pricing-owner_premium_price').value) || 0;
+          } else {
+            updateData.agency_elite_price = parseInt(document.getElementById('pricing-agency_elite_price').value) || 0;
+            updateData.agency_expert_price = parseInt(document.getElementById('pricing-agency_expert_price').value) || 0;
+            updateData.agency_master_price = parseInt(document.getElementById('pricing-agency_master_price').value) || 0;
+            updateData.agency_premium_price = parseInt(document.getElementById('pricing-agency_premium_price').value) || 0;
+          }
+
+          const response = await fetch('/api/subscription/pricing-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+          });
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+
+          pricingData = result.pricing;
+          showMessage(`${type === 'owner' ? '식당 대표' : '대행사'} 가격이 저장되었습니다`, 'success');
+        } catch (error) {
+          console.error('❌ 가격 저장 실패:', error);
+          showMessage('가격 저장 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 토큰 설정 로드 ====================
+
+      async function loadTokenConfig() {
+        try {
+          const response = await fetch('/api/subscription/token-config');
+          const result = await response.json();
+
+          if (!result.success) throw new Error(result.error);
+
+          tokenData = result.tokens;
+          renderTokenUI();
+        } catch (error) {
+          console.error('❌ 토큰 설정 로드 실패:', error);
+          showMessage('토큰 설정 로드 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 토큰 UI 렌더링 ====================
+
+      function renderTokenUI() {
+        const ownerItems = [
+          { key: 'owner_seed_limit', label: '씨앗', unit: '토큰/월' },
+          { key: 'owner_power_limit', label: '파워', unit: '토큰/월' },
+          { key: 'owner_bigpower_limit', label: '빅파워', unit: '토큰/월' },
+          { key: 'owner_premium_limit', label: '프리미엄', unit: '토큰/월' }
+        ];
+
+        const agencyItems = [
+          { key: 'agency_elite_limit', label: '엘리트', unit: '토큰/월' },
+          { key: 'agency_expert_limit', label: '전문가', unit: '토큰/월' },
+          { key: 'agency_master_limit', label: '마스터', unit: '토큰/월' },
+          { key: 'agency_premium_limit', label: '프리미엄', unit: '토큰/월' }
+        ];
+
+        document.getElementById('owner-tokens').innerHTML = ownerItems.map(item => `
+          <div class="setting-item">
+            <div class="setting-label">
+              ${item.label}
+              <span class="setting-badge">기본 한도</span>
+            </div>
+            <div class="input-group">
+              <input type="number" id="token-${item.key}" value="${tokenData[item.key] || 0}" min="0" />
+              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
+            </div>
+            <div class="info-text">월 사용 가능 토큰</div>
+          </div>
+        `).join('');
+
+        document.getElementById('agency-tokens').innerHTML = agencyItems.map(item => `
+          <div class="setting-item">
+            <div class="setting-label">
+              ${item.label}
+              <span class="setting-badge">기본 한도</span>
+            </div>
+            <div class="input-group">
+              <input type="number" id="token-${item.key}" value="${tokenData[item.key] || 0}" min="0" />
+              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
+            </div>
+            <div class="info-text">월 사용 가능 토큰</div>
+          </div>
+        `).join('');
+      }
+
+      // ==================== 토큰 저장 ====================
+
+      async function saveTokens(type) {
+        try {
+          const updateData = {};
+
+          if (type === 'owner') {
+            updateData.owner_seed_limit = parseInt(document.getElementById('token-owner_seed_limit').value) || 0;
+            updateData.owner_power_limit = parseInt(document.getElementById('token-owner_power_limit').value) || 0;
+            updateData.owner_bigpower_limit = parseInt(document.getElementById('token-owner_bigpower_limit').value) || 0;
+            updateData.owner_premium_limit = parseInt(document.getElementById('token-owner_premium_limit').value) || 0;
+          } else {
+            updateData.agency_elite_limit = parseInt(document.getElementById('token-agency_elite_limit').value) || 0;
+            updateData.agency_expert_limit = parseInt(document.getElementById('token-agency_expert_limit').value) || 0;
+            updateData.agency_master_limit = parseInt(document.getElementById('token-agency_master_limit').value) || 0;
+            updateData.agency_premium_limit = parseInt(document.getElementById('token-agency_premium_limit').value) || 0;
+          }
+
+          const response = await fetch('/api/subscription/token-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+          });
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+
+          tokenData = result.tokens;
+          showMessage(`${type === 'owner' ? '식당 대표' : '대행사'} 토큰 한도가 저장되었습니다`, 'success');
+        } catch (error) {
+          console.error('❌ 토큰 저장 실패:', error);
+          showMessage('토큰 저장 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 메시지 ====================
+
+      function showMessage(message, type) {
+        const container = document.getElementById('statusMessage');
+        container.className = type;
+        container.innerHTML = `
+          ${type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>'}
+          ${message}
+        `;
+        container.style.display = 'block';
+
+        setTimeout(() => {
+          container.style.display = 'none';
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

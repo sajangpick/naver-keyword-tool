@@ -47,6 +47,11 @@
       title: 'DB 뷰어',
       subtitle: '데이터베이스 관리',
       icon: '🗄️'
+    },
+    '/admin/news-management.html': {
+      title: '뉴스 관리',
+      subtitle: '정보 게시판 관리',
+      icon: '📰'
     }
   };
 

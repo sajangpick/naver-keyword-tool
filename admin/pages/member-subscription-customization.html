@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>회원 맞춤 설정 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(52, 144, 220, 0.1);
+      }
+
+      .input-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .input-group input {
+        flex: 1;
+      }
+
+      .input-unit {
+        color: #6b7280;
+        font-weight: 600;
+        min-width: 50px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+        width: 100%;
+      }
+
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      .btn-group .btn {
+        flex: 1;
+      }
+
+      .member-info {
+        background: #f0f9ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .member-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e40af;
+      }
+
+      .member-info p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: #1e40af;
+      }
+
+      .info-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+
+      .section-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 24px 0;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+
+      .error {
+        padding: 16px;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        color: #dc2626;
+        margin-bottom: 16px;
+      }
+
+      .success {
+        padding: 16px;
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        color: #16a34a;
+        margin-bottom: 16px;
+      }
+
+      .search-results {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-top: 8px;
+      }
+
+      .search-result-item {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .search-result-item:hover {
+        background: #f9fafb;
+      }
+
+      .search-result-item:last-child {
+        border-bottom: none;
+      }
+
+      .result-name {
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .result-email {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .result-type {
+        display: inline-block;
+        padding: 2px 8px;
+        background: var(--accent);
+        color: white;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 4px;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .tab-btn {
+        padding: 12px 16px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        transition: all 0.2s;
+      }
+
+      .tab-btn.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 사이드바 -->
+    <div id="sidebar"></div>
+
+    <!-- 헤더 -->
+    <div id="header"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+      <div class="container">
+        <!-- 페이지 타이틀 -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
+            <i class="fas fa-user-edit" style="color: var(--accent);"></i>
+            회원 맞춤 설정
+          </h1>
+        </div>
+        <div class="subtitle">특정 회원의 가격과 토큰 한도를 맞춤으로 설정합니다</div>
+
+        <!-- 상태 메시지 -->
+        <div id="statusMessage" style="display: none;"></div>
+
+        <!-- 회원 검색 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-search" style="color: var(--accent);"></i>
+              회원 검색
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>회원 검색 (이름 또는 이메일)</label>
+              <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="검색어를 입력하세요"
+                onkeyup="searchMembers()"
+              />
+              <div class="search-results" id="searchResults" style="display: none;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 맞춤 설정 -->
+        <section class="card" id="customizationCard" style="display: none;">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-cog" style="color: var(--accent);"></i>
+              맞춤 설정
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- 회원 정보 -->
+            <div class="member-info">
+              <h3>선택된 회원</h3>
+              <p><strong>이름:</strong> <span id="memberName">-</span></p>
+              <p><strong>이메일:</strong> <span id="memberEmail">-</span></p>
+              <p><strong>회원 유형:</strong> <span id="memberType">-</span></p>
+              <p><strong>등급:</strong> <span id="memberLevel">-</span></p>
+            </div>
+
+            <!-- 탭 -->
+            <div class="tabs">
+              <button class="tab-btn active" onclick="switchTab('pricing')">
+                <i class="fas fa-tag"></i> 맞춤 가격
+              </button>
+              <button class="tab-btn" onclick="switchTab('tokens')">
+                <i class="fas fa-coins"></i> 맞춤 토큰
+              </button>
+            </div>
+
+            <!-- 맞춤 가격 탭 -->
+            <div id="pricing-tab" class="tab-content active">
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="customPriceCheck" onchange="toggleCustomPrice()" />
+                  맞춤 가격 사용
+                </label>
+                <div class="info-text">체크하면 기본 가격 대신 맞춤 가격을 사용합니다</div>
+              </div>
+
+              <div id="customPriceSection" style="display: none;">
+                <div class="form-group">
+                  <label>맞춤 가격 (원)</label>
+                  <div class="input-group">
+                    <input type="number" id="customPrice" placeholder="가격을 입력하세요" min="0" />
+                    <span class="input-unit">원</span>
+                  </div>
+                  <div class="info-text">공백으로 두면 기본 가격이 적용됩니다</div>
+                </div>
+
+                <div class="form-group">
+                  <label>할인/인상 사유</label>
+                  <textarea 
+                    id="discountReason" 
+                    placeholder="예: VIP 할인, 프로모션, 신규 가입자 등"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 맞춤 토큰 탭 -->
+            <div id="tokens-tab" class="tab-content">
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="customTokenCheck" onchange="toggleCustomToken()" />
+                  맞춤 토큰 한도 사용
+                </label>
+                <div class="info-text">체크하면 기본 한도 대신 맞춤 한도를 사용합니다</div>
+              </div>
+
+              <div id="customTokenSection" style="display: none;">
+                <div class="form-group">
+                  <label>맞춤 토큰 한도 (토큰/월)</label>
+                  <div class="input-group">
+                    <input type="number" id="customToken" placeholder="토큰 한도를 입력하세요" min="0" />
+                    <span class="input-unit">토큰/월</span>
+                  </div>
+                  <div class="info-text">공백으로 두면 기본 한도가 적용됩니다</div>
+                </div>
+
+                <div class="form-group">
+                  <label>사유</label>
+                  <textarea 
+                    id="tokenReason" 
+                    placeholder="예: 이벤트 프로모션, VIP 혜택 등"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 버튼 그룹 -->
+            <div class="btn-group">
+              <button class="btn" onclick="resetForm()">
+                <i class="fas fa-undo"></i> 초기화
+              </button>
+              <button class="btn primary" onclick="saveMemberCustomization()">
+                <i class="fas fa-save"></i> 저장
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
+
+    <script>
+      // ==================== 설정 ====================
+      
+      let supabase;
+      let allMembers = [];
+      let selectedMember = null;
+
+      // ==================== 초기화 ====================
+
+      window.addEventListener('load', async function() {
+        supabase = await AdminBootstrap.getSupabaseClient();
+        await AdminBootstrap.initializeHeader();
+        await AdminBootstrap.initializeSidebar();
+        await loadAllMembers();
+      });
+
+      // ==================== 회원 조회 ====================
+
+      async function loadAllMembers() {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, name, email, user_type, membership_level')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          allMembers = data || [];
+        } catch (error) {
+          console.error('❌ 회원 조회 실패:', error);
+          showMessage('회원 조회 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 회원 검색 ====================
+
+      function searchMembers() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const resultsDiv = document.getElementById('searchResults');
+
+        if (!query) {
+          resultsDiv.style.display = 'none';
+          return;
+        }
+
+        const filtered = allMembers.filter(m => 
+          m.name?.toLowerCase().includes(query) || 
+          m.email?.toLowerCase().includes(query)
+        );
+
+        if (filtered.length === 0) {
+          resultsDiv.innerHTML = '<div class="search-result-item">검색 결과가 없습니다</div>';
+          resultsDiv.style.display = 'block';
+          return;
+        }
+
+        resultsDiv.innerHTML = filtered.map(m => `
+          <div class="search-result-item" onclick="selectMember('${m.id}', '${m.name}', '${m.email}', '${m.user_type}', '${m.membership_level}')">
+            <div class="result-name">${m.name}</div>
+            <div class="result-email">${m.email}</div>
+            <div class="result-type">${getUserTypeText(m.user_type)} - ${getLevelText(m.membership_level)}</div>
+          </div>
+        `).join('');
+
+        resultsDiv.style.display = 'block';
+      }
+
+      // ==================== 회원 선택 ====================
+
+      function selectMember(id, name, email, userType, level) {
+        selectedMember = { id, name, email, userType, level };
+        
+        document.getElementById('searchInput').value = name;
+        document.getElementById('searchResults').style.display = 'none';
+        document.getElementById('customizationCard').style.display = 'block';
+
+        document.getElementById('memberName').textContent = name;
+        document.getElementById('memberEmail').textContent = email;
+        document.getElementById('memberType').textContent = getUserTypeText(userType);
+        document.getElementById('memberLevel').textContent = getLevelText(level);
+
+        loadMemberCustomization();
+      }
+
+      // ==================== 회원 맞춤 설정 로드 ====================
+
+      async function loadMemberCustomization() {
+        try {
+          // 맞춤 가격 조회
+          const pricingResp = await fetch(`/api/subscription/member-pricing/${selectedMember.id}`);
+          const pricingData = await pricingResp.json();
+
+          // 맞춤 토큰 조회
+          const tokenResp = await fetch(`/api/subscription/member-token-limit/${selectedMember.id}`);
+          const tokenData = await tokenResp.json();
+
+          // 가격 설정
+          if (pricingData.custom_pricing) {
+            document.getElementById('customPriceCheck').checked = true;
+            document.getElementById('customPrice').value = pricingData.custom_pricing.custom_price || '';
+            document.getElementById('discountReason').value = pricingData.custom_pricing.discount_reason || '';
+            document.getElementById('customPriceSection').style.display = 'block';
+          } else {
+            document.getElementById('customPriceCheck').checked = false;
+            document.getElementById('customPriceSection').style.display = 'none';
+            document.getElementById('customPrice').value = '';
+            document.getElementById('discountReason').value = '';
+          }
+
+          // 토큰 설정
+          if (tokenData.custom_limit) {
+            document.getElementById('customTokenCheck').checked = true;
+            document.getElementById('customToken').value = tokenData.custom_limit.custom_limit || '';
+            document.getElementById('tokenReason').value = tokenData.custom_limit.reason || '';
+            document.getElementById('customTokenSection').style.display = 'block';
+          } else {
+            document.getElementById('customTokenCheck').checked = false;
+            document.getElementById('customTokenSection').style.display = 'none';
+            document.getElementById('customToken').value = '';
+            document.getElementById('tokenReason').value = '';
+          }
+        } catch (error) {
+          console.error('❌ 맞춤 설정 로드 실패:', error);
+        }
+      }
+
+      // ==================== 탭 전환 ====================
+
+      function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.closest('.tab-btn').classList.add('active');
+
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(tab + '-tab').classList.add('active');
+      }
+
+      // ==================== 토글 함수 ====================
+
+      function toggleCustomPrice() {
+        const checked = document.getElementById('customPriceCheck').checked;
+        document.getElementById('customPriceSection').style.display = checked ? 'block' : 'none';
+      }
+
+      function toggleCustomToken() {
+        const checked = document.getElementById('customTokenCheck').checked;
+        document.getElementById('customTokenSection').style.display = checked ? 'block' : 'none';
+      }
+
+      // ==================== 저장 ====================
+
+      async function saveMemberCustomization() {
+        if (!selectedMember) return;
+
+        try {
+          const promises = [];
+
+          // 맞춤 가격 저장
+          if (document.getElementById('customPriceCheck').checked) {
+            const customPrice = parseInt(document.getElementById('customPrice').value) || null;
+            const discountReason = document.getElementById('discountReason').value;
+
+            if (customPrice !== null) {
+              promises.push(
+                fetch('/api/subscription/member-pricing', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    member_id: selectedMember.id,
+                    custom_price: customPrice,
+                    discount_reason: discountReason
+                  })
+                })
+              );
+            }
+          }
+
+          // 맞춤 토큰 저장
+          if (document.getElementById('customTokenCheck').checked) {
+            const customToken = parseInt(document.getElementById('customToken').value) || null;
+            const tokenReason = document.getElementById('tokenReason').value;
+
+            if (customToken !== null) {
+              promises.push(
+                fetch('/api/subscription/member-token-limit', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    member_id: selectedMember.id,
+                    custom_limit: customToken,
+                    reason: tokenReason
+                  })
+                })
+              );
+            }
+          }
+
+          if (promises.length === 0) {
+            showMessage('저장할 내용이 없습니다', 'error');
+            return;
+          }
+
+          const responses = await Promise.all(promises);
+          const results = await Promise.all(responses.map(r => r.json()));
+
+          for (const result of results) {
+            if (!result.success) throw new Error(result.error);
+          }
+
+          showMessage(`${selectedMember.name} 회원의 맞춤 설정이 저장되었습니다`, 'success');
+        } catch (error) {
+          console.error('❌ 저장 실패:', error);
+          showMessage('저장 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 초기화 ====================
+
+      function resetForm() {
+        if (!selectedMember) return;
+        loadMemberCustomization();
+      }
+
+      // ==================== 유틸 함수 ====================
+
+      function getUserTypeText(type) {
+        const types = {
+          'owner': '식당 대표',
+          'agency': '대행사/블로거',
+          'manager': '매니저',
+          'admin': '관리자'
+        };
+        return types[type] || type;
+      }
+
+      function getLevelText(level) {
+        const levels = {
+          'seed': '씨앗',
+          'power': '파워',
+          'big_power': '빅파워',
+          'premium': '프리미엄',
+          'elite': '엘리트',
+          'expert': '전문가',
+          'master': '마스터',
+          'platinum': '플래티넘',
+          'admin': '관리자'
+        };
+        return levels[level] || level;
+      }
+
+      function showMessage(message, type) {
+        const container = document.getElementById('statusMessage');
+        container.className = type;
+        container.innerHTML = `
+          ${type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>'}
+          ${message}
+        `;
+        container.style.display = 'block';
+
+        setTimeout(() => {
+          container.style.display = 'none';
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

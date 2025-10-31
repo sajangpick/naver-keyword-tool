@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>식당 관리 - 사장픽 대행사</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .btn.danger {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+
+      .btn.danger:hover {
+        background: #fef2f2;
+      }
+
+      .store-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 24px;
+      }
+
+      .store-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        background: #f9fafb;
+        transition: all 0.2s;
+      }
+
+      .store-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(52, 144, 220, 0.1);
+      }
+
+      .store-card-header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .store-card-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .store-info {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .store-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+      }
+
+      .store-actions .btn {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+
+      .error {
+        padding: 16px;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        color: #dc2626;
+        margin-bottom: 16px;
+      }
+
+      .success {
+        padding: 16px;
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        color: #16a34a;
+        margin-bottom: 16px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 24px;
+        color: #6b7280;
+      }
+
+      .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal.show {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #6b7280;
+      }
+
+      .modal-body {
+        padding: 24px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="password"],
+      input[type="url"],
+      textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(52, 144, 220, 0.1);
+      }
+
+      .input-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .modal-footer {
+        padding: 20px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .modal-footer .btn {
+        padding: 10px 16px;
+      }
+
+      .info-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 사이드바 -->
+    <div id="sidebar"></div>
+
+    <!-- 헤더 -->
+    <div id="header"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+      <div class="container">
+        <!-- 페이지 타이틀 -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
+            <i class="fas fa-store" style="color: var(--accent);"></i>
+            내 식당 관리
+          </h1>
+          <button class="btn primary" onclick="openStoreModal()">
+            <i class="fas fa-plus"></i> 식당 추가
+          </button>
+        </div>
+        <div class="subtitle">대행사가 관리하는 식당들을 등록/수정/삭제합니다</div>
+
+        <!-- 상태 메시지 -->
+        <div id="statusMessage" style="display: none;"></div>
+
+        <!-- 식당 목록 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-list" style="color: var(--accent);"></i>
+              관리 식당 목록
+            </div>
+            <button class="btn" onclick="loadStores()">
+              <i class="fas fa-sync"></i> 새로고침
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="storesContainer" class="store-grid">
+              <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- 식당 추가/수정 모달 -->
+    <div id="storeModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">식당 추가</h2>
+          <button class="close-btn" onclick="closeStoreModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>식당명 *</label>
+            <input type="text" id="storeName" placeholder="식당 이름을 입력하세요" />
+          </div>
+
+          <div class="form-group">
+            <label>전화번호</label>
+            <input type="text" id="storePhone" placeholder="010-0000-0000" />
+          </div>
+
+          <div class="form-group">
+            <label>주소</label>
+            <input type="text" id="storeAddress" placeholder="식당 주소를 입력하세요" />
+          </div>
+
+          <div class="form-group">
+            <label>네이버 플레이스 URL</label>
+            <input type="url" id="naverPlaceUrl" placeholder="https://place.naver.com/..." />
+            <div class="info-text">네이버 플레이스 식당 페이지 URL을 입력하세요</div>
+          </div>
+
+          <div style="border-top: 1px solid var(--border); margin: 24px 0; padding-top: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 700; color: #111827;">
+              🔐 네이버 계정 정보
+            </h3>
+
+            <div class="form-group">
+              <label>네이버 ID</label>
+              <input type="text" id="naverId" placeholder="네이버 로그인 아이디" />
+              <div class="info-text">암호화되어 저장됩니다</div>
+            </div>
+
+            <div class="form-group">
+              <label>네이버 비밀번호</label>
+              <input type="password" id="naverPassword" placeholder="네이버 로그인 비밀번호" />
+              <div class="info-text">암호화되어 저장됩니다</div>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid var(--border); margin: 24px 0; padding-top: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 700; color: #111827;">
+              🔐 구글 계정 정보
+            </h3>
+
+            <div class="form-group">
+              <label>구글 이메일</label>
+              <input type="email" id="googleId" placeholder="google@example.com" />
+              <div class="info-text">암호화되어 저장됩니다</div>
+            </div>
+
+            <div class="form-group">
+              <label>구글 비밀번호</label>
+              <input type="password" id="googlePassword" placeholder="구글 로그인 비밀번호" />
+              <div class="info-text">암호화되어 저장됩니다</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" onclick="closeStoreModal()">취소</button>
+          <button class="btn primary" onclick="saveStore()">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
+
+    <script>
+      // ==================== 설정 ====================
+      
+      let supabase;
+      let agencyId;
+      let stores = [];
+      let editingStoreId = null;
+
+      // ==================== 초기화 ====================
+
+      window.addEventListener('load', async function() {
+        supabase = await AdminBootstrap.getSupabaseClient();
+        await AdminBootstrap.initializeHeader();
+        await AdminBootstrap.initializeSidebar();
+        
+        // 현재 사용자(대행사) 정보 조회
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('kakao_id', user.user_metadata?.kakao_id || user.id)
+            .single();
+          
+          if (profile) {
+            agencyId = profile.id;
+            await loadStores();
+          }
+        }
+      });
+
+      // ==================== 식당 목록 로드 ====================
+
+      async function loadStores() {
+        try {
+          const response = await fetch(`/api/subscription/agency-stores/${agencyId}`);
+          const result = await response.json();
+
+          if (!result.success) throw new Error(result.error);
+
+          stores = result.stores || [];
+          renderStores();
+        } catch (error) {
+          console.error('❌ 식당 목록 로드 실패:', error);
+          showMessage('식당 목록 로드 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 식당 목록 렌더링 ====================
+
+      function renderStores() {
+        const container = document.getElementById('storesContainer');
+
+        if (stores.length === 0) {
+          container.innerHTML = `
+            <div style="grid-column: 1 / -1;">
+              <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <div style="margin-top: 16px;">관리하는 식당이 없습니다</div>
+                <button class="btn primary" style="margin-top: 16px;" onclick="openStoreModal()">
+                  <i class="fas fa-plus"></i> 첫 식당 추가하기
+                </button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = stores.map(store => `
+          <div class="store-card">
+            <div class="store-card-header">
+              <h3>${store.store_name}</h3>
+              <button class="btn" style="font-size: 12px;" onclick="deleteStore('${store.id}', '${store.store_name}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+
+            <div class="store-info">
+              <i class="fas fa-phone"></i>
+              ${store.store_phone || '미입력'}
+            </div>
+
+            <div class="store-info">
+              <i class="fas fa-map-marker-alt"></i>
+              ${store.store_address || '미입력'}
+            </div>
+
+            <div class="store-info">
+              <i class="fas fa-globe"></i>
+              ${store.naver_place_url ? `<a href="${store.naver_place_url}" target="_blank" style="color: var(--accent);">네이버 플레이스</a>` : '미입력'}
+            </div>
+
+            <div class="store-card-header" style="margin-top: 16px; padding: 0; border: none;">
+              <span style="font-size: 12px; color: #6b7280;">
+                <i class="fas fa-lock"></i> 
+                ${store.naver_id ? '✓ 네이버' : '○ 네이버'} / 
+                ${store.google_id ? '✓ 구글' : '○ 구글'}
+              </span>
+            </div>
+
+            <div class="store-actions">
+              <button class="btn" onclick="editStore('${store.id}')">
+                <i class="fas fa-edit"></i> 수정
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // ==================== 모달 함수 ====================
+
+      function openStoreModal() {
+        editingStoreId = null;
+        document.getElementById('modalTitle').textContent = '식당 추가';
+        document.getElementById('storeName').value = '';
+        document.getElementById('storePhone').value = '';
+        document.getElementById('storeAddress').value = '';
+        document.getElementById('naverPlaceUrl').value = '';
+        document.getElementById('naverId').value = '';
+        document.getElementById('naverPassword').value = '';
+        document.getElementById('googleId').value = '';
+        document.getElementById('googlePassword').value = '';
+        document.getElementById('storeModal').classList.add('show');
+      }
+
+      function closeStoreModal() {
+        document.getElementById('storeModal').classList.remove('show');
+        editingStoreId = null;
+      }
+
+      // ==================== 식당 수정 ====================
+
+      function editStore(storeId) {
+        const store = stores.find(s => s.id === storeId);
+        if (!store) return;
+
+        editingStoreId = storeId;
+        document.getElementById('modalTitle').textContent = '식당 수정';
+        document.getElementById('storeName').value = store.store_name || '';
+        document.getElementById('storePhone').value = store.store_phone || '';
+        document.getElementById('storeAddress').value = store.store_address || '';
+        document.getElementById('naverPlaceUrl').value = store.naver_place_url || '';
+        document.getElementById('naverId').value = store.naver_id || '';
+        document.getElementById('naverPassword').value = '';
+        document.getElementById('googleId').value = store.google_id || '';
+        document.getElementById('googlePassword').value = '';
+        document.getElementById('storeModal').classList.add('show');
+      }
+
+      // ==================== 식당 저장 ====================
+
+      async function saveStore() {
+        const storeName = document.getElementById('storeName').value.trim();
+        if (!storeName) {
+          showMessage('식당명을 입력하세요', 'error');
+          return;
+        }
+
+        try {
+          const storeData = {
+            agency_id: agencyId,
+            store_name: storeName,
+            store_phone: document.getElementById('storePhone').value.trim() || null,
+            store_address: document.getElementById('storeAddress').value.trim() || null,
+            naver_place_url: document.getElementById('naverPlaceUrl').value.trim() || null,
+            naver_id: document.getElementById('naverId').value.trim() || null,
+            naver_password: document.getElementById('naverPassword').value || null,
+            google_id: document.getElementById('googleId').value.trim() || null,
+            google_password: document.getElementById('googlePassword').value || null
+          };
+
+          const response = await fetch('/api/subscription/agency-stores', {
+            method: editingStoreId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...storeData, id: editingStoreId })
+          });
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+
+          showMessage(`${storeName} 식당이 ${editingStoreId ? '수정' : '등록'}되었습니다`, 'success');
+          closeStoreModal();
+          await loadStores();
+        } catch (error) {
+          console.error('❌ 식당 저장 실패:', error);
+          showMessage('식당 저장 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 식당 삭제 ====================
+
+      async function deleteStore(storeId, storeName) {
+        if (!confirm(`"${storeName}" 식당을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/subscription/agency-stores/${storeId}`, {
+            method: 'DELETE'
+          });
+          const result = await response.json();
+
+          if (!result.success) throw new Error(result.error);
+
+          showMessage(`"${storeName}" 식당이 삭제되었습니다.`, 'success');
+          await loadStores();
+        } catch (error) {
+          console.error('❌ 식당 삭제 실패:', error);
+          showMessage('식당 삭제 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 메시지 ====================
+
+      function showMessage(message, type) {
+        const container = document.getElementById('statusMessage');
+        container.className = type;
+        container.innerHTML = `
+          ${type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>'}
+          ${message}
+        `;
+        container.style.display = 'block';
+
+        setTimeout(() => {
+          container.style.display = 'none';
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

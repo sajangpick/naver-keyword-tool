@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제하기 - 사장픽</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .payment-container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .plan-info {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .plan-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    .plan-details {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+      color: #555;
+    }
+    .price {
+      font-size: 32px;
+      font-weight: 700;
+      color: #333;
+      margin: 20px 0;
+    }
+    .payment-methods {
+      margin-bottom: 30px;
+    }
+    .payment-method {
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .payment-method:hover {
+      border-color: #667eea;
+    }
+    .payment-method.selected {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    .payment-method input[type="radio"] {
+      width: 20px;
+      height: 20px;
+    }
+    .btn-payment {
+      width: 100%;
+      padding: 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-payment:hover {
+      background: #5a67d8;
+    }
+    .btn-payment:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .terms {
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="payment-container">
+    <h1>구독 플랜 결제</h1>
+    <p class="subtitle">더 많은 AI 기능을 사용해보세요</p>
+    
+    <div class="plan-info">
+      <div class="plan-name" id="planName">파워 플랜</div>
+      <div class="plan-details">
+        <span>월간 토큰</span>
+        <strong id="tokenAmount">500 토큰</strong>
+      </div>
+      <div class="plan-details">
+        <span>블로그 작성 가능 횟수</span>
+        <strong>약 15-20회</strong>
+      </div>
+      <div class="plan-details">
+        <span>리뷰 답글</span>
+        <strong>약 50-100회</strong>
+      </div>
+    </div>
+
+    <div class="price">
+      <span id="priceAmount">30,000</span>원
+    </div>
+
+    <div class="payment-methods">
+      <h3 style="margin-bottom: 15px; font-size: 16px;">결제 방법 선택</h3>
+      
+      <label class="payment-method selected">
+        <input type="radio" name="method" value="card" checked>
+        <span>💳 신용/체크카드</span>
+      </label>
+      
+      <label class="payment-method">
+        <input type="radio" name="method" value="transfer">
+        <span>🏦 계좌이체</span>
+      </label>
+      
+      <label class="payment-method">
+        <input type="radio" name="method" value="phone">
+        <span>📱 휴대폰 결제</span>
+      </label>
+    </div>
+
+    <button class="btn-payment" onclick="processPayment()">
+      결제하기
+    </button>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p style="margin-top: 15px;">결제 처리 중...</p>
+    </div>
+
+    <p class="terms">
+      결제하기를 클릭하면 <a href="/terms">이용약관</a> 및 
+      <a href="/privacy">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+    </p>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script>
+    // URL 파라미터에서 플랜 정보 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const plan = urlParams.get('plan') || 'power';
+    
+    // 플랜별 정보
+    const plans = {
+      seed: { name: '씨앗 플랜', price: 0, tokens: 100 },
+      power: { name: '파워 플랜', price: 30000, tokens: 500 },
+      bigpower: { name: '빅파워 플랜', price: 50000, tokens: 833 },
+      premium: { name: '프리미엄 플랜', price: 70000, tokens: 1166 }
+    };
+    
+    // 플랜 정보 표시
+    const planInfo = plans[plan];
+    document.getElementById('planName').textContent = planInfo.name;
+    document.getElementById('priceAmount').textContent = planInfo.price.toLocaleString();
+    document.getElementById('tokenAmount').textContent = planInfo.tokens + ' 토큰';
+    
+    // 결제 방법 선택
+    document.querySelectorAll('.payment-method').forEach(method => {
+      method.addEventListener('click', function() {
+        document.querySelectorAll('.payment-method').forEach(m => {
+          m.classList.remove('selected');
+        });
+        this.classList.add('selected');
+        this.querySelector('input').checked = true;
+      });
+    });
+    
+    // 결제 처리
+    async function processPayment() {
+      const method = document.querySelector('input[name="method"]:checked').value;
+      
+      // 로딩 표시
+      document.getElementById('loading').style.display = 'block';
+      document.querySelector('.btn-payment').disabled = true;
+      
+      try {
+        // Supabase 초기화
+        const SUPABASE_URL = window.NEXT_PUBLIC_SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+          throw new Error('Supabase 설정이 필요합니다');
+        }
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // 사용자 정보 가져오기
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          window.location.href = '/login.html?redirect=/payment.html?plan=' + plan;
+          return;
+        }
+        
+        // 결제 요청 생성
+        const response = await fetch('/api/payment/payment-handler', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session.access_token}`
+          },
+          body: JSON.stringify({
+            action: 'create-payment',
+            userId: user.id,
+            planType: plan,
+            paymentMethod: method
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || '결제 요청 실패');
+        }
+        
+        // 결제 페이지로 이동 (또는 테스트 모드)
+        if (result.paymentUrl.includes('test-success')) {
+          // 테스트 모드: 자동 완료
+          alert('테스트 모드: 결제가 자동으로 완료됩니다');
+          window.location.href = `/payment-success.html?orderId=${result.orderId}`;
+        } else {
+          // 실제 PG사 결제 페이지로 이동
+          window.location.href = result.paymentUrl;
+        }
+        
+      } catch (error) {
+        console.error('결제 오류:', error);
+        alert('결제 처리 중 오류가 발생했습니다: ' + error.message);
+        
+        // 로딩 숨기기
+        document.getElementById('loading').style.display = 'none';
+        document.querySelector('.btn-payment').disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

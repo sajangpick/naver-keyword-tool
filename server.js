@@ -622,6 +622,37 @@ app.get("/api/admin/dashboard", adminDashboardHandler);
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
 
+// ==================== 구독 시스템 API ====================
+// 가격 설정 API
+const pricingConfigHandler = require("./api/subscription/pricing-config");
+app.get("/api/subscription/pricing-config", pricingConfigHandler);
+app.put("/api/subscription/pricing-config", pricingConfigHandler);
+
+// 토큰 설정 API  
+const tokenConfigHandler = require("./api/subscription/token-config");
+app.get("/api/subscription/token-config", tokenConfigHandler);
+app.put("/api/subscription/token-config", tokenConfigHandler);
+
+// 토큰 사용량 API
+const tokenUsageHandler = require("./api/subscription/token-usage");
+app.get("/api/subscription/token-usage", tokenUsageHandler);
+app.post("/api/subscription/token-usage", tokenUsageHandler);
+
+// 구독 주기 API
+const subscriptionCycleHandler = require("./api/subscription/cycle");
+app.get("/api/subscription/cycle", subscriptionCycleHandler);
+app.post("/api/subscription/cycle", subscriptionCycleHandler);
+app.put("/api/subscription/cycle", subscriptionCycleHandler);
+
+// 사용자 대시보드 API
+const userDashboardHandler = require("./api/subscription/user-dashboard");
+app.get("/api/subscription/user-dashboard", userDashboardHandler);
+app.post("/api/subscription/user-dashboard", userDashboardHandler);
+
+// 크론 작업 API (수동 실행용)
+const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
+app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
+
 // ==================== 블로그 스타일 설정 API ====================
 const blogStyleHandler = require("./api/blog-style");
 app.get("/api/blog-style", blogStyleHandler);
@@ -3054,10 +3085,10 @@ app.put('/api/admin/members/:id', async (req, res) => {
     }
 
     const { id } = req.params;
-    const { user_type, membership_level, reset_usage } = req.body;
+    const { user_type, membership_level, role, reset_usage } = req.body;
     
     // 회원 유형 유효성 검사
-    const validUserTypes = ['owner', 'agency', 'admin'];
+    const validUserTypes = ['owner', 'agency', 'admin', 'manager'];
     if (user_type && !validUserTypes.includes(user_type)) {
       return res.status(400).json({
         success: false,
@@ -3072,22 +3103,57 @@ app.put('/api/admin/members/:id', async (req, res) => {
       'admin'
     ];
     
-    if (!validLevels.includes(membership_level)) {
+    if (membership_level && !validLevels.includes(membership_level)) {
       return res.status(400).json({
         success: false,
         error: '유효하지 않은 등급입니다'
       });
     }
+
+    // 역할(role) 유효성 검사
+    const validRoles = ['general', 'super', 'owner', 'member'];
+    if (role && !validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        error: '유효하지 않은 역할입니다'
+      });
+    }
+
+    // 역할과 회원 유형의 조합 검사
+    if (role && user_type) {
+      const validRoleCombinations = {
+        'manager': ['general', 'super'],
+        'admin': ['general', 'owner'],
+        'owner': ['member'],
+        'agency': ['member']
+      };
+
+      if (!validRoleCombinations[user_type] || !validRoleCombinations[user_type].includes(role)) {
+        return res.status(400).json({
+          success: false,
+          error: '유효하지 않은 회원 유형과 역할 조합입니다'
+        });
+      }
+    }
     
     // 업데이트할 데이터
     const updateData = {
-      membership_level,
       updated_at: new Date().toISOString()
     };
     
-    // 회원 유형도 변경하는 경우
+    // 회원 유형 변경
     if (user_type) {
       updateData.user_type = user_type;
+    }
+
+    // 등급 변경
+    if (membership_level) {
+      updateData.membership_level = membership_level;
+    }
+
+    // 역할 변경
+    if (role) {
+      updateData.role = role;
     }
     
     // 사용량 초기화 옵션
@@ -3206,6 +3272,261 @@ app.delete('/api/admin/members/:id', async (req, res) => {
   }
 });
 
+// ==================== 관리자 권한 관리 API ====================
+
+// 일반 관리자의 권한 조회 (오너 관리자만)
+app.get('/api/admin/permissions/:adminId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { adminId } = req.params;
+
+    const { data, error } = await supabase
+      .from('admin_permissions')
+      .select('*')
+      .eq('general_admin_id', adminId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116은 데이터 없음
+      console.error('권한 조회 오류:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    // 데이터가 없으면 기본 권한 구조 반환
+    if (!data) {
+      return res.json({
+        success: true,
+        permissions: null,
+        message: '설정된 권한이 없습니다'
+      });
+    }
+
+    res.json({
+      success: true,
+      permissions: data
+    });
+
+  } catch (error) {
+    console.error('권한 조회 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
+// 일반 관리자의 권한 설정/수정 (오너 관리자만)
+app.post('/api/admin/permissions', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { general_admin_id, owner_admin_id, permissions } = req.body;
+
+    if (!general_admin_id || !owner_admin_id || !permissions) {
+      return res.status(400).json({
+        success: false,
+        error: '필수 필드가 누락되었습니다'
+      });
+    }
+
+    // 기존 권한이 있는지 확인
+    const { data: existing } = await supabase
+      .from('admin_permissions')
+      .select('id')
+      .eq('general_admin_id', general_admin_id)
+      .single();
+
+    let result;
+    if (existing) {
+      // 기존 권한 업데이트
+      result = await supabase
+        .from('admin_permissions')
+        .update({ permissions, updated_at: new Date().toISOString() })
+        .eq('general_admin_id', general_admin_id)
+        .select()
+        .single();
+    } else {
+      // 새 권한 생성
+      result = await supabase
+        .from('admin_permissions')
+        .insert([{ general_admin_id, owner_admin_id, permissions }])
+        .select()
+        .single();
+    }
+
+    if (result.error) {
+      console.error('권한 저장 오류:', result.error);
+      return res.status(500).json({ 
+        success: false, 
+        error: result.error.message 
+      });
+    }
+
+    res.json({
+      success: true,
+      permissions: result.data
+    });
+
+  } catch (error) {
+    console.error('권한 저장 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
+// ==================== 매니저 역할 관리 API ====================
+
+// 매니저의 역할 조회
+app.get('/api/admin/manager-roles/:managerId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { managerId } = req.params;
+
+    const { data, error } = await supabase
+      .from('manager_roles')
+      .select('*')
+      .eq('manager_id', managerId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('매니저 역할 조회 오류:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    if (!data) {
+      return res.json({
+        success: true,
+        role: null,
+        message: '설정된 역할이 없습니다'
+      });
+    }
+
+    res.json({
+      success: true,
+      role: data
+    });
+
+  } catch (error) {
+    console.error('매니저 역할 조회 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
+// 매니저의 역할 설정/수정 (관리자만)
+app.post('/api/admin/manager-roles', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { manager_id, assigned_by_admin_id, manager_role, permissions, scope } = req.body;
+
+    if (!manager_id || !assigned_by_admin_id || !manager_role) {
+      return res.status(400).json({
+        success: false,
+        error: '필수 필드가 누락되었습니다'
+      });
+    }
+
+    // manager_role 유효성 검사
+    const validManagerRoles = ['general', 'super'];
+    if (!validManagerRoles.includes(manager_role)) {
+      return res.status(400).json({
+        success: false,
+        error: '유효하지 않은 매니저 역할입니다'
+      });
+    }
+
+    // 기존 역할이 있는지 확인
+    const { data: existing } = await supabase
+      .from('manager_roles')
+      .select('id')
+      .eq('manager_id', manager_id)
+      .single();
+
+    let result;
+    if (existing) {
+      // 기존 역할 업데이트
+      const updateData = {
+        manager_role,
+        updated_at: new Date().toISOString()
+      };
+      if (permissions) updateData.permissions = permissions;
+      if (scope) updateData.scope = scope;
+
+      result = await supabase
+        .from('manager_roles')
+        .update(updateData)
+        .eq('manager_id', manager_id)
+        .select()
+        .single();
+    } else {
+      // 새 역할 생성
+      result = await supabase
+        .from('manager_roles')
+        .insert([{
+          manager_id,
+          assigned_by_admin_id,
+          manager_role,
+          permissions: permissions || {},
+          scope: scope || 'all'
+        }])
+        .select()
+        .single();
+    }
+
+    if (result.error) {
+      console.error('매니저 역할 저장 오류:', result.error);
+      return res.status(500).json({ 
+        success: false, 
+        error: result.error.message 
+      });
+    }
+
+    res.json({
+      success: true,
+      role: result.data
+    });
+
+  } catch (error) {
+    console.error('매니저 역할 저장 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다' 
+    });
+  }
+});
+
 // ==================== 에러 핸들러 ====================
 
 // 404 에러 핸들러
@@ -3267,6 +3588,50 @@ if (process.env.VERCEL) {
   module.exports = app;
 } else {
   // 로컬 개발 환경
+  // ==================== 크론 작업 설정 ====================
+  // node-cron 패키지 로드 (설치 필요: npm install node-cron)
+  try {
+    const cron = require('node-cron');
+    const { renewExpiredSubscriptions, notifyTokenExceeded, recordDailyStats } = require('./api/cron/subscription-renewal');
+
+    // 매일 자정에 구독 갱신
+    cron.schedule('0 0 * * *', async () => {
+      console.log('🔄 [CRON] 자정 구독 갱신 작업 시작...');
+      try {
+        await renewExpiredSubscriptions();
+        await recordDailyStats();
+        console.log('✅ [CRON] 구독 갱신 작업 완료');
+      } catch (error) {
+        console.error('❌ [CRON] 구독 갱신 실패:', error);
+      }
+    });
+
+    // 매일 오후 6시에 토큰 한도 경고 알림
+    cron.schedule('0 18 * * *', async () => {
+      console.log('📢 [CRON] 토큰 한도 경고 알림 시작...');
+      try {
+        await notifyTokenExceeded();
+        console.log('✅ [CRON] 토큰 한도 알림 완료');
+      } catch (error) {
+        console.error('❌ [CRON] 토큰 한도 알림 실패:', error);
+      }
+    });
+
+    // 매시간 통계 업데이트 (선택사항)
+    cron.schedule('0 * * * *', async () => {
+      console.log('📊 [CRON] 시간별 통계 업데이트...');
+      try {
+        await recordDailyStats();
+      } catch (error) {
+        console.error('❌ [CRON] 통계 업데이트 실패:', error);
+      }
+    });
+
+    console.log('✅ 크론 작업 스케줄러 활성화됨');
+  } catch (error) {
+    console.warn('⚠️ 크론 작업 설정 실패 (node-cron 패키지 필요):', error.message);
+  }
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log("==========================================");
     console.log("🚀 통합 API 서버가 시작되었습니다!");
@@ -3366,3 +3731,516 @@ if (process.env.VERCEL) {
     process.exit(0);
   });
 }
+
+// ==================== 구독 시스템 API ====================
+
+// 1. 가격 설정 조회
+app.get('/api/subscription/pricing-config', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { data, error } = await supabase
+      .from('pricing_config')
+      .select('*')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    // 없으면 기본값으로 초기화
+    if (!data) {
+      const { data: newConfig } = await supabase
+        .from('pricing_config')
+        .insert([{
+          owner_seed_price: 0,
+          owner_power_price: 30000,
+          owner_bigpower_price: 50000,
+          owner_premium_price: 70000,
+          agency_elite_price: 100000,
+          agency_expert_price: 300000,
+          agency_master_price: 500000,
+          agency_premium_price: 1000000
+        }])
+        .select()
+        .single();
+
+      return res.json({ success: true, pricing: newConfig });
+    }
+
+    res.json({ success: true, pricing: data });
+  } catch (error) {
+    console.error('가격 설정 조회 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 2. 가격 설정 수정 (어드민만)
+app.put('/api/subscription/pricing-config', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const pricing = req.body;
+
+    const { data, error } = await supabase
+      .from('pricing_config')
+      .update(pricing)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, pricing: data });
+  } catch (error) {
+    console.error('가격 설정 수정 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 3. 토큰 한도 설정 조회
+app.get('/api/subscription/token-config', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { data, error } = await supabase
+      .from('token_config')
+      .select('*')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    // 없으면 기본값으로 초기화
+    if (!data) {
+      const { data: newConfig } = await supabase
+        .from('token_config')
+        .insert([{
+          owner_seed_limit: 100,
+          owner_power_limit: 500,
+          owner_bigpower_limit: 833,
+          owner_premium_limit: 1166,
+          agency_elite_limit: 1000,
+          agency_expert_limit: 3000,
+          agency_master_limit: 5000,
+          agency_premium_limit: 10000
+        }])
+        .select()
+        .single();
+
+      return res.json({ success: true, tokens: newConfig });
+    }
+
+    res.json({ success: true, tokens: data });
+  } catch (error) {
+    console.error('토큰 설정 조회 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4. 토큰 한도 설정 수정 (어드민만)
+app.put('/api/subscription/token-config', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const tokens = req.body;
+
+    const { data, error } = await supabase
+      .from('token_config')
+      .update(tokens)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, tokens: data });
+  } catch (error) {
+    console.error('토큰 설정 수정 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 5. 개인별 맞춤 가격 조회
+app.get('/api/subscription/member-pricing/:memberId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { memberId } = req.params;
+
+    const { data, error } = await supabase
+      .from('member_custom_pricing')
+      .select('*')
+      .eq('member_id', memberId)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      return res.json({ success: true, custom_pricing: null });
+    }
+
+    if (error) throw error;
+
+    res.json({ success: true, custom_pricing: data });
+  } catch (error) {
+    console.error('맞춤 가격 조회 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 6. 개인별 맞춤 가격 설정/수정 (어드민만)
+app.post('/api/subscription/member-pricing', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { member_id, custom_price, discount_reason } = req.body;
+
+    // 기존 기록 확인
+    const { data: existing } = await supabase
+      .from('member_custom_pricing')
+      .select('id')
+      .eq('member_id', member_id)
+      .single();
+
+    let result;
+    if (existing) {
+      // 기존 기록 수정
+      result = await supabase
+        .from('member_custom_pricing')
+        .update({ custom_price, discount_reason, updated_at: new Date().toISOString() })
+        .eq('member_id', member_id)
+        .select()
+        .single();
+    } else {
+      // 새 기록 생성
+      result = await supabase
+        .from('member_custom_pricing')
+        .insert([{ member_id, custom_price, discount_reason }])
+        .select()
+        .single();
+    }
+
+    if (result.error) throw result.error;
+
+    res.json({ success: true, custom_pricing: result.data });
+  } catch (error) {
+    console.error('맞춤 가격 저장 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 7. 개인별 맞춤 토큰 한도 조회
+app.get('/api/subscription/member-token-limit/:memberId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { memberId } = req.params;
+
+    const { data, error } = await supabase
+      .from('member_custom_token_limit')
+      .select('*')
+      .eq('member_id', memberId)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      return res.json({ success: true, custom_limit: null });
+    }
+
+    if (error) throw error;
+
+    res.json({ success: true, custom_limit: data });
+  } catch (error) {
+    console.error('맞춤 토큰 한도 조회 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 8. 개인별 맞춤 토큰 한도 설정/수정 (어드민만)
+app.post('/api/subscription/member-token-limit', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { member_id, custom_limit, reason } = req.body;
+
+    // 기존 기록 확인
+    const { data: existing } = await supabase
+      .from('member_custom_token_limit')
+      .select('id')
+      .eq('member_id', member_id)
+      .single();
+
+    let result;
+    if (existing) {
+      // 기존 기록 수정
+      result = await supabase
+        .from('member_custom_token_limit')
+        .update({ custom_limit, reason, updated_at: new Date().toISOString() })
+        .eq('member_id', member_id)
+        .select()
+        .single();
+    } else {
+      // 새 기록 생성
+      result = await supabase
+        .from('member_custom_token_limit')
+        .insert([{ member_id, custom_limit, reason }])
+        .select()
+        .single();
+    }
+
+    if (result.error) throw result.error;
+
+    res.json({ success: true, custom_limit: result.data });
+  } catch (error) {
+    console.error('맞춤 토큰 한도 저장 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 9. 토큰 사용 기록 저장 - 새로운 handler 사용 (api/subscription/token-usage.js)
+// app.post('/api/subscription/token-usage', async (req, res) => {
+//   try {
+//     if (!supabase) {
+//       return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+//     }
+
+//     const { user_id, store_id, tokens_used, api_type, input_tokens, output_tokens } = req.body;
+
+//     const { data, error } = await supabase
+//       .from('token_usage')
+//       .insert([{
+//         user_id,
+//         store_id: store_id || null,
+//         tokens_used,
+//         api_type,
+//         input_tokens: input_tokens || 0,
+//         output_tokens: output_tokens || 0
+//       }])
+//       .select()
+//       .single();
+
+//     if (error) throw error;
+
+//     res.json({ success: true, usage: data });
+//   } catch (error) {
+//     console.error('토큰 사용 기록 저장 실패:', error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
+// 10. 구독 주기 조회
+app.get('/api/subscription/cycle/:userId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { userId } = req.params;
+
+    const { data, error } = await supabase
+      .from('subscription_cycle')
+      .select('*')
+      .eq('user_id', userId)
+      .order('cycle_start_date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      return res.json({ success: true, cycle: null });
+    }
+
+    if (error) throw error;
+
+    res.json({ success: true, cycle: data });
+  } catch (error) {
+    console.error('구독 주기 조회 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 11. 대행사 관리 식당 조회
+app.get('/api/subscription/agency-stores/:agencyId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { agencyId } = req.params;
+
+    const { data, error } = await supabase
+      .from('agency_managed_stores')
+      .select('*')
+      .eq('agency_id', agencyId)
+      .eq('is_active', true);
+
+    if (error) throw error;
+
+    res.json({ success: true, stores: data });
+  } catch (error) {
+    console.error('대행사 식당 조회 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 12. 대행사 관리 식당 등록 (대행사만)
+app.post('/api/subscription/agency-stores', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { id, agency_id, store_name, store_phone, store_address, naver_id, naver_password, google_id, google_password } = req.body;
+
+    if (id) {
+      // 수정 모드
+      const updateData = {
+        store_name,
+        store_phone: store_phone || null,
+        store_address: store_address || null,
+        naver_place_url: req.body.naver_place_url || null,
+        naver_id: naver_id || null,
+        google_id: google_id || null,
+      };
+
+      // 비밀번호가 입력되면 추가로 암호화
+      if (naver_password) {
+        updateData.naver_password_encrypted = Buffer.from(naver_password).toString('base64');
+      }
+      if (google_password) {
+        updateData.google_password_encrypted = Buffer.from(google_password).toString('base64');
+      }
+
+      const { data, error } = await supabase
+        .from('agency_managed_stores')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json({ success: true, store: data, mode: 'update' });
+    } else {
+      // 신규 등록 모드
+      const { data, error } = await supabase
+        .from('agency_managed_stores')
+        .insert([{
+          agency_id,
+          store_name,
+          store_phone: store_phone || null,
+          store_address: store_address || null,
+          naver_place_url: req.body.naver_place_url || null,
+          naver_id: naver_id || null,
+          naver_password_encrypted: naver_password ? Buffer.from(naver_password).toString('base64') : null,
+          google_id: google_id || null,
+          google_password_encrypted: google_password ? Buffer.from(google_password).toString('base64') : null
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json({ success: true, store: data, mode: 'insert' });
+    }
+  } catch (error) {
+    console.error('식당 등록/수정 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 식당 삭제 API
+app.delete('/api/subscription/agency-stores/:storeId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { storeId } = req.params;
+
+    const { data, error } = await supabase
+      .from('agency_managed_stores')
+      .update({ is_active: false })
+      .eq('id', storeId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, message: '식당이 삭제되었습니다' });
+  } catch (error) {
+    console.error('식당 삭제 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 13. 업그레이드 요청 생성
+app.post('/api/subscription/upgrade-request', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { user_id, current_membership_level, requested_membership_level, reason } = req.body;
+
+    const { data, error } = await supabase
+      .from('upgrade_requests')
+      .insert([{
+        user_id,
+        current_membership_level,
+        requested_membership_level,
+        reason,
+        status: 'pending'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, request: data });
+  } catch (error) {
+    console.error('업그레이드 요청 생성 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 14. 업그레이드 요청 승인 (어드민만)
+app.put('/api/subscription/upgrade-request/:requestId/approve', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'Supabase 미설정' });
+    }
+
+    const { requestId } = req.params;
+    const { approved_by_admin_id, additional_charge } = req.body;
+
+    const { data, error } = await supabase
+      .from('upgrade_requests')
+      .update({
+        status: 'approved',
+        approved_by_admin_id,
+        additional_charge,
+        approved_at: new Date().toISOString()
+      })
+      .eq('id', requestId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, request: data });
+  } catch (error) {
+    console.error('업그레이드 요청 승인 실패:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});

@@ -11,6 +11,7 @@
 
 const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
+const { trackTokenUsage, checkTokenLimit, extractUserId } = require('./middleware/token-tracker');
 
 // Supabase 클라이언트 초기화
 let supabase = null;
@@ -25,6 +26,43 @@ if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KE
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
+
+// ============================================
+// 토큰 추적 래퍼 함수
+// ============================================
+
+/**
+ * OpenAI API 호출을 토큰 추적과 함께 실행
+ */
+async function callOpenAIWithTracking(userId, apiCall, apiType = 'chatgpt-blog') {
+    try {
+        // 토큰 한도 사전 체크 (예상 토큰: 3000)
+        if (userId) {
+            const limitCheck = await checkTokenLimit(userId, 3000);
+            if (!limitCheck.success) {
+                throw new Error(limitCheck.error);
+            }
+        }
+
+        // OpenAI API 호출
+        const completion = await apiCall();
+
+        // 토큰 사용량 추적
+        if (userId && completion.usage) {
+            const trackingResult = await trackTokenUsage(userId, completion.usage, apiType);
+            console.log('토큰 추적 결과:', trackingResult);
+            
+            if (!trackingResult.success && trackingResult.exceeded) {
+                console.warn('⚠️ 토큰 한도 초과됨');
+            }
+        }
+
+        return completion;
+    } catch (error) {
+        console.error('OpenAI API 호출 오류:', error);
+        throw error;
+    }
+}
 
 // ============================================
 // 다양성 시스템 유틸리티

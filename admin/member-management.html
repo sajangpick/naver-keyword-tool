@@ -845,31 +845,27 @@
           </div>
 
           <div class="form-group">
-            <label>회원 유형</label>
-            <select id="modal-new-user-type">
-              <option value="owner">식당 대표</option>
-              <option value="agency">대행사/블로거</option>
-              <option value="admin">관리자</option>
-            </select>
-          </div>
-
-          <div class="form-group">
             <label>새 등급</label>
             <select id="modal-new-level">
-              <optgroup label="식당 대표 (Owner)">
-                <option value="seed">씨앗 (월 10개)</option>
-                <option value="power">파워 (월 50개)</option>
-                <option value="big_power">빅파워 (월 200개)</option>
-                <option value="premium">프리미엄 (무제한)</option>
+              <optgroup label="식당 대표 (owner)">
+                <option value="owner:member:seed">씨앗 (월 10개)</option>
+                <option value="owner:member:power">파워 (월 50개)</option>
+                <option value="owner:member:big_power">빅파워 (월 200개)</option>
+                <option value="owner:member:premium">프리미엄 (무제한)</option>
               </optgroup>
-              <optgroup label="대행사/블로거 (Agency)">
-                <option value="elite">엘리트 (월 100개)</option>
-                <option value="expert">전문가 (월 500개)</option>
-                <option value="master">마스터 (월 2000개)</option>
-                <option value="platinum">플래티넘 (무제한)</option>
+              <optgroup label="대행사/블로거 (agency)">
+                <option value="agency:member:elite">엘리트 (월 100개)</option>
+                <option value="agency:member:expert">전문가 (월 500개)</option>
+                <option value="agency:member:master">마스터 (월 2000개)</option>
+                <option value="agency:member:platinum">플래티넘 (무제한)</option>
               </optgroup>
-              <optgroup label="관리자 (Admin)">
-                <option value="admin">관리자 (무제한)</option>
+              <optgroup label="매니저 (manager)">
+                <option value="manager:general:admin">🙋 일반 매니저 (뷰만 가능)</option>
+                <option value="manager:super:admin">👑 수퍼 매니저 (제한된 편집)</option>
+              </optgroup>
+              <optgroup label="관리자 (admin)">
+                <option value="admin:general:admin">👔 일반 관리자 (오너가 제약)</option>
+                <option value="admin:owner:admin">👨‍💼 오너 관리자 (모든 권한)</option>
               </optgroup>
             </select>
           </div>
@@ -1133,7 +1129,7 @@
         selectedMember = { id: memberId, name: memberName, level: currentLevel, userType: currentUserType };
         
         document.getElementById('modal-member-name').value = memberName;
-        document.getElementById('modal-new-user-type').value = currentUserType;
+        // 기존 등급에 맞는 값을 찾아 설정
         document.getElementById('modal-new-level').value = currentLevel;
         document.getElementById('modal-reset-usage').checked = false;
         
@@ -1143,9 +1139,11 @@
       async function confirmLevelChange() {
         if (!selectedMember) return;
 
-        const newUserType = document.getElementById('modal-new-user-type').value;
-        const newLevel = document.getElementById('modal-new-level').value;
+        const levelValue = document.getElementById('modal-new-level').value;
         const resetUsage = document.getElementById('modal-reset-usage').checked;
+        
+        // 선택된 값을 파싱: "user_type:role:membership_level"
+        const [newUserType, newRole, newLevel] = levelValue.split(':');
         
         // selectedMember를 먼저 저장 (closeLevelModal이 null로 만들기 전에)
         const memberId = selectedMember.id;
@@ -1162,6 +1160,7 @@
             body: JSON.stringify({ 
               user_type: newUserType,
               membership_level: newLevel,
+              role: newRole,
               reset_usage: resetUsage 
             })
           });
@@ -1170,7 +1169,7 @@
 
           if (!result.success) throw new Error(result.error);
 
-          alert(`${memberName} 회원의 유형 및 등급이 변경되었습니다.`);
+          alert(`${memberName} 회원의 등급이 변경되었습니다.`);
           await loadMembers();
 
         } catch (error) {
@@ -1180,6 +1179,9 @@
           showLoading(false);
         }
       }
+
+      // 회원 유형에 따라 역할 옵션 업데이트 (제거됨 - 더 이상 필요 없음)
+      // 이전 updateRoleOptions() 함수는 제거되었습니다.
 
       async function deleteMember(memberId, memberName) {
         if (!confirm(`${memberName} 회원을 삭제하시겠습니까?\n\n관련된 모든 데이터가 삭제됩니다.`)) {

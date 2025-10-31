@@ -51,6 +51,8 @@
 - **[docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md)** - Vercel 배포
 - **[docs/KAKAO_LOGIN_GUIDE.md](docs/KAKAO_LOGIN_GUIDE.md)** - 카카오 로그인 (Supabase)
 - **[docs/CRAWLING_GUIDE.md](docs/CRAWLING_GUIDE.md)** - 네이버 플레이스 크롤링 (Python)
+- **[docs/SUBSCRIPTION_SYSTEM_GUIDE.md](docs/SUBSCRIPTION_SYSTEM_GUIDE.md)** - 🎯 **TokenFlow** 시스템 (완성!)
+- **[docs/SUBSCRIPTION_DEPLOYMENT_GUIDE.md](docs/SUBSCRIPTION_DEPLOYMENT_GUIDE.md)** - TokenFlow 배포 방법
 
 ### 📖 참고 문서
 - **[docs/AI_LOG.md](docs/AI_LOG.md)** - 작업 이력 (완료 후 기록용)

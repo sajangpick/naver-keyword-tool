@@ -110,7 +110,130 @@
       await initSupabaseClient();
       return supabaseLib;
     },
-    ready: initSupabaseClient
+    ready: initSupabaseClient,
+
+    // ==================== 권한 관리 함수 ====================
+    
+    async initializeHeader() {
+      // 헤더 초기화 (기존 코드가 있다면 유지)
+      const headerEl = document.getElementById('header');
+      if (!headerEl || headerEl.children.length > 0) return;
+      
+      try {
+        const response = await fetch('/admin/assets/common-header.js');
+        // 헤더는 별도 스크립트에서 로드
+      } catch (e) {
+        console.log('헤더 로드 안함');
+      }
+    },
+
+    async initializeSidebar() {
+      // 사이드바 초기화 (기존 코드가 있다면 유지)
+      const sidebarEl = document.getElementById('sidebar');
+      if (!sidebarEl || sidebarEl.children.length > 0) return;
+      
+      try {
+        const response = await fetch('/admin/assets/admin-sidebar.js');
+        // 사이드바는 별도 스크립트에서 로드
+      } catch (e) {
+        console.log('사이드바 로드 안함');
+      }
+    },
+
+    // 현재 사용자의 권한 정보 가져오기
+    async getCurrentUserPermissions() {
+      try {
+        const supabase = await initSupabaseClient();
+        
+        // 로그인한 사용자 정보 조회
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        // profiles 테이블에서 사용자 정보 조회
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('kakao_id', user.user_metadata?.kakao_id || user.id)
+          .single();
+
+        if (!profile) return null;
+
+        // 일반 관리자인 경우 권한 조회
+        if (profile.user_type === 'admin' && profile.role === 'general') {
+          const permResponse = await fetch(`/api/admin/permissions/${profile.id}`);
+          const permData = await permResponse.json();
+          
+          return {
+            userId: profile.id,
+            userType: profile.user_type,
+            role: profile.role,
+            permissions: permData.permissions?.permissions || {}
+          };
+        }
+
+        // 오너 관리자는 모든 권한 보유
+        if (profile.user_type === 'admin' && profile.role === 'owner') {
+          return {
+            userId: profile.id,
+            userType: profile.user_type,
+            role: profile.role,
+            permissions: {} // 모든 권한 허용
+          };
+        }
+
+        // 매니저인 경우 역할 조회
+        if (profile.user_type === 'manager') {
+          const roleResponse = await fetch(`/api/admin/manager-roles/${profile.id}`);
+          const roleData = await roleResponse.json();
+          
+          return {
+            userId: profile.id,
+            userType: profile.user_type,
+            role: profile.role,
+            managerRole: roleData.role?.manager_role || 'general',
+            permissions: roleData.role?.permissions || {}
+          };
+        }
+
+        return {
+          userId: profile.id,
+          userType: profile.user_type,
+          role: profile.role || 'member'
+        };
+      } catch (error) {
+        console.error('권한 조회 실패:', error);
+        return null;
+      }
+    },
+
+    // 권한 확인 함수
+    checkPermission(permissions, featureKey) {
+      // 권한이 명시적으로 false면 불가
+      if (permissions[featureKey] === false) {
+        return false;
+      }
+      // 그 외는 허용
+      return true;
+    },
+
+    // 버튼 활성화/비활성화
+    applyPermissionToElement(element, featureKey, permissions) {
+      if (!element) return;
+
+      const allowed = this.checkPermission(permissions, featureKey);
+      
+      if (allowed) {
+        element.classList.remove('disabled');
+        element.disabled = false;
+        element.title = '';
+      } else {
+        element.classList.add('disabled');
+        element.disabled = true;
+        element.title = '접근 권한이 없습니다';
+        element.style.opacity = '0.5';
+        element.style.cursor = 'not-allowed';
+      }
+    }
   };
 
   initSupabaseClient().catch(error => {

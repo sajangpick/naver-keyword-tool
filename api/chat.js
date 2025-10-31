@@ -7,6 +7,7 @@
  */
 
 const axios = require('axios');
+const { trackTokenUsage, checkTokenLimit, extractUserId } = require('./middleware/token-tracker');
 
 // 입력값 정제 함수
 function sanitizeString(str) {
@@ -41,8 +42,9 @@ module.exports = async (req, res) => {
   try {
     const rawMsg = req.body?.message || '';
     const message = sanitizeString(rawMsg);
+    const userId = await extractUserId(req);
 
-    console.log('ChatGPT 채팅 요청 수신:', { messageLength: message.length });
+    console.log('ChatGPT 채팅 요청 수신:', { messageLength: message.length, userId });
 
     // 입력 데이터 검증
     if (!message || message.trim().length === 0) {
@@ -57,6 +59,21 @@ module.exports = async (req, res) => {
         success: false,
         error: '메시지가 너무 깁니다. 4000자 이하로 입력해주세요.',
       });
+    }
+
+    // 토큰 한도 사전 체크 (예상 토큰: 1500)
+    if (userId) {
+      const limitCheck = await checkTokenLimit(userId, 1500);
+      if (!limitCheck.success) {
+        return res.status(403).json({
+          success: false,
+          error: limitCheck.error,
+          tokenInfo: {
+            remaining: limitCheck.remaining,
+            limit: limitCheck.limit
+          }
+        });
+      }
     }
 
     // OpenAI API 키 확인
@@ -99,10 +116,18 @@ module.exports = async (req, res) => {
 
     console.log('✅ ChatGPT 응답 성공');
 
+    // 토큰 사용량 추적
+    let tokenTracking = null;
+    if (userId && response.data.usage) {
+      tokenTracking = await trackTokenUsage(userId, response.data.usage, 'chat');
+      console.log('토큰 추적 결과:', tokenTracking);
+    }
+
     return res.json({
       success: true,
       reply: response.data.choices[0].message.content,
       usage: response.data.usage,
+      tokenTracking,
       metadata: {
         model: 'gpt-4o-mini',
         timestamp: new Date().toISOString(),
