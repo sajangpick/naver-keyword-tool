@@ -16,7 +16,7 @@
     
     <style>
       .container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
         padding: 16px;
       }
@@ -60,15 +60,33 @@
 
       .settings-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 14px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      
+      @media (max-width: 1200px) {
+        .settings-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      
+      @media (max-width: 900px) {
+        .settings-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      
+      @media (max-width: 600px) {
+        .settings-grid {
+          grid-template-columns: 1fr;
+        }
       }
 
       .setting-item {
         background: #f9fafb;
         border: 1px solid var(--border);
         border-radius: 8px;
-        padding: 12px;
+        padding: 10px;
         transition: all 0.2s;
       }
       
@@ -189,7 +207,7 @@
         border-radius: 6px;
         font-size: 14px;
         font-weight: 500;
-        max-width: 140px;
+        max-width: 120px;
       }
 
       input[type="number"]:focus {
