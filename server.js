@@ -625,15 +625,15 @@ const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
 
 // ==================== 구독 시스템 API ====================
-// 가격 설정 API
-const pricingConfigHandler = require("./api/subscription/pricing-config");
-app.get("/api/subscription/pricing-config", pricingConfigHandler);
-app.put("/api/subscription/pricing-config", pricingConfigHandler);
+// 가격 설정 API - require 실패 시 대비하여 주석 처리
+// const pricingConfigHandler = require("./api/subscription/pricing-config");
+// app.get("/api/subscription/pricing-config", pricingConfigHandler);
+// app.put("/api/subscription/pricing-config", pricingConfigHandler);
 
-// 토큰 설정 API  
-const tokenConfigHandler = require("./api/subscription/token-config");
-app.get("/api/subscription/token-config", tokenConfigHandler);
-app.put("/api/subscription/token-config", tokenConfigHandler);
+// 토큰 설정 API - require 실패 시 대비하여 주석 처리
+// const tokenConfigHandler = require("./api/subscription/token-config");
+// app.get("/api/subscription/token-config", tokenConfigHandler);
+// app.put("/api/subscription/token-config", tokenConfigHandler);
 
 // 토큰 사용량 API
 const tokenUsageHandler = require("./api/subscription/token-usage");
@@ -3736,9 +3736,8 @@ if (process.env.VERCEL) {
 
 // ==================== 구독 시스템 API (중복 제거됨) ====================
 // 이미 625-644번 줄에서 api/subscription/ 폴더의 파일들을 require로 처리하고 있음
-// 아래 중복된 정의는 주석처리함
+// 아래는 백업용 직접 구현 (require 실패 시 사용)
 
-/*
 // 1. 가격 설정 조회
 app.get('/api/subscription/pricing-config', async (req, res) => {
   try {
@@ -4249,4 +4248,3 @@ app.put('/api/subscription/upgrade-request/:requestId/approve', async (req, res)
     res.status(500).json({ success: false, error: error.message });
   }
 });
-*/
