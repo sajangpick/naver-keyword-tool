@@ -3,13 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>사장픽(sajang pick) - 네이버 키워드 도구</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
     />
     <link href="https://cdn.jsdelivr.net/gh/webfontworld/score/SCoreDream.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha384-i5Xn8N5iy7voNjn7S1+YtWVYa/jz2Z8ll3eZe2DQZrY4Lc5cWpSvOPMt4qVLEz4p" crossorigin="anonymous"></script>
     <script src="/assets/common-header.js?v=20251022" defer></script>
     <style>
       * {
@@ -3023,8 +3029,8 @@
           signupBtns.forEach((btn) => (btn.style.display = "inline-block"));
         }
       }
-      // 로그인 상태 UI 업데이트
-      function updateAuthUI() {
+      // 로그인 상태 UI 업데이트 (Supabase 세션 기반)
+      async function updateAuthUI() {
         const authUser = document.getElementById("authUser");
         const loginBtn = document.getElementById("loginBtn");
         const signupBtn = document.getElementById("signupBtn");
@@ -3032,47 +3038,49 @@
         const userEmailSpan = document.getElementById("userEmail");
         const logoutBtn = document.getElementById("logoutBtn");
 
-        const isLoggedIn = localStorage.getItem("isLoggedIn");
-        const userData = localStorage.getItem("userData");
-
-        if (isLoggedIn === "true" && userData) {
+        // Supabase 세션 확인
+        let session = null;
+        if (window.authState?.supabase) {
           try {
-            const user = JSON.parse(userData);
+            const { data } = await window.authState.supabase.auth.getSession();
+            session = data?.session;
+          } catch (error) {
+            console.error("세션 확인 오류:", error);
+          }
+        }
 
-            // 로그인 버튼 숨기기
-            if (loginBtn) loginBtn.style.display = "none";
-            if (signupBtn) signupBtn.style.display = "none";
+        if (session?.user) {
+          const user = session.user;
 
-            // 사용자 정보 표시
-            if (authUser) authUser.style.display = "flex";
-            if (userEmailSpan) {
-              userEmailSpan.textContent = "마이페이지";
-              userEmailSpan.title = "클릭하여 마이페이지로 이동";
-            }
-            if (userAvatar) {
-              const base = user.displayName || user.email || "U";
-              userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-            }
-            if (logoutBtn) {
-              logoutBtn.style.display = "inline-flex";
-              logoutBtn.onclick = async function () {
-                if (!confirm("로그아웃 하시겠습니까?")) return;
-                try {
-                  if (window.authState?.signOut) {
-                    await window.authState.signOut();
-                  } else {
-                    localStorage.removeItem("isLoggedIn");
-                    localStorage.removeItem("userData");
-                  }
-                } finally {
-                  location.href = "/login.html";
+          // 로그인 버튼 숨기기
+          if (loginBtn) loginBtn.style.display = "none";
+          if (signupBtn) signupBtn.style.display = "none";
+
+          // 사용자 정보 표시
+          if (authUser) authUser.style.display = "flex";
+          if (userEmailSpan) {
+            const email = user.email || "마이페이지";
+            userEmailSpan.textContent = email;
+            userEmailSpan.title = `${email} (마이페이지로 이동)`;
+          }
+          if (userAvatar) {
+            const base = user.user_metadata?.full_name || user.email || "U";
+            userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
+          }
+          if (logoutBtn) {
+            logoutBtn.style.display = "inline-flex";
+            logoutBtn.onclick = async function () {
+              if (!confirm("로그아웃 하시겠습니까?")) return;
+              try {
+                if (window.authState?.signOut) {
+                  await window.authState.signOut();
                 }
-              };
-            }
-          } catch (e) {
-            console.error("로그인 정보 파싱 오류:", e);
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("userData");
+              } finally {
+                localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("userData");
+                location.href = "/login.html";
+              }
+            };
           }
         } else {
           // 로그인하지 않은 상태
@@ -3084,14 +3092,22 @@
       }
 
       // 페이지 로드 시 실행
-      updateAuthUI();
-      window.addEventListener("auth:state-changed", updateAuthUI);
-      if (window.authState?.syncSession) {
-        window.authState.syncSession();
-      }
+      (async function() {
+        // auth-state.js 로드 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        await updateAuthUI();
+        window.addEventListener("auth:state-changed", updateAuthUI);
+        if (window.authState?.syncSession) {
+          window.authState.syncSession();
+        }
+      })();
     </script>
 
     <!-- 공통 인증 스크립트 -->
-    <script src="/assets/auth-state.js"></script>
+    <script src="/assets/auth-state.js?v=202410" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
   </body>
 </html>

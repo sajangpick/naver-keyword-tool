@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <title>마이페이지 - 사장픽</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
   <style>
     * {
       margin: 0;
@@ -1110,10 +1114,8 @@
     </div>
   </div>
 
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- 공통 인증 스크립트 -->
-  <script src="/assets/auth-state.js"></script>
+  <script src="/assets/auth-state.js?v=202410" defer></script>
 
   <script>
     // Supabase 클라이언트
@@ -1152,14 +1154,15 @@
       }
     };
 
-    // Supabase 초기화
+    // Supabase 초기화 (auth-state.js에서 안전하게 가져옴)
     async function initSupabase() {
       try {
-        // ⚡ 직접 설정 사용 (API 호출 건너뛰기 - 더 빠름)
-        const supabaseUrl = 'https://ptuzlubgggbgsophfcna.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
+        // auth-state.js가 로드될 때까지 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
         
-        supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+        supabase = window.authState.supabase;
         
         // ✅ 전역 변수로도 저장 (다른 스크립트에서 사용 가능)
         window.supabaseClient = supabase;
@@ -1176,9 +1179,9 @@
       try {
         await initSupabase();
         
-        // 로그인 확인 (localStorage 사용)
-        const userDataStr = localStorage.getItem('userData');
-        if (!userDataStr) {
+        // 로그인 확인 (Supabase 세션 기반)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           showError('로그인이 필요합니다.');
           setTimeout(() => {
             window.location.href = '/login.html';
@@ -1186,7 +1189,7 @@
           return;
         }
 
-        const user = JSON.parse(userDataStr);
+        const user = session.user;
         
         // UUID 형식 검증 (정규식: 8-4-4-4-12)
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1195,7 +1198,8 @@
           console.error('❌ 유효하지 않은 사용자 ID:', user?.id);
           showError('로그인 정보가 유효하지 않습니다. 다시 로그인해주세요.');
           
-          // 잘못된 로그인 정보 제거
+          // 세션 정리
+          await supabase.auth.signOut();
           localStorage.removeItem('isLoggedIn');
           localStorage.removeItem('userData');
           
@@ -1689,10 +1693,11 @@
     
     // 토큰 정보 새로고침
     async function refreshTokenInfo() {
-      const userData = localStorage.getItem('userData');
-      if (userData) {
-        const user = JSON.parse(userData);
-        await loadTokenInfo(user.id);
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await loadTokenInfo(session.user.id);
       }
     }
 

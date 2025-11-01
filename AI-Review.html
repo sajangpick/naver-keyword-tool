@@ -1,14 +1,90 @@
 <!DOCTYPE html>
 <html lang="ko">
+<head>
   <meta charset="utf-8" />
-  <title>AI Review</title>
+  <title>AI 리뷰 작성 - 사장픽</title>
+  <meta name="description" content="AI를 활용한 스마트한 리뷰 답글 작성 도구로 이동합니다" />
   <meta http-equiv="refresh" content="0; url=/review.html" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <body style="font-family: system-ui, Arial; margin: 40px">
-    <h1>AI Review</h1>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta name="referrer" content="no-referrer" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <style>
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .redirect-container {
+      background: white;
+      padding: 48px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+    h1 {
+      color: #03C75A;
+      font-size: 32px;
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+    p {
+      color: #666;
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #03C75A;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    a {
+      color: #03C75A;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: border-bottom 0.3s ease;
+    }
+    a:hover {
+      border-bottom: 2px solid #03C75A;
+    }
+    @media (max-width: 768px) {
+      .redirect-container {
+        padding: 32px 24px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      p {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="redirect-container">
+    <div class="spinner"></div>
+    <h1>AI 리뷰 작성 도구</h1>
     <p>
-      리뷰작성 도구로 이동 중입니다. 이동하지 않으면
-      <a href="/review.html">여기</a>를 클릭하세요.
+      리뷰 작성 페이지로 이동 중입니다.<br>
+      자동으로 이동되지 않으면 <a href="/review.html">여기</a>를 클릭하세요.
     </p>
-  </body>
+  </div>
+</body>
 </html>

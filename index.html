@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data: https://images.unsplash.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>사장픽(sajang pick) - 메인 허브</title>
     <link
       rel="icon"
@@ -11,6 +17,8 @@
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       rel="stylesheet"
+      integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g"
+      crossorigin="anonymous"
     />
     <link href="https://cdn.jsdelivr.net/gh/webfontworld/score/SCoreDream.css" rel="stylesheet">
     <script src="/assets/common-header.js?v=20251029" defer></script>
@@ -791,7 +799,11 @@
       </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
+      integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug"
+      crossorigin="anonymous"
+    ></script>
     <script src="/assets/auth-state.js?v=202410"></script>
     <script>
       // 배너 슬라이더 기능
@@ -840,10 +852,40 @@
       startBannerAutoSlide();
 
       // 로그인 상태 확인 및 UI 업데이트 (즉시 실행)
-      function updateAuthUI() {
-        const isLoggedIn = localStorage.getItem("isLoggedIn");
-        const userData = localStorage.getItem("userData");
+      async function getActiveSession() {
+        if (!window.authState?.supabase) {
+          return null;
+        }
+        try {
+          const { data } = await window.authState.supabase.auth.getSession();
+          return data?.session ?? null;
+        } catch (error) {
+          console.error("세션 조회 실패:", error);
+          return null;
+        }
+      }
 
+      function renderLoggedOut() {
+        const loginBtn = document.getElementById("loginBtn");
+        const signupBtn = document.getElementById("signupBtn");
+        const userEmailSpan = document.getElementById("userEmail");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+
+        if (authUser) authUser.style.display = "none";
+        if (loginBtn) loginBtn.style.display = "inline-flex";
+        if (signupBtn) signupBtn.style.display = "inline-flex";
+        if (userEmailSpan) {
+          userEmailSpan.textContent = "";
+          userEmailSpan.title = "";
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = "none";
+          logoutBtn.onclick = null;
+        }
+      }
+
+      function renderLoggedIn(user) {
         const loginBtn = document.getElementById("loginBtn");
         const signupBtn = document.getElementById("signupBtn");
         const userEmailSpan = document.getElementById("userEmail");
@@ -851,68 +893,64 @@
         const authUser = document.getElementById("authUser");
         const userAvatar = document.getElementById("userAvatar");
 
-        if (isLoggedIn === "true" && userData) {
-          try {
-            const user = JSON.parse(userData);
+        if (loginBtn) loginBtn.style.display = "none";
+        if (signupBtn) signupBtn.style.display = "none";
+        if (authUser) authUser.style.display = "flex";
 
-            // 로그인 버튼 숨기기
-            if (loginBtn) loginBtn.style.display = "none";
-            if (signupBtn) signupBtn.style.display = "none";
+        if (userEmailSpan) {
+          const email = user.email || "마이페이지";
+          userEmailSpan.textContent = email;
+          userEmailSpan.title = `${email} (마이페이지로 이동)`;
+        }
 
-            // 사용자 정보 및 로그아웃 버튼 표시
-            if (authUser) authUser.style.display = "flex";
-            if (userEmailSpan) {
-              userEmailSpan.textContent = "마이페이지";
-              userEmailSpan.title = "클릭하여 마이페이지로 이동";
+        if (userAvatar) {
+          const base =
+            user.user_metadata?.full_name ||
+            user.email ||
+            user.app_metadata?.provider ||
+            "U";
+          const initial = (base.trim()[0] || "U").toUpperCase();
+          userAvatar.textContent = initial;
+          userAvatar.setAttribute("aria-label", `${base} 프로필`);
+        }
+
+        if (logoutBtn) {
+          logoutBtn.style.display = "inline-flex";
+          logoutBtn.onclick = async function () {
+            if (!confirm("로그아웃 하시겠습니까?")) return;
+            try {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
+              }
+            } finally {
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("userData");
+              location.href = "login.html";
             }
-            if (userAvatar) {
-              const base =
-                user.displayName ||
-                user.user_metadata?.full_name ||
-                user.email ||
-                "U";
-              userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-            }
-            if (logoutBtn) {
-              logoutBtn.style.display = "inline-flex";
-              logoutBtn.onclick = async function () {
-                if (!confirm("로그아웃 하시겠습니까?")) return;
-                try {
-                  if (window.authState?.signOut) {
-                    await window.authState.signOut();
-                  } else {
-                    localStorage.removeItem("isLoggedIn");
-                    localStorage.removeItem("userData");
-                  }
-                } finally {
-                  location.href = "login.html";
-                }
-              };
-            }
-          } catch (e) {
-            console.error("로그인 정보 파싱 오류:", e);
-            // 오류 발생 시 로그인 정보 초기화
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("userData");
-          }
+          };
+        }
+      }
+
+      let authRenderToken = 0;
+
+      async function updateAuthUI() {
+        const currentToken = ++authRenderToken;
+        const session = await getActiveSession();
+
+        // 이전 요청이 더 최신이면 렌더링하지 않습니다.
+        if (currentToken !== authRenderToken) return;
+
+        if (session?.user) {
+          renderLoggedIn(session.user);
         } else {
-          // 로그인하지 않은 상태 - 로그인/회원가입 버튼 표시
-          if (authUser) authUser.style.display = "none";
-          if (loginBtn) loginBtn.style.display = "inline-flex";
-          if (signupBtn) signupBtn.style.display = "inline-flex";
-          if (userEmailSpan) {
-            userEmailSpan.textContent = "";
-            userEmailSpan.title = "";
-          }
-          if (logoutBtn) {
-            logoutBtn.style.display = "none";
-            logoutBtn.onclick = null;
-          }
+          renderLoggedOut();
         }
       }
 
       updateAuthUI();
-      window.addEventListener("auth:state-changed", updateAuthUI);
+      window.addEventListener("auth:state-changed", () => {
+        updateAuthUI();
+      });
       if (window.authState?.syncSession) {
         window.authState.syncSession();
       }

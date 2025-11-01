@@ -3,8 +3,12 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>AI 블로그 생성기 - 사장픽</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" />
     <link href="https://cdn.jsdelivr.net/gh/webfontworld/score/SCoreDream.css" rel="stylesheet">
     <script src="/assets/common-header.js?v=20251022" defer></script>
     <style>
@@ -964,7 +968,7 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
     <script src="/assets/auth-state.js?v=202410"></script>
     <script>
       // DOM 요소들
@@ -985,7 +989,7 @@
         let globalPromotionData = null;
         let globalHasPromotion = false;
 
-        // 인증 확인
+        // 인증 확인 (Supabase 세션 기반)
         async function ensureAuthenticated() {
             // 🔧 로컬 개발 환경에서는 인증 건너뛰기
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -1002,18 +1006,25 @@
                 return true;
             }
 
-            if (localStorage.getItem("isLoggedIn") === "true") {
-                return true;
-            }
-            if (window.authState?.syncSession) {
+            // Supabase 세션 확인
+            if (window.authState?.supabase) {
                 try {
-                    const session = await window.authState.syncSession();
-                    if (session) return true;
+                    const { data: { session } } = await window.authState.supabase.auth.getSession();
+                    if (session?.user) {
+                        // 세션이 유효하면 사용자 정보 저장
+                        localStorage.setItem('userData', JSON.stringify({
+                            id: session.user.id,
+                            email: session.user.email,
+                            name: session.user.user_metadata?.full_name || session.user.email
+                        }));
+                        return true;
+                    }
                 } catch (error) {
-                    console.warn("세션 동기화 실패:", error);
+                    console.warn("세션 확인 실패:", error);
                 }
             }
-            // 로그인 페이지로 리다이렉트
+            
+            // 세션이 없으면 로그인 페이지로 리다이렉트
             const current = window.location.pathname + window.location.search + window.location.hash;
             window.location.replace(`login.html?redirect=${encodeURIComponent(current)}`);
             return false;
@@ -1737,8 +1748,8 @@
     <script src="/assets/performance-tracker.js"></script>
 
     <script>
-      // 로그인 상태 UI 업데이트
-      function updateAuthUI() {
+      // 로그인 상태 UI 업데이트 (Supabase 세션 기반)
+      async function updateAuthUI() {
         const authUser = document.getElementById("authUser");
         const loginBtn = document.getElementById("loginBtn");
         const signupBtn = document.getElementById("signupBtn");
@@ -1746,47 +1757,49 @@
         const userEmailSpan = document.getElementById("userEmail");
         const logoutBtn = document.getElementById("logoutBtn");
 
-        const isLoggedIn = localStorage.getItem("isLoggedIn");
-        const userData = localStorage.getItem("userData");
-
-        if (isLoggedIn === "true" && userData) {
+        // Supabase 세션 확인
+        let session = null;
+        if (window.authState?.supabase) {
           try {
-            const user = JSON.parse(userData);
+            const { data } = await window.authState.supabase.auth.getSession();
+            session = data?.session;
+          } catch (error) {
+            console.error("세션 확인 오류:", error);
+          }
+        }
 
-            // 로그인 버튼 숨기기
-            if (loginBtn) loginBtn.style.display = "none";
-            if (signupBtn) signupBtn.style.display = "none";
+        if (session?.user) {
+          const user = session.user;
 
-            // 사용자 정보 표시
-            if (authUser) authUser.style.display = "flex";
-            if (userEmailSpan) {
-              userEmailSpan.textContent = "마이페이지";
-              userEmailSpan.title = "클릭하여 마이페이지로 이동";
-            }
-            if (userAvatar) {
-              const base = user.displayName || user.email || "U";
-              userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-            }
-            if (logoutBtn) {
-              logoutBtn.style.display = "inline-flex";
-              logoutBtn.onclick = async function () {
-                if (!confirm("로그아웃 하시겠습니까?")) return;
-                try {
-                  if (window.authState?.signOut) {
-                    await window.authState.signOut();
-                  } else {
-                    localStorage.removeItem("isLoggedIn");
-                    localStorage.removeItem("userData");
-                  }
-                } finally {
-                  location.href = "/login.html";
+          // 로그인 버튼 숨기기
+          if (loginBtn) loginBtn.style.display = "none";
+          if (signupBtn) signupBtn.style.display = "none";
+
+          // 사용자 정보 표시
+          if (authUser) authUser.style.display = "flex";
+          if (userEmailSpan) {
+            const email = user.email || "마이페이지";
+            userEmailSpan.textContent = email;
+            userEmailSpan.title = `${email} (마이페이지로 이동)`;
+          }
+          if (userAvatar) {
+            const base = user.user_metadata?.full_name || user.email || "U";
+            userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
+          }
+          if (logoutBtn) {
+            logoutBtn.style.display = "inline-flex";
+            logoutBtn.onclick = async function () {
+              if (!confirm("로그아웃 하시겠습니까?")) return;
+              try {
+                if (window.authState?.signOut) {
+                  await window.authState.signOut();
                 }
-              };
-            }
-          } catch (e) {
-            console.error("로그인 정보 파싱 오류:", e);
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("userData");
+              } finally {
+                localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("userData");
+                location.href = "/login.html";
+              }
+            };
           }
         } else {
           // 로그인하지 않은 상태
@@ -1804,8 +1817,5 @@
         window.authState.syncSession();
       }
     </script>
-
-    <!-- 공통 인증 스크립트 -->
-    <script src="/assets/auth-state.js"></script>
   </body>
 </html>

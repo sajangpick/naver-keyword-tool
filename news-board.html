@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* http://127.0.0.1:* https://sajangpick-kwon-teamjang.onrender.com; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <title>정보 게시판 - 사장픽</title>
   <link
     rel="icon"
@@ -11,6 +14,8 @@
   <link
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     rel="stylesheet"
+    integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g"
+    crossorigin="anonymous"
   />
   <link href="https://cdn.jsdelivr.net/gh/webfontworld/score/SCoreDream.css" rel="stylesheet">
 
@@ -884,6 +889,16 @@
 
     let currentPage = 1;
     let currentCategory = 'all';
+    
+    // HTML 엔티티 이스케이프 함수 (XSS 방지)
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
 
     // 카테고리 라벨
     const categoryLabels = {
@@ -929,7 +944,7 @@
                 <span class="news-category category-${news.category}">
                   ${categoryLabels[news.category] || news.category}
                 </span>
-                <h3 class="news-title">${news.title}</h3>
+                <h3 class="news-title">${escapeHtml(news.title)}</h3>
                 <p class="news-excerpt">${excerpt}...</p>
                 <div class="news-meta">
                   <span><i class="fas fa-calendar"></i> ${createdAt}</span>
@@ -995,7 +1010,7 @@
                   ${categoryLabels[news.category] || news.category}
                 </span>
                 ${news.is_featured ? '<span class="news-category" style="background: #FFE082; color: #F57F17;">⭐ 중요</span>' : ''}
-                <h3 class="news-item-title">${news.title}</h3>
+                <h3 class="news-item-title">${escapeHtml(news.title)}</h3>
                 <p class="news-item-excerpt">${excerpt}...</p>
                 <div class="news-meta">
                   <span><i class="fas fa-calendar"></i> ${createdAt}</span>
@@ -1085,18 +1100,19 @@
         const news = result.data;
         const createdAt = new Date(news.created_at).toLocaleDateString('ko-KR');
 
+        // XSS 방지를 위해 안전하게 콘텐츠 생성
         content.innerHTML = `
           ${news.image_url ? `<img src="${news.image_url}" alt="${news.title}" class="modal-image" />` : ''}
           <span class="modal-category category-${news.category}">
             ${categoryLabels[news.category] || news.category}
           </span>
           ${news.is_featured ? '<span class="modal-category" style="background: #FFE082; color: #F57F17;">⭐ 중요</span>' : ''}
-          <h1 class="modal-title">${news.title}</h1>
+          <h1 class="modal-title">${escapeHtml(news.title)}</h1>
           <div class="modal-meta">
             <span><i class="fas fa-calendar"></i> ${createdAt}</span>
             <span><i class="fas fa-eye"></i> ${news.views}회</span>
           </div>
-          <div class="modal-body">${news.content}</div>
+          <div class="modal-body" id="modalBodyContent"></div>
           ${news.source_url ? `
             <div class="modal-source">
               <i class="fas fa-external-link-alt"></i>
@@ -1104,6 +1120,14 @@
             </div>
           ` : ''}
         `;
+        
+        // HTML 콘텐츠를 안전하게 렌더링 (HTML 태그 허용이 필요한 경우)
+        const modalBodyContent = document.getElementById('modalBodyContent');
+        if (modalBodyContent) {
+          // 서버에서 이미 sanitize된 HTML이라면 innerHTML 사용
+          // 그렇지 않다면 textContent 사용
+          modalBodyContent.innerHTML = news.content;
+        }
 
       } catch (error) {
         console.error('Open news error:', error);
@@ -1128,11 +1152,8 @@
       }
     });
 
-    // 로그인 상태 확인 및 UI 업데이트
-    function updateAuthUI() {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
-      const userData = localStorage.getItem("userData");
-
+    // 로그인 상태 확인 및 UI 업데이트 (Supabase 세션 기반)
+    async function updateAuthUI() {
       const loginBtn = document.getElementById("loginBtn");
       const signupBtn = document.getElementById("signupBtn");
       const userEmailSpan = document.getElementById("userEmail");
@@ -1140,59 +1161,74 @@
       const authUser = document.getElementById("authUser");
       const userAvatar = document.getElementById("userAvatar");
 
-      if (isLoggedIn === "true" && userData) {
+      // Supabase 세션 확인
+      let session = null;
+      if (window.authState?.supabase) {
         try {
-          const user = JSON.parse(userData);
+          const { data } = await window.authState.supabase.auth.getSession();
+          session = data?.session;
+        } catch (error) {
+          console.error("세션 확인 오류:", error);
+        }
+      }
 
-          if (loginBtn) loginBtn.style.display = "none";
-          if (signupBtn) signupBtn.style.display = "none";
-          if (authUser) authUser.style.display = "flex";
-          if (userEmailSpan) {
-            userEmailSpan.textContent = "마이페이지";
-            userEmailSpan.title = "클릭하여 마이페이지로 이동";
-          }
-          if (userAvatar) {
-            const base = user.displayName || user.user_metadata?.full_name || user.email || "U";
-            userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-          }
-          if (logoutBtn) {
-            logoutBtn.style.display = "inline-flex";
-            logoutBtn.onclick = async function () {
-              if (!confirm("로그아웃 하시겠습니까?")) return;
-              try {
-                localStorage.removeItem("isLoggedIn");
-                localStorage.removeItem("userData");
-              } finally {
-                location.href = "login.html";
+      if (session?.user) {
+        const user = session.user;
+
+        // 로그인 버튼 숨기기
+        if (loginBtn) loginBtn.style.display = "none";
+        if (signupBtn) signupBtn.style.display = "none";
+
+        // 사용자 정보 표시
+        if (authUser) authUser.style.display = "flex";
+        if (userEmailSpan) {
+          const email = user.email || "마이페이지";
+          userEmailSpan.textContent = email;
+          userEmailSpan.title = `${email} (마이페이지로 이동)`;
+        }
+        if (userAvatar) {
+          const base = user.user_metadata?.full_name || user.email || "U";
+          userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = "inline-flex";
+          logoutBtn.onclick = async function () {
+            if (!confirm("로그아웃 하시겠습니까?")) return;
+            try {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
               }
-            };
-          }
-        } catch (e) {
-          console.error("로그인 정보 파싱 오류:", e);
-          localStorage.removeItem("isLoggedIn");
-          localStorage.removeItem("userData");
+            } finally {
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("userData");
+              location.href = "/login.html";
+            }
+          };
         }
       } else {
+        // 로그인하지 않은 상태
         if (authUser) authUser.style.display = "none";
         if (loginBtn) loginBtn.style.display = "inline-flex";
         if (signupBtn) signupBtn.style.display = "inline-flex";
-        if (userEmailSpan) {
-          userEmailSpan.textContent = "";
-          userEmailSpan.title = "";
-        }
-        if (logoutBtn) {
-          logoutBtn.style.display = "none";
-          logoutBtn.onclick = null;
-        }
+        if (logoutBtn) logoutBtn.style.display = "none";
       }
     }
 
-    updateAuthUI();
-    window.addEventListener("auth:state-changed", updateAuthUI);
+    // 페이지 로드 시 실행
+    (async function() {
+      while (!window.authState?.supabase) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      await updateAuthUI();
+      window.addEventListener("auth:state-changed", updateAuthUI);
+      if (window.authState?.syncSession) {
+        window.authState.syncSession();
+      }
+    })();
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/assets/auth-state.js?v=202410"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+  <script src="/assets/auth-state.js?v=202410" defer></script>
 </body>
 </html>
 

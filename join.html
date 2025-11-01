@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>회원가입 - 사장픽</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
     <style>
       :root {
         --naver-green: #03c75a;
@@ -370,20 +374,34 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+    <script src="/assets/auth-state.js?v=202410" defer></script>
     <script>
-      // 이미 로그인된 경우 메인 페이지로 리다이렉트
-      (function checkAlreadyLoggedIn() {
-        const isLoggedIn = localStorage.getItem("isLoggedIn");
-        if (isLoggedIn === "true") {
-          window.location.href = "index.html";
+      // 이미 로그인된 경우 메인 페이지로 리다이렉트 (Supabase 세션 기반)
+      (async function checkAlreadyLoggedIn() {
+        // Supabase 초기화 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        try {
+          const { data: { session } } = await window.authState.supabase.auth.getSession();
+          if (session) {
+            window.location.href = "index.html";
+          }
+        } catch (error) {
+          console.error("세션 확인 오류:", error);
         }
       })();
 
-      // Supabase 초기화
-      const SUPABASE_URL = "https://ptuzlubgggbgsophfcna.supabase.co";
-      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE"; // 대시보드의 anon public 키를 넣으세요
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY || "");
+      // Supabase 객체 참조 (서버에서 안전하게 가져온 auth-state.js에서 초기화)
+      let supabase = null;
+      (async function initSupabase() {
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        supabase = window.authState.supabase;
+      })();
 
       function setLoggedInFromSession(session) {
         if (!session) return;
@@ -400,31 +418,38 @@
         localStorage.setItem("isLoggedIn", "true");
       }
 
-      // 페이지 로드 시 Supabase 세션 확인
-      // 단, 카카오 OAuth 콜백에서 돌아온 경우는 onAuthStateChange에서 처리하도록 스킵
+      // 페이지 로드 시 Supabase 세션 확인 및 상태 변화 감지
       (async () => {
-        try {
-          // URL 해시나 쿼리에 OAuth 관련 파라미터가 있으면 스킵
-          const hasOAuthParams = window.location.hash.includes('access_token') || 
-                                 window.location.search.includes('code=');
-          
-          if (!hasOAuthParams) {
-            const { data: { session } } = await supabase.auth.getSession();
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const supabaseClient = window.authState.supabase;
+        
+        // URL 해시나 쿼리에 OAuth 관련 파라미터가 있으면 스킵
+        const hasOAuthParams = window.location.hash.includes('access_token') || 
+                               window.location.search.includes('code=');
+        
+        if (!hasOAuthParams) {
+          try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
               setLoggedInFromSession(session);
               window.location.replace("index.html");
             }
+          } catch (error) {
+            console.error("세션 확인 오류:", error);
           }
-        } catch (_) {}
-      })();
-
-      // 로그인 상태 변화 감지
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN") {
-          setLoggedInFromSession(session);
-          window.location.replace("index.html");
         }
-      });
+        
+        // 로그인 상태 변화 감지
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          if (event === "SIGNED_IN") {
+            setLoggedInFromSession(session);
+            window.location.replace("index.html");
+          }
+        });
+      })();
 
       // DOM elements
       const kakaoSignupBtn = document.getElementById("kakaoSignup");
@@ -456,6 +481,11 @@
         kakaoSignupBtn.addEventListener("click", async () => {
           try {
             hideMessages();
+            
+            // Supabase 객체 대기
+            while (!supabase) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
             
             // Supabase OAuth를 사용한 카카오 회원가입
             const { data, error } = await supabase.auth.signInWithOAuth({
