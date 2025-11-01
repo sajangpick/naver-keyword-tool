@@ -16,27 +16,6 @@
       badge: null
     },
     {
-      section: '모니터링'
-    },
-    {
-      icon: '📈',
-      title: '분석',
-      path: '/admin/analytics.html',
-      badge: null
-    },
-    {
-      icon: '⚡',
-      title: '성능',
-      path: '/admin/performance.html',
-      badge: null
-    },
-    {
-      icon: '🐛',
-      title: '에러',
-      path: '/admin/errors.html',
-      badge: null
-    },
-    {
       section: '관리'
     },
     {
@@ -91,6 +70,27 @@
       icon: '🗄️',
       title: 'DB 뷰어',
       path: '/admin/db-view.html',
+      badge: null
+    },
+    {
+      section: '모니터링'
+    },
+    {
+      icon: '📈',
+      title: '분석',
+      path: '/admin/analytics.html',
+      badge: null
+    },
+    {
+      icon: '⚡',
+      title: '성능',
+      path: '/admin/performance.html',
+      badge: null
+    },
+    {
+      icon: '🐛',
+      title: '에러',
+      path: '/admin/errors.html',
       badge: null
     }
   ];
