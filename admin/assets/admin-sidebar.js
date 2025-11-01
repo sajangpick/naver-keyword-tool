@@ -68,13 +68,7 @@
     },
     {
       icon: '💰',
-      title: '가격 설정',
-      path: '/admin/pages/subscription-settings.html',
-      badge: null
-    },
-    {
-      icon: '🎁',
-      title: '토큰 설정',
+      title: '토큰 가격설정',
       path: '/admin/pages/subscription-settings.html',
       badge: null
     },

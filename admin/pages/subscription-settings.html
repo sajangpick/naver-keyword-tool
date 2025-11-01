@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>구독 설정 - 사장픽 관리자</title>
+    <title>토큰 가격설정 - 사장픽 관리자</title>
     
     <!-- Font Awesome -->
     <link
@@ -192,36 +192,22 @@
         border-bottom: 2px solid var(--accent);
       }
 
-      .tabs {
+      .section-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 40px 0;
+      }
+
+      .section-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--accent);
         display: flex;
-        gap: 8px;
-        margin-bottom: 24px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .tab-btn {
-        padding: 12px 16px;
-        background: none;
-        border: none;
-        border-bottom: 3px solid transparent;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        color: #6b7280;
-        transition: all 0.2s;
-      }
-
-      .tab-btn.active {
-        color: var(--accent);
-        border-bottom-color: var(--accent);
-      }
-
-      .tab-content {
-        display: none;
-      }
-
-      .tab-content.active {
-        display: block;
+        align-items: center;
+        gap: 10px;
       }
     </style>
   </head>
@@ -239,7 +225,7 @@
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
             <i class="fas fa-sliders-h" style="color: var(--accent);"></i>
-            구독 설정
+            토큰 가격설정
           </h1>
         </div>
         <div class="subtitle">구독 요금과 토큰 한도를 설정합니다</div>
@@ -247,89 +233,41 @@
         <!-- 상태 메시지 -->
         <div id="statusMessage" style="display: none;"></div>
 
-        <!-- 탭 -->
-        <div class="tabs">
-          <button class="tab-btn active" onclick="switchTab('pricing')">
-            <i class="fas fa-tag"></i> 가격 설정
-          </button>
-          <button class="tab-btn" onclick="switchTab('tokens')">
-            <i class="fas fa-coins"></i> 토큰 한도
-          </button>
-        </div>
+        <!-- 식당 대표 설정 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-utensils" style="color: #f59e0b;"></i>
+              🍽️ 식당 대표 등급 설정
+            </div>
+            <button class="btn primary" onclick="saveSettings('owner')">
+              <i class="fas fa-save"></i> 저장
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="settings-grid" id="owner-settings">
+              <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+            </div>
+          </div>
+        </section>
 
-        <!-- 가격 설정 탭 -->
-        <div id="pricing-tab" class="tab-content active">
-          <section class="card">
-            <div class="card-header">
-              <div class="title">
-                <i class="fas fa-tag" style="color: var(--accent);"></i>
-                식당 대표 가격 설정
-              </div>
-              <button class="btn primary" onclick="savePricing('owner')">
-                <i class="fas fa-save"></i> 저장
-              </button>
+        <!-- 대행사 설정 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-building" style="color: #8b5cf6;"></i>
+              🏢 대행사 등급 설정
             </div>
-            <div class="card-body">
-              <div class="settings-grid" id="owner-pricing">
-                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
-              </div>
+            <button class="btn primary" onclick="saveSettings('agency')">
+              <i class="fas fa-save"></i> 저장
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="settings-grid" id="agency-settings">
+              <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
             </div>
-          </section>
-
-          <section class="card">
-            <div class="card-header">
-              <div class="title">
-                <i class="fas fa-tag" style="color: var(--accent);"></i>
-                대행사 가격 설정
-              </div>
-              <button class="btn primary" onclick="savePricing('agency')">
-                <i class="fas fa-save"></i> 저장
-              </button>
-            </div>
-            <div class="card-body">
-              <div class="settings-grid" id="agency-pricing">
-                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- 토큰 한도 탭 -->
-        <div id="tokens-tab" class="tab-content">
-          <section class="card">
-            <div class="card-header">
-              <div class="title">
-                <i class="fas fa-coins" style="color: var(--accent);"></i>
-                식당 대표 토큰 한도
-              </div>
-              <button class="btn primary" onclick="saveTokens('owner')">
-                <i class="fas fa-save"></i> 저장
-              </button>
-            </div>
-            <div class="card-body">
-              <div class="settings-grid" id="owner-tokens">
-                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
-              </div>
-            </div>
-          </section>
-
-          <section class="card">
-            <div class="card-header">
-              <div class="title">
-                <i class="fas fa-coins" style="color: var(--accent);"></i>
-                대행사 토큰 한도
-              </div>
-              <button class="btn primary" onclick="saveTokens('agency')">
-                <i class="fas fa-save"></i> 저장
-              </button>
-            </div>
-            <div class="card-body">
-              <div class="settings-grid" id="agency-tokens">
-                <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
-              </div>
-            </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </div>
     </main>
 
@@ -347,220 +285,178 @@
       // ==================== 초기화 ====================
 
       window.addEventListener('load', async function() {
-        supabase = await AdminBootstrap.getSupabaseClient();
-        await AdminBootstrap.initializeHeader();
-        await AdminBootstrap.initializeSidebar();
-        await loadPricingConfig();
-        await loadTokenConfig();
+        try {
+          console.log('🔄 초기화 시작...');
+          
+          supabase = await AdminBootstrap.getSupabaseClient();
+          console.log('✅ Supabase 클라이언트 초기화 완료');
+          
+          await AdminBootstrap.initializeHeader();
+          console.log('✅ 헤더 초기화 완료');
+          
+          await AdminBootstrap.initializeSidebar();
+          console.log('✅ 사이드바 초기화 완료');
+          
+          await loadAllSettings();
+          console.log('✅ 모든 설정 로드 완료');
+          
+        } catch (error) {
+          console.error('❌ 페이지 초기화 실패:', error);
+          showMessage('페이지 초기화 실패: ' + error.message, 'error');
+        }
       });
 
-      // ==================== 탭 전환 ====================
+      // ==================== 통합 설정 로드 ====================
 
-      function switchTab(tab) {
-        // 탭 버튼 활성화
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.closest('.tab-btn').classList.add('active');
-
-        // 탭 콘텐츠 활성화
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        document.getElementById(tab + '-tab').classList.add('active');
-      }
-
-      // ==================== 가격 설정 로드 ====================
-
-      async function loadPricingConfig() {
+      async function loadAllSettings() {
         try {
-          const response = await fetch('/api/subscription/pricing-config');
-          const result = await response.json();
+          // 가격과 토큰 동시 로드
+          const [pricingRes, tokenRes] = await Promise.all([
+            fetch('/api/subscription/pricing-config'),
+            fetch('/api/subscription/token-config')
+          ]);
 
-          if (!result.success) throw new Error(result.error);
+          const pricingResult = await pricingRes.json();
+          const tokenResult = await tokenRes.json();
 
-          pricingData = result.pricing;
-          renderPricingUI();
+          if (!pricingResult.success) throw new Error(pricingResult.error);
+          if (!tokenResult.success) throw new Error(tokenResult.error);
+
+          pricingData = pricingResult.pricing;
+          tokenData = tokenResult.tokens;
+
+          renderSettings();
         } catch (error) {
-          console.error('❌ 가격 설정 로드 실패:', error);
-          showMessage('가격 설정 로드 실패: ' + error.message, 'error');
+          console.error('❌ 설정 로드 실패:', error);
+          showMessage('설정 로드 실패: ' + error.message, 'error');
         }
       }
 
-      // ==================== 가격 UI 렌더링 ====================
+      // ==================== 통합 UI 렌더링 ====================
 
-      function renderPricingUI() {
-        const ownerItems = [
-          { key: 'owner_seed_price', label: '씨앗', unit: '원' },
-          { key: 'owner_power_price', label: '파워', unit: '원' },
-          { key: 'owner_bigpower_price', label: '빅파워', unit: '원' },
-          { key: 'owner_premium_price', label: '프리미엄', unit: '원' }
+      function renderSettings() {
+        // 식당 대표 등급 설정
+        const ownerLevels = [
+          { priceKey: 'owner_seed_price', tokenKey: 'owner_seed_limit', label: '🌱 씨앗', icon: '🌱' },
+          { priceKey: 'owner_power_price', tokenKey: 'owner_power_limit', label: '⚡ 파워', icon: '⚡' },
+          { priceKey: 'owner_bigpower_price', tokenKey: 'owner_bigpower_limit', label: '💪 빅파워', icon: '💪' },
+          { priceKey: 'owner_premium_price', tokenKey: 'owner_premium_limit', label: '⭐ 프리미엄', icon: '⭐' }
         ];
 
-        const agencyItems = [
-          { key: 'agency_elite_price', label: '엘리트', unit: '원' },
-          { key: 'agency_expert_price', label: '전문가', unit: '원' },
-          { key: 'agency_master_price', label: '마스터', unit: '원' },
-          { key: 'agency_premium_price', label: '프리미엄', unit: '원' }
-        ];
-
-        document.getElementById('owner-pricing').innerHTML = ownerItems.map(item => `
+        document.getElementById('owner-settings').innerHTML = ownerLevels.map(level => `
           <div class="setting-item">
             <div class="setting-label">
-              ${item.label}
-              <span class="setting-badge">기본 가격</span>
+              ${level.label}
+              <span class="setting-badge">등급 설정</span>
             </div>
-            <div class="input-group">
-              <input type="number" id="pricing-${item.key}" value="${pricingData[item.key] || 0}" min="0" />
-              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="input-group">
+                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">💰 가격:</label>
+                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" 
+                       style="flex: 1;" placeholder="가격을 입력하세요"/>
+                <span style="color: #6b7280; font-weight: 600;">원/월</span>
+              </div>
+              <div class="input-group">
+                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">🪙 토큰:</label>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" 
+                       style="flex: 1;" placeholder="토큰을 입력하세요"/>
+                <span style="color: #6b7280; font-weight: 600;">토큰/월</span>
+              </div>
             </div>
-            <div class="info-text">월 구독료</div>
           </div>
         `).join('');
 
-        document.getElementById('agency-pricing').innerHTML = agencyItems.map(item => `
+        // 대행사 등급 설정
+        const agencyLevels = [
+          { priceKey: 'agency_elite_price', tokenKey: 'agency_elite_limit', label: '🏆 엘리트', icon: '🏆' },
+          { priceKey: 'agency_expert_price', tokenKey: 'agency_expert_limit', label: '🎯 전문가', icon: '🎯' },
+          { priceKey: 'agency_master_price', tokenKey: 'agency_master_limit', label: '👑 마스터', icon: '👑' },
+          { priceKey: 'agency_premium_price', tokenKey: 'agency_premium_limit', label: '💎 프리미엄', icon: '💎' }
+        ];
+
+        document.getElementById('agency-settings').innerHTML = agencyLevels.map(level => `
           <div class="setting-item">
             <div class="setting-label">
-              ${item.label}
-              <span class="setting-badge">기본 가격</span>
+              ${level.label}
+              <span class="setting-badge">등급 설정</span>
             </div>
-            <div class="input-group">
-              <input type="number" id="pricing-${item.key}" value="${pricingData[item.key] || 0}" min="0" />
-              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="input-group">
+                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">💰 가격:</label>
+                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" 
+                       style="flex: 1;" placeholder="가격을 입력하세요"/>
+                <span style="color: #6b7280; font-weight: 600;">원/월</span>
+              </div>
+              <div class="input-group">
+                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">🪙 토큰:</label>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" 
+                       style="flex: 1;" placeholder="토큰을 입력하세요"/>
+                <span style="color: #6b7280; font-weight: 600;">토큰/월</span>
+              </div>
             </div>
-            <div class="info-text">월 구독료</div>
           </div>
         `).join('');
       }
 
-      // ==================== 가격 저장 ====================
+      // ==================== 통합 저장 ====================
 
-      async function savePricing(type) {
+      async function saveSettings(type) {
         try {
-          const updateData = {};
+          const pricingUpdate = {};
+          const tokenUpdate = {};
 
           if (type === 'owner') {
-            updateData.owner_seed_price = parseInt(document.getElementById('pricing-owner_seed_price').value) || 0;
-            updateData.owner_power_price = parseInt(document.getElementById('pricing-owner_power_price').value) || 0;
-            updateData.owner_bigpower_price = parseInt(document.getElementById('pricing-owner_bigpower_price').value) || 0;
-            updateData.owner_premium_price = parseInt(document.getElementById('pricing-owner_premium_price').value) || 0;
+            pricingUpdate.owner_seed_price = parseInt(document.getElementById('owner_seed_price').value) || 0;
+            pricingUpdate.owner_power_price = parseInt(document.getElementById('owner_power_price').value) || 0;
+            pricingUpdate.owner_bigpower_price = parseInt(document.getElementById('owner_bigpower_price').value) || 0;
+            pricingUpdate.owner_premium_price = parseInt(document.getElementById('owner_premium_price').value) || 0;
+
+            tokenUpdate.owner_seed_limit = parseInt(document.getElementById('owner_seed_limit').value) || 0;
+            tokenUpdate.owner_power_limit = parseInt(document.getElementById('owner_power_limit').value) || 0;
+            tokenUpdate.owner_bigpower_limit = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
+            tokenUpdate.owner_premium_limit = parseInt(document.getElementById('owner_premium_limit').value) || 0;
           } else {
-            updateData.agency_elite_price = parseInt(document.getElementById('pricing-agency_elite_price').value) || 0;
-            updateData.agency_expert_price = parseInt(document.getElementById('pricing-agency_expert_price').value) || 0;
-            updateData.agency_master_price = parseInt(document.getElementById('pricing-agency_master_price').value) || 0;
-            updateData.agency_premium_price = parseInt(document.getElementById('pricing-agency_premium_price').value) || 0;
+            pricingUpdate.agency_elite_price = parseInt(document.getElementById('agency_elite_price').value) || 0;
+            pricingUpdate.agency_expert_price = parseInt(document.getElementById('agency_expert_price').value) || 0;
+            pricingUpdate.agency_master_price = parseInt(document.getElementById('agency_master_price').value) || 0;
+            pricingUpdate.agency_premium_price = parseInt(document.getElementById('agency_premium_price').value) || 0;
+
+            tokenUpdate.agency_elite_limit = parseInt(document.getElementById('agency_elite_limit').value) || 0;
+            tokenUpdate.agency_expert_limit = parseInt(document.getElementById('agency_expert_limit').value) || 0;
+            tokenUpdate.agency_master_limit = parseInt(document.getElementById('agency_master_limit').value) || 0;
+            tokenUpdate.agency_premium_limit = parseInt(document.getElementById('agency_premium_limit').value) || 0;
           }
 
-          const response = await fetch('/api/subscription/pricing-config', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updateData)
-          });
+          // 가격과 토큰 동시 저장
+          const [pricingRes, tokenRes] = await Promise.all([
+            fetch('/api/subscription/pricing-config', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(pricingUpdate)
+            }),
+            fetch('/api/subscription/token-config', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(tokenUpdate)
+            })
+          ]);
 
-          const result = await response.json();
-          if (!result.success) throw new Error(result.error);
+          const pricingResult = await pricingRes.json();
+          const tokenResult = await tokenRes.json();
 
-          pricingData = result.pricing;
-          showMessage(`${type === 'owner' ? '식당 대표' : '대행사'} 가격이 저장되었습니다`, 'success');
+          if (!pricingResult.success) throw new Error(pricingResult.error);
+          if (!tokenResult.success) throw new Error(tokenResult.error);
+
+          pricingData = pricingResult.pricing;
+          tokenData = tokenResult.tokens;
+
+          showMessage(`${type === 'owner' ? '🍽️ 식당 대표' : '🏢 대행사'} 설정이 저장되었습니다`, 'success');
         } catch (error) {
-          console.error('❌ 가격 저장 실패:', error);
-          showMessage('가격 저장 실패: ' + error.message, 'error');
+          console.error('❌ 저장 실패:', error);
+          showMessage('저장 실패: ' + error.message, 'error');
         }
       }
 
-      // ==================== 토큰 설정 로드 ====================
-
-      async function loadTokenConfig() {
-        try {
-          const response = await fetch('/api/subscription/token-config');
-          const result = await response.json();
-
-          if (!result.success) throw new Error(result.error);
-
-          tokenData = result.tokens;
-          renderTokenUI();
-        } catch (error) {
-          console.error('❌ 토큰 설정 로드 실패:', error);
-          showMessage('토큰 설정 로드 실패: ' + error.message, 'error');
-        }
-      }
-
-      // ==================== 토큰 UI 렌더링 ====================
-
-      function renderTokenUI() {
-        const ownerItems = [
-          { key: 'owner_seed_limit', label: '씨앗', unit: '토큰/월' },
-          { key: 'owner_power_limit', label: '파워', unit: '토큰/월' },
-          { key: 'owner_bigpower_limit', label: '빅파워', unit: '토큰/월' },
-          { key: 'owner_premium_limit', label: '프리미엄', unit: '토큰/월' }
-        ];
-
-        const agencyItems = [
-          { key: 'agency_elite_limit', label: '엘리트', unit: '토큰/월' },
-          { key: 'agency_expert_limit', label: '전문가', unit: '토큰/월' },
-          { key: 'agency_master_limit', label: '마스터', unit: '토큰/월' },
-          { key: 'agency_premium_limit', label: '프리미엄', unit: '토큰/월' }
-        ];
-
-        document.getElementById('owner-tokens').innerHTML = ownerItems.map(item => `
-          <div class="setting-item">
-            <div class="setting-label">
-              ${item.label}
-              <span class="setting-badge">기본 한도</span>
-            </div>
-            <div class="input-group">
-              <input type="number" id="token-${item.key}" value="${tokenData[item.key] || 0}" min="0" />
-              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
-            </div>
-            <div class="info-text">월 사용 가능 토큰</div>
-          </div>
-        `).join('');
-
-        document.getElementById('agency-tokens').innerHTML = agencyItems.map(item => `
-          <div class="setting-item">
-            <div class="setting-label">
-              ${item.label}
-              <span class="setting-badge">기본 한도</span>
-            </div>
-            <div class="input-group">
-              <input type="number" id="token-${item.key}" value="${tokenData[item.key] || 0}" min="0" />
-              <span style="color: #6b7280; font-weight: 600;">${item.unit}</span>
-            </div>
-            <div class="info-text">월 사용 가능 토큰</div>
-          </div>
-        `).join('');
-      }
-
-      // ==================== 토큰 저장 ====================
-
-      async function saveTokens(type) {
-        try {
-          const updateData = {};
-
-          if (type === 'owner') {
-            updateData.owner_seed_limit = parseInt(document.getElementById('token-owner_seed_limit').value) || 0;
-            updateData.owner_power_limit = parseInt(document.getElementById('token-owner_power_limit').value) || 0;
-            updateData.owner_bigpower_limit = parseInt(document.getElementById('token-owner_bigpower_limit').value) || 0;
-            updateData.owner_premium_limit = parseInt(document.getElementById('token-owner_premium_limit').value) || 0;
-          } else {
-            updateData.agency_elite_limit = parseInt(document.getElementById('token-agency_elite_limit').value) || 0;
-            updateData.agency_expert_limit = parseInt(document.getElementById('token-agency_expert_limit').value) || 0;
-            updateData.agency_master_limit = parseInt(document.getElementById('token-agency_master_limit').value) || 0;
-            updateData.agency_premium_limit = parseInt(document.getElementById('token-agency_premium_limit').value) || 0;
-          }
-
-          const response = await fetch('/api/subscription/token-config', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updateData)
-          });
-
-          const result = await response.json();
-          if (!result.success) throw new Error(result.error);
-
-          tokenData = result.tokens;
-          showMessage(`${type === 'owner' ? '식당 대표' : '대행사'} 토큰 한도가 저장되었습니다`, 'success');
-        } catch (error) {
-          console.error('❌ 토큰 저장 실패:', error);
-          showMessage('토큰 저장 실패: ' + error.message, 'error');
-        }
-      }
 
       // ==================== 메시지 ====================
 

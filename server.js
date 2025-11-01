@@ -203,6 +203,8 @@ app.post(
 app.use("/csp-report", rateLimiter);
 
 // 정적 파일 제공 (안전한 디렉터리만 공개)
+// 정적 파일 서빙 (루트 경로도 추가)
+app.use(express.static(path.join(__dirname)));
 app.use("/css", express.static(path.join(__dirname, "css")));
 app.use("/js", express.static(path.join(__dirname, "js")));
 app.use("/images", express.static(path.join(__dirname, "images")));
@@ -3732,8 +3734,11 @@ if (process.env.VERCEL) {
   });
 }
 
-// ==================== 구독 시스템 API ====================
+// ==================== 구독 시스템 API (중복 제거됨) ====================
+// 이미 625-644번 줄에서 api/subscription/ 폴더의 파일들을 require로 처리하고 있음
+// 아래 중복된 정의는 주석처리함
 
+/*
 // 1. 가격 설정 조회
 app.get('/api/subscription/pricing-config', async (req, res) => {
   try {
@@ -4244,3 +4249,4 @@ app.put('/api/subscription/upgrade-request/:requestId/approve', async (req, res)
     res.status(500).json({ success: false, error: error.message });
   }
 });
+*/
