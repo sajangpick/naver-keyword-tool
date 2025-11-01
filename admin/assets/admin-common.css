@@ -46,6 +46,7 @@ body {
 
 body.has-sidebar {
   padding-left: var(--sidebar-width);
+  overflow-x: hidden;
 }
 
 /* ==================== 사이드바 ==================== */
