@@ -16,9 +16,9 @@
     
     <style>
       .container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 24px;
+        padding: 32px;
       }
 
       .subtitle {
@@ -46,11 +46,11 @@
       }
 
       .card-header .title {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 700;
         color: #111827;
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
       }
 
@@ -60,49 +60,76 @@
 
       .settings-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 28px;
       }
 
       .setting-item {
         background: #f9fafb;
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 20px;
+        padding: 24px;
+        transition: all 0.2s;
+      }
+      
+      .setting-item:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
       }
 
       .setting-label {
-        font-size: 14px;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 8px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 16px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
       }
 
       .setting-badge {
         display: inline-block;
-        padding: 2px 8px;
+        padding: 3px 10px;
         background: var(--accent);
         color: white;
-        border-radius: 4px;
-        font-size: 11px;
+        border-radius: 6px;
+        font-size: 12px;
         font-weight: 600;
       }
 
       .input-group {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         align-items: center;
+        margin-bottom: 8px;
+      }
+      
+      .input-group label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #4b5563;
+        min-width: 60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      
+      .input-group .unit {
+        white-space: nowrap;
+        color: #6b7280;
+        font-weight: 500;
+        font-size: 14px;
+        min-width: 60px;
       }
 
       input[type="number"] {
         flex: 1;
-        padding: 10px 12px;
+        padding: 12px 14px;
         border: 1px solid var(--border);
         border-radius: 8px;
-        font-size: 14px;
+        font-size: 15px;
+        font-weight: 500;
+        max-width: 180px;
       }
 
       input[type="number"]:focus {
@@ -349,18 +376,16 @@
               ${level.label}
               <span class="setting-badge">등급 설정</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 14px;">
               <div class="input-group">
-                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">💰 가격:</label>
-                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" 
-                       style="flex: 1;" placeholder="가격을 입력하세요"/>
-                <span style="color: #6b7280; font-weight: 600;">원/월</span>
+                <label>💰 가격</label>
+                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" placeholder="가격 입력"/>
+                <span class="unit">원/월</span>
               </div>
               <div class="input-group">
-                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">🪙 토큰:</label>
-                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" 
-                       style="flex: 1;" placeholder="토큰을 입력하세요"/>
-                <span style="color: #6b7280; font-weight: 600;">토큰/월</span>
+                <label>🪙 토큰</label>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" placeholder="토큰 입력"/>
+                <span class="unit">토큰/월</span>
               </div>
             </div>
           </div>
@@ -380,18 +405,16 @@
               ${level.label}
               <span class="setting-badge">등급 설정</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 14px;">
               <div class="input-group">
-                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">💰 가격:</label>
-                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" 
-                       style="flex: 1;" placeholder="가격을 입력하세요"/>
-                <span style="color: #6b7280; font-weight: 600;">원/월</span>
+                <label>💰 가격</label>
+                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" placeholder="가격 입력"/>
+                <span class="unit">원/월</span>
               </div>
               <div class="input-group">
-                <label style="font-size: 13px; font-weight: 600; color: #6b7280; min-width: 80px;">🪙 토큰:</label>
-                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" 
-                       style="flex: 1;" placeholder="토큰을 입력하세요"/>
-                <span style="color: #6b7280; font-weight: 600;">토큰/월</span>
+                <label>🪙 토큰</label>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" placeholder="토큰 입력"/>
+                <span class="unit">토큰/월</span>
               </div>
             </div>
           </div>
