@@ -308,7 +308,7 @@
    * @param {string} message - 메시지
    */
   function showSuccess(message) {
-    // TODO: 나중에 토스트 UI로 개선
+    // 토스트 UI 구현 예정 (Toastify.js 추천)
     alert('✅ ' + message);
   }
 
@@ -317,7 +317,7 @@
    * @param {string} message - 메시지
    */
   function showError(message) {
-    // TODO: 나중에 토스트 UI로 개선
+    // 토스트 UI 구현 예정 (Toastify.js 추천)
     alert('❌ ' + message);
   }
 

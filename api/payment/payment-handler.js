@@ -315,7 +315,14 @@ async function handleWebhook(req, res) {
   // PG사 웹훅 서명 검증
   const signature = req.headers['x-webhook-signature'];
   
-  // TODO: 서명 검증 로직
+  // PG사별 서명 검증 구현 (토스페이먼츠 예시)
+  // const expectedSignature = crypto
+  //   .createHmac('sha256', process.env.WEBHOOK_SECRET)
+  //   .update(JSON.stringify(req.body))
+  //   .digest('hex');
+  // if (signature !== expectedSignature) {
+  //   return res.status(401).json({ error: 'Invalid signature' });
+  // }
   
   const { eventType, data } = req.body;
 
@@ -354,7 +361,19 @@ async function handleFailedPayment(data) {
 async function cancelPayment(req, res) {
   const { orderId } = req.body;
 
-  // TODO: PG사 API로 실제 취소 처리
+  // PG사 API로 실제 취소 처리
+  // 토스페이먼츠 예시:
+  // if (process.env.TOSS_SECRET_KEY) {
+  //   await axios.post(
+  //     `https://api.tosspayments.com/v1/payments/${payment.payment_key}/cancel`,
+  //     { cancelReason },
+  //     {
+  //       headers: {
+  //         Authorization: `Basic ${Buffer.from(process.env.TOSS_SECRET_KEY + ':').toString('base64')}`,
+  //       },
+  //     }
+  //   );
+  // }
 
   const { error } = await supabase
     .from('payment_history')

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>AI 블로그 생성기 - 사장픽</title>
@@ -991,10 +991,11 @@
 
         // 인증 확인 (Supabase 세션 기반)
         async function ensureAuthenticated() {
-            // 🔧 로컬 개발 환경에서는 인증 건너뛰기
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                console.log('🔧 로컬 개발 모드: 인증 건너뛰기');
-                // 로컬 개발용 임시 사용자 데이터 설정
+            // 🔧 개발 환경 체크 (프로덕션에서는 항상 인증 필요)
+            const isDevelopment = false; // 프로덕션 모드
+            if (isDevelopment) {
+                console.log('🔧 개발 모드: 인증 건너뛰기');
+                // 개발용 임시 사용자 데이터 설정
                 if (!localStorage.getItem('userData')) {
                     localStorage.setItem('userData', JSON.stringify({
                         id: 'dev-user-001',

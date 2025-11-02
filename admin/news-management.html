@@ -576,9 +576,7 @@
     <script src="/admin/assets/admin-utils.js"></script>
     
     <script>
-      const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:5000'
-        : 'https://sajangpick-kwon-teamjang.onrender.com';
+      const API_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
 
       let quill;
       let currentPage = 1;
@@ -756,21 +754,21 @@
       // HTML 모드 토글
       function toggleHTMLMode() {
         isHTMLMode = !isHTMLMode;
-        const editorContainer = document.getElementById('editor').parentElement;
+        const editor = document.getElementById('editor');
         const htmlEditor = document.getElementById('htmlEditor');
         const indicator = document.getElementById('htmlModeIndicator');
 
         if (isHTMLMode) {
           // HTML 모드로 전환
           htmlEditor.value = quill.root.innerHTML;
-          editorContainer.style.display = 'none';
+          editor.style.display = 'none';
           htmlEditor.style.display = 'block';
           indicator.style.display = 'inline';
         } else {
           // 에디터 모드로 전환
           quill.root.innerHTML = htmlEditor.value;
           htmlEditor.style.display = 'none';
-          editorContainer.style.display = 'block';
+          editor.style.display = 'block';
           indicator.style.display = 'none';
         }
       }
@@ -782,7 +780,7 @@
         
         // HTML 모드 초기화
         isHTMLMode = false;
-        document.getElementById('editor').parentElement.style.display = 'block';
+        document.getElementById('editor').style.display = 'block';
         document.getElementById('htmlEditor').style.display = 'none';
         document.getElementById('htmlModeIndicator').style.display = 'none';
         

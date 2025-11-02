@@ -102,7 +102,8 @@
       
       if (error) {
         console.error('이벤트 전송 실패:', error);
-      } else if (window.location.hostname === 'localhost') {
+      } else if (process.env.NODE_ENV === 'development') {
+        // 개발 환경에서만 로그 출력
         console.log('📊 이벤트 전송:', eventName, eventData);
       }
     } catch (error) {

@@ -126,7 +126,8 @@
       
       if (error) {
         console.error('성능 데이터 저장 실패:', error);
-      } else if (window.location.hostname === 'localhost') {
+      } else if (process.env.NODE_ENV === 'development') {
+        // 개발 환경에서만 로그 출력
         console.log('✅ 성능 데이터 저장 완료:', {
           page: data.page_title,
           loadTime: data.load_complete_ms + 'ms',
@@ -165,7 +166,7 @@
       const duration = Math.round(endTime - startTime);
       
       // 콘솔에 로그 출력
-      if (window.location.hostname === 'localhost') {
+      if (process.env.NODE_ENV === 'development') {
         const emoji = response.ok ? '✅' : '❌';
         console.log(`${emoji} API: ${endpoint} - ${duration}ms`);
       }
@@ -186,7 +187,7 @@
   window.trackUserAction = function(action, details = {}) {
     try {
       // 간단한 이벤트 로깅
-      if (window.location.hostname === 'localhost') {
+      if (process.env.NODE_ENV === 'development') {
         console.log('👤 사용자 액션:', action, details);
       }
       

@@ -11,9 +11,25 @@ const { createClient } = require("@supabase/supabase-js");
 const app = express();
 app.set("trust proxy", true);
 
+// 개발 환경 체크
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// 조건부 로깅 함수
+const devLog = (...args) => {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+};
+
+const devError = (...args) => {
+  if (isDevelopment) {
+    console.error(...args);
+  }
+};
+
 // 환경변수에서 설정 읽기 (Render/Vercel/로컬 모두 호환)
-// PORT가 지정되어 있으면 해당 포트 사용, 없으면 3001 사용 (3000 충돌 방지)
-const PORT = Number(process.env.PORT) || 3001;
+// PORT가 지정되어 있으면 해당 포트 사용, 없으면 3003 사용 (3000 충돌 방지)
+const PORT = Number(process.env.PORT) || 3003;
 
 // 네이버 API 설정
 const NAVER_API = {
@@ -43,12 +59,12 @@ let supabase = null;
 if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    console.log("✅ Supabase 클라이언트 초기화 성공");
+    devLog("✅ Supabase 클라이언트 초기화 성공");
   } catch (error) {
-    console.error("❌ Supabase 클라이언트 초기화 실패:", error.message);
+    devError("❌ Supabase 클라이언트 초기화 실패:", error.message);
   }
 } else {
-  console.warn("⚠️ Supabase 환경변수가 설정되지 않았습니다. DB 저장 기능이 비활성화됩니다.");
+  devLog("⚠️ Supabase 환경변수가 설정되지 않았습니다. DB 저장 기능이 비활성화됩니다.");
 }
 // Kakao OAuth 설정
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
@@ -58,7 +74,7 @@ const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET || "";
 const JWT_SECRET =
   process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex");
 if (!process.env.JWT_SECRET) {
-  console.warn(
+  devLog(
     "[SECURITY] JWT_SECRET is not set. Using a random secret for this process only."
   );
 }
@@ -98,7 +114,7 @@ if (
   process.env.NODE_ENV === "production" &&
   (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === "*")
 ) {
-  console.warn(
+  devLog(
     "[SECURITY] In production, CORS_ORIGIN is not set or is '*'. Set it to your exact domain to prevent unwanted origins."
   );
 }
@@ -162,7 +178,7 @@ if (process.env.NODE_ENV === "production") {
   );
 } else {
   // 개발 환경에서는 CSP 비활성화
-  console.log("[DEV] Content Security Policy disabled for development");
+  devLog("[DEV] Content Security Policy disabled for development");
 }
 // Request ID & timing
 app.use((req, res, next) => {
@@ -175,7 +191,7 @@ app.use((req, res, next) => {
   req.requestId = reqId;
   res.on("finish", () => {
     const durationMs = Date.now() - start;
-    console.log(
+    devLog(
       `${new Date().toISOString()} - ${req.method} ${req.path} - ${
         res.statusCode
       } - ${durationMs}ms - reqId:${reqId}`
@@ -192,9 +208,9 @@ app.post(
   express.json({ type: ["application/csp-report", "application/json"] }),
   (req, res) => {
     try {
-      console.warn("CSP Report:", JSON.stringify(req.body));
+      devLog("CSP Report:", JSON.stringify(req.body));
     } catch (e) {
-      console.warn("CSP Report (raw):", req.body);
+      devLog("CSP Report (raw):", req.body);
     }
     res.status(204).end();
   }
@@ -282,7 +298,7 @@ setInterval(() => {
 // 로깅 미들웨어(요약, IP만 기록)
 app.use((req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress;
-  console.log(`IP: ${ip} - reqId:${req.requestId}`);
+  devLog(`IP: ${ip} - reqId:${req.requestId}`);
   next();
 });
 
@@ -624,6 +640,37 @@ app.get("/api/admin/dashboard", adminDashboardHandler);
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
 
+// ==================== 뉴스 게시판 API ====================
+const newsBoardHandler = require("./api/news-board");
+app.get("/api/news-board", newsBoardHandler);
+app.post("/api/news-board", newsBoardHandler);
+app.put("/api/news-board", newsBoardHandler);
+app.delete("/api/news-board", newsBoardHandler);
+
+// AI 뉴스 추천 API
+const aiNewsRecommendHandler = require("./api/ai-news-recommend");
+app.post("/api/ai-news-recommend", aiNewsRecommendHandler);
+
+// ==================== 정책지원금 API ====================
+const policySupportHandler = require("./api/policy-support");
+app.get("/api/policy-support", policySupportHandler);
+app.post("/api/policy-support", policySupportHandler);
+app.put("/api/policy-support", policySupportHandler);
+app.delete("/api/policy-support", policySupportHandler);
+app.get("/api/policy-support/categories", policySupportHandler);
+app.post("/api/policy-support/bookmark", policySupportHandler);
+app.post("/api/policy-support/apply", policySupportHandler);
+
+// 실제 정책 데이터 수집 API
+const fetchRealPolicyHandler = require("./api/fetch-real-policy-data");
+app.get("/api/fetch-real-policies", fetchRealPolicyHandler);
+app.post("/api/fetch-real-policies", fetchRealPolicyHandler);
+
+// ==================== 레시피 관리 시스템 API ====================
+// 레시피 CRUD 및 검색 API
+const recipesRouter = require("./api/recipes");
+app.use("/api/recipes", recipesRouter);
+
 // ==================== 구독 시스템 API ====================
 // 가격 설정 API - require 실패 시 대비하여 주석 처리
 // const pricingConfigHandler = require("./api/subscription/pricing-config");
@@ -681,7 +728,7 @@ app.post("/api/keywords", async (req, res) => {
   }
 
   try {
-    console.log("키워드 검색 요청 수신");
+    devLog("키워드 검색 요청 수신");
 
     const timestamp = Date.now().toString();
     const method = "GET";
@@ -709,7 +756,7 @@ app.post("/api/keywords", async (req, res) => {
       timeout: 30000,
     });
 
-    console.log(
+    devLog(
       `키워드 검색 성공: ${response.data.keywordList?.length || 0}개 결과`
     );
 
@@ -722,11 +769,11 @@ app.post("/api/keywords", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("네이버 검색광고 API 호출 오류:", error.message);
+    devError("네이버 검색광고 API 호출 오류:", error.message);
 
     if (error.response) {
       const { status, data } = error.response;
-      console.error(`네이버 API 오류 (${status}):`, data);
+      devError(`네이버 API 오류 (${status}):`, data);
 
       let errorMessage;
       switch (status) {
@@ -786,13 +833,13 @@ app.post("/api/keyword-trend", async (req, res) => {
   }
 
   try {
-    console.log("키워드 트렌드 검색 요청 수신");
+    devLog("키워드 트렌드 검색 요청 수신");
 
     // 네이버 데이터랩 API로 실제 트렌드 데이터 요청
     const trendData = await getNaverTrendData(keyword);
 
     if (trendData && trendData.length > 0) {
-      console.log(
+      devLog(
         `실제 트렌드 데이터 수집 완료: ${trendData.length}개월 데이터`
       );
 
@@ -831,7 +878,7 @@ app.post("/api/keyword-trend", async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("키워드 트렌드 생성 오류:", error.message);
+    devError("키워드 트렌드 생성 오류:", error.message);
 
     res.status(500).json({
       success: false,
@@ -849,7 +896,7 @@ async function getNaverTrendData(keyword) {
     const clientSecret = process.env.NAVER_DATALAB_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      console.warn("네이버 데이터랩 API 키가 설정되지 않음");
+      devLog("네이버 데이터랩 API 키가 설정되지 않음");
       return null;
     }
 
@@ -873,7 +920,7 @@ async function getNaverTrendData(keyword) {
       ],
     };
 
-    console.log("네이버 데이터랩 API 요청:", requestBody);
+    devLog("네이버 데이터랩 API 요청:", requestBody);
 
     const response = await axios.post(
       "https://openapi.naver.com/v1/datalab/search",
@@ -913,7 +960,7 @@ async function getNaverTrendData(keyword) {
 
     return null;
   } catch (error) {
-    console.error(
+    devError(
       "네이버 데이터랩 API 오류:",
       error.response?.data || error.message
     );
@@ -962,7 +1009,7 @@ async function generateFallbackTrendData(keyword) {
           ) || response.data.keywordList[0];
       }
     } catch (apiError) {
-      console.warn("키워드 API 조회 실패:", apiError.message);
+      devLog("키워드 API 조회 실패:", apiError.message);
     }
 
     // 현재 데이터 기반 트렌드 생성
@@ -978,7 +1025,7 @@ async function generateFallbackTrendData(keyword) {
       keyword
     );
   } catch (error) {
-    console.error("대체 트렌드 데이터 생성 실패:", error.message);
+    devError("대체 트렌드 데이터 생성 실패:", error.message);
 
     // 최후 수단: 완전 랜덤 데이터
     const basePcCount = Math.floor(Math.random() * 1500) + 500;
@@ -1010,7 +1057,7 @@ app.get("/api/related-keywords", async (req, res) => {
   }
 
   try {
-    console.log("연관 키워드 검색 요청 수신");
+    devLog("연관 키워드 검색 요청 수신");
 
     const timestamp = Date.now().toString();
     const method = "GET";
@@ -1037,7 +1084,7 @@ app.get("/api/related-keywords", async (req, res) => {
       timeout: 30000,
     });
 
-    console.log(`연관 키워드 검색 성공`);
+    devLog(`연관 키워드 검색 성공`);
     res.json({
       ...response.data,
       searchInfo: {
@@ -1047,7 +1094,7 @@ app.get("/api/related-keywords", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("연관 키워드 API 호출 오류:", error.message);
+    devError("연관 키워드 API 호출 오류:", error.message);
 
     if (error.response) {
       res.status(error.response.status).json({
@@ -1089,7 +1136,7 @@ app.get("/api/search/local", async (req, res) => {
   }
 
   try {
-    console.log("네이버 로컬 검색 요청 수신");
+    devLog("네이버 로컬 검색 요청 수신");
 
     const response = await axios.get(
       "https://openapi.naver.com/v1/search/local.json",
@@ -1107,7 +1154,7 @@ app.get("/api/search/local", async (req, res) => {
       }
     );
 
-    console.log(`네이버 로컬 검색 성공: ${response.data.items.length}개 결과`);
+    devLog(`네이버 로컬 검색 성공: ${response.data.items.length}개 결과`);
     res.json({
       success: true,
       items: response.data.items,
@@ -1117,7 +1164,7 @@ app.get("/api/search/local", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
+    devError(
       "네이버 로컬 검색 API 오류:",
       error.response?.data || error.message
     );
@@ -1134,7 +1181,7 @@ app.get("/api/search/local", async (req, res) => {
 // ChatGPT API 호출 (블로그 생성용)
 async function callChatGPTForBlog(prompt) {
   try {
-    console.log("ChatGPT API 호출 중 (블로그 생성)...");
+    devLog("ChatGPT API 호출 중 (블로그 생성)...");
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -1164,7 +1211,7 @@ async function callChatGPTForBlog(prompt) {
 
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error("ChatGPT API 오류:", error.response?.data || error.message);
+    devError("ChatGPT API 오류:", error.response?.data || error.message);
     throw new Error(
       "ChatGPT API 호출 실패: " +
         (error.response?.data?.error?.message || error.message)
@@ -1175,7 +1222,7 @@ async function callChatGPTForBlog(prompt) {
 // ChatGPT API 호출 (리뷰 분석용)
 async function callChatGPTForReview(prompt) {
   try {
-    console.log("ChatGPT API 호출 중 (리뷰 분석)...");
+    devLog("ChatGPT API 호출 중 (리뷰 분석)...");
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -1205,7 +1252,7 @@ async function callChatGPTForReview(prompt) {
 
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error("ChatGPT API 오류:", error.response?.data || error.message);
+    devError("ChatGPT API 오류:", error.response?.data || error.message);
     throw new Error(
       "ChatGPT API 호출 실패: " +
         (error.response?.data?.error?.message || error.message)
@@ -1216,7 +1263,7 @@ async function callChatGPTForReview(prompt) {
 // Gemini API 호출
 async function callGemini(prompt) {
   try {
-    console.log("Gemini API 호출 중...");
+    devLog("Gemini API 호출 중...");
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -1252,10 +1299,10 @@ async function callGemini(prompt) {
       throw new Error("Gemini API 응답 형식 오류");
     }
   } catch (error) {
-    console.error("Gemini API 오류:", error.response?.data || error.message);
+    devError("Gemini API 오류:", error.response?.data || error.message);
     if (error.response?.status === 404) {
       try {
-        console.log("gemini-1.5-flash로 재시도...");
+        devLog("gemini-1.5-flash로 재시도...");
         const response = await axios.post(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
           {
@@ -1289,7 +1336,7 @@ async function callGemini(prompt) {
           return response.data.candidates[0].content.parts[0].text;
         }
       } catch (retryError) {
-        console.error(
+        devError(
           "Gemini 재시도 실패:",
           retryError.response?.data || retryError.message
         );
@@ -1305,7 +1352,7 @@ async function callGemini(prompt) {
 // Claude API 호출
 async function callClaude(prompt) {
   try {
-    console.log("Claude API 호출 중...");
+    devLog("Claude API 호출 중...");
     const response = await axios.post(
       "https://api.anthropic.com/v1/messages",
       {
@@ -1334,7 +1381,7 @@ async function callClaude(prompt) {
       throw new Error("Claude API 응답 형식 오류");
     }
   } catch (error) {
-    console.error("Claude API 오류:", error.response?.data || error.message);
+    devError("Claude API 오류:", error.response?.data || error.message);
     throw new Error(
       "Claude API 호출 실패: " +
         (error.response?.data?.error?.message || error.message)
@@ -1350,7 +1397,7 @@ app.post("/api/chat", async (req, res) => {
     const rawMsg = req.body?.message || "";
     const message = sanitizeString(rawMsg);
 
-    console.log("ChatGPT 채팅 요청 수신");
+    devLog("ChatGPT 채팅 요청 수신");
 
     // 입력 데이터 검증
     if (!message || message.trim().length === 0) {
@@ -1401,7 +1448,7 @@ app.post("/api/chat", async (req, res) => {
       }
     );
 
-    console.log("ChatGPT 응답 성공");
+    devLog("ChatGPT 응답 성공");
 
     res.json({
       success: true,
@@ -1414,7 +1461,7 @@ app.post("/api/chat", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("ChatGPT API 오류:", error.response?.data || error.message);
+    devError("ChatGPT API 오류:", error.response?.data || error.message);
 
     res.status(500).json({
       success: false,
@@ -1505,7 +1552,7 @@ app.post("/api/generate-blog", async (req, res) => {
       ),
       previousContent: sanitizeString(req.body?.previousContent || ""),
     };
-    console.log("블로그 생성 요청 수신");
+    devLog("블로그 생성 요청 수신");
 
     // 입력 데이터 검증
     if (!storeData.storeName || !storeData.category || !storeData.blogStyle) {
@@ -1525,12 +1572,12 @@ app.post("/api/generate-blog", async (req, res) => {
 
     // Step 1: ChatGPT로 초안 작성
     try {
-      console.log("Step 1: ChatGPT 초안 작성 시작");
+      devLog("Step 1: ChatGPT 초안 작성 시작");
       const chatgptPrompt = generateBlogPrompt(storeData, "chatgpt");
       results.step1_chatgpt = await callChatGPTForBlog(chatgptPrompt);
-      console.log("Step 1 완료");
+      devLog("Step 1 완료");
     } catch (error) {
-      console.error("Step 1 실패:", error.message);
+      devError("Step 1 실패:", error.message);
       return res.status(500).json({
         success: false,
         error: `ChatGPT 단계에서 오류: ${error.message}`,
@@ -1540,34 +1587,34 @@ app.post("/api/generate-blog", async (req, res) => {
 
     // Step 2: Gemini로 개선
     try {
-      console.log("Step 2: Gemini 개선 시작");
+      devLog("Step 2: Gemini 개선 시작");
       storeData.previousContent = results.step1_chatgpt;
       const geminiPrompt = generateBlogPrompt(storeData, "gemini");
       results.step2_gemini = await callGemini(geminiPrompt);
-      console.log("Step 2 완료");
+      devLog("Step 2 완료");
     } catch (error) {
-      console.error("Step 2 실패:", error.message);
+      devError("Step 2 실패:", error.message);
       results.step2_gemini = results.step1_chatgpt;
-      console.log("Gemini 단계 실패, ChatGPT 결과 사용");
+      devLog("Gemini 단계 실패, ChatGPT 결과 사용");
     }
 
     // Step 3: Claude로 최종 다듬기
     try {
-      console.log("Step 3: Claude 최종 다듬기 시작");
+      devLog("Step 3: Claude 최종 다듬기 시작");
       storeData.previousContent = results.step2_gemini;
       const claudePrompt = generateBlogPrompt(storeData, "claude");
       results.step3_claude = await callClaude(claudePrompt);
-      console.log("Step 3 완료");
+      devLog("Step 3 완료");
     } catch (error) {
-      console.error("Step 3 실패:", error.message);
+      devError("Step 3 실패:", error.message);
       results.step3_claude = results.step2_gemini;
-      console.log("Claude 단계 실패, 이전 결과 사용");
+      devLog("Claude 단계 실패, 이전 결과 사용");
     }
 
     results.finalBlog =
       results.step3_claude || results.step2_gemini || results.step1_chatgpt;
 
-    console.log("블로그 생성 완료");
+    devLog("블로그 생성 완료");
 
     res.json({
       success: true,
@@ -1590,7 +1637,7 @@ app.post("/api/generate-blog", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("블로그 생성 전체 오류:", error);
+    devError("블로그 생성 전체 오류:", error);
     res.status(500).json({
       success: false,
       error: error.message || "블로그 생성 중 오류가 발생했습니다.",
@@ -1732,7 +1779,7 @@ function parseAnalysisResponse(responseText, analysisType, options) {
     result.summary =
       responseText.substring(0, 300) + (responseText.length > 300 ? "..." : "");
   } catch (error) {
-    console.error("응답 파싱 오류:", error);
+    devError("응답 파싱 오류:", error);
   }
 
   return result;
@@ -1833,12 +1880,12 @@ app.post("/api/analyze-review", async (req, res) => {
     const placeInfo = req.body?.placeInfo || null;
     const ownerTips = sanitizeString(req.body?.ownerTips || "");
 
-    console.log("리뷰 분석 요청 수신");
+    devLog("리뷰 분석 요청 수신");
     if (placeInfo) {
-      console.log("식당 정보 포함됨:", placeInfo.basic?.name || "정보 없음");
+      devLog("식당 정보 포함됨:", placeInfo.basic?.name || "정보 없음");
     }
     if (ownerTips) {
-      console.log("사장님 추천 정보 포함됨");
+      devLog("사장님 추천 정보 포함됨");
     }
 
     // 입력 데이터 검증
@@ -1860,7 +1907,7 @@ app.post("/api/analyze-review", async (req, res) => {
 
     // 기본 분석 (ChatGPT)
     try {
-      console.log("Step 1: ChatGPT로 기본 분석 시작");
+      devLog("Step 1: ChatGPT로 기본 분석 시작");
       const prompt = generateReviewAnalysisPrompt(
         reviewText,
         analysisType,
@@ -1876,9 +1923,9 @@ app.post("/api/analyze-review", async (req, res) => {
       );
       Object.assign(results, parsedResults);
 
-      console.log("Step 1 완료");
+      devLog("Step 1 완료");
     } catch (error) {
-      console.error("ChatGPT 분석 실패:", error.message);
+      devError("ChatGPT 분석 실패:", error.message);
       // ChatGPT 실패시 기본값 설정
       results.sentiment = {
         overall: "neutral",
@@ -1890,7 +1937,7 @@ app.post("/api/analyze-review", async (req, res) => {
     // 감정 분석 보강 (Gemini)
     if (analysisType === "comprehensive" || analysisType === "sentiment") {
       try {
-        console.log("Step 2: Gemini로 감정 분석 보강");
+        devLog("Step 2: Gemini로 감정 분석 보강");
         const sentimentPrompt = `다음 리뷰의 감정을 0-1 사이 점수로 정확히 분석해주세요:
 "${reviewText}"
 
@@ -1910,16 +1957,16 @@ app.post("/api/analyze-review", async (req, res) => {
           results.sentiment = sentimentResult.sentiment;
         }
 
-        console.log("Step 2 완료");
+        devLog("Step 2 완료");
       } catch (error) {
-        console.error("Gemini 감정 분석 실패:", error.message);
+        devError("Gemini 감정 분석 실패:", error.message);
       }
     }
 
     // 답글 생성 (Claude)
     if (options && options.includes("generateReply")) {
       try {
-        console.log("Step 3: Claude로 답글 생성");
+        devLog("Step 3: Claude로 답글 생성");
         
         // 식당 정보를 프롬프트에 추가
         let placeInfoText = "";
@@ -1979,7 +2026,7 @@ ${placeInfoText}${ownerTipsInstruction}
         const claudeResponse = await callClaude(replyPrompt);
         results.reply = claudeResponse.trim().replace(/^"|"$/g, "");
 
-        console.log("답글 생성 완료");
+        devLog("답글 생성 완료");
 
         res.json({
           success: true,
@@ -1995,11 +2042,11 @@ ${placeInfoText}${ownerTipsInstruction}
           },
         });
       } catch (error) {
-        console.error("Claude 답글 생성 실패:", error.message);
+        devError("Claude 답글 생성 실패:", error.message);
 
         // Claude 실패시 ChatGPT로 대체 시도
         try {
-          console.log("ChatGPT로 대체 답글 생성 시도");
+          devLog("ChatGPT로 대체 답글 생성 시도");
 
           // 식당 정보를 프롬프트에 추가
           let fallbackPlaceInfo = "";
@@ -2041,7 +2088,7 @@ ${fallbackPlaceInfo}
 
           if (supabase) {
             try {
-              console.log("📦 DB 저장 시작 (Fallback)...");
+              devLog("📦 DB 저장 시작 (Fallback)...");
 
               // 1. places 테이블에 식당 정보 저장 (UPSERT)
               let savedPlaceId = null;
@@ -2071,13 +2118,13 @@ ${fallbackPlaceInfo}
                     .select();
 
                   if (placeError) {
-                    console.error("❌ places 저장 실패:", placeError);
+                    devError("❌ places 저장 실패:", placeError);
                   } else {
                     savedPlaceId = placeData.place_id;
-                    console.log("✅ places 저장 성공:", savedPlaceId);
+                    devLog("✅ places 저장 성공:", savedPlaceId);
                   }
                 } else {
-                  console.warn("⚠️ place_id가 없어 places 테이블에 저장하지 않습니다.");
+                  devLog("⚠️ place_id가 없어 places 테이블에 저장하지 않습니다.");
                 }
               }
 
@@ -2091,7 +2138,7 @@ ${fallbackPlaceInfo}
               let userId = testUser?.id;
               
               if (userError || !testUser) {
-                console.warn("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
+                devLog("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
                 const { data: firstUser, error: firstUserError } = await supabase
                   .from("profiles")
                   .select("id")
@@ -2125,21 +2172,21 @@ ${fallbackPlaceInfo}
                 .select();
 
               if (reviewError) {
-                console.error("❌ review_responses 저장 실패:", reviewError);
+                devError("❌ review_responses 저장 실패:", reviewError);
                 fallbackDbSaveStatus = "failed";
                 fallbackDbError = reviewError.message;
               } else {
                 fallbackReviewId = reviewResult[0]?.id;
-                console.log("✅ review_responses 저장 성공:", fallbackReviewId);
+                devLog("✅ review_responses 저장 성공:", fallbackReviewId);
                 fallbackDbSaveStatus = "success";
               }
             } catch (dbErr) {
-              console.error("❌ DB 저장 중 오류:", dbErr);
+              devError("❌ DB 저장 중 오류:", dbErr);
               fallbackDbSaveStatus = "failed";
               fallbackDbError = dbErr.message;
             }
           } else {
-            console.log("⚠️ Supabase 클라이언트가 초기화되지 않아 DB 저장을 건너뜁니다.");
+            devLog("⚠️ Supabase 클라이언트가 초기화되지 않아 DB 저장을 건너뜁니다.");
           }
           // ==================== DB 저장 로직 끝 (Fallback) ====================
 
@@ -2160,7 +2207,7 @@ ${fallbackPlaceInfo}
             },
           });
         } catch (fallbackError) {
-          console.error("대체 답글 생성도 실패:", fallbackError.message);
+          devError("대체 답글 생성도 실패:", fallbackError.message);
           throw new Error(
             "답글 생성에 실패했습니다. 잠시 후 다시 시도해주세요."
           );
@@ -2182,7 +2229,7 @@ ${fallbackPlaceInfo}
       results.rating = estimatedRating;
     }
 
-    console.log("리뷰 분석 완료!");
+    devLog("리뷰 분석 완료!");
 
     res.json({
       success: true,
@@ -2196,7 +2243,7 @@ ${fallbackPlaceInfo}
       },
     });
   } catch (error) {
-    console.error("리뷰 분석 전체 오류:", error);
+    devError("리뷰 분석 전체 오류:", error);
     res.status(500).json({
       success: false,
       error: error.message || "리뷰 분석 중 오류가 발생했습니다.",
@@ -2213,12 +2260,12 @@ app.post("/api/generate-reply", async (req, res) => {
     const placeInfo = req.body?.placeInfo || null;
     const ownerTips = sanitizeString(req.body?.ownerTips || "");
 
-    console.log("리뷰 답글 생성 요청 수신");
+    devLog("리뷰 답글 생성 요청 수신");
     if (placeInfo) {
-      console.log("식당 정보 포함됨:", placeInfo.basic?.name || "정보 없음");
+      devLog("식당 정보 포함됨:", placeInfo.basic?.name || "정보 없음");
     }
     if (ownerTips) {
-      console.log("사장님 추천 정보 포함됨");
+      devLog("사장님 추천 정보 포함됨");
     }
 
     // 입력 데이터 검증
@@ -2238,7 +2285,7 @@ app.post("/api/generate-reply", async (req, res) => {
 
     // Claude로 답글 생성
     try {
-      console.log("Claude로 답글 생성 시작");
+      devLog("Claude로 답글 생성 시작");
 
       // 식당 정보를 프롬프트에 추가
       let placeInfoText = "";
@@ -2324,7 +2371,7 @@ ${placeInfoText}${ownerTipsInstruction}
       const reply = await callClaude(replyPrompt);
       const cleanReply = reply.trim().replace(/^"|"$/g, "");
 
-      console.log("답글 생성 완료");
+      devLog("답글 생성 완료");
 
       // ==================== DB 저장 로직 ====================
       let savedReviewId = null;
@@ -2333,7 +2380,7 @@ ${placeInfoText}${ownerTipsInstruction}
 
       if (supabase) {
         try {
-          console.log("📦 DB 저장 시작...");
+          devLog("📦 DB 저장 시작...");
 
           // 1. places 테이블에 식당 정보 저장 (UPSERT)
           let savedPlaceId = null;
@@ -2364,13 +2411,13 @@ ${placeInfoText}${ownerTipsInstruction}
                 .select();
 
               if (placeError) {
-                console.error("❌ places 저장 실패:", placeError);
+                devError("❌ places 저장 실패:", placeError);
               } else {
                 savedPlaceId = placeData.place_id;
-                console.log("✅ places 저장 성공:", savedPlaceId);
+                devLog("✅ places 저장 성공:", savedPlaceId);
               }
             } else {
-              console.warn("⚠️ place_id가 없어 places 테이블에 저장하지 않습니다.");
+              devLog("⚠️ place_id가 없어 places 테이블에 저장하지 않습니다.");
             }
           }
 
@@ -2385,7 +2432,7 @@ ${placeInfoText}${ownerTipsInstruction}
           let userId = testUser?.id;
           
           if (userError || !testUser) {
-            console.warn("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
+            devLog("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
             // 첫 번째 회원 가져오기
             const { data: firstUser, error: firstUserError } = await supabase
               .from("profiles")
@@ -2420,21 +2467,21 @@ ${placeInfoText}${ownerTipsInstruction}
             .select();
 
           if (reviewError) {
-            console.error("❌ review_responses 저장 실패:", reviewError);
+            devError("❌ review_responses 저장 실패:", reviewError);
             dbSaveStatus = "failed";
             dbError = reviewError.message;
           } else {
             savedReviewId = reviewResult[0]?.id;
-            console.log("✅ review_responses 저장 성공:", savedReviewId);
+            devLog("✅ review_responses 저장 성공:", savedReviewId);
             dbSaveStatus = "success";
           }
         } catch (dbErr) {
-          console.error("❌ DB 저장 중 오류:", dbErr);
+          devError("❌ DB 저장 중 오류:", dbErr);
           dbSaveStatus = "failed";
           dbError = dbErr.message;
         }
       } else {
-        console.log("⚠️ Supabase 클라이언트가 초기화되지 않아 DB 저장을 건너뜁니다.");
+        devLog("⚠️ Supabase 클라이언트가 초기화되지 않아 DB 저장을 건너뜁니다.");
       }
       // ==================== DB 저장 로직 끝 ====================
 
@@ -2455,11 +2502,11 @@ ${placeInfoText}${ownerTipsInstruction}
         },
       });
     } catch (error) {
-      console.error("Claude 답글 생성 실패:", error.message);
+      devError("Claude 답글 생성 실패:", error.message);
 
       // Claude 실패시 ChatGPT로 대체 시도
       try {
-        console.log("ChatGPT로 대체 답글 생성 시도");
+        devLog("ChatGPT로 대체 답글 생성 시도");
 
         // 식당 정보를 프롬프트에 추가
         let placeInfoText = "";
@@ -2508,12 +2555,12 @@ ${placeInfoText}
           },
         });
       } catch (fallbackError) {
-        console.error("대체 답글 생성도 실패:", fallbackError.message);
+        devError("대체 답글 생성도 실패:", fallbackError.message);
         throw new Error("답글 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
       }
     }
   } catch (error) {
-    console.error("답글 생성 전체 오류:", error);
+    devError("답글 생성 전체 오류:", error);
     res.status(500).json({
       success: false,
       error: error.message || "답글 생성 중 오류가 발생했습니다.",
@@ -2630,13 +2677,13 @@ app.get("/api/store-info", async (req, res) => {
       .single();
 
     if (error) {
-      console.error("가게 정보 조회 실패:", error);
+      devError("가게 정보 조회 실패:", error);
       return res.status(500).json({ error: "가게 정보 조회 실패", details: error.message });
     }
 
     res.json({ success: true, data: data || {} });
   } catch (error) {
-    console.error("가게 정보 조회 오류:", error);
+    devError("가게 정보 조회 오류:", error);
     res.status(500).json({ error: "서버 오류", details: error.message });
   }
 });
@@ -2658,7 +2705,7 @@ app.post("/api/store-info", async (req, res) => {
 
     // 🔍 플레이스 URL이 있으면 자동 크롤링 시도
     if (storeInfo.placeUrl && storeInfo.placeUrl.trim()) {
-      console.log('📍 플레이스 URL 발견, 자동 크롤링 시작:', storeInfo.placeUrl);
+      devLog('📍 플레이스 URL 발견, 자동 크롤링 시작:', storeInfo.placeUrl);
 
       try {
         // 1. 캐시 확인
@@ -2669,7 +2716,7 @@ app.post("/api/store-info", async (req, res) => {
           .single();
 
         if (cachedPlace && !cacheError) {
-          console.log('✅ 캐시에서 플레이스 정보 발견:', cachedPlace.place_name);
+          devLog('✅ 캐시에서 플레이스 정보 발견:', cachedPlace.place_name);
           // 캐시된 정보 사용 (사용자가 입력한 정보가 있으면 우선 사용)
           if (!storeInfo.companyName && cachedPlace.place_name) {
             finalStoreInfo.companyName = cachedPlace.place_name;
@@ -2695,13 +2742,13 @@ app.post("/api/store-info", async (req, res) => {
             .eq('id', cachedPlace.id);
 
         } else {
-          console.log('⏭️ 캐시 없음, 사용자 입력 정보로 저장합니다.');
+          devLog('⏭️ 캐시 없음, 사용자 입력 정보로 저장합니다.');
           // 캐시가 없으면 크롤링은 건너뛰고 사용자가 입력한 정보만 저장
           crawlResult = { fromCache: false, skipped: true };
         }
 
       } catch (crawlError) {
-        console.error('⚠️ 크롤링 체크 실패, 사용자 입력 정보 사용:', crawlError.message);
+        devError('⚠️ 크롤링 체크 실패, 사용자 입력 정보 사용:', crawlError.message);
         // 크롤링 실패 시 사용자가 입력한 정보 그대로 사용
       }
     }
@@ -2725,7 +2772,7 @@ app.post("/api/store-info", async (req, res) => {
       .single();
 
     if (error) {
-      console.error("가게 정보 저장 실패:", error);
+      devError("가게 정보 저장 실패:", error);
       return res.status(500).json({ error: "가게 정보 저장 실패", details: error.message });
     }
 
@@ -2735,7 +2782,7 @@ app.post("/api/store-info", async (req, res) => {
       crawlResult: crawlResult // 크롤링 결과 정보 포함
     });
   } catch (error) {
-    console.error("가게 정보 저장 오류:", error);
+    devError("가게 정보 저장 오류:", error);
     res.status(500).json({ error: "서버 오류", details: error.message });
   }
 });
@@ -2760,13 +2807,13 @@ app.get("/api/place-cache", async (req, res) => {
       .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error("캐시 조회 실패:", error);
+      devError("캐시 조회 실패:", error);
       return res.status(500).json({ error: "캐시 조회 실패", details: error.message });
     }
 
     res.json({ success: true, data: data || null });
   } catch (error) {
-    console.error("캐시 조회 오류:", error);
+    devError("캐시 조회 오류:", error);
     res.status(500).json({ error: "서버 오류", details: error.message });
   }
 });
@@ -2784,13 +2831,13 @@ app.get("/api/admin/place-cache", async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("캐시 목록 조회 실패:", error);
+      devError("캐시 목록 조회 실패:", error);
       return res.status(500).json({ error: "캐시 목록 조회 실패", details: error.message });
     }
 
     res.json({ success: true, data: data || [] });
   } catch (error) {
-    console.error("캐시 목록 조회 오류:", error);
+    devError("캐시 목록 조회 오류:", error);
     res.status(500).json({ error: "서버 오류", details: error.message });
   }
 });
@@ -2811,13 +2858,13 @@ app.get("/api/admin/store-info/:userId", async (req, res) => {
       .single();
 
     if (error) {
-      console.error("회원 가게 정보 조회 실패:", error);
+      devError("회원 가게 정보 조회 실패:", error);
       return res.status(500).json({ error: "회원 가게 정보 조회 실패", details: error.message });
     }
 
     res.json({ success: true, data: data || {} });
   } catch (error) {
-    console.error("회원 가게 정보 조회 오류:", error);
+    devError("회원 가게 정보 조회 오류:", error);
     res.status(500).json({ error: "서버 오류", details: error.message });
   }
 });
@@ -2850,13 +2897,13 @@ app.put("/api/admin/store-info/:userId", async (req, res) => {
       .single();
 
     if (error) {
-      console.error("회원 가게 정보 수정 실패:", error);
+      devError("회원 가게 정보 수정 실패:", error);
       return res.status(500).json({ error: "회원 가게 정보 수정 실패", details: error.message });
     }
 
     res.json({ success: true, data });
   } catch (error) {
-    console.error("회원 가게 정보 수정 오류:", error);
+    devError("회원 가게 정보 수정 오류:", error);
     res.status(500).json({ error: "서버 오류", details: error.message });
   }
 });
@@ -3052,7 +3099,7 @@ app.get('/api/admin/members', async (req, res) => {
     const { data, error, count } = await query;
     
     if (error) {
-      console.error('회원 목록 조회 오류:', error);
+      devError('회원 목록 조회 오류:', error);
       return res.status(500).json({ 
         success: false, 
         error: error.message 
@@ -3068,7 +3115,7 @@ app.get('/api/admin/members', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('회원 목록 조회 실패:', error);
+    devError('회원 목록 조회 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3173,7 +3220,7 @@ app.put('/api/admin/members/:id', async (req, res) => {
       .single();
     
     if (error) {
-      console.error('회원 정보 변경 오류:', error);
+      devError('회원 정보 변경 오류:', error);
       return res.status(500).json({ 
         success: false, 
         error: error.message 
@@ -3186,7 +3233,7 @@ app.put('/api/admin/members/:id', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('회원 정보 변경 실패:', error);
+    devError('회원 정보 변경 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3213,7 +3260,7 @@ app.get('/api/admin/members/:id', async (req, res) => {
       .single();
     
     if (error) {
-      console.error('회원 조회 오류:', error);
+      devError('회원 조회 오류:', error);
       return res.status(404).json({ 
         success: false, 
         error: '회원을 찾을 수 없습니다' 
@@ -3226,7 +3273,7 @@ app.get('/api/admin/members/:id', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('회원 조회 실패:', error);
+    devError('회원 조회 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3253,7 +3300,7 @@ app.delete('/api/admin/members/:id', async (req, res) => {
       .eq('id', id);
     
     if (error) {
-      console.error('회원 삭제 오류:', error);
+      devError('회원 삭제 오류:', error);
       return res.status(500).json({ 
         success: false, 
         error: error.message 
@@ -3266,7 +3313,7 @@ app.delete('/api/admin/members/:id', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('회원 삭제 실패:', error);
+    devError('회원 삭제 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3295,7 +3342,7 @@ app.get('/api/admin/permissions/:adminId', async (req, res) => {
       .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116은 데이터 없음
-      console.error('권한 조회 오류:', error);
+      devError('권한 조회 오류:', error);
       return res.status(500).json({ 
         success: false, 
         error: error.message 
@@ -3317,7 +3364,7 @@ app.get('/api/admin/permissions/:adminId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('권한 조회 실패:', error);
+    devError('권한 조회 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3370,7 +3417,7 @@ app.post('/api/admin/permissions', async (req, res) => {
     }
 
     if (result.error) {
-      console.error('권한 저장 오류:', result.error);
+      devError('권한 저장 오류:', result.error);
       return res.status(500).json({ 
         success: false, 
         error: result.error.message 
@@ -3383,7 +3430,7 @@ app.post('/api/admin/permissions', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('권한 저장 실패:', error);
+    devError('권한 저장 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3412,7 +3459,7 @@ app.get('/api/admin/manager-roles/:managerId', async (req, res) => {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      console.error('매니저 역할 조회 오류:', error);
+      devError('매니저 역할 조회 오류:', error);
       return res.status(500).json({ 
         success: false, 
         error: error.message 
@@ -3433,7 +3480,7 @@ app.get('/api/admin/manager-roles/:managerId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('매니저 역할 조회 실패:', error);
+    devError('매니저 역할 조회 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3508,7 +3555,7 @@ app.post('/api/admin/manager-roles', async (req, res) => {
     }
 
     if (result.error) {
-      console.error('매니저 역할 저장 오류:', result.error);
+      devError('매니저 역할 저장 오류:', result.error);
       return res.status(500).json({ 
         success: false, 
         error: result.error.message 
@@ -3521,7 +3568,7 @@ app.post('/api/admin/manager-roles', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('매니저 역할 저장 실패:', error);
+    devError('매니저 역할 저장 실패:', error);
     res.status(500).json({ 
       success: false, 
       error: '서버 오류가 발생했습니다' 
@@ -3566,7 +3613,7 @@ app.use("*", (req, res) => {
 
 // 전역 에러 핸들러
 app.use((error, req, res, next) => {
-  console.error("전역 에러:", error);
+  devError("전역 에러:", error);
   res.status(500).json({
     error: "서버 내부 오류가 발생했습니다.",
     details:
@@ -3580,7 +3627,7 @@ app.use((error, req, res, next) => {
 // ==================== 서버 시작 ====================
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  console.error("[SECURITY] In production, JWT_SECRET must be set. Exiting.");
+  devError("[SECURITY] In production, JWT_SECRET must be set. Exiting.");
   process.exit(1);
 }
 
@@ -3598,138 +3645,138 @@ if (process.env.VERCEL) {
 
     // 매일 자정에 구독 갱신
     cron.schedule('0 0 * * *', async () => {
-      console.log('🔄 [CRON] 자정 구독 갱신 작업 시작...');
+      devLog('🔄 [CRON] 자정 구독 갱신 작업 시작...');
       try {
         await renewExpiredSubscriptions();
         await recordDailyStats();
-        console.log('✅ [CRON] 구독 갱신 작업 완료');
+        devLog('✅ [CRON] 구독 갱신 작업 완료');
       } catch (error) {
-        console.error('❌ [CRON] 구독 갱신 실패:', error);
+        devError('❌ [CRON] 구독 갱신 실패:', error);
       }
     });
 
     // 매일 오후 6시에 토큰 한도 경고 알림
     cron.schedule('0 18 * * *', async () => {
-      console.log('📢 [CRON] 토큰 한도 경고 알림 시작...');
+      devLog('📢 [CRON] 토큰 한도 경고 알림 시작...');
       try {
         await notifyTokenExceeded();
-        console.log('✅ [CRON] 토큰 한도 알림 완료');
+        devLog('✅ [CRON] 토큰 한도 알림 완료');
       } catch (error) {
-        console.error('❌ [CRON] 토큰 한도 알림 실패:', error);
+        devError('❌ [CRON] 토큰 한도 알림 실패:', error);
       }
     });
 
     // 매시간 통계 업데이트 (선택사항)
     cron.schedule('0 * * * *', async () => {
-      console.log('📊 [CRON] 시간별 통계 업데이트...');
+      devLog('📊 [CRON] 시간별 통계 업데이트...');
       try {
         await recordDailyStats();
       } catch (error) {
-        console.error('❌ [CRON] 통계 업데이트 실패:', error);
+        devError('❌ [CRON] 통계 업데이트 실패:', error);
       }
     });
 
-    console.log('✅ 크론 작업 스케줄러 활성화됨');
+    devLog('✅ 크론 작업 스케줄러 활성화됨');
   } catch (error) {
-    console.warn('⚠️ 크론 작업 설정 실패 (node-cron 패키지 필요):', error.message);
+    devLog('⚠️ 크론 작업 설정 실패 (node-cron 패키지 필요):', error.message);
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log("==========================================");
-    console.log("🚀 통합 API 서버가 시작되었습니다!");
-    console.log(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
-    console.log(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
-    console.log(`📊 환경: ${process.env.NODE_ENV || "development"}`);
-    console.log("==========================================");
-    console.log("");
-    console.log("🔧 사용 가능한 서비스:");
-    console.log("");
-    console.log("📊 네이버 키워드 도구:");
-    console.log('- 키워드 검색: POST /api/keywords (Body: {DataQ: "치킨"})');
-    console.log(
+    devLog("==========================================");
+    devLog("🚀 통합 API 서버가 시작되었습니다!");
+    devLog(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
+    devLog(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
+    devLog(`📊 환경: ${process.env.NODE_ENV || "development"}`);
+    devLog("==========================================");
+    devLog("");
+    devLog("🔧 사용 가능한 서비스:");
+    devLog("");
+    devLog("📊 네이버 키워드 도구:");
+    devLog('- 키워드 검색: POST /api/keywords (Body: {DataQ: "치킨"})');
+    devLog(
       '- 키워드 트렌드: POST /api/keyword-trend (Body: {keyword: "치킨"})'
     );
-    console.log("- 연관 키워드: GET /api/related-keywords?seed=맛집");
-    console.log("");
-    console.log("🤖 AI 블로그 생성:");
-    console.log("- 블로그 생성: POST /api/generate-blog");
-    console.log("- API 키 테스트: GET /api/test-keys");
-    console.log("");
-    console.log("🔍 리뷰 분석:");
-    console.log("- 리뷰 분석: POST /api/analyze-review");
-    console.log("- 답글 생성: POST /api/generate-reply");
-    console.log("- 분석 옵션: GET /api/analysis-options");
-    console.log("");
-    console.log("📍 네이버 플레이스 검색:");
-    console.log("- 로컬 검색: GET /api/search/local?query=마포맛집");
-    console.log("");
-    console.log("⚙️ API 설정 확인:");
-    console.log(
+    devLog("- 연관 키워드: GET /api/related-keywords?seed=맛집");
+    devLog("");
+    devLog("🤖 AI 블로그 생성:");
+    devLog("- 블로그 생성: POST /api/generate-blog");
+    devLog("- API 키 테스트: GET /api/test-keys");
+    devLog("");
+    devLog("🔍 리뷰 분석:");
+    devLog("- 리뷰 분석: POST /api/analyze-review");
+    devLog("- 답글 생성: POST /api/generate-reply");
+    devLog("- 분석 옵션: GET /api/analysis-options");
+    devLog("");
+    devLog("📍 네이버 플레이스 검색:");
+    devLog("- 로컬 검색: GET /api/search/local?query=마포맛집");
+    devLog("");
+    devLog("⚙️ API 설정 확인:");
+    devLog(
       `- 네이버 Customer ID: ${NAVER_API.customerId ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log(
+    devLog(
       `- 네이버 API Key: ${NAVER_API.apiKey ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log(
+    devLog(
       `- 네이버 Secret Key: ${NAVER_API.secretKey ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log(
+    devLog(
       `- 네이버 검색 Client ID: ${
         NAVER_SEARCH.clientId ? "✅ 설정됨" : "❌ 미설정"
       }`
     );
-    console.log(
+    devLog(
       `- 네이버 검색 Client Secret: ${
         NAVER_SEARCH.clientSecret ? "✅ 설정됨" : "❌ 미설정"
       }`
     );
-    console.log(
+    devLog(
       `- OpenAI API Key: ${OPENAI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log(
+    devLog(
       `- Gemini API Key: ${GEMINI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log(
+    devLog(
       `- Claude API Key: ${CLAUDE_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log("------------------------------------------");
-    console.log("Feature Flags:");
-    console.log(
+    devLog("------------------------------------------");
+    devLog("Feature Flags:");
+    devLog(
       `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
     );
-    console.log(
+    devLog(
       `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
     );
-    console.log(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
-    console.log("==========================================");
-    console.log("🔐 Kakao OAuth:");
-    console.log(
+    devLog(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
+    devLog("==========================================");
+    devLog("🔐 Kakao OAuth:");
+    devLog(
       `- Kakao REST API Key: ${KAKAO_REST_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log(`- Kakao Redirect URI: ${KAKAO_REDIRECT_URI || "❌ 미설정"}`);
-    console.log(
+    devLog(`- Kakao Redirect URI: ${KAKAO_REDIRECT_URI || "❌ 미설정"}`);
+    devLog(
       `- Kakao Client Secret: ${KAKAO_CLIENT_SECRET ? "✅ 설정됨" : "❌ 미설정"}`
     );
-    console.log("------------------------------------------");
-    console.log("Feature Flags:");
-    console.log(
+    devLog("------------------------------------------");
+    devLog("Feature Flags:");
+    devLog(
       `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
     );
-    console.log(
+    devLog(
       `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
     );
-    console.log(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
-    console.log("==========================================");
+    devLog(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
+    devLog("==========================================");
   });
 
   // 종료 처리 (로컬 환경에서만)
   process.on("SIGINT", () => {
-    console.log("\n🛑 서버를 종료합니다...");
+    devLog("\n🛑 서버를 종료합니다...");
     process.exit(0);
   });
 
   process.on("SIGTERM", () => {
-    console.log("\n🛑 서버를 종료합니다...");
+    devLog("\n🛑 서버를 종료합니다...");
     process.exit(0);
   });
 }
@@ -3776,7 +3823,7 @@ app.get('/api/subscription/pricing-config', async (req, res) => {
 
     res.json({ success: true, pricing: data });
   } catch (error) {
-    console.error('가격 설정 조회 실패:', error);
+    devError('가격 설정 조회 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3800,7 +3847,7 @@ app.put('/api/subscription/pricing-config', async (req, res) => {
 
     res.json({ success: true, pricing: data });
   } catch (error) {
-    console.error('가격 설정 수정 실패:', error);
+    devError('가격 설정 수정 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3843,7 +3890,7 @@ app.get('/api/subscription/token-config', async (req, res) => {
 
     res.json({ success: true, tokens: data });
   } catch (error) {
-    console.error('토큰 설정 조회 실패:', error);
+    devError('토큰 설정 조회 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3867,7 +3914,7 @@ app.put('/api/subscription/token-config', async (req, res) => {
 
     res.json({ success: true, tokens: data });
   } catch (error) {
-    console.error('토큰 설정 수정 실패:', error);
+    devError('토큰 설정 수정 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3895,7 +3942,7 @@ app.get('/api/subscription/member-pricing/:memberId', async (req, res) => {
 
     res.json({ success: true, custom_pricing: data });
   } catch (error) {
-    console.error('맞춤 가격 조회 실패:', error);
+    devError('맞춤 가격 조회 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3938,7 +3985,7 @@ app.post('/api/subscription/member-pricing', async (req, res) => {
 
     res.json({ success: true, custom_pricing: result.data });
   } catch (error) {
-    console.error('맞춤 가격 저장 실패:', error);
+    devError('맞춤 가격 저장 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3966,7 +4013,7 @@ app.get('/api/subscription/member-token-limit/:memberId', async (req, res) => {
 
     res.json({ success: true, custom_limit: data });
   } catch (error) {
-    console.error('맞춤 토큰 한도 조회 실패:', error);
+    devError('맞춤 토큰 한도 조회 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4009,7 +4056,7 @@ app.post('/api/subscription/member-token-limit', async (req, res) => {
 
     res.json({ success: true, custom_limit: result.data });
   } catch (error) {
-    console.error('맞춤 토큰 한도 저장 실패:', error);
+    devError('맞춤 토큰 한도 저장 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4040,7 +4087,7 @@ app.post('/api/subscription/member-token-limit', async (req, res) => {
 
 //     res.json({ success: true, usage: data });
 //   } catch (error) {
-//     console.error('토큰 사용 기록 저장 실패:', error);
+//     devError('토큰 사용 기록 저장 실패:', error);
 //     res.status(500).json({ success: false, error: error.message });
 //   }
 // });
@@ -4070,7 +4117,7 @@ app.get('/api/subscription/cycle/:userId', async (req, res) => {
 
     res.json({ success: true, cycle: data });
   } catch (error) {
-    console.error('구독 주기 조회 실패:', error);
+    devError('구독 주기 조회 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4094,7 +4141,7 @@ app.get('/api/subscription/agency-stores/:agencyId', async (req, res) => {
 
     res.json({ success: true, stores: data });
   } catch (error) {
-    console.error('대행사 식당 조회 실패:', error);
+    devError('대행사 식당 조회 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4158,7 +4205,7 @@ app.post('/api/subscription/agency-stores', async (req, res) => {
       res.json({ success: true, store: data, mode: 'insert' });
     }
   } catch (error) {
-    console.error('식당 등록/수정 실패:', error);
+    devError('식당 등록/수정 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4183,7 +4230,7 @@ app.delete('/api/subscription/agency-stores/:storeId', async (req, res) => {
 
     res.json({ success: true, message: '식당이 삭제되었습니다' });
   } catch (error) {
-    console.error('식당 삭제 실패:', error);
+    devError('식당 삭제 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4213,7 +4260,7 @@ app.post('/api/subscription/upgrade-request', async (req, res) => {
 
     res.json({ success: true, request: data });
   } catch (error) {
-    console.error('업그레이드 요청 생성 실패:', error);
+    devError('업그레이드 요청 생성 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4244,7 +4291,7 @@ app.put('/api/subscription/upgrade-request/:requestId/approve', async (req, res)
 
     res.json({ success: true, request: data });
   } catch (error) {
-    console.error('업그레이드 요청 승인 실패:', error);
+    devError('업그레이드 요청 승인 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

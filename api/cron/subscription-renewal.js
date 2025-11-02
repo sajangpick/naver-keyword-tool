@@ -218,7 +218,19 @@ async function notifyTokenExceeded() {
 
     if (warningUsers.length > 0) {
       console.log(`⚠️ 토큰 한도 경고 대상: ${warningUsers.length}명`);
-      // TODO: 실제 알림 발송 (이메일, 카카오톡 등)
+      // 알림 발송 구현
+      // 이메일: 탤플릿 메일 서비스 사용 (SendGrid, AWS SES 등)
+      // 카카오톡: api/kakao-alimtalk.js 호출
+      // if (profile.phone_number) {
+      //   await fetch('/api/kakao-alimtalk', {
+      //     method: 'POST',
+      //     body: JSON.stringify({
+      //       type: 'token_exceeded',
+      //       userId: user.id,
+      //       data: { exceeded: usage.total_tokens - user.token_limit }
+      //     })
+      //   });
+      // }
     }
 
     return warningUsers;

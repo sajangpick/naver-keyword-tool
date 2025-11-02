@@ -1,8 +1,17 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Supabase 초기화 (키가 없으면 null)
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseKey);
+  } catch (error) {
+    console.error('뉴스보드 Supabase 초기화 실패:', error.message);
+  }
+}
 
 /**
  * 뉴스 게시판 API
@@ -25,6 +34,14 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Supabase 연결 확인
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Database service unavailable' 
+      });
+    }
+
     // GET: 뉴스 목록 또는 단일 뉴스 조회
     if (req.method === 'GET') {
       const { id, category, page = 1, limit = 10, featured } = req.query;

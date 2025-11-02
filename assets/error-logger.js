@@ -159,7 +159,8 @@
       
       if (error) {
         console.error('에러 로그 저장 실패:', error);
-      } else if (window.location.hostname === 'localhost') {
+      } else if (process.env.NODE_ENV === 'development') {
+        // 개발 환경에서만 로그 출력
         console.log('🔴 에러 로그 저장 완료:', {
           type: errorData.error_type,
           severity: errorData.severity,

@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레시피 관리 시스템 - 사장픽</title>
+    <link rel="stylesheet" href="assets/common-styles.css">
+    <style>
+        /* ===== 레시피 매니저 전용 스타일 ===== */
+        :root {
+            --primary-color: #10B981;
+            --secondary-color: #F59E0B;
+            --danger-color: #EF4444;
+            --bg-light: #F9FAFB;
+            --border-color: #E5E7EB;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-light);
+            color: #1F2937;
+            line-height: 1.6;
+        }
+        
+        /* 메인 컨테이너 */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 페이지 헤더 */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color), #059669);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tab-btn:hover {
+            background: var(--bg-light);
+        }
+        
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        /* 탭 컨텐츠 */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 검색 섹션 */
+        .search-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 0.9rem;
+            color: #6B7280;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        /* 버튼 스타일 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6B7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4B5563;
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #DC2626;
+        }
+        
+        .btn-outline {
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        /* 레시피 카드 그리드 */
+        .recipes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .recipe-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .recipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .recipe-card-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667EEA, #764BA2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+        }
+        
+        .recipe-card-body {
+            padding: 20px;
+        }
+        
+        .recipe-card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1F2937;
+        }
+        
+        .recipe-card-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #6B7280;
+        }
+        
+        .recipe-card-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .recipe-card-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #4B5563;
+        }
+        
+        .badge.badge-category {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .badge.badge-difficulty {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+        
+        /* 레시피 생성 폼 */
+        .recipe-form-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
+        }
+        
+        .form-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #1F2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* 재료 입력 */
+        .ingredients-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .ingredient-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg-light);
+            border-radius: 6px;
+        }
+        
+        .ingredient-item input {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .btn-remove {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 조리 단계 */
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .step-item {
+            display: flex;
+            gap: 10px;
+            align-items: start;
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 6px;
+        }
+        
+        .step-number {
+            background: var(--primary-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .step-content textarea {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        /* AI 생성 섹션 */
+        .ai-generate-section {
+            background: linear-gradient(135deg, #667EEA, #764BA2);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .ai-generate-section h3 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .ai-input-box {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            color: #1F2937;
+        }
+        
+        /* 로딩 스피너 */
+        .loading-spinner {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-spinner.active {
+            display: block;
+        }
+        
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6B7280;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tab-nav {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            
+            .recipes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .ingredient-item {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 공통 헤더 -->
+    <div id="common-header"></div>
+    
+    <!-- 메인 컨테이너 -->
+    <div class="main-container">
+        <!-- 페이지 헤더 -->
+        <div class="page-header">
+            <h1>
+                <span>🍳</span>
+                레시피 관리 시스템
+            </h1>
+            <p class="subtitle">
+                식당 운영에 필요한 모든 레시피를 한 곳에서 관리하세요
+            </p>
+        </div>
+        
+        <!-- 탭 네비게이션 -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="search">
+                🔍 레시피 검색
+            </button>
+            <button class="tab-btn" data-tab="create">
+                ➕ 새 레시피 만들기
+            </button>
+            <button class="tab-btn" data-tab="my-recipes">
+                📚 내 레시피
+            </button>
+            <button class="tab-btn" data-tab="bookmarks">
+                ⭐ 북마크
+            </button>
+            <button class="tab-btn" data-tab="ai-generate">
+                🤖 AI 레시피 생성
+            </button>
+        </div>
+        
+        <!-- 탭 컨텐츠 -->
+        <!-- 1. 레시피 검색 탭 -->
+        <div class="tab-content active" id="tab-search">
+            <div class="search-section">
+                <div class="search-header">
+                    <h2>🔍 레시피 검색</h2>
+                    <span class="text-muted">공공 데이터와 사용자 레시피를 검색합니다</span>
+                </div>
+                
+                <form class="search-form" id="searchForm">
+                    <div class="form-group">
+                        <label>검색어</label>
+                        <input type="text" id="searchKeyword" placeholder="레시피명, 재료 등">
+                    </div>
+                    <div class="form-group">
+                        <label>카테고리</label>
+                        <select id="searchCategory">
+                            <option value="">전체</option>
+                            <option value="한식">한식</option>
+                            <option value="중식">중식</option>
+                            <option value="일식">일식</option>
+                            <option value="양식">양식</option>
+                            <option value="분식">분식</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>난이도</label>
+                        <select id="searchDifficulty">
+                            <option value="">전체</option>
+                            <option value="초급">초급</option>
+                            <option value="중급">중급</option>
+                            <option value="고급">고급</option>
+                            <option value="전문가">전문가</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>조리시간</label>
+                        <select id="searchTime">
+                            <option value="">전체</option>
+                            <option value="30">30분 이내</option>
+                            <option value="60">1시간 이내</option>
+                            <option value="120">2시간 이내</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>검색 범위</label>
+                        <select id="searchSource">
+                            <option value="all">전체</option>
+                            <option value="internal">내부 DB만</option>
+                            <option value="public">공공 API만</option>
+                        </select>
+                    </div>
+                </form>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="searchRecipes()">
+                        🔍 검색하기
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetSearch()">
+                        ↻ 초기화
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 검색 결과 -->
+            <div id="searchResults">
+                <div class="loading-spinner" id="searchLoader"></div>
+                <div class="recipes-grid" id="recipesGrid"></div>
+            </div>
+        </div>
+        
+        <!-- 2. 새 레시피 만들기 탭 -->
+        <div class="tab-content" id="tab-create">
+            <div class="recipe-form-section">
+                <form id="recipeForm">
+                    <!-- 기본 정보 -->
+                    <div class="form-section">
+                        <h3>📋 기본 정보</h3>
+                        <div class="search-form">
+                            <div class="form-group">
+                                <label>레시피명 *</label>
+                                <input type="text" id="recipeName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>카테고리 *</label>
+                                <select id="recipeCategory" required>
+                                    <option value="">선택하세요</option>
+                                    <option value="한식">한식</option>
+                                    <option value="중식">중식</option>
+                                    <option value="일식">일식</option>
+                                    <option value="양식">양식</option>
+                                    <option value="분식">분식</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>난이도</label>
+                                <select id="recipeDifficulty">
+                                    <option value="초급">초급</option>
+                                    <option value="중급">중급</option>
+                                    <option value="고급">고급</option>
+                                    <option value="전문가">전문가</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>인분</label>
+                                <input type="number" id="recipeServings" value="4" min="1">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>설명</label>
+                            <textarea id="recipeDescription" rows="3" placeholder="레시피에 대한 간단한 설명을 입력하세요"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- 재료 -->
+                    <div class="form-section">
+                        <h3>🥬 재료</h3>
+                        <div class="ingredients-list" id="ingredientsList">
+                            <div class="ingredient-item">
+                                <input type="text" placeholder="재료명" class="ing-name">
+                                <input type="text" placeholder="수량" class="ing-amount">
+                                <input type="text" placeholder="단위" class="ing-unit">
+                                <input type="number" placeholder="원가" class="ing-cost">
+                                <button type="button" class="btn-remove" onclick="removeIngredient(this)">×</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline" onclick="addIngredient()">
+                            + 재료 추가
+                        </button>
+                    </div>
+                    
+                    <!-- 조리 단계 -->
+                    <div class="form-section">
+                        <h3>👨‍🍳 조리 단계</h3>
+                        <div class="steps-list" id="stepsList">
+                            <div class="step-item">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <textarea placeholder="조리 과정을 설명하세요" class="step-description"></textarea>
+                                    <input type="number" placeholder="소요 시간(분)" class="step-time" min="1">
+                                </div>
+                                <button type="button" class="btn-remove" onclick="removeStep(this)">×</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline" onclick="addStep()">
+                            + 단계 추가
+                        </button>
+                    </div>
+                    
+                    <!-- 저장 버튼 -->
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+                            📝 임시 저장
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            💾 레시피 저장
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 3. 내 레시피 탭 -->
+        <div class="tab-content" id="tab-my-recipes">
+            <div class="search-section">
+                <h2>📚 내 레시피</h2>
+                <div class="loading-spinner" id="myRecipesLoader"></div>
+                <div class="recipes-grid" id="myRecipesGrid"></div>
+            </div>
+        </div>
+        
+        <!-- 4. 북마크 탭 -->
+        <div class="tab-content" id="tab-bookmarks">
+            <div class="search-section">
+                <h2>⭐ 북마크한 레시피</h2>
+                <div class="loading-spinner" id="bookmarksLoader"></div>
+                <div id="bookmarksFolders"></div>
+            </div>
+        </div>
+        
+        <!-- 5. AI 레시피 생성 탭 -->
+        <div class="tab-content" id="tab-ai-generate">
+            <div class="ai-generate-section">
+                <h3>🤖 AI 레시피 생성기</h3>
+                <p>재료를 입력하면 AI가 레시피를 만들어드립니다!</p>
+            </div>
+            
+            <div class="recipe-form-section">
+                <div class="form-section">
+                    <h3>재료 입력</h3>
+                    <div class="form-group">
+                        <label>가지고 있는 재료를 입력하세요</label>
+                        <textarea id="aiIngredients" rows="3" placeholder="예: 돼지고기 300g, 김치, 두부, 대파"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>원하는 스타일 (선택)</label>
+                        <input type="text" id="aiStyle" placeholder="예: 매운맛, 아이들이 좋아하는, 술안주용">
+                    </div>
+                    <div class="form-group">
+                        <label>조리 시간</label>
+                        <select id="aiCookTime">
+                            <option value="30">30분 이내</option>
+                            <option value="60">1시간 이내</option>
+                            <option value="120">2시간 이내</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="generateAIRecipe()">
+                    🪄 AI 레시피 생성하기
+                </button>
+                
+                <div class="loading-spinner" id="aiLoader"></div>
+                <div id="aiResult" style="margin-top: 30px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 레시피 상세 모달 -->
+    <div class="modal" id="recipeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">레시피 상세</h2>
+                <button class="btn-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 동적으로 내용 생성 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">닫기</button>
+                <button class="btn btn-primary" id="bookmarkBtn" onclick="toggleBookmark()">
+                    ⭐ 북마크
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 스크립트 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/common-header.js"></script>
+    <script>
+        // ===== 전역 변수 =====
+        let currentRecipeId = null;
+        let currentUserId = null;
+        
+        // ===== 초기화 =====
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTabs();
+            loadUserInfo();
+            loadCategories();
+            
+            // 폼 제출 이벤트
+            document.getElementById('recipeForm').addEventListener('submit', handleRecipeSubmit);
+        });
+        
+        // ===== 탭 전환 =====
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.dataset.tab;
+                    
+                    // 버튼 활성화
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // 컨텐츠 표시
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === `tab-${tabName}`) {
+                            content.classList.add('active');
+                            
+                            // 탭별 데이터 로드
+                            if (tabName === 'my-recipes') {
+                                loadMyRecipes();
+                            } else if (tabName === 'bookmarks') {
+                                loadBookmarks();
+                            }
+                        }
+                    });
+                });
+            });
+        }
+        
+        // ===== 사용자 정보 로드 =====
+        async function loadUserInfo() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    currentUserId = user.id;
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        }
+        
+        // ===== 카테고리 로드 =====
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/recipes/categories/list');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    // 검색 카테고리 업데이트
+                    const searchCategory = document.getElementById('searchCategory');
+                    const recipeCategory = document.getElementById('recipeCategory');
+                    
+                    searchCategory.innerHTML = '<option value="">전체</option>';
+                    recipeCategory.innerHTML = '<option value="">선택하세요</option>';
+                    
+                    result.data.forEach(cat => {
+                        const option = `<option value="${cat.category_name}">${cat.icon_emoji} ${cat.category_name}</option>`;
+                        searchCategory.innerHTML += option;
+                        recipeCategory.innerHTML += option;
+                    });
+                }
+            } catch (error) {
+                console.error('카테고리 로드 실패:', error);
+            }
+        }
+        
+        // ===== 레시피 검색 =====
+        async function searchRecipes() {
+            const loader = document.getElementById('searchLoader');
+            const grid = document.getElementById('recipesGrid');
+            
+            loader.classList.add('active');
+            grid.innerHTML = '';
+            
+            try {
+                const params = new URLSearchParams({
+                    keyword: document.getElementById('searchKeyword').value,
+                    category: document.getElementById('searchCategory').value,
+                    difficulty: document.getElementById('searchDifficulty').value,
+                    maxTime: document.getElementById('searchTime').value,
+                    source: document.getElementById('searchSource').value
+                });
+                
+                const response = await fetch(`/api/recipes/search?${params}`, {
+                    headers: {
+                        'user-id': currentUserId || ''
+                    }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayRecipes(result.data, grid);
+                } else {
+                    grid.innerHTML = '<p>검색 중 오류가 발생했습니다.</p>';
+                }
+            } catch (error) {
+                console.error('검색 오류:', error);
+                grid.innerHTML = '<p>검색 중 오류가 발생했습니다.</p>';
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+        
+        // ===== 검색 초기화 =====
+        function resetSearch() {
+            document.getElementById('searchForm').reset();
+            document.getElementById('recipesGrid').innerHTML = '';
+        }
+        
+        // ===== 레시피 카드 표시 =====
+        function displayRecipes(recipes, container) {
+            if (!recipes || recipes.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #6B7280;">검색 결과가 없습니다.</p>';
+                return;
+            }
+            
+            recipes.forEach(recipe => {
+                const card = createRecipeCard(recipe);
+                container.appendChild(card);
+            });
+        }
+        
+        // ===== 레시피 카드 생성 =====
+        function createRecipeCard(recipe) {
+            const card = document.createElement('div');
+            card.className = 'recipe-card';
+            card.onclick = () => showRecipeDetail(recipe.id);
+            
+            const emoji = getCategoryEmoji(recipe.category);
+            const difficultyColor = getDifficultyColor(recipe.difficulty);
+            
+            card.innerHTML = `
+                <div class="recipe-card-image">
+                    ${emoji}
+                </div>
+                <div class="recipe-card-body">
+                    <h3 class="recipe-card-title">${recipe.name}</h3>
+                    <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 10px;">
+                        ${recipe.description || '설명이 없습니다.'}
+                    </p>
+                    <div class="recipe-card-meta">
+                        <span>⏱️ ${recipe.total_time || 0}분</span>
+                        <span>👥 ${recipe.servings || 1}인분</span>
+                        <span>⭐ ${recipe.rating || 0}</span>
+                    </div>
+                    <div class="recipe-card-badges">
+                        <span class="badge badge-category">${recipe.category}</span>
+                        <span class="badge badge-difficulty" style="background: ${difficultyColor};">
+                            ${recipe.difficulty || '미정'}
+                        </span>
+                        ${recipe.source_type === 'public_api' ? 
+                            '<span class="badge">공공데이터</span>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // ===== 카테고리별 이모지 =====
+        function getCategoryEmoji(category) {
+            const emojis = {
+                '한식': '🍚',
+                '중식': '🥟',
+                '일식': '🍱',
+                '양식': '🍝',
+                '분식': '🍜',
+                '디저트': '🍰',
+                '반찬': '🥘'
+            };
+            return emojis[category] || '🍴';
+        }
+        
+        // ===== 난이도별 색상 =====
+        function getDifficultyColor(difficulty) {
+            const colors = {
+                '초급': '#DCFCE7',
+                '중급': '#FEF3C7',
+                '고급': '#FED7AA',
+                '전문가': '#FECACA'
+            };
+            return colors[difficulty] || '#E5E7EB';
+        }
+        
+        // ===== 재료 추가 =====
+        function addIngredient() {
+            const container = document.getElementById('ingredientsList');
+            const item = document.createElement('div');
+            item.className = 'ingredient-item';
+            item.innerHTML = `
+                <input type="text" placeholder="재료명" class="ing-name">
+                <input type="text" placeholder="수량" class="ing-amount">
+                <input type="text" placeholder="단위" class="ing-unit">
+                <input type="number" placeholder="원가" class="ing-cost">
+                <button type="button" class="btn-remove" onclick="removeIngredient(this)">×</button>
+            `;
+            container.appendChild(item);
+        }
+        
+        // ===== 재료 삭제 =====
+        function removeIngredient(button) {
+            const items = document.querySelectorAll('.ingredient-item');
+            if (items.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+        
+        // ===== 조리 단계 추가 =====
+        function addStep() {
+            const container = document.getElementById('stepsList');
+            const stepCount = container.children.length + 1;
+            const item = document.createElement('div');
+            item.className = 'step-item';
+            item.innerHTML = `
+                <div class="step-number">${stepCount}</div>
+                <div class="step-content">
+                    <textarea placeholder="조리 과정을 설명하세요" class="step-description"></textarea>
+                    <input type="number" placeholder="소요 시간(분)" class="step-time" min="1">
+                </div>
+                <button type="button" class="btn-remove" onclick="removeStep(this)">×</button>
+            `;
+            container.appendChild(item);
+        }
+        
+        // ===== 조리 단계 삭제 =====
+        function removeStep(button) {
+            const items = document.querySelectorAll('.step-item');
+            if (items.length > 1) {
+                button.parentElement.remove();
+                updateStepNumbers();
+            }
+        }
+        
+        // ===== 단계 번호 업데이트 =====
+        function updateStepNumbers() {
+            const items = document.querySelectorAll('.step-item');
+            items.forEach((item, index) => {
+                item.querySelector('.step-number').textContent = index + 1;
+            });
+        }
+        
+        // ===== 레시피 저장 =====
+        async function handleRecipeSubmit(e) {
+            e.preventDefault();
+            
+            // 재료 수집
+            const ingredients = [];
+            document.querySelectorAll('.ingredient-item').forEach(item => {
+                const name = item.querySelector('.ing-name').value;
+                if (name) {
+                    ingredients.push({
+                        name: name,
+                        amount: item.querySelector('.ing-amount').value,
+                        unit: item.querySelector('.ing-unit').value,
+                        cost: parseFloat(item.querySelector('.ing-cost').value) || 0
+                    });
+                }
+            });
+            
+            // 조리 단계 수집
+            const steps = [];
+            document.querySelectorAll('.step-item').forEach((item, index) => {
+                const description = item.querySelector('.step-description').value;
+                if (description) {
+                    steps.push({
+                        order: index + 1,
+                        description: description,
+                        time: parseInt(item.querySelector('.step-time').value) || 0
+                    });
+                }
+            });
+            
+            const recipeData = {
+                name: document.getElementById('recipeName').value,
+                description: document.getElementById('recipeDescription').value,
+                category: document.getElementById('recipeCategory').value,
+                difficulty: document.getElementById('recipeDifficulty').value,
+                servings: parseInt(document.getElementById('recipeServings').value),
+                ingredients: ingredients,
+                steps: steps,
+                prep_time: steps.reduce((sum, step) => sum + step.time, 0)
+            };
+            
+            try {
+                const response = await fetch('/api/recipes/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'user-id': currentUserId
+                    },
+                    body: JSON.stringify(recipeData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('레시피가 성공적으로 저장되었습니다!');
+                    document.getElementById('recipeForm').reset();
+                    
+                    // 내 레시피 탭으로 이동
+                    document.querySelector('[data-tab="my-recipes"]').click();
+                } else {
+                    alert('레시피 저장에 실패했습니다: ' + result.error);
+                }
+            } catch (error) {
+                console.error('레시피 저장 오류:', error);
+                alert('레시피 저장 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // ===== 내 레시피 로드 =====
+        async function loadMyRecipes() {
+            const loader = document.getElementById('myRecipesLoader');
+            const grid = document.getElementById('myRecipesGrid');
+            
+            if (!currentUserId) {
+                grid.innerHTML = '<p style="text-align: center;">로그인이 필요합니다.</p>';
+                return;
+            }
+            
+            loader.classList.add('active');
+            grid.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/recipes/my/list', {
+                    headers: {
+                        'user-id': currentUserId
+                    }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayRecipes(result.data, grid);
+                } else {
+                    grid.innerHTML = '<p>레시피 로드에 실패했습니다.</p>';
+                }
+            } catch (error) {
+                console.error('내 레시피 로드 오류:', error);
+                grid.innerHTML = '<p>레시피 로드 중 오류가 발생했습니다.</p>';
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+        
+        // ===== 북마크 로드 =====
+        async function loadBookmarks() {
+            const loader = document.getElementById('bookmarksLoader');
+            const container = document.getElementById('bookmarksFolders');
+            
+            if (!currentUserId) {
+                container.innerHTML = '<p style="text-align: center;">로그인이 필요합니다.</p>';
+                return;
+            }
+            
+            loader.classList.add('active');
+            container.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/recipes/my/bookmarks', {
+                    headers: {
+                        'user-id': currentUserId
+                    }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayBookmarkFolders(result.data, container);
+                } else {
+                    container.innerHTML = '<p>북마크 로드에 실패했습니다.</p>';
+                }
+            } catch (error) {
+                console.error('북마크 로드 오류:', error);
+                container.innerHTML = '<p>북마크 로드 중 오류가 발생했습니다.</p>';
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+        
+        // ===== 북마크 폴더 표시 =====
+        function displayBookmarkFolders(folders, container) {
+            if (!folders || Object.keys(folders).length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6B7280;">북마크한 레시피가 없습니다.</p>';
+                return;
+            }
+            
+            Object.entries(folders).forEach(([folderName, bookmarks]) => {
+                const folderDiv = document.createElement('div');
+                folderDiv.style.marginBottom = '30px';
+                
+                folderDiv.innerHTML = `
+                    <h3 style="margin-bottom: 15px;">📁 ${folderName} (${bookmarks.length})</h3>
+                    <div class="recipes-grid"></div>
+                `;
+                
+                const grid = folderDiv.querySelector('.recipes-grid');
+                bookmarks.forEach(bookmark => {
+                    if (bookmark.recipe) {
+                        const card = createRecipeCard(bookmark.recipe);
+                        grid.appendChild(card);
+                    }
+                });
+                
+                container.appendChild(folderDiv);
+            });
+        }
+        
+        // ===== AI 레시피 생성 =====
+        async function generateAIRecipe() {
+            const loader = document.getElementById('aiLoader');
+            const resultDiv = document.getElementById('aiResult');
+            
+            const ingredients = document.getElementById('aiIngredients').value;
+            if (!ingredients.trim()) {
+                alert('재료를 입력해주세요!');
+                return;
+            }
+            
+            loader.classList.add('active');
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/chatgpt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        step: 'generate-recipe',
+                        ingredients: ingredients,
+                        style: document.getElementById('aiStyle').value,
+                        maxTime: document.getElementById('aiCookTime').value
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayAIRecipe(result.data, resultDiv);
+                } else {
+                    resultDiv.innerHTML = '<p>레시피 생성에 실패했습니다.</p>';
+                }
+            } catch (error) {
+                console.error('AI 레시피 생성 오류:', error);
+                resultDiv.innerHTML = '<p>레시피 생성 중 오류가 발생했습니다.</p>';
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+        
+        // ===== AI 레시피 표시 =====
+        function displayAIRecipe(data, container) {
+            container.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid var(--primary-color);">
+                    <h3 style="color: var(--primary-color); margin-bottom: 15px;">
+                        🤖 AI가 생성한 레시피
+                    </h3>
+                    <div style="white-space: pre-wrap; line-height: 1.8;">
+                        ${data.recipe}
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="saveAIRecipe()">
+                            💾 이 레시피 저장하기
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ===== 레시피 상세 보기 =====
+        async function showRecipeDetail(recipeId) {
+            currentRecipeId = recipeId;
+            const modal = document.getElementById('recipeModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalBody.innerHTML = '<div class="loading-spinner active"></div>';
+            modal.classList.add('active');
+            
+            try {
+                const response = await fetch(`/api/recipes/${recipeId}`, {
+                    headers: {
+                        'user-id': currentUserId || ''
+                    }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayRecipeDetail(result.data, modalBody);
+                    
+                    // 북마크 버튼 업데이트
+                    const bookmarkBtn = document.getElementById('bookmarkBtn');
+                    bookmarkBtn.innerHTML = result.data.isBookmarked ? 
+                        '⭐ 북마크 제거' : '⭐ 북마크 추가';
+                } else {
+                    modalBody.innerHTML = '<p>레시피를 불러올 수 없습니다.</p>';
+                }
+            } catch (error) {
+                console.error('레시피 상세 조회 오류:', error);
+                modalBody.innerHTML = '<p>오류가 발생했습니다.</p>';
+            }
+        }
+        
+        // ===== 레시피 상세 표시 =====
+        function displayRecipeDetail(recipe, container) {
+            document.getElementById('modalTitle').textContent = recipe.name;
+            
+            let ingredientsList = '';
+            if (recipe.ingredients) {
+                recipe.ingredients.forEach(ing => {
+                    ingredientsList += `
+                        <li>${ing.name} ${ing.amount}${ing.unit} 
+                        ${ing.cost ? `(${ing.cost.toLocaleString()}원)` : ''}</li>
+                    `;
+                });
+            }
+            
+            let stepsList = '';
+            if (recipe.steps) {
+                recipe.steps.forEach(step => {
+                    stepsList += `
+                        <div style="margin-bottom: 15px;">
+                            <strong>Step ${step.order}</strong> 
+                            ${step.time ? `(${step.time}분)` : ''}
+                            <p>${step.description}</p>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = `
+                <div>
+                    <p style="color: #6B7280; margin-bottom: 20px;">
+                        ${recipe.description || ''}
+                    </p>
+                    
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <span>📂 ${recipe.category}</span>
+                        <span>⏱️ ${recipe.total_time || 0}분</span>
+                        <span>👥 ${recipe.servings || 1}인분</span>
+                        <span>💰 ${recipe.cost_per_serving ? 
+                            recipe.cost_per_serving.toLocaleString() + '원' : '미정'}</span>
+                    </div>
+                    
+                    <h4 style="margin-top: 30px; margin-bottom: 15px;">🥬 재료</h4>
+                    <ul style="line-height: 1.8;">
+                        ${ingredientsList}
+                    </ul>
+                    
+                    <h4 style="margin-top: 30px; margin-bottom: 15px;">👨‍🍳 조리 과정</h4>
+                    <div>
+                        ${stepsList}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ===== 북마크 토글 =====
+        async function toggleBookmark() {
+            if (!currentUserId) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/recipes/bookmark/${currentRecipeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'user-id': currentUserId
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const bookmarkBtn = document.getElementById('bookmarkBtn');
+                    bookmarkBtn.innerHTML = result.bookmarked ? 
+                        '⭐ 북마크 제거' : '⭐ 북마크 추가';
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('북마크 토글 오류:', error);
+                alert('북마크 처리 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // ===== 모달 닫기 =====
+        function closeModal() {
+            document.getElementById('recipeModal').classList.remove('active');
+        }
+        
+        // ===== 임시 저장 =====
+        function saveDraft() {
+            // localStorage에 임시 저장
+            const formData = new FormData(document.getElementById('recipeForm'));
+            const draft = {};
+            formData.forEach((value, key) => {
+                draft[key] = value;
+            });
+            localStorage.setItem('recipeDraft', JSON.stringify(draft));
+            alert('임시 저장되었습니다!');
+        }
+    </script>
+</body>
+</html>

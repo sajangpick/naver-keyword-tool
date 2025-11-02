@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* http://127.0.0.1:* https://sajangpick-kwon-teamjang.onrender.com; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <title>정보 게시판 - 사장픽</title>
@@ -883,9 +883,7 @@
   </div>
 
   <script>
-    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? 'http://localhost:5000'
-      : 'https://sajangpick-kwon-teamjang.onrender.com';
+    const API_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
 
     let currentPage = 1;
     let currentCategory = 'all';

@@ -43,6 +43,12 @@
       badge: null
     },
     {
+      icon: '🏛️',
+      title: '정책지원금 관리',
+      path: '/admin/policy-management.html',
+      badge: null
+    },
+    {
       section: '구독 및 청구'
     },
     {

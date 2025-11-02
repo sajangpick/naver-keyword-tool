@@ -366,12 +366,16 @@
         font-weight: 700;
         color: var(--primary-green);
         transition: all 0.3s ease;
+        text-align: center;
+        width: 100%;
       }
       @media (max-width: 768px) {
         .quick-label {
           font-size: 9px;
           font-weight: 600;
           line-height: 1.2;
+          text-align: center;
+          width: 100%;
         }
       }
 
@@ -413,6 +417,9 @@
       }
       .feature-banner.style-4 {
         background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%);
+      }
+      .feature-banner.style-6 {
+        background: linear-gradient(135deg, #FF6B6B 0%, #C44569 100%);
       }
       .feature-content {
         flex: 1;
@@ -491,6 +498,9 @@
       }
       .feature-banner.style-4 .feature-button {
         color: #9B59B6;
+      }
+      .feature-banner.style-6 .feature-button {
+        color: #FF6B6B;
       }
 
       .auth-buttons {
@@ -723,6 +733,18 @@
           </div>
           <div class="quick-label">정보 게시판</div>
         </a>
+        <a href="/policy-support.html" class="quick-menu-item">
+          <div class="quick-icon">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+          <div class="quick-label">정책지원금<br><small style="color: #999; font-size: 11px; display: block; text-align: center;">(준비중)</small></div>
+        </a>
+        <a href="/recipe-manager.html" class="quick-menu-item">
+          <div class="quick-icon">
+            <i class="fa-solid fa-utensils"></i>
+          </div>
+          <div class="quick-label">레시피 관리<br><small style="color: #999; font-size: 11px; display: block; text-align: center;">(준비중)</small></div>
+        </a>
       </div>
 
       <!-- 상세 기능 배너 -->
@@ -793,6 +815,35 @@
             </p>
             <span class="feature-button">
               <i class="fa-solid fa-arrow-right"></i> 지금 확인하기
+            </span>
+          </div>
+        </a>
+
+        <a href="/policy-support.html" class="feature-banner style-6" style="text-decoration: none;">
+          <div class="feature-content">
+            <span class="feature-badge">정부 지원</span>
+            <h3 class="feature-title">정책지원금 <span style="color: #ff6b6b; font-size: 14px;">(준비중)</span></h3>
+            <p class="feature-desc">
+              소상공인을 위한 정부 지원금 정보를 한눈에 확인하세요.
+              창업지원, 운영자금, 시설개선, 인건비 지원 등 다양한 혜택을 놓치지 마세요.
+            </p>
+            <span class="feature-button">
+              <i class="fa-solid fa-arrow-right"></i> 지원금 확인하기
+            </span>
+          </div>
+        </a>
+
+        <a href="/recipe-manager.html" class="feature-banner style-3" style="text-decoration: none;">
+          <div class="feature-content">
+            <span class="feature-badge">준비중</span>
+            <h3 class="feature-title">🍳 레시피 관리 시스템 <span style="color: #ff6b6b; font-size: 14px;">(준비중)</span></h3>
+            <p class="feature-desc">
+              AI로 레시피를 생성하고, 검색하고, 관리하세요.
+              공공 데이터와 ChatGPT를 활용한 스마트 레시피 관리 시스템으로
+              메뉴 개발과 원가 계산을 한 번에 해결합니다.
+            </p>
+            <span class="feature-button">
+              <i class="fa-solid fa-arrow-right"></i> 레시피 관리 시작하기
             </span>
           </div>
         </a>

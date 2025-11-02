@@ -1351,6 +1351,155 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
 }
 
 // ============================================
+// 레시피 생성 함수
+// ============================================
+
+/**
+ * AI를 사용한 레시피 생성
+ */
+async function generateRecipeWithAI(ingredients, style, maxTime, userId) {
+    try {
+        console.log('[레시피 생성] 파라미터:', {
+            ingredients,
+            style,
+            maxTime,
+            userId
+        });
+
+        const systemPrompt = `당신은 전문 요리사이자 레시피 개발 전문가입니다.
+주어진 재료로 실용적이고 맛있는 레시피를 만들어주세요.
+
+중요 지침:
+1. 재료는 주어진 것만 사용 (기본 양념은 추가 가능)
+2. 조리 시간은 ${maxTime || 60}분 이내
+3. 한국 식당에서 실제로 판매 가능한 수준
+4. 원가와 판매가격 계산 포함
+5. 단계별 조리 과정을 명확하게
+6. 실용적인 팁과 주의사항 포함`;
+
+        const userPrompt = `다음 재료로 레시피를 만들어주세요:
+
+재료: ${ingredients}
+${style ? `원하는 스타일: ${style}` : ''}
+
+다음 형식으로 작성해주세요:
+
+## 🍳 레시피명
+
+### 📝 요리 소개
+(2-3줄로 이 요리의 특징과 매력을 설명)
+
+### 🥬 필요한 재료
+**주재료:**
+- 재료명: 수량 (예상 원가)
+
+**양념재료:**
+- 재료명: 수량
+
+### 👨‍🍳 조리 과정
+
+**준비 시간:** ○○분
+**조리 시간:** ○○분
+**난이도:** ★☆☆☆☆ (1-5개)
+
+#### Step 1. [단계명]
+(상세한 조리 설명)
+
+#### Step 2. [단계명]
+(상세한 조리 설명)
+
+(필요한 만큼 단계 추가)
+
+### 💰 원가 분석
+- 재료 원가: ○○○원
+- 1인분 원가: ○○○원
+- 권장 판매가: ○○○원 (원가율 30% 기준)
+
+### 💡 요리 팁
+1. (실용적인 팁)
+2. (주의사항)
+
+### 🍴 추천 사이드 메뉴
+- (어울리는 밑반찬이나 음료)
+
+### 🏷️ 키워드
+#레시피 #재료명 #요리스타일`;
+
+        // AI 호출 (토큰 추적 포함)
+        const completion = await callOpenAIWithTracking(
+            userId,
+            async () => {
+                return await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.8,
+                    max_tokens: 2000
+                });
+            },
+            'recipe-generation'
+        );
+
+        const recipe = completion.choices[0].message.content;
+
+        // 레시피 파싱 (구조화된 데이터로 변환)
+        const parsedRecipe = parseRecipeContent(recipe);
+
+        return {
+            recipe,
+            parsed: parsedRecipe,
+            timestamp: new Date().toISOString()
+        };
+
+    } catch (error) {
+        console.error('[레시피 생성] 오류:', error);
+        throw new Error('레시피 생성에 실패했습니다: ' + error.message);
+    }
+}
+
+/**
+ * 레시피 내용 파싱
+ */
+function parseRecipeContent(content) {
+    try {
+        // 레시피명 추출
+        const nameMatch = content.match(/##\s*🍳?\s*(.+)/);
+        const name = nameMatch ? nameMatch[1].trim() : '새로운 레시피';
+
+        // 조리 시간 추출
+        const prepTimeMatch = content.match(/준비 시간[:\s]*(\d+)분/);
+        const cookTimeMatch = content.match(/조리 시간[:\s]*(\d+)분/);
+        const prepTime = prepTimeMatch ? parseInt(prepTimeMatch[1]) : 0;
+        const cookTime = cookTimeMatch ? parseInt(cookTimeMatch[1]) : 0;
+
+        // 난이도 추출
+        const difficultyMatch = content.match(/난이도[:\s]*(★+)/);
+        const difficultyStars = difficultyMatch ? difficultyMatch[1].length : 3;
+        const difficulties = ['', '초급', '초급', '중급', '고급', '전문가'];
+        const difficulty = difficulties[difficultyStars] || '중급';
+
+        // 원가 추출
+        const costMatch = content.match(/1인분 원가[:\s]*(\d+[,\d]*)/);
+        const costPerServing = costMatch ? 
+            parseInt(costMatch[1].replace(/,/g, '')) : 0;
+
+        return {
+            name,
+            prepTime,
+            cookTime,
+            totalTime: prepTime + cookTime,
+            difficulty,
+            costPerServing
+        };
+    } catch (error) {
+        console.error('레시피 파싱 오류:', error);
+        return null;
+    }
+}
+
+// ============================================
 // Express 라우트 핸들러
 // ============================================
 
@@ -1661,6 +1810,36 @@ module.exports = async function handler(req, res) {
                             writingAngle: blogResult.writingAngle
                         }
                     });
+                }
+
+            case 'generate-recipe':
+                {
+                    try {
+                        console.log('[레시피 생성] 시작:', {
+                            userId: data.userId,
+                            ingredients: data.ingredients,
+                            style: data.style,
+                            maxTime: data.maxTime
+                        });
+
+                        const recipeResult = await generateRecipeWithAI(
+                            data.ingredients, 
+                            data.style, 
+                            data.maxTime,
+                            data.userId
+                        );
+
+                        return res.status(200).json({
+                            success: true,
+                            data: recipeResult
+                        });
+                    } catch (error) {
+                        console.error('[레시피 생성] 오류:', error);
+                        return res.status(500).json({
+                            success: false,
+                            error: `레시피 생성 실패: ${error.message}`
+                        });
+                    }
                 }
 
             default:

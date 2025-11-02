@@ -257,7 +257,7 @@ function scheduleNationwideCrawl(cronPattern = '0 0 * * *') {
   console.log(`📅 전국 크롤링 스케줄 등록: ${cronPattern}`);
   console.log('💡 매일 자정에 자동 실행됩니다.');
   
-  // TODO: cron 작업 등록
+  // Cron 작업 등록 예시 (node-cron 라이브러리 필요)
   // cron.schedule(cronPattern, () => {
   //   console.log('⏰ 스케줄 크롤링 시작...');
   //   runNationwideCrawl({

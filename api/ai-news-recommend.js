@@ -1,8 +1,16 @@
 const OpenAI = require('openai');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// OpenAI 초기화 (키가 없으면 null)
+let openai = null;
+if (process.env.OPENAI_API_KEY) {
+  try {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  } catch (error) {
+    console.error('OpenAI 초기화 실패:', error.message);
+  }
+}
 
 /**
  * AI 뉴스 추천 API
@@ -26,6 +34,14 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // OpenAI 연결 확인
+    if (!openai) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'AI service unavailable' 
+      });
+    }
+
     const { category } = req.body;
 
     // 카테고리별 프롬프트

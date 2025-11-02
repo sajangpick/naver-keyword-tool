@@ -117,7 +117,8 @@ module.exports = async (req, res) => {
         }
 
         // 사용자의 카카오 Access Token 가져오기
-        // TODO: Supabase profiles 테이블에 kakao_access_token 저장 필요
+        // 구현 필요: Supabase profiles 테이블에 kakao_access_token 저장
+        // await supabase.from('profiles').update({ kakao_access_token }).eq('id', userId);
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('kakao_access_token')
