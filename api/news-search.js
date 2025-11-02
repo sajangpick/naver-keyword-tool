@@ -43,6 +43,11 @@ module.exports = async (req, res) => {
     const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
+      console.error('[news-search] NAVER_SEARCH_CLIENT_ID or SECRET missing', {
+        hasClientId: Boolean(clientId),
+        hasClientSecret: Boolean(clientSecret),
+        envKeys: Object.keys(process.env).filter((key) => key.includes('NAVER'))
+      });
       return res.status(500).json({ 
         error: '네이버 검색 API 키가 설정되지 않았습니다.',
         keywords: RESTAURANT_KEYWORDS 
