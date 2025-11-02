@@ -246,12 +246,30 @@ async function getDauMau(res, days) {
  */
 async function getFeatureUsage(res, days) {
   try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
     const { data, error } = await supabase
-      .rpc('get_feature_usage', { days: days });
+      .from('user_events')
+      .select('event_name')
+      .gte('created_at', startDate.toISOString());
 
     if (error) throw error;
 
-    return res.json(data || []);
+    // 이벤트별 집계
+    const stats = {};
+    data?.forEach(event => {
+      const name = event.event_name || 'unknown';
+      stats[name] = (stats[name] || 0) + 1;
+    });
+
+    // 배열로 변환
+    const result = Object.entries(stats).map(([name, count]) => ({
+      feature: name,
+      usage_count: count
+    }));
+
+    return res.json(result);
 
   } catch (error) {
     console.error('기능 사용 통계 조회 실패:', error);
@@ -264,16 +282,35 @@ async function getFeatureUsage(res, days) {
  */
 async function getFunnelConversion(res) {
   try {
-    const { data, error } = await supabase
-      .rpc('get_funnel_conversion');
+    // 주요 단계별 사용자 수 계산
+    const steps = ['signup', 'blog_created', 'review_replied', 'crawling_used'];
+    const funnel = [];
 
-    if (error) throw error;
+    for (const step of steps) {
+      const { data, error } = await supabase
+        .from('user_events')
+        .select('user_id')
+        .eq('event_name', step)
+        .not('user_id', 'is', null);
 
-    return res.json(data || []);
+      if (error) {
+        console.error(`퍼널 단계 ${step} 조회 실패:`, error);
+      }
+
+      funnel.push({
+        step: step,
+        users: data ? new Set(data.map(e => e.user_id)).size : 0
+      });
+    }
+
+    return res.json(funnel);
 
   } catch (error) {
     console.error('퍼널 전환율 조회 실패:', error);
-    return res.status(500).json({ error: '퍼널 전환율 조회 실패' });
+    return res.status(500).json({ 
+      error: '퍼널 전환율 조회 실패',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 
@@ -282,8 +319,13 @@ async function getFunnelConversion(res) {
  */
 async function getHourlyActivity(res, days) {
   try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
     const { data, error } = await supabase
-      .rpc('get_hourly_activity', { days: days });
+      .from('user_events')
+      .select('created_at, user_id')
+      .gte('created_at', startDate.toISOString());
 
     if (error) throw error;
 
@@ -294,9 +336,24 @@ async function getHourlyActivity(res, days) {
       event_count: 0
     }));
 
-    // 실제 데이터로 채우기
-    data?.forEach(item => {
-      hourlyData[item.hour] = item;
+    // 시간대별 집계
+    const hourlyUsers = Array.from({ length: 24 }, () => new Set());
+
+    if (data && Array.isArray(data)) {
+      data.forEach(event => {
+        const hour = new Date(event.created_at).getHours();
+        if (hour >= 0 && hour < 24) {
+          hourlyData[hour].event_count++;
+          if (event.user_id) {
+            hourlyUsers[hour].add(event.user_id);
+          }
+        }
+      });
+    }
+
+    // 고유 사용자 수 계산
+    hourlyData.forEach((item, index) => {
+      item.user_count = hourlyUsers[index].size;
     });
 
     return res.json(hourlyData);
