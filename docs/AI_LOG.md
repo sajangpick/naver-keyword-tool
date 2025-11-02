@@ -1246,7 +1246,7 @@ git push origin main
 - 유지: `docs/env.example.md` (주석 및 설명 포함)
 
 **5. 구식 문서 아카이브**:
-- 생성: `docs/archive/` 폴더 + README.md
+- 생성: `docs/보관함/` 폴더 + README.md
 - 이동 완료:
   - `KAKAO_LOGIN_SETUP.md` (구 카카오 로그인, Supabase 전환 전)
   - `새로운방식.md` (Next.js 전환 계획, 현재 진행 안 함)
@@ -3658,7 +3658,7 @@ const supabase = createClient(
 - `supabase-schema-final.sql` - 데이터베이스 스키마
 
 **외부 링크:**
-- [Supabase JavaScript Client](https://supabase.com/docs/reference/javascript/introduction)
+- [Supabase JavaScript Client](https://supabase.com/docs/참고자료/javascript/introduction)
 - [Supabase Database](https://supabase.com/docs/guides/database)
 
 ---
@@ -5226,7 +5226,7 @@ After:  ⭐⭐⭐⭐⭐ (5/5) - RLS로 완전 보호
 
 #### Phase 1: DB 스키마 & 마이페이지 UI
 1. **Supabase 테이블 설계 (3개)**
-   - 파일: `database/schemas/features/review/review-monitoring.sql`
+   - 파일: `database/schem../기능/review/review-monitoring.sql`
    - `review_monitoring`: 사용자별 모니터링 설정 저장
    - `review_alerts`: 수집된 리뷰 알림 저장
    - `review_crawl_logs`: 크롤링 실행 로그
@@ -5309,7 +5309,7 @@ api/
 ├── cron/
 │   └── review-monitoring.js (40줄) ✅
 
-database/schemas/features/review/
+database/schem../기능/review/
 └── review-monitoring.sql (158줄) ✅
 
 admin/
@@ -5334,7 +5334,7 @@ admin/index.html - 메뉴 추가 ✅
 ```
 1. https://app.supabase.com 접속
 2. SQL Editor 열기
-3. database/schemas/features/review/review-monitoring.sql 복사
+3. database/schem../기능/review/review-monitoring.sql 복사
 4. 붙여넣고 RUN
 5. ✅ 테이블 3개 생성 완료
 ```
@@ -5440,7 +5440,7 @@ KAKAO_TEMPLATE_DAILY_SUMMARY=template_code_3
 3. **`docs/KAKAO_ALIMTALK_SETUP.md`**
    - 카카오 알림톡 설정 방법
 
-4. **`database/schemas/features/review/review-monitoring.sql`**
+4. **`database/schem../기능/review/review-monitoring.sql`**
    - DB 스키마 (테이블 3개, RLS 정책)
 
 ### 🎉 Git 커밋 이력

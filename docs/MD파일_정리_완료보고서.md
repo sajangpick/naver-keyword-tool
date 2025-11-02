@@ -103,7 +103,7 @@ docs/                          # 모든 문서 중앙 관리
 - `중요_경고사항.md` → `docs/`
 - `정책지원금_가이드.md` → `docs/`
 - `재구성_가이드.md` → `docs/`
-- `한글파일명_변경완료.md` → `docs/reports/`
+- `한글파일명_변경완료.md` → `docs/보고서/`
 - `SUPABASE_실행가이드.txt` → 유지 (설정 파일)
 
 ### admin에서 docs/admin으로 이동 (5개)
