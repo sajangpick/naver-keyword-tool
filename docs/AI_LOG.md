@@ -6617,3 +6617,34 @@ ON public.review_responses FOR ALL USING (true);
 - í´ ì•”í˜¸í™”ëœ ê³„ì • ì •ë³´ ê´€ë¦¬
 
 ---
+
+---
+
+## 2025-11-02 | ¼Ò»ó°øÀÎ ´º½º °Ë»ö ±â´É ±¸Çö
+
+### ÀÛ¾÷ ³»¿ë
+1. ³×ÀÌ¹ö °Ë»ö API ¿¬µ¿ÇÏ¿© ´º½º °Ë»ö ±â´É ±¸Çö
+2. CORS ¹®Á¦ ±Ùº» ÇØ°á (Vercel ÇÁ·Ï½Ã + »ó´ë °æ·Î)
+3. Supabase news_board Å×ÀÌºí »ı¼º
+
+### ÁÖ¿ä º¯°æ ÆÄÀÏ
+- pi/news-search.js - ³×ÀÌ¹ö ´º½º °Ë»ö API ¿£µåÆ÷ÀÎÆ® »ı¼º
+- dmin/news-management.html - API_BASE¸¦ »ó´ë °æ·Î·Î º¯°æ
+- ercel.json - Render ÇÁ·Ï½Ã URL ¼öÁ¤
+- server.js - news-ai-summary ¶ó¿ìÆ® Á¦°Å
+- supabase-schema-news-board.sql - ´º½º °Ô½ÃÆÇ Å×ÀÌºí ½ºÅ°¸¶
+
+### Render È¯°æº¯¼ö Ãß°¡
+- NAVER_SEARCH_CLIENT_ID
+- NAVER_SEARCH_CLIENT_SECRET
+
+### ÇØ°áÇÑ ÁÖ¿ä ÀÌ½´
+- CORS Á¤Ã¥ À§¹İ  Vercel rewrites·Î °°Àº µµ¸ŞÀÎ ÇÁ·Ï½Ã
+- API Å° ´©¶ô  Render È¯°æº¯¼ö ¼³Á¤
+- Å×ÀÌºí ¹ÌÁ¸Àç  Supabase SQL Editor·Î »ı¼º
+
+### ¹èÆ÷ »óÅÂ
+- ? Vercel ÀÚµ¿ ¹èÆ÷ ¿Ï·á
+- ? Render ¼öµ¿ ¹èÆ÷ ¿Ï·á (8:39 PM)
+- ? ÇÁ·Î´ö¼Ç ¼­ºñ½º Á¤»ó ÀÛµ¿
+
