@@ -600,8 +600,10 @@
     <script src="/admin/assets/admin-utils.js"></script>
     
     <script>
-      // Vercel 프록시를 통해 자동으로 Render API로 전달됨 (CORS 문제 해결)
-      const API_BASE = '';
+      // 로컬 개발 환경과 프로덕션 환경 자동 감지
+      const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:3003' 
+        : '';
 
       let quill;
       let currentPage = 1;
