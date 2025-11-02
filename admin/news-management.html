@@ -600,7 +600,8 @@
     <script src="/admin/assets/admin-utils.js"></script>
     
     <script>
-      const API_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
+      // Vercel 프록시를 통해 자동으로 Render API로 전달됨 (CORS 문제 해결)
+      const API_BASE = '';
 
       let quill;
       let currentPage = 1;
