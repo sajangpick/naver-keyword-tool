@@ -5,11 +5,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
+      "destination": "https://sajangpick-kwon-teamjang.onrender.com/api/:path*"
     },
     {
       "source": "/auth/:path*",
-      "destination": "https://naver-keyword-tool.onrender.com/auth/:path*"
+      "destination": "https://sajangpick-kwon-teamjang.onrender.com/auth/:path*"
     }
   ],
   "crons": [
