@@ -661,6 +661,15 @@ app.delete("/api/news-board", newsBoardHandler);
 const aiNewsRecommendHandler = require("./api/ai-news-recommend");
 app.post("/api/ai-news-recommend", aiNewsRecommendHandler);
 
+// 뉴스 검색 API (소상공인/식당 특화)
+const newsSearchHandler = require("./api/news-search");
+app.get("/api/news-search", newsSearchHandler);
+app.post("/api/news-search", newsSearchHandler);
+
+// AI 뉴스 요약 API
+const newsAiSummaryHandler = require("./api/news-ai-summary");
+app.post("/api/news-ai-summary", newsAiSummaryHandler);
+
 // ==================== 정책지원금 API ====================
 const policySupportHandler = require("./api/policy-support");
 app.get("/api/policy-support", policySupportHandler);

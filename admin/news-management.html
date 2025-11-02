@@ -445,16 +445,40 @@
       <!-- 헤더 자동 생성 -->
       
       <div class="content">
-        <!-- AI 추천 섹션 -->
-        <div class="ai-recommend-section" id="aiRecommendSection">
-          <div class="ai-recommend-title">🤖 AI 뉴스 추천</div>
+        <!-- 뉴스 검색 섹션 -->
+        <div class="ai-recommend-section" id="newsSearchSection">
+          <div class="ai-recommend-title">🔍 소상공인 뉴스 검색</div>
           <div class="ai-recommend-desc">
-            AI가 최신 외식업 관련 뉴스를 찾아서 요약해드립니다
+            정책지원금, 외식 트렌드, 성공사례 등 식당 대표님께 유용한 최신 뉴스를 검색하세요
           </div>
-          <button class="ai-recommend-btn" onclick="getAIRecommendations()">
-            AI 뉴스 추천받기
-          </button>
-          <div class="ai-suggestions" id="aiSuggestions"></div>
+          
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <input 
+              type="text" 
+              id="newsKeyword" 
+              placeholder="검색어를 입력하세요 (예: 소상공인 지원금, 배달 트렌드)"
+              style="flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+              onkeypress="if(event.key === 'Enter') searchNews()"
+            />
+            <select 
+              id="newsCategory" 
+              style="padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+              onchange="loadCategoryKeywords()"
+            >
+              <option value="all">전체</option>
+              <option value="policy">정책/지원금</option>
+              <option value="trend">외식 트렌드</option>
+              <option value="success">성공사례</option>
+              <option value="ingredient">식재료/원가</option>
+              <option value="regulation">규제/의무사항</option>
+            </select>
+            <button class="ai-recommend-btn" onclick="searchNews()">
+              <i class="fas fa-search"></i> 검색
+            </button>
+          </div>
+          
+          <div id="keywordSuggestions" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
+          <div class="ai-suggestions" id="searchResults"></div>
         </div>
 
         <!-- 컨트롤 -->
@@ -924,7 +948,181 @@
         }
       }
 
-      // AI 뉴스 추천
+      // 뉴스 검색
+      async function searchNews() {
+        const keyword = document.getElementById('newsKeyword').value;
+        const category = document.getElementById('newsCategory').value;
+        const resultsEl = document.getElementById('searchResults');
+        
+        resultsEl.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 뉴스를 검색하는 중...</div>';
+
+        try {
+          const response = await fetch(`${API_BASE}/api/news-search?keyword=${encodeURIComponent(keyword)}&category=${category}&display=10`);
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error || '검색에 실패했습니다.');
+          }
+
+          if (!result.items || result.items.length === 0) {
+            resultsEl.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
+            return;
+          }
+
+          // 검색 결과 표시
+          resultsEl.innerHTML = `
+            <div style="margin-top: 20px;">
+              <h3 style="margin-bottom: 16px;">"${result.searchQuery}" 검색 결과 (${result.total}건)</h3>
+              <div class="news-grid">
+                ${result.items.map((item, index) => `
+                  <div class="news-card" style="cursor: pointer;" onclick="selectSearchResult(${index})">
+                    <div class="news-placeholder">📰</div>
+                    <div class="news-content">
+                      <div class="news-header">
+                        <span class="news-category category-${item.category === '정책/지원금' ? 'policy' : 'trend'}">
+                          ${item.category}
+                        </span>
+                        ${item.importance >= 4 ? '<span class="news-featured">중요</span>' : ''}
+                      </div>
+                      <div class="news-title">${item.title}</div>
+                      <div class="news-excerpt">${item.description}</div>
+                      <div class="news-meta">
+                        <span><i class="far fa-calendar"></i> ${item.formattedDate}</span>
+                        <span><i class="fas fa-star"></i> 중요도: ${item.importance}/5</span>
+                      </div>
+                      <div class="news-actions">
+                        <button class="news-btn" onclick="event.stopPropagation(); getAISummary(${index})">
+                          <i class="fas fa-magic"></i> AI 요약
+                        </button>
+                        <button class="news-btn edit" onclick="event.stopPropagation(); editFromSearch(${index})">
+                          <i class="fas fa-edit"></i> 편집하여 발행
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+
+          // 검색 결과를 전역 변수에 저장
+          window.searchResults = result.items;
+
+        } catch (error) {
+          console.error('Search error:', error);
+          resultsEl.innerHTML = `<div class="empty-state" style="color: var(--danger);">검색 실패: ${error.message}</div>`;
+        }
+      }
+
+      // 카테고리별 추천 키워드 로드
+      function loadCategoryKeywords() {
+        const category = document.getElementById('newsCategory').value;
+        const suggestionsEl = document.getElementById('keywordSuggestions');
+        
+        const keywords = {
+          policy: ['소상공인 지원금', '외식업 지원', '임대료 지원', '배달앱 수수료'],
+          trend: ['외식 트렌드', '배달 트렌드', 'MZ세대 외식', '맛집 마케팅'],
+          success: ['식당 성공사례', '매출 증대', '인스타그램 마케팅'],
+          ingredient: ['식재료 가격', '원자재 동향'],
+          regulation: ['위생 점검', '영업 규제', '음식점 의무사항']
+        };
+
+        if (category === 'all' || !keywords[category]) {
+          suggestionsEl.innerHTML = '';
+          return;
+        }
+
+        suggestionsEl.innerHTML = keywords[category].map(kw => 
+          `<button class="category-btn" onclick="setKeyword('${kw}')" style="font-size: 12px; padding: 6px 12px;">
+            ${kw}
+          </button>`
+        ).join('');
+      }
+
+      // 키워드 설정
+      function setKeyword(keyword) {
+        document.getElementById('newsKeyword').value = keyword;
+        searchNews();
+      }
+
+      // 검색 결과 선택
+      function selectSearchResult(index) {
+        const item = window.searchResults[index];
+        window.open(item.link, '_blank');
+      }
+
+      // AI 요약 받기
+      async function getAISummary(index) {
+        const item = window.searchResults[index];
+        
+        try {
+          const btn = event.target;
+          const originalText = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI 분석 중...';
+
+          const response = await fetch(`${API_BASE}/api/news-ai-summary`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              title: item.title,
+              description: item.description,
+              url: item.link
+            })
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error || 'AI 요약에 실패했습니다.');
+          }
+
+          // 요약 결과 표시
+          alert(`🤖 AI 분석 결과\n\n` +
+                `📌 핵심 요약:\n${result.aiSummary.summary}\n\n` +
+                `💡 실질적 도움:\n${result.aiSummary.benefit}\n\n` +
+                `✅ 액션 아이템:\n${result.aiSummary.action}\n\n` +
+                `⭐ 중요도: ${result.aiSummary.importance}/5\n` +
+                `📂 카테고리: ${result.aiSummary.category}`);
+
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+
+        } catch (error) {
+          console.error('AI summary error:', error);
+          alert('AI 요약 실패: ' + error.message);
+          event.target.disabled = false;
+          event.target.innerHTML = '<i class="fas fa-magic"></i> AI 요약';
+        }
+      }
+
+      // 검색 결과를 편집 모달로
+      function editFromSearch(index) {
+        const item = window.searchResults[index];
+        openModal();
+        
+        // 폼에 데이터 채우기
+        document.getElementById('newsTitle').value = item.title;
+        quill.root.innerHTML = `<p>${item.description}</p><p><br></p><p>원문: <a href="${item.link}" target="_blank">${item.link}</a></p>`;
+        
+        // 카테고리 자동 선택
+        const categoryMap = {
+          '정책/지원금': 'policy',
+          '트렌드': 'trend',
+          '성공사례': 'management',
+          '배달/플랫폼': 'technology',
+          '식재료/원가': 'ingredients'
+        };
+        
+        const categorySelect = document.getElementById('newsCategory');
+        if (categoryMap[item.category]) {
+          categorySelect.value = categoryMap[item.category];
+        }
+      }
+
+      // AI 뉴스 추천 (기존 함수 유지)
       async function getAIRecommendations() {
         const suggestionsEl = document.getElementById('aiSuggestions');
         const btn = event.target;
