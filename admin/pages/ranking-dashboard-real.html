@@ -131,19 +131,22 @@
     <div id="sidebar-container"></div>
     
     <!-- 메인 콘텐츠 -->
-    <main class="main-content">
-        <!-- 헤더 -->
-        <div class="content-header">
-            <h1><i class="bi bi-graph-up"></i> ADLOG 순위 추적 대시보드 (실제 데이터)</h1>
-            <div class="header-actions">
-                <button class="btn btn-success" onclick="refreshData()">
-                    <i class="bi bi-arrow-clockwise"></i> 새로고침
-                </button>
-                <button class="btn btn-primary" onclick="runScraping()">
-                    <i class="bi bi-play-fill"></i> 스크래핑 실행
-                </button>
+    <main class="admin-main">
+        <!-- 헤더 자동 생성 -->
+        
+        <div class="content">
+            <!-- 페이지 헤더 -->
+            <div class="page-header mb-4">
+                <h1><i class="bi bi-graph-up"></i> ADLOG 순위 추적 대시보드 (실제 데이터)</h1>
+                <div class="header-actions">
+                    <button class="btn btn-success" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise"></i> 새로고침
+                    </button>
+                    <button class="btn btn-primary" onclick="runScraping()">
+                        <i class="bi bi-play-fill"></i> 스크래핑 실행
+                    </button>
+                </div>
             </div>
-        </div>
         
         <!-- 통계 카드 -->
         <div class="row mb-4">
@@ -341,6 +344,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </main>
     
@@ -680,5 +684,15 @@
             alert('스크래핑 기능은 Python 환경에서 실행해주세요.\n터미널: python scraping/adlog_full_scraper.py');
         }
     </script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/admin/assets/admin-bootstrap.js?v=20251102"></script>
+    <script src="/assets/common-header.js?v=20251102"></script>
+    
+    <!-- 공통 스크립트 -->
+    <script src="/admin/assets/admin-utils.js?v=20251102"></script>
+    <script src="/admin/assets/admin-sidebar.js?v=20251102"></script>
+    <script src="/admin/assets/admin-header.js?v=20251102"></script>
 </body>
 </html>
