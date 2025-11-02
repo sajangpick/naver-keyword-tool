@@ -666,10 +666,6 @@ const newsSearchHandler = require("./api/news-search");
 app.get("/api/news-search", newsSearchHandler);
 app.post("/api/news-search", newsSearchHandler);
 
-// AI 뉴스 요약 API
-const newsAiSummaryHandler = require("./api/news-ai-summary");
-app.post("/api/news-ai-summary", newsAiSummaryHandler);
-
 // ==================== 정책지원금 API ====================
 const policySupportHandler = require("./api/policy-support");
 app.get("/api/policy-support", policySupportHandler);
