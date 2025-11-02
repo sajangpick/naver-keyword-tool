@@ -1,10 +1,21 @@
 /**
  * 블로그 생성용 플레이스 크롤링 API
- * Vercel Serverless Function
+ * Render & Vercel 호환
  */
 
-const chromium = require("@sparticuz/chromium");
-const puppeteer = require("puppeteer-core");
+// 프로덕션(Render/Vercel)에서는 chromium 사용, 로컬에서만 puppeteer 사용
+const isProduction = process.env.NODE_ENV === "production";
+
+let chromium, puppeteer;
+
+if (isProduction) {
+  // Render/Vercel: @sparticuz/chromium 사용
+  chromium = require("@sparticuz/chromium");
+  puppeteer = require("puppeteer-core");
+} else {
+  // 로컬: 일반 puppeteer 사용
+  puppeteer = require("puppeteer");
+}
 
 /**
  * URL에서 Place ID 추출
@@ -39,20 +50,39 @@ async function crawlPlace(placeId) {
     try {
         console.log('[크롤링 시작]', url);
         
-        const executablePath = await chromium.executablePath();
+        // 환경별 브라우저 설정
+        let launchOptions;
         
-        browser = await puppeteer.launch({
-            args: [
-                ...chromium.args,
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-            ],
-            defaultViewport: { width: 412, height: 915 },
-            executablePath,
-            headless: chromium.headless,
-        });
+        if (isProduction) {
+            // Render/Vercel: chromium 사용
+            const executablePath = await chromium.executablePath();
+            launchOptions = {
+                args: [
+                    ...chromium.args,
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                ],
+                defaultViewport: { width: 412, height: 915 },
+                executablePath,
+                headless: chromium.headless,
+            };
+        } else {
+            // 로컬: 일반 puppeteer
+            launchOptions = {
+                args: [
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                ],
+                defaultViewport: { width: 412, height: 915 },
+                headless: true,
+            };
+        }
+        
+        browser = await puppeteer.launch(launchOptions);
 
         const page = await browser.newPage();
         await page.setUserAgent(

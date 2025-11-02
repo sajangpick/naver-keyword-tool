@@ -1,8 +1,19 @@
-// Improved Serverless crawler for Naver Place list on Vercel
+// Improved Serverless crawler for Naver Place list (Render & Vercel 호환)
 // Uses puppeteer-core with @sparticuz/chromium for AWS Lambda-compatible Chromium
 
-const chromium = require("@sparticuz/chromium");
-const puppeteer = require("puppeteer-core");
+// 프로덕션(Render/Vercel)에서는 chromium 사용, 로컬에서만 puppeteer 사용
+const isProduction = process.env.NODE_ENV === "production";
+
+let chromium, puppeteer;
+
+if (isProduction) {
+  // Render/Vercel: @sparticuz/chromium 사용
+  chromium = require("@sparticuz/chromium");
+  puppeteer = require("puppeteer-core");
+} else {
+  // 로컬: 일반 puppeteer 사용
+  puppeteer = require("puppeteer");
+}
 
 async function crawlList(keyword, { maxScrolls = 6, timeoutMs = 30000 } = {}) {
   if (!keyword || !keyword.trim()) {
@@ -22,20 +33,39 @@ async function crawlList(keyword, { maxScrolls = 6, timeoutMs = 30000 } = {}) {
 
   try {
     debugInfo.steps.push("1. Chrome 실행 시작");
-    const executablePath = await chromium.executablePath();
     
-    browser = await puppeteer.launch({
-      args: [
-        ...chromium.args,
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-      ],
-      defaultViewport: { width: 412, height: 915, deviceScaleFactor: 2 },
-      executablePath,
-      headless: chromium.headless,
-    });
+    let launchOptions;
+    
+    if (isProduction) {
+      // Render/Vercel: chromium 사용
+      const executablePath = await chromium.executablePath();
+      launchOptions = {
+        args: [
+          ...chromium.args,
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
+        defaultViewport: { width: 412, height: 915, deviceScaleFactor: 2 },
+        executablePath,
+        headless: chromium.headless,
+      };
+    } else {
+      // 로컬: 일반 puppeteer
+      launchOptions = {
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
+        defaultViewport: { width: 412, height: 915, deviceScaleFactor: 2 },
+        headless: true,
+      };
+    }
+    
+    browser = await puppeteer.launch(launchOptions);
     debugInfo.steps.push("✅ Chrome 실행 성공");
 
     const page = await browser.newPage();

@@ -1,8 +1,19 @@
-// 네이버 플레이스 상세 정보 크롤링 (Vercel Functions)
+// 네이버 플레이스 상세 정보 크롤링 (Render & Vercel 호환)
 // 특정 place_id의 모든 데이터를 수집
 
-const chromium = require("@sparticuz/chromium");
-const puppeteer = require("puppeteer-core");
+// 프로덕션(Render/Vercel)에서는 chromium 사용, 로컬에서만 puppeteer 사용
+const isProduction = process.env.NODE_ENV === "production";
+
+let chromium, puppeteer;
+
+if (isProduction) {
+  // Render/Vercel: @sparticuz/chromium 사용
+  chromium = require("@sparticuz/chromium");
+  puppeteer = require("puppeteer-core");
+} else {
+  // 로컬: 일반 puppeteer 사용
+  puppeteer = require("puppeteer");
+}
 
 /**
  * 네이버 플레이스 상세 페이지에서 모든 정보 크롤링

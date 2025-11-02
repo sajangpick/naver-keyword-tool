@@ -1,14 +1,17 @@
 // ⚡ 최적화된 네이버 플레이스 배치 크롤링
 // 병렬 처리 + 속도 최적화 + 새로운 데이터 수집
 
-const isVercel = process.env.VERCEL || process.env.NODE_ENV === "production";
+// 프로덕션(Render/Vercel)에서는 chromium 사용, 로컬에서만 puppeteer 사용
+const isProduction = process.env.NODE_ENV === "production";
 
 let chromium, puppeteer;
 
-if (isVercel) {
+if (isProduction) {
+  // Render/Vercel: @sparticuz/chromium 사용
   chromium = require("@sparticuz/chromium");
   puppeteer = require("puppeteer-core");
 } else {
+  // 로컬: 일반 puppeteer 사용
   puppeteer = require("puppeteer");
 }
 
@@ -60,7 +63,8 @@ async function batchCrawlPlaces(
     
     let launchOptions;
     
-    if (isVercel) {
+    if (isProduction) {
+      // Render/Vercel: chromium 사용
       const executablePath = await chromium.executablePath();
       launchOptions = {
         args: [
@@ -75,6 +79,7 @@ async function batchCrawlPlaces(
         headless: chromium.headless,
       };
     } else {
+      // 로컬: 일반 puppeteer
       launchOptions = {
         args: [
           "--no-sandbox",

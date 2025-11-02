@@ -12,13 +12,15 @@ const { createClient } = require('@supabase/supabase-js');
 const { sendUrgentReviewAlert, sendHighRatingAlert } = require('./kakao-alimtalk');
 
 // Puppeteer 설정 (환경별)
-const isVercel = process.env.VERCEL || process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === "production";
 
 let chromium, puppeteer;
-if (isVercel) {
+if (isProduction) {
+    // Render/Vercel: @sparticuz/chromium 사용
     chromium = require("@sparticuz/chromium");
     puppeteer = require("puppeteer-core");
 } else {
+    // 로컬: 일반 puppeteer 사용
     puppeteer = require("puppeteer");
 }
 
@@ -72,7 +74,8 @@ async function crawlPlaceReviews(placeUrl, isFirstCrawl = false) {
         
         // 브라우저 실행
         let launchOptions;
-        if (isVercel) {
+        if (isProduction) {
+            // Render/Vercel: chromium 사용
             const executablePath = await chromium.executablePath();
             launchOptions = {
                 args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
@@ -81,6 +84,7 @@ async function crawlPlaceReviews(placeUrl, isFirstCrawl = false) {
                 headless: chromium.headless,
             };
         } else {
+            // 로컬: 일반 puppeteer
             launchOptions = {
                 args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
                 defaultViewport: { width: 412, height: 915 },
