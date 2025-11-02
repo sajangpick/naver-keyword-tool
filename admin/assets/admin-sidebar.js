@@ -49,6 +49,12 @@
       badge: null
     },
     {
+      icon: '📈',
+      title: 'ADLOG 순위 추적',
+      path: '/admin/pages/ranking-dashboard-real.html',
+      badge: 'REAL'
+    },
+    {
       section: '구독 및 청구'
     },
     {

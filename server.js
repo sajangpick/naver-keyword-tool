@@ -218,6 +218,16 @@ app.post(
 // Limit CSP report spam
 app.use("/csp-report", rateLimiter);
 
+// ==================== API 라우트 (정적 파일보다 먼저) ====================
+
+// 클라이언트용 환경변수 제공 (공개 가능한 키만)
+app.get("/api/config", (req, res) => {
+  res.json({
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+  });
+});
+
 // 정적 파일 제공 (안전한 디렉터리만 공개)
 // 정적 파일 서빙 (루트 경로도 추가)
 app.use(express.static(path.join(__dirname)));
@@ -670,6 +680,11 @@ app.post("/api/fetch-real-policies", fetchRealPolicyHandler);
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");
 app.use("/api/recipes", recipesRouter);
+
+// ==================== ADLOG 순위 추적 API ====================
+// 어드민 스크래핑 제어 API
+const scrapingControlRouter = require("./api/admin/scraping-control");
+app.use("/api/admin", scrapingControlRouter);
 
 // ==================== 구독 시스템 API ====================
 // 가격 설정 API - require 실패 시 대비하여 주석 처리
@@ -2647,13 +2662,7 @@ app.get("/api/test-keys", async (req, res) => {
 
 // ==================== 추가 API 엔드포인트들 ====================
 
-// 클라이언트용 환경변수 제공 (공개 가능한 키만)
-app.get("/api/config", (req, res) => {
-  res.json({
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
-    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
-  });
-});
+// /api/config는 위쪽(220번 라인 근처)에 정의되어 있음
 
 // ==================== 가게 정보 관리 API ====================
 

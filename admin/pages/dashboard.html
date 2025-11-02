@@ -334,21 +334,30 @@
           // 세션이 있는 경우 Supabase 이벤트 기반 통계 조회 (없으면 0 유지)
           if (session) {
             try {
+              console.log('📊 분석 API 호출 시작...');
               const overviewResponse = await fetch('/api/admin/analytics?type=overview&days=1', {
                 headers: {
                   'Authorization': `Bearer ${session.access_token}`
                 }
               });
 
+              console.log('📊 분석 API 응답 상태:', overviewResponse.status, overviewResponse.statusText);
+
               if (overviewResponse.ok) {
                 const overview = await overviewResponse.json();
+                console.log('📊 분석 데이터:', overview);
                 stats.dau = overview.activeUsers || 0;
                 stats.todayBlogs = overview.blogsCreated || 0;
                 stats.todayReviews = overview.reviewsReplied || 0;
+              } else {
+                const errorText = await overviewResponse.text();
+                console.error('❌ 분석 API 오류:', overviewResponse.status, errorText);
               }
             } catch (innerError) {
-              console.warn('Supabase 통계 조회 실패:', innerError);
+              console.error('❌ Supabase 통계 조회 실패:', innerError);
             }
+          } else {
+            console.warn('⚠️ 세션이 없어 분석 통계를 가져올 수 없습니다. 로그인을 확인하세요.');
           }
 
           document.getElementById('dauValue').textContent = stats.dau.toLocaleString();
