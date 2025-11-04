@@ -601,9 +601,107 @@
     
     <script>
       // 로컬 개발 환경과 프로덕션 환경 자동 감지
-      const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:3003' 
-        : '';
+      const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
+      const PRIMARY_RENDER_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
+      const LEGACY_RENDER_BASE = 'https://naver-keyword-tool.onrender.com';
+      const FALLBACK_RENDER_BASES = [PRIMARY_RENDER_BASE, LEGACY_RENDER_BASE].filter(Boolean);
+      const RETRYABLE_STATUS = new Set([404, 408, 500, 502, 503, 504, 521, 522, 523]);
+
+      function cloneRequestOptions(options) {
+        if (!options) return undefined;
+        const cloned = { ...options };
+        if (options.headers instanceof Headers) {
+          cloned.headers = new Headers(options.headers);
+        } else if (options.headers) {
+          cloned.headers = { ...options.headers };
+        }
+
+        if (options.body instanceof FormData) {
+          const formDataCopy = new FormData();
+          options.body.forEach((value, key) => formDataCopy.append(key, value));
+          cloned.body = formDataCopy;
+        } else if (options.body instanceof URLSearchParams) {
+          cloned.body = new URLSearchParams(options.body);
+        } else if (options.body instanceof Blob) {
+          cloned.body = options.body.slice(0, options.body.size, options.body.type);
+        } else if (options.body !== undefined) {
+          cloned.body = options.body;
+        }
+
+        return cloned;
+      }
+
+      async function fetchWithFallback(path, options) {
+        const targets = [];
+
+        if (API_BASE) {
+          targets.push(`${API_BASE}${path}`);
+        } else {
+          targets.push(path);
+        }
+
+        FALLBACK_RENDER_BASES.forEach((host) => {
+          if (!host) return;
+          const absolutePath = `${host}${path}`;
+          if (!targets.includes(absolutePath)) {
+            targets.push(absolutePath);
+          }
+        });
+
+        let lastError = null;
+        let lastResponse = null;
+
+        for (let index = 0; index < targets.length; index += 1) {
+          const target = targets[index];
+
+          try {
+            const response = await fetch(target, cloneRequestOptions(options));
+
+            if (response.ok) {
+              return response;
+            }
+
+            lastResponse = response;
+
+            if (RETRYABLE_STATUS.has(response.status) && index < targets.length - 1) {
+              continue;
+            }
+
+            return response;
+          } catch (error) {
+            lastError = error;
+          }
+        }
+
+        if (lastResponse) return lastResponse;
+        if (lastError) throw lastError;
+        throw new Error('API 요청에 실패했습니다.');
+      }
+
+      async function fetchJson(path, options) {
+        const response = await fetchWithFallback(path, options);
+        const text = await response.text();
+        let data = {};
+
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch (parseError) {
+            data = { error: text };
+          }
+        }
+
+        if (!response.ok) {
+          const message = data?.error || `요청 실패 (${response.status})`;
+          const error = new Error(message);
+          error.status = response.status;
+          error.data = data;
+          throw error;
+        }
+
+        return data;
+      }
 
       let quill;
       let currentPage = 1;
@@ -653,8 +751,7 @@
             params.append('category', currentCategory);
           }
 
-          const response = await fetch(`${API_BASE}/api/news-board?${params}`);
-          const result = await response.json();
+          const result = await fetchJson(`/api/news-board?${params.toString()}`);
 
           if (!result.success || !result.data) {
             throw new Error(result.error || '뉴스를 불러올 수 없습니다.');
@@ -834,12 +931,11 @@
       async function loadNewsDetail(id) {
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch(`${API_BASE}/api/news-board?id=${id}`, {
+          const result = await fetchJson(`/api/news-board?id=${id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
-          const result = await response.json();
 
           if (result.success && result.data) {
             document.getElementById('newsId').value = result.data.id;
@@ -891,7 +987,7 @@
             body.id = editingNewsId;
           }
 
-          const response = await fetch(`${API_BASE}/api/news-board`, {
+          const result = await fetchJson('/api/news-board', {
             method,
             headers: {
               'Content-Type': 'application/json',
@@ -899,8 +995,6 @@
             },
             body: JSON.stringify(body)
           });
-
-          const result = await response.json();
 
           if (!result.success) {
             throw new Error(result.error || '저장에 실패했습니다.');
@@ -929,14 +1023,12 @@
 
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch(`${API_BASE}/api/news-board?id=${id}`, {
+          const result = await fetchJson(`/api/news-board?id=${id}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
-
-          const result = await response.json();
 
           if (!result.success) {
             throw new Error(result.error || '삭제에 실패했습니다.');
@@ -960,8 +1052,12 @@
         resultsEl.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 뉴스를 검색하는 중...</div>';
 
         try {
-          const response = await fetch(`${API_BASE}/api/news-search?keyword=${encodeURIComponent(keyword)}&category=${category}&display=10`);
-          const result = await response.json();
+          const query = new URLSearchParams({
+            keyword,
+            category,
+            display: 10
+          });
+          const result = await fetchJson(`/api/news-search?${query.toString()}`);
 
           if (!result.success) {
             throw new Error(result.error || '검색에 실패했습니다.');
@@ -1057,14 +1153,16 @@
       // AI 요약 받기
       async function getAISummary(index) {
         const item = window.searchResults[index];
-        
-        try {
-          const btn = event.target;
-          const originalText = btn.innerHTML;
+        const btn = event?.target;
+        const originalText = btn ? btn.innerHTML : '';
+
+        if (btn) {
           btn.disabled = true;
           btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI 분석 중...';
+        }
 
-          const response = await fetch(`${API_BASE}/api/news-ai-summary`, {
+        try {
+          const result = await fetchJson('/api/news-ai-summary', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -1075,8 +1173,6 @@
               url: item.link
             })
           });
-
-          const result = await response.json();
 
           if (!result.success) {
             throw new Error(result.error || 'AI 요약에 실패했습니다.');
@@ -1090,14 +1186,14 @@
                 `⭐ 중요도: ${result.aiSummary.importance}/5\n` +
                 `📂 카테고리: ${result.aiSummary.category}`);
 
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-
         } catch (error) {
           console.error('AI summary error:', error);
           alert('AI 요약 실패: ' + error.message);
-          event.target.disabled = false;
-          event.target.innerHTML = '<i class="fas fa-magic"></i> AI 요약';
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText || '<i class="fas fa-magic"></i> AI 요약';
+          }
         }
       }
 
@@ -1134,7 +1230,7 @@
 
         try {
           const token = localStorage.getItem('access_token');
-          const response = await fetch(`${API_BASE}/api/ai-news-recommend`, {
+          const result = await fetchJson('/api/ai-news-recommend', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1144,8 +1240,6 @@
               category: currentCategory === 'all' ? null : currentCategory
             })
           });
-
-          const result = await response.json();
 
           if (!result.success || !result.data) {
             throw new Error(result.error || 'AI 추천에 실패했습니다.');

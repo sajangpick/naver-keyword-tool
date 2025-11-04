@@ -11,35 +11,279 @@
       rel="stylesheet"
     />
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
     
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
       :root {
-        --primary: #03C75A;
-        --primary-dark: #02b350;
+        --accent-color: #ff7b54;
+        --bg-color: #fff7f0;
+        --text-primary: #201a17;
+        --text-secondary: #7a6a60;
+        --primary: var(--accent-color);
+        --primary-dark: #e56548;
         --secondary: #f0f8f5;
-        --text: #333;
-        --text-secondary: #666;
+        --text: var(--text-primary);
         --border: #e0e0e0;
-        --bg: #f5f5f5;
+        --bg: var(--bg-color);
         --white: #ffffff;
         --danger: #ef4444;
         --warning: #f59e0b;
         --info: #3b82f6;
       }
 
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: 'Noto Sans KR', sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        line-height: 1.6;
+        font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        background: var(--bg-color);
+        color: var(--text-primary);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .is-hidden {
+        display: none !important;
+      }
+
+      /* 사이드바 스타일 */
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 220px;
+        height: 100vh;
+        background: linear-gradient(180deg, rgba(255, 126, 70, 0.08) 0%, rgba(255, 209, 164, 0.12) 100%);
+        border-right: 1px solid rgba(0, 0, 0, 0.06);
+        z-index: 40;
+        overflow-y: auto;
+      }
+
+      .sidebar-header {
+        padding: 20px 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: inherit;
+        transition: opacity 0.3s ease;
+      }
+
+      .sidebar-logo:hover {
+        opacity: 0.8;
+      }
+
+      .sidebar-logo-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent-color);
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .sidebar-logo-text {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--text-primary);
+      }
+
+      .sidebar-menu {
+        padding: 16px 0;
+      }
+
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+      }
+
+      .sidebar-item:hover {
+        background: rgba(255, 126, 70, 0.1);
+        color: var(--accent-color);
+        border-left-color: var(--accent-color);
+      }
+
+      .sidebar-item.active {
+        background: rgba(255, 126, 70, 0.15);
+        color: var(--accent-color);
+        border-left-color: var(--accent-color);
+        font-weight: 700;
+      }
+
+      .sidebar-item i {
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+      }
+
+      /* 메인 컨텐츠 영역 */
+      .main-content {
+        margin-left: 220px;
+        min-height: 100vh;
+      }
+
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--bg-color);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .header-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 12px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 20px;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .header-auth {
+        display: flex;
+        align-items: center;
+      }
+
+      .auth-buttons {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .auth-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 44px;
+        padding: 0 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: #fff;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+      }
+
+      .auth-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      }
+
+      .auth-btn--primary {
+        background: var(--accent-color);
+        color: #fff;
+        border: none;
+      }
+
+      .auth-btn--primary:hover {
+        box-shadow: 0 8px 18px rgba(255, 126, 70, 0.18);
+        transform: translateY(-1px);
+      }
+
+      .auth-btn--ghost {
+        background: transparent;
+        color: var(--text-secondary);
+      }
+
+      .auth-btn--ghost:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+      }
+
+      .auth-user {
+        display: none;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+        border-radius: 16px;
+        background: rgba(3, 199, 90, 0.12);
+        color: var(--text-primary);
+      }
+
+      .auth-user__avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .auth-user__meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+      }
+
+      .auth-user__label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .auth-user__email {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .auth-user__logout {
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        color: var(--accent-color);
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+
+      .auth-user__logout:hover {
+        background: rgba(255, 126, 70, 0.12);
+        transform: translateY(-2px);
       }
 
       /* 헤더 영역 */
@@ -596,10 +840,89 @@
     </style>
   </head>
   <body>
-    <!-- 헤더 자리 -->
-    <div id="commonHeader"></div>
+    <!-- 사이드바 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-logo">
+          <div class="sidebar-logo-icon" style="margin-right: 3.75px;">
+            <i class="fa-solid fa-thumbtack"></i>
+          </div>
+          <span class="sidebar-logo-text"><span>sajang pick</span>
+        </a>
+      </div>
+      <nav class="sidebar-menu">
+        <a href="/" class="sidebar-item">
+          <i class="fa-solid fa-home"></i>
+          <span>홈페이지</span>
+        </a>
+        <a href="/ChatGPT.html" class="sidebar-item">
+          <i class="fa-solid fa-robot"></i>
+          <span>ChatGPT 채팅</span>
+        </a>
+        <a href="/naver_search.html" class="sidebar-item">
+          <i class="fa-solid fa-search"></i>
+          <span>네이버 키워드 도구</span>
+        </a>
+        <a href="/Blog-Editor.html" class="sidebar-item">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>AI 블로그 에디터</span>
+        </a>
+        <a href="/AI-Review.html" class="sidebar-item">
+          <i class="fa-solid fa-star"></i>
+          <span>AI 리뷰 작성</span>
+        </a>
+        <a href="/news-board.html" class="sidebar-item">
+          <i class="fa-solid fa-newspaper"></i>
+          <span>뉴스 게시판</span>
+        </a>
+        <a href="/recipe-manager.html" class="sidebar-item">
+          <i class="fa-solid fa-utensils"></i>
+          <span>레시피 매니저</span>
+        </a>
+        <a href="/policy-support.html" class="sidebar-item active">
+          <i class="fa-solid fa-bullhorn"></i>
+          <span>지원금 정보</span>
+        </a>
+        <a href="/mypage.html" class="sidebar-item">
+          <i class="fa-solid fa-user"></i>
+          <span>마이페이지</span>
+        </a>
+      </nav>
+    </aside>
 
-    <div class="container">
+    <!-- 메인 컨텐츠 -->
+    <div class="main-content">
+      <header class="header">
+        <div class="header-inner">
+          <div class="header-right">
+            <div class="header-auth">
+              <div class="auth-buttons" id="authButtons">
+                <div class="auth-user" id="authUser" style="display: none;">
+                  <div class="auth-user__avatar" id="userAvatar">U</div>
+                  <div class="auth-user__meta">
+                    <div class="auth-user__label">사용자</div>
+                    <div class="auth-user__email" id="userEmail">마이페이지</div>
+                  </div>
+                  <button class="auth-user__logout" id="logoutBtn">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <span>로그아웃</span>
+                  </button>
+                </div>
+                <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+                  <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px;"></i>
+                  <span>로그인</span>
+                </a>
+                <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+                  <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i>
+                  <span>회원가입</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="container">
       <!-- 페이지 타이틀 -->
       <div class="page-title">
         <h1>💰 정책지원금 정보 <span class="beta-badge">준비중</span></h1>
@@ -1130,5 +1453,6 @@
         }
       });
     </script>
+    </div>
   </body>
 </html>
