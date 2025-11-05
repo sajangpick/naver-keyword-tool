@@ -3973,6 +3973,163 @@ JWT_SECRET=강력한_랜덤_문자열_32자_이상
 
 ---
 
+## 📦 2025-11-04 (신규) - naver_search.html과 AI-Review.html 사이드바 메뉴 통일
+
+**작업 일시**: 2025-11-04  
+**소요 시간**: 10분  
+**작업 난이도**: ⭐ (매우 쉬움)  
+**작업 유형**: UI 일관성 개선
+
+### 📋 작업 배경
+
+**사용자 요청**:
+> "이 두 화면의 왼쪽 탭이 순서랑 이름이 달라. ai-review에 있는 탭으로 통일되게 수정해"
+
+### 🎯 발견된 차이점
+
+**AI-Review.html 메뉴 (기준)**:
+1. 홈 (`/index.html`)
+2. 네이버 키워드 도구 (`/naver_search.html`)
+3. AI 리뷰 관리 (`/AI-Review.html`)
+4. AI 블로그 생성 (`/Blog-Editor.html`)
+5. AI 채팅 (`/ChatGPT.html`)
+6. 뉴스 게시판 (`/news-board.html`)
+7. 정책 지원금 (`/policy-support.html`)
+8. 레시피 관리 (`/recipe-manager.html`)
+
+**naver_search.html 메뉴 (수정 전)**:
+1. 홈 (`/`) ← 경로 다름
+2. 키워드 검색 (`/naver_search.html`) ← 이름 다름
+3. 리뷰 답글 (`/AI-Review.html`) ← 이름 다름
+4. 블로그 작성 (`/Blog-Editor.html`) ← 이름 다름
+5. 뉴스 게시판 (`/news-board.html`)
+6. 정책 지원금 (`/policy-support.html`)
+7. 레시피 관리 (`/recipe-manager.html`)
+   - ❌ AI 채팅 메뉴 없음
+
+### ✅ 수정 내용
+
+**수정된 파일**: `naver_search.html` (1434~1462줄)
+
+**변경 사항**:
+1. 홈 링크: `/` → `/index.html`
+2. 메뉴명 변경:
+   - "키워드 검색" → "네이버 키워드 도구"
+   - "리뷰 답글" → "AI 리뷰 관리"
+   - "블로그 작성" → "AI 블로그 생성"
+3. AI 채팅 메뉴 추가:
+   ```html
+   <a href="/ChatGPT.html" class="sidebar-item">
+     <i class="fas fa-comments"></i>
+     <span>AI 채팅</span>
+   </a>
+   ```
+
+### 📊 통일 결과
+
+**After (두 화면 완전 동일)**:
+1. ✅ 홈 (`/index.html`)
+2. ✅ 네이버 키워드 도구 (`/naver_search.html`)
+3. ✅ AI 리뷰 관리 (`/AI-Review.html`)
+4. ✅ AI 블로그 생성 (`/Blog-Editor.html`)
+5. ✅ AI 채팅 (`/ChatGPT.html`)
+6. ✅ 뉴스 게시판 (`/news-board.html`)
+7. ✅ 정책 지원금 (`/policy-support.html`)
+8. ✅ 레시피 관리 (`/recipe-manager.html`)
+
+### 🧪 테스트 방법
+
+1. 브라우저에서 `naver_search.html` 페이지 접속
+2. 왼쪽 사이드바 메뉴 확인:
+   - 메뉴 개수: 8개
+   - 메뉴 이름: AI-Review.html과 완전 동일
+   - 순서: AI-Review.html과 완전 동일
+3. 각 메뉴 링크 클릭하여 정상 작동 확인
+
+### 🔧 기술적 세부사항
+
+**수정된 HTML 구조**:
+```html
+<div class="sidebar-menu">
+  <a href="/index.html" class="sidebar-item">
+    <i class="fas fa-home"></i>
+    <span>홈</span>
+  </a>
+  <a href="/naver_search.html" class="sidebar-item active">
+    <i class="fas fa-search"></i>
+    <span>네이버 키워드 도구</span>
+  </a>
+  <a href="/AI-Review.html" class="sidebar-item">
+    <i class="fas fa-robot"></i>
+    <span>AI 리뷰 관리</span>
+  </a>
+  <a href="/Blog-Editor.html" class="sidebar-item">
+    <i class="fas fa-edit"></i>
+    <span>AI 블로그 생성</span>
+  </a>
+  <a href="/ChatGPT.html" class="sidebar-item">
+    <i class="fas fa-comments"></i>
+    <span>AI 채팅</span>
+  </a>
+  <a href="/news-board.html" class="sidebar-item">
+    <i class="fas fa-newspaper"></i>
+    <span>뉴스 게시판</span>
+  </a>
+  <a href="/policy-support.html" class="sidebar-item">
+    <i class="fas fa-handshake"></i>
+    <span>정책 지원금</span>
+  </a>
+  <a href="/recipe-manager.html" class="sidebar-item">
+    <i class="fas fa-utensils"></i>
+    <span>레시피 관리</span>
+  </a>
+</div>
+```
+
+### 🎯 달성 효과
+
+**사용자 경험 개선**:
+- ✅ 모든 페이지에서 일관된 네비게이션
+- ✅ 혼란 없는 메뉴 구조
+- ✅ AI 채팅 기능 접근 가능
+
+**유지보수성 향상**:
+- ✅ 표준화된 사이드바 구조
+- ✅ 향후 메뉴 추가 시 일관성 유지 가능
+
+### 🚀 배포
+
+**배포 방법**: Git 푸시 후 Vercel 자동 배포
+```bash
+git add naver_search.html
+git commit -m "fix: naver_search.html 사이드바 메뉴를 AI-Review.html과 통일
+
+- 홈 링크 경로 수정: / → /index.html
+- 메뉴명 통일: 네이버 키워드 도구, AI 리뷰 관리, AI 블로그 생성
+- AI 채팅 메뉴 추가
+- 두 페이지 사이드바 완전 동일화"
+
+git push origin main
+```
+
+**배포 확인**:
+- Vercel 대시보드에서 배포 상태 확인
+- 프로덕션 환경에서 메뉴 정상 작동 확인
+
+### 💡 학습된 점
+
+**UI 일관성의 중요성**:
+- 작은 차이도 사용자에게 혼란 야기
+- 모든 페이지에서 동일한 네비게이션 제공 필수
+- 메뉴 추가/변경 시 전체 페이지 일괄 적용 필요
+
+**유지보수 개선 아이디어**:
+- 공통 헤더/사이드바 컴포넌트화 고려
+- 메뉴 구조를 JSON으로 관리
+- 자동화된 일관성 검사 도구
+
+---
+
 ## 📦 2025-10-29: 플레이스 크롤링 캐싱 시스템 구축 및 UI 개선
 
 ### 🎯 작업 목표
@@ -6532,9 +6689,9 @@ ON public.review_responses FOR ALL USING (true);
 
 ---
 
-## 2025-10-31 — ��� 토큰 기반 구독 시스템 전체 완성 (8단계)
+## 2025-10-31 — ��� 토큰 기반 구독 시스템 전체 완성 (8단계)
 
-### ��� 최종 완성 요약
+### ��� 최종 완성 요약
 
 **완성된 기능:**
 - ✅ 식당 대표 4단계: 씨앗(무료) → 파워(30K) → 빅파워(50K) → 프리미엄(70K)
@@ -6545,7 +6702,7 @@ ON public.review_responses FOR ALL USING (true);
 - ✅ 사용자 대시보드: 실시간 토큰 상태 표시
 - ✅ 사용자 구독 관리: 플랜 선택, 업그레이드 요청
 
-### ���️ 8단계 결과물
+### ���️ 8단계 결과물
 
 **생성된 페이지 (7개):**
 - /admin/pages/subscription-settings.html (가격/토큰 설정)
@@ -6575,7 +6732,7 @@ ON public.review_responses FOR ALL USING (true);
 - token_usage, billing_history, upgrade_requests
 - agency_managed_stores, admin_permissions, manager_roles
 
-### ��� 최종 통계
+### ��� 최종 통계
 
 작업 기간: 2025-10-15 ~ 2025-10-31 (17일)
 생성 페이지: 7개 | API: 16개 | 테이블: 11개 | 문서: 2개 (2,100줄)
@@ -6596,9 +6753,9 @@ ON public.review_responses FOR ALL USING (true);
 
 ---
 
-### ���️ 미니프로젝트 공식 명칭
+### ���️ 미니프로젝트 공식 명칭
 
-**프로젝트명**: **TokenFlow** ���
+**프로젝트명**: **TokenFlow** ���
 
 **의미**: 토큰이 자동으로 흘러가며 관리되는 동적 구독 시스템
 
@@ -6609,42 +6766,56 @@ ON public.review_responses FOR ALL USING (true);
 - 기술적이고 현대적
 
 **주요 특징 (TokenFlow)**:
-- ��� 4단계 회원 계층 (Owner/Agency)
+- ��� 4단계 회원 계층 (Owner/Agency)
 - ⚡ 자동 월별 토큰 갱신
-- ��� 개인별 맞춤 가격/토큰 설정
-- ��� 대행사 다중 식당 관리
-- ��� 실시간 토큰 대시보드
-- ��� 암호화된 계정 정보 관리
+- ��� 개인별 맞춤 가격/토큰 설정
+- ��� 대행사 다중 식당 관리
+- ��� 실시간 토큰 대시보드
+- ��� 암호화된 계정 정보 관리
 
 ---
 
 ---
 
-## 2025-11-02 | �һ���� ���� �˻� ��� ����
+## 2025-11-02 | �һ���� ���� �˻� ��� ����
 
-### �۾� ����
-1. ���̹� �˻� API �����Ͽ� ���� �˻� ��� ����
-2. CORS ���� �ٺ� �ذ� (Vercel ���Ͻ� + ��� ���)
-3. Supabase news_board ���̺� ����
+### �۾� ����
+1. ���̹� �˻� API �����Ͽ� ���� �˻� ��� ����
+2. CORS ���� �ٺ� �ذ� (Vercel ���Ͻ� + ��� ���)
+3. Supabase news_board ���̺� ����
 
-### �ֿ� ���� ����
-- pi/news-search.js - ���̹� ���� �˻� API ��������Ʈ ����
-- dmin/news-management.html - API_BASE�� ��� ��η� ����
-- ercel.json - Render ���Ͻ� URL ����
-- server.js - news-ai-summary ���Ʈ ����
-- supabase-schema-news-board.sql - ���� �Խ��� ���̺� ��Ű��
+### �ֿ� ���� ����
+- pi/news-search.js - ���̹� ���� �˻� API ��������Ʈ ����
+- dmin/news-management.html - API_BASE�� ��� ��η� ����
+- ercel.json - Render ���Ͻ� URL ����
+- server.js - news-ai-summary ���Ʈ ����
+- supabase-schema-news-board.sql - ���� �Խ��� ���̺� ��Ű��
 
-### Render ȯ�溯�� �߰�
+### Render ȯ�溯�� �߰�
 - NAVER_SEARCH_CLIENT_ID
 - NAVER_SEARCH_CLIENT_SECRET
 
-### �ذ��� �ֿ� �̽�
-- CORS ��å ����  Vercel rewrites�� ���� ������ ���Ͻ�
-- API Ű ����  Render ȯ�溯�� ����
-- ���̺� ������  Supabase SQL Editor�� ����
+### �ذ��� �ֿ� �̽�
+- CORS ��å ����  Vercel rewrites�� ���� ������ ���Ͻ�
+- API Ű ����  Render ȯ�溯�� ����
+- ���̺� ������  Supabase SQL Editor�� ����
 
-### ���� ����
-- ? Vercel �ڵ� ���� �Ϸ�
-- ? Render ���� ���� �Ϸ� (8:39 PM)
-- ? ���δ��� ���� ���� �۵�
+### ���� ����
+- ? Vercel �ڵ� ���� �Ϸ�
+- ? Render ���� ���� �Ϸ� (8:39 PM)
+- ? ���δ��� ���� ���� �۵�
+
+---
+
+## 2025-11-04 로그인/회원가입 버튼 디자인 통일 작업
+
+### 작업 내용
+- ChatGPT.html을 기준으로 모든 페이지의 로그인/회원가입 버튼 위치와 디자인 통일
+- naver_search.html: 로그인/회원가입 버튼에 아이콘 추가 (fa-sign-in-alt, fa-user-plus)
+- Blog-Editor.html: 로그인 버튼 아이콘을 fa-arrow-right-to-bracket에서 fa-sign-in-alt로 변경
+- 총 7개 주요 페이지 중 2개 수정, 5개는 이미 통일되어 있었음
+
+### 결과
+- ✅ 모든 페이지 로그인/회원가입 버튼 디자인 통일 완료
+- ✅ 아이콘 일관성 확보: 로그인(fa-sign-in-alt), 회원가입(fa-user-plus)
 
