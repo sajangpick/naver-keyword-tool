@@ -555,6 +555,29 @@ app.get("/health", (req, res) => {
   });
 });
 
+// API 경로로도 헬스체크 제공 (Vercel/Render 프록시용)
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "OK",
+    message: "통합 API 서버가 정상 작동 중입니다.",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    version: "2.2.0",
+    featureFlags: {
+      apiReadNext: FEATURE_API_READ_NEXT,
+      apiChatNext: FEATURE_API_CHAT_NEXT,
+      authNext: FEATURE_AUTH_NEXT,
+    },
+    services: {
+      naverKeywordTool: NAVER_API.customerId ? "ACTIVE" : "INACTIVE",
+      keywordTrend: "ACTIVE",
+      blogGenerator: OPENAI_API_KEY ? "ACTIVE" : "INACTIVE",
+      reviewAnalyzer: OPENAI_API_KEY ? "ACTIVE" : "INACTIVE",
+      placeSearch: NAVER_SEARCH.clientId ? "ACTIVE" : "INACTIVE",
+    },
+  });
+});
+
 // 루트 경로: 홈페이지 제공
 app.get("/", (req, res) => sendHtml(res, "index.html"));
 
