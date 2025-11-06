@@ -7,28 +7,75 @@
     return;
   }
 
-  // ✅ 보안: 서버 API에서 환경변수를 안전하게 가져옵니다
-  let SUPABASE_URL = window.SUPABASE_URL;
-  let SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+  async function resolveSupabaseConfig() {
+    let url = window.SUPABASE_URL;
+    let anonKey = window.SUPABASE_ANON_KEY;
 
-  // window에 설정되지 않았으면 서버에서 가져오기
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    try {
-      const response = await fetch('/api/config');
-      const config = await response.json();
-      SUPABASE_URL = config.supabaseUrl;
-      SUPABASE_ANON_KEY = config.supabaseAnonKey;
-    } catch (error) {
-      console.error("[auth] 환경변수를 가져오는데 실패했습니다:", error);
-      return;
+    if (url && anonKey) {
+      return { url, anonKey };
     }
+
+    const endpoints = ["/api/config"];
+
+    // Render 백엔드 직접 호출 (Vercel 프록시 실패 시 대비)
+    const renderOrigin = window.SUPABASE_CONFIG_FALLBACK_ORIGIN ||
+      "https://sajangpick-kwon-teamjang.onrender.com";
+    if (renderOrigin && renderOrigin !== window.location.origin) {
+      endpoints.push(`${renderOrigin}/api/config`);
+    }
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint, { credentials: "omit" });
+        if (!response.ok) {
+          console.warn("[auth] Supabase config 요청 실패:", endpoint, response.status);
+          continue;
+        }
+
+        let config;
+        try {
+          config = await response.clone().json();
+        } catch (parseError) {
+          const text = await response.text().catch(() => "");
+          throw new Error(`JSON 파싱 실패: ${text?.slice(0, 120) || ""}`);
+        }
+
+        if (config?.supabaseUrl && config?.supabaseAnonKey) {
+          return {
+            url: config.supabaseUrl,
+            anonKey: config.supabaseAnonKey,
+            source: endpoint,
+          };
+        }
+      } catch (error) {
+        console.error("[auth] Supabase config 가져오기 오류:", endpoint, error);
+      }
+    }
+
+    throw new Error("Supabase 환경변수를 가져오지 못했습니다");
   }
 
-  // 환경변수가 여전히 없으면 에러
+  let SUPABASE_URL = null;
+  let SUPABASE_ANON_KEY = null;
+  try {
+    const config = await resolveSupabaseConfig();
+    SUPABASE_URL = config.url;
+    SUPABASE_ANON_KEY = config.anonKey;
+    if (config.source) {
+      console.info("[auth] Supabase config loaded from", config.source);
+    }
+  } catch (error) {
+    console.error("[auth] 환경변수를 가져오는데 실패했습니다:", error);
+    return;
+  }
+
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error("[auth] Supabase 환경변수가 설정되지 않았습니다.");
     return;
   }
+
+  window.SUPABASE_URL = SUPABASE_URL;
+  window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
