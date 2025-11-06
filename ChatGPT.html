@@ -2,7 +2,7 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -14,13 +14,16 @@
       integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g"
       crossorigin="anonymous"
     />
-    <link href="https://cdn.jsdelivr.net/gh/webfontworld/score/SCoreDream.css" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
     <script src="/assets/common-header.js?v=20251022" defer></script>
     <style>
       :root {
-        --primary-green: #03C75A;
-        --primary-white: #FFFFFF;
+        --accent-color: #ff7b54;
+        --bg-color: #fff7f0;
+        --text-primary: #201a17;
+        --text-secondary: #7a6a60;
       }
+
       * {
         margin: 0;
         padding: 0;
@@ -28,400 +31,781 @@
       }
 
       body {
-        font-family: 'SCoreDream', -apple-system, BlinkMacSystemFont, "Segoe UI",
-          "Noto Sans KR", Arial, sans-serif;
-        background: #FFFFFF;
-        min-height: 100vh;
-        color: #03C75A;
+        font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        background: var(--bg-color);
+        color: var(--text-primary);
       }
 
-      .header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 50;
-        background: var(--primary-white);
-        box-shadow: 0 2px 10px rgba(3, 199, 90, 0.1);
-        transition: transform 0.3s ease;
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .is-hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 992px) {
+        .header {
+          display: none;
+        }
+      }
+
+      .header.header-hidden {
+        transform: translateY(-100%);
       }
 
       .header-inner {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        max-width: 100%;
+        margin: 0;
+        padding: 12px 20px;
+        display: flex;
         align-items: center;
-        padding: 20px 40px;
-        max-width: 1400px;
-        margin: 0 auto;
+        justify-content: space-between;
         gap: 20px;
+        position: relative;
       }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 20px;
+        color: var(--text-primary);
+        cursor: pointer;
+        flex: 0 0 auto;
+      }
+
+      .logo-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+
+      .logo-text {
+        letter-spacing: -0.03em;
+        text-transform: lowercase;
+      }
+
+      .header-slogan {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin: 0;
+        white-space: nowrap;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+      }
+
+      .header-auth {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+      }
+
       @media (max-width: 768px) {
         .header-inner {
-          display: flex;
-          flex-direction: row;
+          padding: 12px 16px;
+          flex-wrap: wrap;
+        }
+        
+        .header-slogan {
+          font-size: 12px;
+          position: static;
+          transform: none;
+          order: 3;
+          width: 100%;
+          text-align: center;
+          margin-top: 8px;
+        }
+        
+        .logo-container {
+          order: 1;
+          gap: 8px;
+        }
+        
+        .header-auth {
+          order: 2;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header-inner {
+          padding: 10px 12px;
+          gap: 12px;
+        }
+        
+        .header-slogan {
+          display: none;
+        }
+
+        .logo-container {
+          gap: 6px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .header-inner {
+          padding: 8px 6px 8px 8px;
+          gap: 0;
+          min-height: auto;
+          flex-wrap: nowrap;
           justify-content: space-between;
           align-items: center;
-          padding: 8px 12px;
-          gap: 8px;
+        }
+
+        .logo-container {
+          gap: 4px;
+          flex: 0 1 auto;
+          min-width: 0;
+          margin-right: auto;
+        }
+
+        .logo-icon {
+          width: 19px;
+          height: 19px;
+          font-size: 10px;
+          flex-shrink: 0;
+        }
+
+        .logo-text {
+          font-size: 11px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
+        }
+
+        .header-slogan {
+          display: none;
+        }
+
+        .header-auth {
+          flex-shrink: 0;
+          margin-left: auto;
+          margin-right: 0;
+        }
+
+        .auth-buttons {
+          gap: 2px;
+          flex-wrap: nowrap;
+          justify-content: flex-end;
+        }
+
+        .auth-btn {
+          height: 28px;
+          padding: 0 6px;
+          font-size: 9px;
+          min-width: auto;
+          flex-shrink: 0;
+        }
+
+        .auth-btn i {
+          font-size: 9px;
+          margin-right: 2px;
+        }
+
+        .auth-btn span {
+          font-size: 9px;
+          white-space: nowrap;
+        }
+
+        .auth-btn--ghost {
+          display: none;
         }
       }
 
       .logo-container {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 12px;
+        color: var(--text-primary);
         cursor: pointer;
-        text-decoration: none;
       }
+
       .logo-icon {
-        font-size: 48px;
-        color: #000;
+        width: 28px;
+        height: 28px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 14px;
       }
+
       .logo-text {
-        font-weight: 800;
-        font-size: 20px;
-        color: #000;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.03em;
+        text-transform: lowercase;
+        font-size: 12px;
       }
-      .header-slogan {
-        text-align: center;
-        font-size: 24px;
-        font-weight: 700;
-        color: #000;
-        white-space: nowrap;
-      }
+
       @media (max-width: 768px) {
-        .logo-container {
-          gap: 6px;
-        }
         .logo-icon {
-          font-size: 24px;
+          width: 26px;
+          height: 26px;
+          font-size: 13px;
         }
+
         .logo-text {
+          font-size: 12px;
+        }
+      }
+
+      /* 사이드바 스타일 - 새로운 디자인 */
+      .side-nav {
+        background: #ffe8d9;
+        border-radius: 18px;
+        padding: 18px 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        align-items: center;
+        position: fixed;
+        left: 20px;
+        top: 120px;
+        width: 66px;
+        height: auto;
+        max-height: calc(100vh - 160px);
+        overflow-y: auto;
+        z-index: 40;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+      }
+
+      .side-nav .menu-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 9px 6px;
+        color: #5a5a5a;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 9px;
+        border-radius: 11px;
+        transition: all 0.3s ease;
+        width: 43px;
+        position: relative;
+        background: transparent;
+      }
+      
+      .side-nav .menu-item:hover {
+        background: #ffffff;
+        color: #ff7e46;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 126, 70, 0.3);
+      }
+      
+      .side-nav .menu-item:hover .ico {
+        color: #ff7e46;
+        background: rgba(255, 126, 70, 0.1);
+      }
+
+      .side-nav .menu-item.active {
+        background: #ffffff;
+        color: #ff7e46;
+      }
+
+      .side-nav .menu-item.active .ico {
+        color: #ff7e46;
+        background: rgba(255, 126, 70, 0.1);
+      }
+
+      .side-nav .ico {
+        width: 29px;
+        height: 29px;
+        border-radius: 7px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        color: #5a5a5a;
+        font-size: 13px;
+        transition: all 0.3s ease;
+      }
+
+      /* 기존 사이드바 숨김 */
+      .sidebar {
+        display: none;
+      }
+
+      .sidebar-header {
+        padding: 20px 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        text-decoration: none;
+        color: inherit;
+        transition: opacity 0.3s ease;
+      }
+
+      .sidebar-logo:hover {
+        opacity: 0.8;
+      }
+
+      .sidebar-logo-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent-color);
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .sidebar-logo-text {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--text-primary);
+      }
+
+      .sidebar-menu {
+        padding: 16px 0;
+      }
+
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+      }
+
+      .sidebar-item:hover {
+        background: rgba(255, 126, 70, 0.1);
+        color: var(--accent-color);
+        border-left-color: var(--accent-color);
+      }
+
+      .sidebar-item.active {
+        background: rgba(255, 126, 70, 0.15);
+        color: var(--accent-color);
+        border-left-color: var(--accent-color);
+        font-weight: 700;
+      }
+
+      .sidebar-item i {
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+      }
+
+      /* 메인 컨텐츠 영역 */
+      .main-content {
+        margin-left: 0;
+        padding-left: 100px;
+        min-height: 100vh;
+      }
+
+      @media (max-width: 992px) {
+        .side-nav {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          top: auto;
+          flex-direction: row;
+          width: auto;
+          max-width: calc(100vw - 40px);
+          padding: 12px 16px;
+          overflow-x: hidden;
+          overflow-y: hidden;
+          gap: 8px;
+          border-radius: 24px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+          justify-content: space-between;
+        }
+
+        .side-nav .menu-item {
+          flex-direction: column;
+          min-width: 0;
+          padding: 8px 6px;
+          font-size: 8px;
+          flex: 1 1 auto;
+        }
+
+        .side-nav .menu-item .ico {
+          width: 32px;
+          height: 32px;
           font-size: 14px;
         }
-        .header-slogan {
-          display: none;
+
+        .main-content {
+          padding-left: 0;
+          padding-bottom: 0;
         }
+      }
+
+      @media (max-width: 360px) {
+        .side-nav {
+          bottom: 12px;
+          max-width: calc(100vw - 16px);
+          padding: 8px 4px;
+          gap: 2px;
+          border-radius: 18px;
+          overflow-x: hidden;
+          justify-content: space-between;
+        }
+
+        .side-nav .menu-item {
+          min-width: 0;
+          padding: 4px 1px;
+          font-size: 6px;
+          flex: 1 1 calc((100% - 12px) / 7);
+          max-width: calc((100% - 12px) / 7);
+          gap: 2px;
+        }
+
+        .side-nav .menu-item .ico {
+          width: 22px;
+          height: 22px;
+          font-size: 10px;
+        }
+
+        .side-nav .menu-item span:not(.ico) {
+          font-size: 6px;
+          word-break: keep-all;
+          line-height: 1.2;
+          text-align: center;
+        }
+
+        .side-nav .menu-item:hover .ico {
+          background: #ffffff;
+        }
+
+        .main-content {
+          padding-bottom: 0;
+        }
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
       }
 
       .header-auth {
         display: flex;
-        justify-content: flex-end;
         align-items: center;
-        gap: 12px;
-      }
-      .home-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 50px;
-        padding: 0 32px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 16px;
-        gap: 8px;
-        border: none;
-        background: var(--primary-green);
-        color: var(--primary-white);
-        text-decoration: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-      .home-btn:hover {
-        background: #02a84a;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(3, 199, 90, 0.3);
       }
 
       .auth-buttons {
         display: flex;
         align-items: center;
-        gap: 0;
+        gap: 16px;
       }
+
+      .auth-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 44px;
+        padding: 0 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: #fff;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+      }
+
+      .auth-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      }
+
+      .auth-btn--primary {
+        background: transparent;
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
+      }
+
+      .auth-btn--primary:hover {
+        background: var(--accent-color);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(255, 126, 70, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .auth-btn--ghost {
+        background: transparent;
+        color: var(--text-secondary);
+      }
+
+      .auth-btn--ghost:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+      }
+
       .auth-user {
         display: none;
         align-items: center;
-        gap: 12px;
-        padding: 12px 24px;
-        border-radius: 8px;
-        background: var(--primary-green);
-        color: var(--primary-white);
+        gap: 14px;
+        padding: 10px 16px;
+        border-radius: 16px;
+        background: rgba(3, 199, 90, 0.12);
+        color: var(--text-primary);
       }
+
       .auth-user__avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--primary-white);
-        color: var(--primary-green);
-        font-weight: 800;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
-        letter-spacing: -0.02em;
-        text-transform: uppercase;
+        font-size: 16px;
       }
+
       .auth-user__meta {
         display: flex;
         flex-direction: column;
         line-height: 1.3;
       }
+
       .auth-user__label {
         font-size: 11px;
         font-weight: 600;
-        color: var(--primary-white);
+        color: var(--text-secondary);
         letter-spacing: 0.05em;
         text-transform: uppercase;
       }
+
       .auth-user__email {
         font-size: 14px;
         font-weight: 600;
-        color: var(--primary-white);
+        color: var(--text-primary);
       }
+
       .auth-user__logout {
         height: 36px;
         padding: 0 16px;
-        border-radius: 6px;
-        border: 1px solid rgba(255,255,255,0.3);
-        background: transparent;
-        color: var(--primary-white);
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        color: var(--accent-color);
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
-        justify-content: center;
         gap: 6px;
+        transition: background 0.2s ease, transform 0.2s ease;
       }
+
       .auth-user__logout:hover {
-        background: rgba(255,255,255,0.1);
-      }
-      .auth-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 50px;
-        padding: 0 32px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 16px;
-        gap: 8px;
-        border: none;
-        text-decoration: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-      .auth-btn--primary {
-        background: var(--primary-green);
-        color: var(--primary-white);
-      }
-      .auth-btn--primary:hover {
-        background: #02a84a;
+        background: rgba(255, 126, 70, 0.12);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(3, 199, 90, 0.3);
-      }
-      .auth-btn--ghost {
-        display: none;
       }
       @media (max-width: 768px) {
-        .auth-user {
-          padding: 4px 8px;
-          gap: 6px;
-        }
-        .auth-user__avatar {
-          width: 24px;
-          height: 24px;
-          font-size: 10px;
-        }
-        .auth-user__label {
-          font-size: 8px;
-          white-space: nowrap;
-        }
-        .auth-user__email {
-          font-size: 9px;
-          white-space: nowrap;
-        }
-        .auth-user__logout {
-          height: 24px;
-          padding: 0 8px;
-          font-size: 9px;
-        }
         .auth-btn {
-          height: 28px;
-          padding: 0 12px;
-          font-size: 11px;
+          height: 38px;
+          padding: 0 16px;
+          font-size: 13px;
         }
-        .home-btn {
-          height: 28px;
-          padding: 0 12px;
-          font-size: 11px;
+
+        .auth-user {
+          padding: 8px 12px;
+          gap: 10px;
         }
-      }
 
-      /* Hide old nav elements */
-      .nav-container, .nav-menu, .top-nav, .user-actions {
-        display: none !important;
-      }
+        .auth-user__avatar {
+          width: 32px;
+          height: 32px;
+          font-size: 14px;
+        }
 
-      .old-nav-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 20px;
-        gap: 20px;
-      }
+        .auth-user__email {
+          font-size: 13px;
+        }
 
-      .top-nav {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        position: relative;
-      }
+        .auth-user__logout {
+          height: 32px;
+          padding: 0 12px;
+          font-size: 12px;
+        }
+        
+        .sidebar {
+          width: 100%;
+          height: 100vh;
+          position: fixed;
+          top: 0;
+          left: -100%;
+          transition: left 0.3s ease;
+          z-index: 60;
+          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
 
-      .logo {
-        font-size: 32px;
-        font-weight: 800;
-        color: #111827;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        letter-spacing: -1px;
-      }
+        .sidebar.open {
+          left: 0;
+        }
 
-      .logo:hover {
-        transform: scale(1.05);
-        color: var(--naver-green);
-      }
-
-      .nav-menu {
-        display: flex;
-        list-style: none;
-        gap: 20px;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .nav-menu a {
-        text-decoration: none;
-        color: #333;
-        font-weight: 600;
-        font-size: 15px;
-        transition: all 0.3s ease;
-        padding: 12px 18px;
-        display: block;
-        border-radius: 8px;
-        position: relative;
-      }
-
-      .nav-menu a:hover {
-        color: var(--naver-green);
-        background: var(--naver-green-50);
-        transform: translateY(-1px);
-      }
-
-      .nav-menu a.active {
-        color: white;
-        background: var(--naver-green);
-        font-weight: 700;
-        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
-      }
-
-      .user-actions {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        position: absolute;
-        right: 0;
-      }
-
-      .login-btn,
-      .signup-btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
-      }
-
-      .login-btn {
-        background: var(--naver-green);
-        color: white;
-        box-shadow: 0 3px 10px rgba(3, 199, 90, 0.25);
-      }
-
-      .signup-btn {
-        background: transparent;
-        color: var(--naver-green);
-        border: 2px solid var(--naver-green);
-      }
-
-      .login-btn:hover,
-      .signup-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        .main-content {
+          margin-left: 0;
+        }
       }
 
       .container {
-        max-width: 1000px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 30px 20px;
+        padding: 32px;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 16px 12px 0 12px;
+          padding-top: 8px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .container {
+          padding: 16px 12px 0 12px;
+          padding-top: 8px;
+        }
+      }
+
+      /* 페이지 헤더 섹션 - 통일된 스타일 */
+      .header-section {
+        background: #ffe8d9;
+        border-radius: 20px 20px 0 0;
+        padding: 8px 20px 8px 20px;
+        margin-bottom: 0;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .page-header {
+        margin-bottom: 0;
         text-align: center;
-        margin-bottom: 40px;
-        color: #2c3e50;
+        width: 100%;
       }
 
       .page-header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-        font-weight: 700;
-        letter-spacing: -1px;
+        font-size: 12pt;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+        line-height: 1.2;
       }
 
       .page-header p {
-        font-size: 1.1rem;
-        color: #7f8c8d;
-        font-weight: 400;
+        font-size: 8pt;
+        color: var(--text-secondary);
+        line-height: 1.3;
+        margin: 0;
+      }
+
+      @media (max-width: 768px) {
+        .header-section {
+          padding: 8px 12px 8px 12px;
+          border-radius: 16px 16px 0 0;
+          min-height: 56px;
+        }
+
+        .page-header {
+          margin-bottom: 0;
+        }
+
+        .page-header h1 {
+          font-size: 12pt;
+          margin-bottom: 2px;
+          line-height: 1.2;
+        }
+
+        .page-header p {
+          font-size: 8pt;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.3;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .header-section {
+          padding: 8px 8px 8px 8px;
+          border-radius: 12px 12px 0 0;
+          min-height: 56px;
+        }
+
+        .page-header {
+          margin-bottom: 0;
+        }
+
+        .page-header h1 {
+          font-size: 12pt;
+          margin-bottom: 2px;
+          line-height: 1.2;
+        }
+
+        .page-header p {
+          font-size: 8pt;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.3;
+        }
       }
 
       .chat-container {
         background: white;
-        border-radius: 20px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         overflow: hidden;
         height: 70vh;
         min-height: 600px;
         display: flex;
         flex-direction: column;
-        border: 1px solid #f0f0f0;
+        margin-top: 0;
+        border: none;
       }
 
-      .chat-header {
-        background: linear-gradient(
-          135deg,
-          var(--naver-green),
-          var(--naver-green-dark)
-        );
-        color: white;
-        padding: 25px;
-        text-align: center;
-        font-size: 1.3em;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
+      @media (max-width: 768px) {
+        .chat-container {
+          height: calc(100vh - 165px);
+          min-height: calc(100vh - 165px);
+          border-radius: 16px;
+          margin-bottom: 0;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .chat-container {
+          height: calc(100vh - 135px);
+          min-height: calc(100vh - 135px);
+          border-radius: 12px;
+          margin-bottom: 0;
+        }
       }
 
       .chat-messages {
@@ -434,6 +818,34 @@
         background: #fafafa;
       }
 
+      @media (max-width: 768px) {
+        .chat-messages {
+          padding: 16px;
+          gap: 16px;
+          justify-content: center;
+        }
+
+        .welcome-message {
+          padding: 24px 16px;
+          margin-top: auto;
+          margin-bottom: auto;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .chat-messages {
+          padding: 12px;
+          gap: 12px;
+          justify-content: center;
+        }
+
+        .welcome-message {
+          padding: 20px 12px;
+          margin-top: auto;
+          margin-bottom: auto;
+        }
+      }
+
       .message {
         max-width: 80%;
         padding: 16px 20px;
@@ -443,6 +855,23 @@
         font-size: 15px;
         line-height: 1.6;
         position: relative;
+      }
+
+      @media (max-width: 768px) {
+        .message {
+          max-width: 85%;
+          padding: 12px 16px;
+          font-size: 14px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .message {
+          max-width: 90%;
+          padding: 10px 12px;
+          font-size: 12px;
+          border-radius: 16px;
+        }
       }
 
       @keyframes fadeIn {
@@ -459,14 +888,14 @@
       .user-message {
         background: linear-gradient(
           135deg,
-          var(--naver-green),
-          var(--naver-green-dark)
+          var(--accent-color),
+          #e56548
         );
         color: white;
         align-self: flex-end;
         margin-left: auto;
         border-bottom-right-radius: 8px;
-        box-shadow: 0 3px 15px rgba(3, 199, 90, 0.25);
+        box-shadow: 0 3px 15px rgba(255, 123, 84, 0.25);
       }
 
       .bot-message {
@@ -509,8 +938,23 @@
         width: 350px;
       }
 
+      @media (max-width: 768px) {
+        .message-input {
+          width: 100%;
+          min-height: 80px;
+          max-height: 200px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .message-input {
+          min-height: 70px;
+          max-height: 180px;
+        }
+      }
+
       .message-input:focus {
-        border-color: var(--naver-green);
+        border-color: var(--accent-color);
         background: white;
       }
 
@@ -518,8 +962,8 @@
         padding: 15px 25px;
         background: linear-gradient(
           135deg,
-          var(--naver-green),
-          var(--naver-green-dark)
+          var(--accent-color),
+          #e56548
         );
         color: white;
         border: none;
@@ -536,7 +980,7 @@
 
       .send-button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(3, 199, 90, 0.35);
+        box-shadow: 0 6px 20px rgba(255, 123, 84, 0.35);
       }
 
       .send-button:disabled {
@@ -626,6 +1070,79 @@
         font-style: italic;
       }
 
+      .welcome-message h3 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+      }
+
+      .welcome-message p {
+        font-size: 16px;
+        margin-bottom: 0;
+        color: var(--text-secondary);
+      }
+
+      @media (max-width: 768px) {
+        .welcome-message {
+          padding: 24px 16px;
+        }
+
+        .welcome-message > div[style*="font-size: 3rem"] {
+          font-size: 2rem !important;
+          margin-bottom: 12px !important;
+        }
+
+        .welcome-message h3 {
+          font-size: 18px;
+          margin-bottom: 8px;
+        }
+
+        .welcome-message p {
+          font-size: 14px;
+        }
+
+        .suggestions {
+          margin-top: 16px;
+          gap: 8px;
+        }
+
+        .suggestion-btn {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .welcome-message {
+          padding: 20px 12px;
+        }
+
+        .welcome-message > div[style*="font-size: 3rem"] {
+          font-size: 1.5rem !important;
+          margin-bottom: 10px !important;
+        }
+
+        .welcome-message h3 {
+          font-size: 16px;
+          margin-bottom: 6px;
+        }
+
+        .welcome-message p {
+          font-size: 12px;
+        }
+
+        .suggestions {
+          margin-top: 12px;
+          gap: 6px;
+        }
+
+        .suggestion-btn {
+          padding: 5px 10px;
+          font-size: 11px;
+        }
+      }
+
       .suggestions {
         display: flex;
         flex-wrap: wrap;
@@ -646,129 +1163,76 @@
       }
 
       .suggestion-btn:hover {
-        border-color: #667eea;
-        color: #667eea;
+        border-color: var(--accent-color);
+        color: var(--accent-color);
         transform: translateY(-1px);
       }
 
-      .footer {
-        background: #2c3e50;
-        color: white;
-        text-align: center;
-        padding: 40px 20px;
-        margin-top: 50px;
-      }
-
-      .footer-content {
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-
-      .footer-links {
-        display: flex;
-        justify-content: center;
-        gap: 30px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-      }
-
-      .footer-links a {
-        color: #bdc3c7;
-        text-decoration: none;
-        transition: color 0.3s;
-      }
-
-      .footer-links a:hover {
-        color: #3498db;
-      }
 
       @media (max-width: 768px) {
-        /* 헤더 겹침 방지 및 내비게이션 스크롤 */
-        .top-nav {
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-        }
-        .user-actions {
-          position: static;
-          right: auto;
-          width: 100%;
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .logo {
-          font-size: 26px;
-        }
-        .login-btn,
-        .signup-btn {
-          padding: 8px 14px;
-          font-size: 13px;
-          border-radius: 16px;
-        }
-        .nav-container {
-          padding: 14px;
+        .input-container {
+          padding: 16px;
           gap: 12px;
+          align-items: center;
         }
-        .nav-menu {
-          justify-content: flex-start;
-          overflow-x: auto;
-          white-space: nowrap;
-          padding: 5px 0;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
+
+        .message-input {
+          padding: 12px 16px;
+          font-size: 14px;
+          width: 100%;
+          flex: 1;
         }
-        .nav-menu::-webkit-scrollbar {
+
+        .send-button {
+          padding: 10px 12px;
+          font-size: 13px;
+          flex-shrink: 0;
+          min-width: auto;
+          width: auto;
+        }
+
+        .send-button .send-text {
           display: none;
         }
-        .nav-menu li {
-          flex-shrink: 0;
+
+        .send-button i {
+          display: inline-block;
+          margin: 0;
         }
-        .nav-menu a {
-          font-size: 12px;
-          padding: 8px 12px;
-          white-space: nowrap;
-        }
-        body {
-          padding-top: 60px;
-        }
-        .page-header h1 {
-          font-size: 1.5rem;
-        }
-        .page-header p {
-          font-size: 0.9rem;
-        }
-        .page-header {
-          margin-bottom: 20px;
-          margin-top: 10px;
-        }
-        .container {
-          padding: 20px 15px;
-        }
-        textarea, input[type="text"] {
-          font-size: 0.85rem !important;
-        }
-        .chat-input {
-          font-size: 0.85rem;
-        }
-        button {
-          font-size: 12px;
-        }
-        .chat-container {
-          height: 60vh;
-          min-height: 500px;
-        }
-        .message {
-          max-width: 85%;
-        }
+      }
+
+      @media (max-width: 360px) {
         .input-container {
-          flex-direction: column;
-          gap: 10px;
+          padding: 12px;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: nowrap;
         }
+
+        .message-input {
+          padding: 10px 12px;
+          font-size: 12px;
+          border-radius: 20px;
+          width: 100%;
+          flex: 1;
+        }
+
         .send-button {
-          align-self: stretch;
-          justify-content: center;
+          padding: 8px 10px;
+          font-size: 12px;
+          border-radius: 20px;
+          flex-shrink: 0;
+          min-width: auto;
+          width: auto;
+        }
+
+        .send-button .send-text {
+          display: none;
+        }
+
+        .send-button i {
+          display: inline-block;
+          margin: 0;
         }
       }
     </style>
@@ -786,10 +1250,6 @@
         <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
         
         <div class="header-auth">
-          <a href="/" class="home-btn">
-            <i class="fa-solid fa-home"></i>
-            <span>홈</span>
-          </a>
           <div class="auth-buttons" id="authButtons">
             <div class="auth-user" id="authUser" style="display: none;">
               <div class="auth-user__avatar" id="userAvatar">U</div>
@@ -798,16 +1258,15 @@
                 <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
               </div>
               <button class="auth-user__logout" id="logoutBtn" type="button">
-                <i class="fa-solid fa-right-from-bracket"></i>
                 로그아웃
               </button>
             </div>
             <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
-              <i class="fa-solid fa-arrow-right-to-bracket"></i>
+              <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px;"></i>
               <span>로그인</span>
             </a>
             <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
-              <i class="fa-solid fa-user-plus"></i>
+              <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i>
               <span>회원가입</span>
             </a>
           </div>
@@ -815,18 +1274,50 @@
       </div>
     </header>
 
-    <div class="container" style="margin-top: 80px;">
-      <div class="page-header">
-        <h1>ChatGPT 채팅</h1>
-        <p>AI와 실시간으로 대화하며 궁금한 것들을 물어보세요</p>
-      </div>
+    <aside class="side-nav" aria-label="사이드 네비게이션">
+      <a class="menu-item" href="/">
+        <span class="ico"><i class="fa-solid fa-house"></i></span>
+        <span>홈</span>
+      </a>
+      <a class="menu-item" href="/naver_search.html">
+        <span class="ico"><i class="fa-solid fa-key"></i></span>
+        <span>키워드</span>
+      </a>
+      <a class="menu-item" href="/AI-Review.html">
+        <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
+        <span>리뷰</span>
+      </a>
+      <a class="menu-item" href="/Blog-Editor.html">
+        <span class="ico"><i class="fa-solid fa-blog"></i></span>
+        <span>블로그</span>
+      </a>
+      <a class="menu-item" href="/recipe-manager.html">
+        <span class="ico"><i class="fa-solid fa-utensils"></i></span>
+        <span>레시피</span>
+      </a>
+      <a class="menu-item" href="/news-board.html">
+        <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
+        <span>정보</span>
+      </a>
+      <a class="menu-item" href="/policy-support.html">
+        <span class="ico"><i class="fa-solid fa-coins"></i></span>
+        <span>정책</span>
+      </a>
+    </aside>
 
-      <div class="chat-container">
-        <div class="chat-header">
-          <i class="fas fa-robot"></i>
-          ChatGPT AI 어시스턴트
+    <!-- 메인 컨텐츠 -->
+    <div class="main-content">
+
+      <div class="container">
+        <!-- 헤더 섹션 -->
+        <div class="header-section">
+          <div class="page-header">
+            <h1>ChatGPT 채팅</h1>
+            <p>AI와 실시간으로 대화하며 궁금한 것들을 물어보세요</p>
+          </div>
         </div>
 
+        <div class="chat-container">
         <div class="chat-messages" id="chatMessages">
           <div class="welcome-message">
             <div style="font-size: 3rem; margin-bottom: 20px">🤖</div>
@@ -854,10 +1345,9 @@
               </button>
               <button
                 class="suggestion-btn"
-                onclick="sendSuggestion('프로그래밍 질문이 있어요')"
+                onclick="sendSuggestion('신제품 마케팅 방법이 궁금해요')"
               >
-                프로그래밍 도움
-              </button>
+마케팅방법              </button>
               <button
                 class="suggestion-btn"
                 onclick="sendSuggestion('창의적인 아이디어가 필요해요')"
@@ -872,12 +1362,12 @@
           <textarea
             id="messageInput"
             class="message-input"
-            placeholder="메시지를 입력하세요... (Shift+Enter로 줄바꿈, Enter로 전송)"
+            placeholder="메시지를 입력하세요. (Shift+Enter로 줄바꿈, Enter로 전송)"
             rows="1"
           ></textarea>
           <button onclick="sendMessage()" id="sendButton" class="send-button">
             <i class="fas fa-paper-plane"></i>
-            전송
+            <span class="send-text">전송</span>
           </button>
         </div>
 
@@ -890,19 +1380,6 @@
         </div>
       </div>
     </div>
-
-    <footer class="footer">
-      <div class="footer-content">
-        <div class="footer-links">
-          <a href="#">서비스 소개</a>
-          <a href="#">이용약관</a>
-          <a href="#">개인정보처리방침</a>
-          <a href="#">고객지원</a>
-          <a href="#">API 문서</a>
-        </div>
-        <p>&copy; 2024 사장픽. All rights reserved.</p>
-      </div>
-    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
     <script src="/assets/auth-state.js?v=202410"></script>
@@ -939,7 +1416,7 @@
         // 전송 버튼 비활성화
         sendButton.disabled = true;
         sendButton.innerHTML =
-          '<i class="fas fa-spinner fa-spin"></i> 전송 중...';
+          '<i class="fas fa-spinner fa-spin"></i><span class="send-text">전송 중...</span>';
 
         // 로딩 표시
         const loadingId = showLoading();
@@ -974,7 +1451,7 @@
         } finally {
           // 전송 버튼 복원
           sendButton.disabled = false;
-          sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> 전송';
+          sendButton.innerHTML = '<i class="fas fa-paper-plane"></i><span class="send-text">전송</span>';
           messageInput.focus();
         }
       }
@@ -1104,6 +1581,25 @@
         setInterval(checkConnection, 5 * 60 * 1000);
       });
 
+      // initialChatPrompt가 있으면 입력창에 채워넣고 포커스
+      (function() {
+        try {
+          const saved = localStorage.getItem('initialChatPrompt');
+          if (saved) {
+            messageInput.value = saved;
+            // 한 박자 뒤에 포커스 및 커서 이동
+            setTimeout(() => {
+              messageInput.focus();
+              messageInput.selectionStart = messageInput.selectionEnd = messageInput.value.length;
+            }, 50);
+            // 사용 후 제거
+            localStorage.removeItem('initialChatPrompt');
+          }
+        } catch (e) {
+          console.debug('initialChatPrompt read error', e);
+        }
+      })();
+
       // 페이지 언로드 시 정리
       window.addEventListener("beforeunload", function () {
         // 필요한 정리 작업
@@ -1222,6 +1718,25 @@
           window.authState.syncSession();
         }
       })();
+
+      // 사이드바 토글 함수
+      function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('open');
+      }
+
+      // 사이드바 외부 클릭 시 닫기 (모바일)
+      document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const menuBtn = document.querySelector('.header-menu-btn');
+        
+        if (window.innerWidth <= 768 && 
+            sidebar.classList.contains('open') && 
+            !sidebar.contains(e.target) && 
+            !menuBtn.contains(e.target)) {
+          sidebar.classList.remove('open');
+        }
+      });
     </script>
   </body>
 </html>

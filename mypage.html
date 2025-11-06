@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <title>마이페이지 - 사장픽</title>
@@ -546,17 +546,148 @@
     }
 
     @media (max-width: 768px) {
+      .container {
+        padding: 20px 12px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .page-subtitle {
+        font-size: 14px;
+        margin-bottom: 30px;
+      }
+
       .content-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
       }
       
+      .profile-section {
+        padding: 24px 16px;
+        border-radius: 20px;
+      }
+
       .profile-header {
         flex-direction: column;
         text-align: center;
+        gap: 20px;
+        padding-bottom: 20px;
+      }
+
+      .profile-header > div:last-child {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+      }
+
+      .profile-header > div:last-child button {
+        width: 100%;
+      }
+
+      .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        font-size: 28px;
+      }
+
+      .profile-name {
+        font-size: 22px;
+      }
+
+      .profile-email {
+        font-size: 14px;
       }
 
       .stats-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .stat-card {
+        padding: 16px 12px;
+      }
+
+      .stat-number {
+        font-size: 20px;
+      }
+
+      .section {
+        padding: 20px 16px;
+        border-radius: 16px;
+      }
+
+      .section-title {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+
+      .section-title i {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      .form-input {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        font-size: 13px;
+      }
+
+      .token-status-card {
+        padding: 20px 16px;
+      }
+
+      .plan-name {
+        font-size: 20px;
+      }
+
+      .token-stats {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 16px 10px;
+      }
+
+      .page-title {
+        font-size: 20px;
+      }
+
+      .profile-section {
+        padding: 20px 12px;
+      }
+
+      .profile-avatar-large {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+      }
+
+      .profile-name {
+        font-size: 18px;
+      }
+
+      .section {
+        padding: 16px 12px;
+      }
+
+      .form-input {
+        padding: 10px;
+        font-size: 13px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        font-size: 12px;
       }
     }
 

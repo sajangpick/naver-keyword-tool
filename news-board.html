@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -17,13 +17,16 @@
     integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g"
     crossorigin="anonymous"
   />
-  <link href="https://cdn.jsdelivr.net/gh/webfontworld/score/SCoreDream.css" rel="stylesheet">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 
   <style>
     :root {
-      --primary-green: #03C75A;
-      --primary-white: #FFFFFF;
+      --accent-color: #ff7b54;
+      --bg-color: #fff7f0;
+      --text-primary: #201a17;
+      --text-secondary: #7a6a60;
     }
+
     * {
       margin: 0;
       padding: 0;
@@ -31,317 +34,841 @@
     }
 
     body {
-      font-family: 'SCoreDream', -apple-system, BlinkMacSystemFont, "Segoe UI",
-        "Noto Sans KR", Arial, sans-serif;
-      background: #f5f5f5;
-      color: #333;
-      padding-top: 100px;
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+      background: var(--bg-color);
+      color: var(--text-primary);
     }
 
-    .header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 50;
-      background: var(--primary-white);
-      box-shadow: 0 2px 10px rgba(3, 199, 90, 0.1);
-      transition: transform 0.3s ease;
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .is-hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 992px) {
+      .header {
+        display: none;
+      }
+    }
+
+    .header.header-hidden {
+      transform: translateY(-100%);
     }
 
     .header-inner {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      max-width: 100%;
+      margin: 0;
+      padding: 12px 20px;
+      display: flex;
       align-items: center;
-      padding: 20px 40px;
-      max-width: 1400px;
-      margin: 0 auto;
+      justify-content: space-between;
       gap: 20px;
-    }
-    @media (max-width: 768px) {
-      .header-inner {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
-        gap: 8px;
-      }
-      body {
-        padding-top: 60px;
-      }
+      position: relative;
     }
 
     .logo-container {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 12px;
+      color: var(--text-primary);
       cursor: pointer;
-      text-decoration: none;
+      flex: 0 0 auto;
     }
+
     .logo-icon {
-      font-size: 48px;
-      color: #000;
+      width: 28px;
+      height: 28px;
+      border-radius: 12px;
+      background: var(--accent-color);
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 14px;
     }
+
     .logo-text {
-      font-weight: 800;
-      font-size: 20px;
-      color: #000;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.03em;
+      text-transform: lowercase;
+      font-size: 12px;
     }
+
     .header-slogan {
-      text-align: center;
-      font-size: 24px;
-      font-weight: 700;
-      color: #000;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin: 0;
       white-space: nowrap;
-    }
-    @media (max-width: 768px) {
-      .logo-container {
-        gap: 6px;
-      }
-      .logo-icon {
-        font-size: 24px;
-      }
-      .logo-text {
-        font-size: 14px;
-      }
-      .header-slogan {
-        display: none;
-      }
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
     }
 
     .header-auth {
       display: flex;
-      justify-content: flex-end;
       align-items: center;
-      gap: 12px;
+      flex: 0 0 auto;
     }
-    .home-btn {
-      display: inline-flex;
+
+    @media (max-width: 768px) {
+      .header-inner {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+      }
+      
+      .header-slogan {
+        font-size: 12px;
+        position: static;
+        transform: none;
+        order: 3;
+        width: 100%;
+        text-align: center;
+        margin-top: 8px;
+      }
+      
+      .logo-container {
+        order: 1;
+        gap: 8px;
+      }
+      
+      .header-auth {
+        order: 2;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-inner {
+        padding: 10px 12px;
+        gap: 12px;
+      }
+      
+      .header-slogan {
+        display: none;
+      }
+
+      .logo-container {
+        gap: 6px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .header-inner {
+        padding: 8px 6px 8px 8px;
+        gap: 0;
+        min-height: auto;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo-container {
+        gap: 4px;
+        flex: 0 1 auto;
+        min-width: 0;
+        margin-right: auto;
+      }
+
+      .logo-icon {
+        width: 19px;
+        height: 19px;
+        font-size: 10px;
+        flex-shrink: 0;
+      }
+
+      .logo-text {
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+      }
+
+      .header-slogan {
+        display: none;
+      }
+
+      .header-auth {
+        flex-shrink: 0;
+        margin-left: auto;
+        margin-right: 0;
+      }
+
+      .auth-buttons {
+        gap: 2px;
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+      }
+
+      .auth-btn {
+        height: 28px;
+        padding: 0 6px;
+        font-size: 9px;
+        min-width: auto;
+        flex-shrink: 0;
+      }
+
+      .auth-btn i {
+        font-size: 9px;
+        margin-right: 2px;
+      }
+
+      .auth-btn span {
+        font-size: 9px;
+        white-space: nowrap;
+      }
+
+      .auth-btn--ghost {
+        display: none;
+      }
+    }
+
+    /* 사이드바 스타일 - 새로운 디자인 */
+    .side-nav {
+      background: #ffe8d9;
+      border-radius: 18px;
+      padding: 18px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       align-items: center;
-      justify-content: center;
-      height: 50px;
-      padding: 0 32px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 16px;
-      gap: 8px;
-      border: none;
-      background: var(--primary-green);
-      color: var(--primary-white);
+      position: fixed;
+      left: 20px;
+      top: 120px;
+      width: 66px;
+      height: auto;
+      max-height: calc(100vh - 160px);
+      overflow-y: auto;
+      z-index: 40;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .side-nav .menu-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 9px 6px;
+      color: #5a5a5a;
       text-decoration: none;
-      cursor: pointer;
+      font-weight: 500;
+      font-size: 9px;
+      border-radius: 11px;
+      transition: all 0.3s ease;
+      width: 43px;
+      position: relative;
+      background: transparent;
+    }
+    
+    .side-nav .menu-item:hover {
+      background: #ffffff;
+      color: #ff7e46;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 126, 70, 0.3);
+    }
+    
+    .side-nav .menu-item:hover .ico {
+      color: #ff7e46;
+      background: rgba(255, 126, 70, 0.1);
+    }
+
+    .side-nav .menu-item.active {
+      background: #ffffff;
+      color: #ff7e46;
+    }
+
+    .side-nav .menu-item.active .ico {
+      color: #ff7e46;
+      background: rgba(255, 126, 70, 0.1);
+    }
+
+    .side-nav .ico {
+      width: 29px;
+      height: 29px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      color: #5a5a5a;
+      font-size: 13px;
       transition: all 0.3s ease;
     }
-    .home-btn:hover {
-      background: #02a84a;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(3, 199, 90, 0.3);
+
+    /* 기존 사이드바 숨김 */
+    .sidebar {
+      display: none;
     }
+
+    .sidebar-header {
+      padding: 20px 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar-logo:hover {
+      opacity: 0.8;
+    }
+
+    .sidebar-logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-color);
+      color: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .sidebar-logo-text {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .sidebar-menu {
+      padding: 16px 0;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar-item:hover {
+      background: rgba(255, 126, 70, 0.1);
+      color: var(--accent-color);
+      border-left-color: var(--accent-color);
+    }
+
+    .sidebar-item.active {
+      background: rgba(255, 126, 70, 0.15);
+      color: var(--accent-color);
+      border-left-color: var(--accent-color);
+      font-weight: 700;
+    }
+
+    .sidebar-item i {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    /* 메인 컨텐츠 영역 */
+    .main-content {
+      margin-left: 0;
+      padding-left: 100px;
+      min-height: 100vh;
+    }
+
     @media (max-width: 768px) {
-      .home-btn {
-        height: 32px;
-        padding: 0 16px;
-        font-size: 12px;
+      .container {
+        padding: 16px 12px;
       }
+    }
+
+    @media (max-width: 360px) {
+      .container {
+        padding: 16px 12px;
+      }
+    }
+
+    @media (max-width: 992px) {
+      .side-nav {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        top: auto;
+        flex-direction: row;
+        width: auto;
+        max-width: calc(100vw - 40px);
+        padding: 12px 16px;
+        overflow-x: hidden;
+        overflow-y: hidden;
+        gap: 8px;
+        border-radius: 24px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+        justify-content: space-between;
+      }
+
+      .side-nav .menu-item {
+        flex-direction: column;
+        min-width: 0;
+        padding: 8px 6px;
+        font-size: 8px;
+        flex: 1 1 auto;
+      }
+
+      .side-nav .menu-item .ico {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      .side-nav .menu-item.active {
+        background: #ffffff;
+        color: #ff7e46;
+      }
+
+      .side-nav .menu-item.active .ico {
+        color: #ff7e46;
+        background: rgba(255, 126, 70, 0.1);
+      }
+
+      .main-content {
+        padding-left: 0;
+        padding-bottom: 90px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .side-nav {
+        bottom: 12px;
+        max-width: calc(100vw - 16px);
+        padding: 8px 4px;
+        gap: 2px;
+        border-radius: 18px;
+        overflow-x: hidden;
+        justify-content: space-between;
+      }
+
+      .side-nav .menu-item {
+        min-width: 0;
+        padding: 4px 1px;
+        font-size: 6px;
+        flex: 1 1 calc((100% - 12px) / 7);
+        max-width: calc((100% - 12px) / 7);
+        gap: 2px;
+      }
+
+      .side-nav .menu-item .ico {
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
+      }
+
+      .side-nav .menu-item span:not(.ico) {
+        font-size: 6px;
+        word-break: keep-all;
+        line-height: 1.2;
+        text-align: center;
+      }
+
+      .side-nav .menu-item:hover .ico {
+        background: #ffffff;
+      }
+
+      .side-nav .menu-item.active {
+        background: #ffffff;
+        color: #ff7e46;
+      }
+
+      .side-nav .menu-item.active .ico {
+        color: #ff7e46;
+        background: rgba(255, 126, 70, 0.1);
+      }
+
+      .main-content {
+        padding-bottom: 70px;
+      }
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .header-auth {
+      display: flex;
+      align-items: center;
     }
 
     .auth-buttons {
       display: flex;
       align-items: center;
-      gap: 0;
+      gap: 16px;
     }
+
+    .auth-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      padding: 0 22px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      background: #fff;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+    }
+
+    .auth-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    .auth-btn--primary {
+      background: transparent;
+      color: var(--accent-color);
+      border: 1px solid var(--accent-color);
+    }
+
+    .auth-btn--primary:hover {
+      background: var(--accent-color);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(255, 126, 70, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .auth-btn--ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      display: inline-flex;
+    }
+
+    .auth-btn--ghost:hover {
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+
     .auth-user {
       display: none;
       align-items: center;
-      gap: 12px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      background: var(--primary-green);
-      color: var(--primary-white);
+      gap: 14px;
+      padding: 10px 16px;
+      border-radius: 16px;
+      background: rgba(3, 199, 90, 0.12);
+      color: var(--text-primary);
     }
+
     .auth-user__avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--primary-white);
-      color: var(--primary-green);
-      font-weight: 800;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--accent-color);
+      color: #fff;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      letter-spacing: -0.02em;
-      text-transform: uppercase;
+      font-size: 16px;
     }
+
     .auth-user__meta {
       display: flex;
       flex-direction: column;
       line-height: 1.3;
     }
+
     .auth-user__label {
       font-size: 11px;
       font-weight: 600;
-      color: var(--primary-white);
+      color: var(--text-secondary);
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
+
     .auth-user__email {
       font-size: 14px;
       font-weight: 600;
-      color: var(--primary-white);
+      color: var(--text-primary);
     }
+
     .auth-user__logout {
       height: 36px;
       padding: 0 16px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.3);
-      background: transparent;
-      color: var(--primary-white);
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: #fff;
+      color: var(--accent-color);
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 6px;
+      transition: background 0.2s ease, transform 0.2s ease;
     }
+
     .auth-user__logout:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    .auth-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 50px;
-      padding: 0 32px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 16px;
-      gap: 8px;
-      border: none;
-      text-decoration: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .auth-btn--primary {
-      background: var(--primary-green);
-      color: var(--primary-white);
-    }
-    .auth-btn--primary:hover {
-      background: #02a84a;
+      background: rgba(255, 126, 70, 0.12);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(3, 199, 90, 0.3);
     }
-    .auth-btn--ghost {
-      display: none;
-    }
-      @media (max-width: 768px) {
-        .auth-user {
-          padding: 4px 8px;
-          gap: 6px;
-        }
-        .auth-user__avatar {
-          width: 24px;
-          height: 24px;
-          font-size: 10px;
-        }
-        .auth-user__label {
-          font-size: 8px;
-          white-space: nowrap;
-        }
-        .auth-user__email {
-          font-size: 9px;
-          white-space: nowrap;
-        }
-        .auth-user__logout {
-          height: 24px;
-          padding: 0 8px;
-          font-size: 9px;
-        }
-        .auth-btn {
-          height: 28px;
-          padding: 0 12px;
-          font-size: 11px;
-        }
-        .home-btn {
-          height: 28px;
-          padding: 0 12px;
-          font-size: 11px;
-        }
+    @media (max-width: 768px) {
+      .mobile-menu-toggle {
+        display: block !important;
       }
 
+      .auth-btn {
+        height: 38px;
+        padding: 0 16px;
+        font-size: 13px;
+      }
+
+      .auth-user {
+        padding: 8px 12px;
+        gap: 10px;
+      }
+
+      .auth-user__avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      .auth-user__email {
+        font-size: 13px;
+      }
+
+      .auth-user__logout {
+        height: 32px;
+        padding: 0 12px;
+        font-size: 12px;
+      }
+      
+      .sidebar {
+        width: 280px;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: -280px;
+        transition: left 0.3s ease;
+        z-index: 60;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar.open {
+        left: 0;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 32px;
+      background: transparent;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 16px 12px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .container {
+        padding: 16px 12px;
+      }
+    }
+
+    /* 페이지 헤더 섹션 - 통일된 스타일 */
+    .header-section {
+      background: #ffe8d9;
+      border-radius: 20px 20px 0 0;
+      padding: 8px 20px 8px 20px;
+      margin-bottom: 0;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .page-header {
+      margin-bottom: 0;
       text-align: center;
-      margin-bottom: 40px;
-      padding-top: 20px;
-      color: #2c3e50;
+      width: 100%;
     }
 
     .page-header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 15px;
-      font-weight: 700;
-      letter-spacing: -1px;
+      font-size: 12pt;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+      line-height: 1.2;
     }
 
     .page-header p {
-      font-size: 1.1rem;
-      color: #7f8c8d;
-      font-weight: 400;
+      font-size: 8pt;
+      color: var(--text-secondary);
+      line-height: 1.3;
+      margin: 0;
     }
 
-    .page-title {
-      font-size: 42px;
-      font-weight: 800;
-      color: #2c3e50;
-      margin-bottom: 12px;
+    .content-section {
+      padding: 36px;
     }
 
-    .page-subtitle {
-      font-size: 18px;
-      color: #7f8c8d;
+    @media (max-width: 768px) {
+      .header-section {
+        padding: 8px 12px 8px 12px;
+        border-radius: 16px 16px 0 0;
+        min-height: 56px;
+      }
+
+      .page-header {
+        margin-bottom: 0;
+      }
+
+      .page-header h1 {
+        font-size: 12pt;
+        margin-bottom: 2px;
+        line-height: 1.2;
+      }
+
+      .page-header p {
+        font-size: 8pt;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.3;
+      }
+
+      .content-section {
+        padding: 24px 16px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .header-section {
+        padding: 8px 8px 8px 8px;
+        border-radius: 12px 12px 0 0;
+        min-height: 56px;
+      }
+
+      .page-header {
+        margin-bottom: 0;
+      }
+
+      .page-header h1 {
+        font-size: 12pt;
+        margin-bottom: 2px;
+        line-height: 1.2;
+      }
+
+      .page-header p {
+        font-size: 8pt;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.3;
+      }
+
+      .content-section {
+        padding: 20px 12px;
+      }
+    }
+
+    .beta-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--accent-color);
+      color: white;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 20px;
+      margin-left: 10px;
+      vertical-align: middle;
     }
 
     .category-tabs {
       display: flex;
-      gap: 12px;
+      gap: 8px;
       margin-bottom: 32px;
       overflow-x: auto;
-      padding-bottom: 8px;
+      padding: 16px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .category-tabs::-webkit-scrollbar {
+      display: none;
     }
 
     .category-tab {
-      padding: 12px 24px;
-      border: 2px solid #e0e0e0;
-      background: white;
-      border-radius: 50px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border: 1px solid #e1e5e9;
+      background: #ffffff;
+      border-radius: 20px;
       cursor: pointer;
-      font-weight: 600;
-      font-size: 15px;
+      font-weight: 500;
+      font-size: 14px;
+      color: #4e5968;
       white-space: nowrap;
-      transition: all 0.3s;
+      transition: all 0.2s ease;
       flex-shrink: 0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     }
 
     .category-tab:hover {
-      border-color: #03C75A;
-      background: rgba(3, 199, 90, 0.05);
+      border-color: var(--accent-color);
+      background: rgba(255, 123, 84, 0.08);
+      color: var(--accent-color);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(255, 123, 84, 0.15);
     }
 
     .category-tab.active {
-      background: #03C75A;
+      background: var(--accent-color);
       color: white;
-      border-color: #03C75A;
+      border-color: var(--accent-color);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(255, 123, 84, 0.25);
+    }
+
+    .category-tab.active:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 12px rgba(255, 123, 84, 0.3);
     }
 
     .featured-section {
@@ -354,6 +881,7 @@
       margin-bottom: 20px;
       display: flex;
       align-items: center;
+      color: var(--text-primary);
       gap: 8px;
     }
 
@@ -433,7 +961,8 @@
       margin-bottom: 12px;
       color: #333;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -444,7 +973,8 @@
       line-height: 1.6;
       margin-bottom: 16px;
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -518,7 +1048,8 @@
       color: #666;
       margin-bottom: 12px;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -685,11 +1216,7 @@
 
     @media (max-width: 768px) {
       .container {
-        padding: 16px;
-      }
-
-      .page-title {
-        font-size: 32px;
+        padding: 16px 12px;
       }
 
       .featured-grid {
@@ -714,20 +1241,15 @@
         font-size: 24px;
       }
 
-      .page-header h1 {
-        font-size: 1.3rem;
-        margin-bottom: 8px;
+      .category-tabs {
+        gap: 6px;
+        padding: 12px 0;
       }
-      .page-header p {
-        font-size: 0.75rem;
-      }
-      .page-header {
-        margin-bottom: 16px;
-        margin-top: 8px;
-      }
+      
       .category-tab {
-        padding: 6px 12px;
-        font-size: 9px;
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 16px;
       }
       button {
         font-size: 9px;
@@ -775,75 +1297,111 @@
   </style>
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <a href="/" class="logo-container">
-        <div class="logo-icon">
-          <i class="fa-solid fa-thumbtack"></i>
-        </div>
-        <span class="logo-text">sajang pick</span>
-      </a>
-      
-      <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
-      
-      <div class="header-auth">
-        <a href="/" class="home-btn">
-          <i class="fa-solid fa-house"></i> 홈
-        </a>
-        <div class="auth-buttons" id="authButtons">
-          <div class="auth-user" id="authUser" style="display: none;">
-            <div class="auth-user__avatar" id="userAvatar">U</div>
-            <div class="auth-user__meta">
-              <a href="/mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
-              <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
-            </div>
-            <button class="auth-user__logout" id="logoutBtn" type="button">
-              로그아웃
-            </button>
+    <header class="header">
+      <div class="header-inner">
+        <a href="/" class="logo-container">
+          <div class="logo-icon">
+            <i class="fa-solid fa-thumbtack"></i>
           </div>
-          <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
-            로그인
-          </a>
-          <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
-            회원가입
-          </a>
+          <span class="logo-text">sajang pick</span>
+        </a>
+        
+        <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
+        
+        <div class="header-auth">
+          <div class="auth-buttons" id="authButtons">
+            <div class="auth-user" id="authUser" style="display: none;">
+              <div class="auth-user__avatar" id="userAvatar">U</div>
+              <div class="auth-user__meta">
+                <a href="/mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
+                <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
+              </div>
+              <button class="auth-user__logout" id="logoutBtn" type="button">
+                로그아웃
+              </button>
+            </div>
+            <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+              <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px;"></i>
+              <span>로그인</span>
+            </a>
+            <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+              <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i>
+              <span>회원가입</span>
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <div class="container">
-    <div class="page-header">
-      <h1>정보 게시판</h1>
-      <p>식당 대표님들을 위한 유용한 정보를 모았습니다</p>
-    </div>
+    <aside class="side-nav" aria-label="사이드 네비게이션">
+      <a class="menu-item" href="/">
+        <span class="ico"><i class="fa-solid fa-house"></i></span>
+        <span>홈</span>
+      </a>
+      <a class="menu-item" href="/naver_search.html">
+        <span class="ico"><i class="fa-solid fa-key"></i></span>
+        <span>키워드</span>
+      </a>
+      <a class="menu-item" href="/AI-Review.html">
+        <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
+        <span>리뷰</span>
+      </a>
+      <a class="menu-item" href="/Blog-Editor.html">
+        <span class="ico"><i class="fa-solid fa-blog"></i></span>
+        <span>블로그</span>
+      </a>
+      <a class="menu-item" href="/recipe-manager.html">
+        <span class="ico"><i class="fa-solid fa-utensils"></i></span>
+        <span>레시피</span>
+      </a>
+      <a class="menu-item active" href="/news-board.html">
+        <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
+        <span>정보</span>
+      </a>
+      <a class="menu-item" href="/policy-support.html">
+        <span class="ico"><i class="fa-solid fa-coins"></i></span>
+        <span>정책</span>
+      </a>
+    </aside>
 
-    <!-- 카테고리 탭 -->
-    <div class="category-tabs">
+    <!-- 메인 컨텐츠 -->
+    <div class="main-content">
+
+      <div class="container">
+        <!-- 헤더 섹션 -->
+        <div class="header-section">
+          <div class="page-header">
+            <h1>정보 게시판 <span class="beta-badge">준비중</span></h1>
+            <p>식당 대표님들을 위한 유용한 정보를 모았습니다.</p>
+          </div>
+        </div>
+
+        <!-- 카테고리 탭 -->
+        <div class="content-section" style="background: white; border-radius: 0 0 20px 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); margin-top: 0; margin-bottom: 40px;">
+          <div class="category-tabs">
       <button class="category-tab active" data-category="all" onclick="filterCategory('all')">
         전체
       </button>
       <button class="category-tab" data-category="policy" onclick="filterCategory('policy')">
-        🏛️ 정책/법규
+        정책/법규
       </button>
       <button class="category-tab" data-category="trend" onclick="filterCategory('trend')">
-        📈 트렌드
+        트렌드
       </button>
       <button class="category-tab" data-category="management" onclick="filterCategory('management')">
-        💡 경영 팁
+        경영 팁
       </button>
       <button class="category-tab" data-category="ingredients" onclick="filterCategory('ingredients')">
-        🍽️ 식자재 정보
+        식자재 정보
       </button>
       <button class="category-tab" data-category="technology" onclick="filterCategory('technology')">
-        🛠️ 기술/도구
+        기술/도구
       </button>
     </div>
 
     <!-- 중요 뉴스 -->
     <div class="featured-section" id="featuredSection">
       <h2 class="section-title">
-        <span>⭐</span>
         <span>중요 뉴스</span>
       </h2>
       <div class="featured-grid" id="featuredNews">
@@ -857,7 +1415,6 @@
     <!-- 전체 뉴스 -->
     <div>
       <h2 class="section-title">
-        <span>📋</span>
         <span>전체 뉴스</span>
       </h2>
       <div class="news-list" id="newsList">
@@ -868,6 +1425,8 @@
       </div>
 
       <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -883,7 +1442,108 @@
   </div>
 
   <script>
-    const API_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
+    const PRIMARY_RENDER_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
+    const LEGACY_RENDER_BASE = 'https://naver-keyword-tool.onrender.com';
+    const FALLBACK_RENDER_BASES = [PRIMARY_RENDER_BASE, LEGACY_RENDER_BASE].filter(Boolean);
+    const RETRYABLE_STATUS = new Set([404, 408, 500, 502, 503, 504, 521, 522, 523]);
+
+    function cloneRequestOptions(options) {
+      if (!options) return undefined;
+      const cloned = { ...options };
+
+      if (options.headers instanceof Headers) {
+        cloned.headers = new Headers(options.headers);
+      } else if (options.headers) {
+        cloned.headers = { ...options.headers };
+      }
+
+      if (options.body instanceof FormData) {
+        const formDataCopy = new FormData();
+        options.body.forEach((value, key) => formDataCopy.append(key, value));
+        cloned.body = formDataCopy;
+      } else if (options.body instanceof URLSearchParams) {
+        cloned.body = new URLSearchParams(options.body);
+      } else if (options.body instanceof Blob) {
+        cloned.body = options.body.slice(0, options.body.size, options.body.type);
+      } else if (options.body !== undefined) {
+        cloned.body = options.body;
+      }
+
+      return cloned;
+    }
+
+    async function fetchWithFallback(path, options) {
+      const targets = [];
+
+      if (API_BASE) {
+        targets.push(`${API_BASE}${path}`);
+      } else {
+        targets.push(path);
+      }
+
+      FALLBACK_RENDER_BASES.forEach((host) => {
+        if (!host) return;
+        const absolutePath = `${host}${path}`;
+        if (!targets.includes(absolutePath)) {
+          targets.push(absolutePath);
+        }
+      });
+
+      let lastError = null;
+      let lastResponse = null;
+
+      for (let index = 0; index < targets.length; index += 1) {
+        const target = targets[index];
+
+        try {
+          const response = await fetch(target, cloneRequestOptions(options));
+
+          if (response.ok) {
+            return response;
+          }
+
+          lastResponse = response;
+
+          if (RETRYABLE_STATUS.has(response.status) && index < targets.length - 1) {
+            continue;
+          }
+
+          return response;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      if (lastResponse) return lastResponse;
+      if (lastError) throw lastError;
+      throw new Error('API 요청에 실패했습니다.');
+    }
+
+    async function fetchJson(path, options) {
+      const response = await fetchWithFallback(path, options);
+      const text = await response.text();
+      let data = {};
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          data = { error: text };
+        }
+      }
+
+      if (!response.ok) {
+        const message = data?.error || `요청 실패 (${response.status})`;
+        const error = new Error(message);
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    }
 
     let currentPage = 1;
     let currentCategory = 'all';
@@ -900,11 +1560,11 @@
 
     // 카테고리 라벨
     const categoryLabels = {
-      policy: '🏛️ 정책/법규',
-      trend: '📈 트렌드',
-      management: '💡 경영 팁',
-      ingredients: '🍽️ 식자재 정보',
-      technology: '🛠️ 기술/도구'
+      policy: '정책/법규',
+      trend: '트렌드',
+      management: '경영 팁',
+      ingredients: '식자재 정보',
+      technology: '기술/도구'
     };
 
     // 페이지 로드 시 뉴스 불러오기
@@ -919,8 +1579,7 @@
       const featuredSection = document.getElementById('featuredSection');
 
       try {
-        const response = await fetch(`${API_BASE}/api/news-board?featured=true&limit=3`);
-        const result = await response.json();
+  const result = await fetchJson('/api/news-board?featured=true&limit=3');
 
         if (!result.success || !result.data || result.data.length === 0) {
           featuredSection.style.display = 'none';
@@ -974,8 +1633,7 @@
           params.append('category', currentCategory);
         }
 
-        const response = await fetch(`${API_BASE}/api/news-board?${params}`);
-        const result = await response.json();
+  const result = await fetchJson(`/api/news-board?${params.toString()}`);
 
         if (!result.success || !result.data) {
           throw new Error(result.error || '뉴스를 불러올 수 없습니다.');
@@ -1088,8 +1746,7 @@
       content.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i></div>';
 
       try {
-        const response = await fetch(`${API_BASE}/api/news-board?id=${id}`);
-        const result = await response.json();
+  const result = await fetchJson(`/api/news-board?id=${id}`);
 
         if (!result.success || !result.data) {
           throw new Error('뉴스를 불러올 수 없습니다.');
@@ -1212,8 +1869,41 @@
       }
     }
 
+    // 모바일 메뉴 토글 기능
+    function initMobileMenu() {
+      const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+      if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', () => {
+          sidebar.classList.toggle('open');
+          sidebarOverlay.classList.toggle('active');
+        });
+      }
+
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+          sidebarOverlay.classList.remove('active');
+        });
+      }
+
+      // 사이드바 링크 클릭 시 모바일에서 사이드바 닫기
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.addEventListener('click', () => {
+          if (window.innerWidth <= 768) {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+          }
+        });
+      });
+    }
+
     // 페이지 로드 시 실행
     (async function() {
+      initMobileMenu();
+      
       while (!window.authState?.supabase) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
