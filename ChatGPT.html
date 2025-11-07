@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3003 http://127.0.0.1:3003 https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>ChatGPT 채팅 - 사장픽</title>
@@ -907,6 +907,74 @@
         box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
       }
 
+      .bot-message table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 12px 0;
+        font-size: 14px;
+      }
+
+      .bot-message table th,
+      .bot-message table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .bot-message table th {
+        background-color: #f5f5f5;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .bot-message table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .bot-message table tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      .bot-message h1,
+      .bot-message h2,
+      .bot-message h3 {
+        margin: 12px 0 8px 0;
+        font-weight: 600;
+      }
+
+      .bot-message h1 {
+        font-size: 20px;
+      }
+
+      .bot-message h2 {
+        font-size: 18px;
+      }
+
+      .bot-message h3 {
+        font-size: 16px;
+      }
+
+      .bot-message code {
+        background-color: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+      }
+
+      .bot-message pre {
+        background-color: #f5f5f5;
+        padding: 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin: 8px 0;
+      }
+
+      .bot-message pre code {
+        background-color: transparent;
+        padding: 0;
+      }
+
       .message-time {
         font-size: 11px;
         opacity: 0.7;
@@ -1384,7 +1452,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
     <script src="/assets/auth-state.js?v=202410"></script>
     <script>
-      // 전역 설정: 상대 경로(`/api`) 사용
+      // 전역 설정: 환경에 따라 API 주소 자동 감지
+      const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
+      const FALLBACK_API_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
+      
       let totalTokens = 0;
       let isConnected = false;
 
@@ -1401,6 +1473,31 @@
         this.style.height = "auto";
         this.style.height = Math.min(this.scrollHeight, 120) + "px";
       });
+
+      // 안전한 JSON 파싱 함수
+      async function readJsonSafely(response) {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          try {
+            const text = await response.text();
+            if (!text || text.trim().length === 0) {
+              return { error: "서버에서 빈 응답을 받았습니다.", status: response.status };
+            }
+            return JSON.parse(text);
+          } catch (parseError) {
+            console.error("JSON 파싱 오류:", parseError);
+            return { error: "응답 형식이 올바르지 않습니다.", status: response.status };
+          }
+        }
+        try {
+          const text = await response.text();
+          return text
+            ? { error: text.substring(0, 200), status: response.status }
+            : { error: "서버 응답이 없습니다.", status: response.status };
+        } catch (readError) {
+          return { error: "응답을 읽을 수 없습니다.", status: response.status };
+        }
+      }
 
       // 메시지 전송 함수
       async function sendMessage() {
@@ -1422,17 +1519,63 @@
         const loadingId = showLoading();
 
         try {
-          const response = await fetch(`/api/chat`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ message: message }),
-          });
+          // API 엔드포인트 결정 (로컬이면 localhost, 아니면 상대 경로)
+          const apiUrl = API_BASE ? `${API_BASE}/api/chat` : `/api/chat`;
+          
+          let response;
+          let lastError = null;
+          
+          // 첫 번째 시도: 기본 API
+          try {
+            response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ message: message }),
+            });
+            
+            // 성공하면 그대로 사용
+            if (response.ok) {
+              // 응답 처리 계속
+            } else {
+              throw new Error(`HTTP ${response.status}`);
+            }
+          } catch (fetchError) {
+            lastError = fetchError;
+            
+            // 로컬이 아니고 실패했으면 폴백 서버 시도
+            if (!API_BASE && FALLBACK_API_BASE) {
+              try {
+                console.log('기본 API 실패, 폴백 서버 시도:', `${FALLBACK_API_BASE}/api/chat`);
+                response = await fetch(`${FALLBACK_API_BASE}/api/chat`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ message: message }),
+                });
+              } catch (fallbackError) {
+                throw new Error(`API 연결 실패: ${lastError.message}`);
+              }
+            } else {
+              throw fetchError;
+            }
+          }
 
-          const data = await response.json();
+          // 안전하게 JSON 파싱 (응답은 한 번만 읽을 수 있음)
+          const data = await readJsonSafely(response);
 
-          if (response.ok && data.success) {
+          // 응답 상태 확인
+          if (!response.ok) {
+            throw new Error(data.error || `서버 오류 (${response.status})`);
+          }
+
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          if (data.success && data.reply) {
             hideLoading(loadingId);
             addMessage(data.reply, "bot");
 
@@ -1442,12 +1585,20 @@
               updateTokenCount();
             }
           } else {
-            throw new Error(data.error || "API 호출 실패");
+            throw new Error(data.error || "API 응답 형식이 올바르지 않습니다.");
           }
         } catch (error) {
           hideLoading(loadingId);
           console.error("채팅 오류:", error);
-          showError(error.message || "메시지 전송 중 오류가 발생했습니다.");
+          
+          // 네트워크 오류인지 확인
+          if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showError("서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.");
+          } else if (error.message.includes('JSON')) {
+            showError("서버 응답을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.");
+          } else {
+            showError(error.message || "메시지 전송 중 오류가 발생했습니다.");
+          }
         } finally {
           // 전송 버튼 복원
           sendButton.disabled = false;
@@ -1460,6 +1611,113 @@
       function sendSuggestion(suggestion) {
         messageInput.value = suggestion;
         sendMessage();
+      }
+
+      // 마크다운을 HTML로 변환하는 함수 (개선된 버전)
+      function markdownToHtml(markdown) {
+        let html = markdown;
+        const lines = html.split('\n');
+        let result = [];
+        let inTable = false;
+        let tableRows = [];
+        let i = 0;
+        
+        while (i < lines.length) {
+          const line = lines[i].trim();
+          
+          // 테이블 감지
+          if (line.match(/^\|.+\|$/)) {
+            if (!inTable) {
+              inTable = true;
+              tableRows = [];
+            }
+            tableRows.push(line);
+          } else {
+            // 테이블이 끝났을 때 처리
+            if (inTable && tableRows.length > 0) {
+              result.push(parseMarkdownTable(tableRows));
+              tableRows = [];
+              inTable = false;
+            }
+            
+            // 코드 블록 처리
+            if (line.startsWith('```')) {
+              const codeBlock = [];
+              i++;
+              while (i < lines.length && !lines[i].trim().startsWith('```')) {
+                codeBlock.push(lines[i]);
+                i++;
+              }
+              result.push('<pre><code>' + codeBlock.join('\n') + '</code></pre>');
+              i++;
+              continue;
+            }
+            
+            // 헤더 처리
+            if (line.startsWith('### ')) {
+              result.push('<h3>' + line.substring(4) + '</h3>');
+            } else if (line.startsWith('## ')) {
+              result.push('<h2>' + line.substring(3) + '</h2>');
+            } else if (line.startsWith('# ')) {
+              result.push('<h1>' + line.substring(2) + '</h1>');
+            } else if (line.length > 0) {
+              // 일반 텍스트 (볼드, 이탤릭 처리 후)
+              let processedLine = line;
+              processedLine = processedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+              processedLine = processedLine.replace(/\*(.*?)\*/g, '<em>$1</em>');
+              processedLine = processedLine.replace(/`([^`]+)`/g, '<code>$1</code>');
+              result.push('<p>' + processedLine + '</p>');
+            } else {
+              result.push('<br>');
+            }
+          }
+          i++;
+        }
+        
+        // 마지막 테이블 처리
+        if (inTable && tableRows.length > 0) {
+          result.push(parseMarkdownTable(tableRows));
+        }
+        
+        return result.join('\n');
+      }
+      
+      // 마크다운 테이블 파싱
+      function parseMarkdownTable(tableRows) {
+        if (tableRows.length < 2) return '';
+        
+        let html = '<table>';
+        let isHeader = true;
+        
+        for (let i = 0; i < tableRows.length; i++) {
+          const row = tableRows[i];
+          
+          // 구분선 스킵
+          if (row.match(/^\|[\s\-:]+\|$/)) {
+            isHeader = false;
+            continue;
+          }
+          
+          // 셀 추출
+          const cells = row.split('|').map(cell => cell.trim()).filter(cell => cell.length > 0);
+          
+          if (isHeader) {
+            html += '<thead><tr>';
+            cells.forEach(cell => {
+              html += '<th>' + cell + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+          } else {
+            html += '<tr>';
+            cells.forEach(cell => {
+              html += '<td>' + cell + '</td>';
+            });
+            html += '</tr>';
+          }
+        }
+        
+        html += '</tbody></table>';
+        return html;
       }
 
       // 메시지 추가 함수
@@ -1479,8 +1737,11 @@
           minute: "2-digit",
         });
 
+        // 마크다운을 HTML로 변환
+        const htmlContent = sender === 'bot' ? markdownToHtml(text) : text.replace(/\n/g, '<br>');
+
         messageDiv.innerHTML = `
-                <div>${text}</div>
+                <div>${htmlContent}</div>
                 <div class="message-time">${timeStr}</div>
             `;
 
@@ -1548,14 +1809,35 @@
       // 연결 상태 확인
       async function checkConnection() {
         try {
-          const response = await fetch(`/api/health`);
-          if (response.ok) {
-            isConnected = true;
-            statusDot.classList.remove("disconnected");
-            statusText.textContent = "연결됨";
-          } else {
-            throw new Error("서버 응답 오류");
+          const healthUrl = API_BASE ? `${API_BASE}/health` : `/api/health`;
+          let response;
+          
+          try {
+            response = await fetch(healthUrl);
+            if (response.ok) {
+              isConnected = true;
+              statusDot.classList.remove("disconnected");
+              statusText.textContent = "연결됨";
+              return;
+            }
+          } catch (error) {
+            // 로컬이 아니고 실패했으면 폴백 서버 시도
+            if (!API_BASE && FALLBACK_API_BASE) {
+              try {
+                response = await fetch(`${FALLBACK_API_BASE}/health`);
+                if (response.ok) {
+                  isConnected = true;
+                  statusDot.classList.remove("disconnected");
+                  statusText.textContent = "연결됨 (폴백)";
+                  return;
+                }
+              } catch (fallbackError) {
+                // 폴백도 실패
+              }
+            }
           }
+          
+          throw new Error("서버 응답 오류");
         } catch (error) {
           isConnected = false;
           statusDot.classList.add("disconnected");
@@ -1686,7 +1968,7 @@
         window.location.replace(buildRedirectUrl());
       }
 
-      // 페이지 로드 시 인증 확인
+      // 페이지 로드 시 인증 확인 (로그인 선택적)
       (async function initAuth() {
         // Supabase 초기화 대기
         while (!window.authState?.supabase) {
@@ -1699,13 +1981,13 @@
             // 세션이 있으면 UI 업데이트
             await updateAuthUI();
           } else {
-            // 세션이 없으면 로그인 페이지로 리다이렉트
-            redirectToLogin();
+            // 세션이 없어도 채팅 사용 가능 (로그인 선택적)
+            await updateAuthUI();
           }
         } catch (error) {
           console.error("세션 확인 실패:", error);
-          // 에러 발생 시에도 로그인 페이지로
-          redirectToLogin();
+          // 에러 발생해도 채팅 사용 가능
+          await updateAuthUI();
         }
         
         // 인증 상태 변경 감지

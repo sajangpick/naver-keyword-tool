@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3003 http://127.0.0.1:3003 https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <title>정보 게시판 - 사장픽</title>
@@ -1293,6 +1293,7 @@
       .news-item {
         padding: 14px;
       }
+
     }
   </style>
 </head>
@@ -1378,7 +1379,8 @@
 
         <!-- 카테고리 탭 -->
         <div class="content-section" style="background: white; border-radius: 0 0 20px 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); margin-top: 0; margin-bottom: 40px;">
-          <div class="category-tabs">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div class="category-tabs" style="flex: 1; margin: 0;">
       <button class="category-tab active" data-category="all" onclick="filterCategory('all')">
         전체
       </button>
@@ -1398,6 +1400,7 @@
         기술/도구
       </button>
     </div>
+          </div>
 
     <!-- 중요 뉴스 -->
     <div class="featured-section" id="featuredSection">
@@ -1614,7 +1617,10 @@
 
       } catch (error) {
         console.error('Load featured news error:', error);
-        featuredSection.style.display = 'none';
+        // 서버 연결 실패 시에는 중요 뉴스 섹션을 숨김 (기본 목록에서 오류 표시)
+        if (!error.message.includes('Failed to fetch') && !error.message.includes('NetworkError')) {
+          featuredSection.style.display = 'none';
+        }
       }
     }
 
@@ -1682,10 +1688,36 @@
 
       } catch (error) {
         console.error('Load news error:', error);
+        
+        let errorMessage = '뉴스를 불러오는데 실패했습니다';
+        let errorDetails = '';
+        
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMessage = '서버에 연결할 수 없습니다';
+          errorDetails = `
+            <div style="margin-top: 16px; padding: 16px; background: #fff3cd; border-radius: 8px; font-size: 13px; line-height: 1.6;">
+              <strong>🔧 서버를 실행해주세요:</strong><br>
+              1. VS Code 터미널 열기 (Ctrl + 백틱 키)<br>
+              2. 다음 명령어 실행: <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">node server.js</code><br>
+              3. 서버가 <strong>localhost:3003</strong>에서 실행되는지 확인<br>
+              4. 페이지를 새로고침하세요
+            </div>
+          `;
+        } else {
+          errorDetails = `
+            <div style="margin-top: 16px; padding: 16px; background: #fff3cd; border-radius: 8px; font-size: 13px;">
+              <strong>확인사항:</strong><br>
+              - 서버가 정상적으로 실행 중인지 확인<br>
+              - 브라우저 개발자 도구(F12) > Console에서 상세 오류 확인
+            </div>
+          `;
+        }
+        
         newsList.innerHTML = `
           <div class="empty-state">
             <div class="empty-icon">⚠️</div>
-            <div>뉴스를 불러오는데 실패했습니다</div>
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">${errorMessage}</div>
+            ${errorDetails}
           </div>
         `;
       }
@@ -1736,6 +1768,7 @@
 
       loadNews(1);
     }
+
 
     // 뉴스 상세 보기
     async function openNews(id) {
@@ -1919,4 +1952,5 @@
   <script src="/assets/auth-state.js?v=202410" defer></script>
 </body>
 </html>
+
 

@@ -1077,17 +1077,21 @@ app.get("/api/related-keywords", async (req, res) => {
   }
 
   try {
-    devLog("연관 키워드 검색 요청 수신");
+    devLog("연관 키워드 검색 요청 수신:", seed);
 
+    // /relkwdstat 엔드포인트가 작동하지 않을 수 있으므로
+    // /keywordstool 엔드포인트를 사용하여 연관 키워드 조회
     const timestamp = Date.now().toString();
     const method = "GET";
-    const uri = "/relkwdstat";
+    const uri = "/keywordstool";
     const signature = generateSignature(
       timestamp,
       method,
       uri,
       NAVER_API.secretKey
     );
+
+    devLog(`네이버 API 호출: ${NAVER_API.baseUrl}${uri}`);
 
     const response = await axios.get(`${NAVER_API.baseUrl}${uri}`, {
       params: {
@@ -1104,21 +1108,42 @@ app.get("/api/related-keywords", async (req, res) => {
       timeout: 30000,
     });
 
-    devLog(`연관 키워드 검색 성공`);
+    devLog(`연관 키워드 검색 성공: ${response.data.keywordList?.length || 0}개 결과`);
+    
+    // 시드 키워드와 정확히 일치하는 항목 제외
+    const keywordList = (response.data.keywordList || []).filter(item => {
+      const keyword = item.relKeyword || item.keyword || "";
+      return keyword.toLowerCase().trim() !== seed.toLowerCase().trim();
+    });
+
     res.json({
-      ...response.data,
+      keywordList: keywordList,
       searchInfo: {
         seed: seed,
         timestamp: new Date().toISOString(),
         server: "Integrated Server",
+        totalCount: keywordList.length,
       },
     });
   } catch (error) {
     devError("연관 키워드 API 호출 오류:", error.message);
+    devError("에러 상세:", error.response?.data || error.response?.status);
 
     if (error.response) {
-      res.status(error.response.status).json({
-        error: `네이버 API 오류 (${error.response.status})`,
+      // 네이버 API 오류를 그대로 전달하지 않고, 더 명확한 메시지 제공
+      const status = error.response.status;
+      let errorMessage = `네이버 API 오류 (${status})`;
+      
+      if (status === 404) {
+        errorMessage = "네이버 API 엔드포인트를 찾을 수 없습니다. API 설정을 확인해주세요.";
+      } else if (status === 401) {
+        errorMessage = "네이버 API 인증에 실패했습니다. API 키를 확인해주세요.";
+      } else if (status === 403) {
+        errorMessage = "네이버 API 사용 권한이 없습니다.";
+      }
+
+      res.status(500).json({
+        error: errorMessage,
         details: error.response.data,
         timestamp: new Date().toISOString(),
       });
@@ -1411,7 +1436,12 @@ async function callClaude(prompt) {
 
 // ==================== ChatGPT 채팅 API ====================
 
-// ChatGPT 채팅 API
+// ChatGPT 채팅 API - api/chat.js 사용 (Function Calling 포함)
+const chatHandler = require("./api/chat");
+app.post("/api/chat", chatHandler);
+
+// 기존 코드 (Function Calling 없이) - 주석 처리
+/*
 app.post("/api/chat", async (req, res) => {
   try {
     const rawMsg = req.body?.message || "";
@@ -1441,6 +1471,18 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
+    // 현재 날짜 및 계절 정보
+    const now = new Date();
+    const month = now.getMonth() + 1; // 1-12
+    const day = now.getDate();
+    const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+    const weekday = weekdays[now.getDay()];
+    let season = '';
+    if (month >= 3 && month <= 5) season = '봄';
+    else if (month >= 6 && month <= 8) season = '여름';
+    else if (month >= 9 && month <= 11) season = '가을';
+    else season = '겨울';
+
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -1449,7 +1491,13 @@ app.post("/api/chat", async (req, res) => {
           {
             role: "system",
             content:
-              "당신은 도움이 되는 AI 어시스턴트입니다. 한국어로 친근하고 정확하게 답변해주세요. 사용자의 질문에 성실하게 대답하고, 필요한 경우 추가 설명이나 예시를 제공해주세요.",
+              "당신은 ChatGPT입니다. 사용자의 모든 질문에 대해 유용하고 자연스러운 답변을 제공해주세요.\n\n" +
+              "현재 날짜 정보: " + `${now.getFullYear()}년 ${month}월 ${day}일 ${weekday}, ${season}` + "\n\n" +
+              "답변 지침:\n" +
+              "1. 날씨 질문: 실시간 날씨 데이터는 제공할 수 없지만, 현재 계절(" + season + ")과 해당 지역의 일반적인 날씨 패턴을 바탕으로 예상 날씨를 안내해주세요. 예를 들어 \"현재 " + season + "인 부산은 일반적으로 [계절별 특징]하며, 오늘 같은 날씨라면 [예상 날씨]일 가능성이 높습니다. 외출 시에는 [구체적인 조언]하시면 좋습니다\"와 같이 구체적이고 유용하게 답변해주세요.\n" +
+              "2. 일반 지식: 학습된 지식을 바탕으로 정확하고 도움이 되는 정보를 제공해주세요.\n" +
+              "3. 모든 질문에 대해: 친근하고 자연스러우며, '제공할 수 없습니다' 같은 부정적인 표현보다는 가능한 한 유용한 정보나 대안을 제시해주세요. ChatGPT 웹사이트에서 사용자들이 받는 것처럼 자연스럽고 도움이 되는 답변을 제공해주세요.\n" +
+              "4. 한국어로 친근하고 정확하게 답변하며, 사용자가 도움이 되도록 최선을 다해주세요.",
           },
           {
             role: "user",
@@ -1491,6 +1539,7 @@ app.post("/api/chat", async (req, res) => {
     });
   }
 });
+*/
 
 // ==================== 블로그 생성 API ====================
 

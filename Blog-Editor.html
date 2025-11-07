@@ -18,6 +18,8 @@
         --text-secondary: #7a6a60;
         --primary-green: #03C75A;
         --primary-white: #FFFFFF;
+        --naver-green: #03C75A;
+        --naver-green-50: rgba(3, 199, 90, 0.1);
       }
 
       * {
@@ -461,13 +463,13 @@
 
       @media (max-width: 768px) {
         .container {
-          padding: 16px 12px;
+          padding: 12px 8px;
         }
       }
 
       @media (max-width: 360px) {
         .container {
-          padding: 16px 12px;
+          padding: 12px 8px;
         }
       }
 
@@ -517,7 +519,7 @@
 
         .main-content {
           padding-left: 0;
-          padding-bottom: 90px;
+          padding-bottom: 100px;
         }
       }
 
@@ -569,7 +571,7 @@
         }
 
         .main-content {
-          padding-bottom: 70px;
+          padding-bottom: 5px;
         }
       }
 
@@ -754,19 +756,19 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 32px;
+            padding: 5px;
             background: transparent;
         }
 
         @media (max-width: 768px) {
           .container {
-            padding: 16px 12px;
+            padding: 12px 8px;
           }
         }
 
         @media (max-width: 360px) {
           .container {
-            padding: 16px 12px;
+            padding: 12px 8px;
           }
         }
 
@@ -1007,8 +1009,17 @@
         }
 
       .result-section {
-            padding: 40px;
             display: none;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 40px;
+            margin-top: 0;
+        }
+        
+        .result-content {
+            padding: 36px;
         }
 
         .result-section.show {
@@ -1018,7 +1029,7 @@
         .step-indicator {
         display: flex;
         justify-content: space-between;
-            margin-bottom: 30px;
+            margin-bottom: 12px;
             gap: 10px;
         }
 
@@ -1030,28 +1041,28 @@
             border-radius: 10px;
         font-weight: 600;
             font-size: 0.9rem;
-            color: #6c757d;
+            color: #495057;
         transition: all 0.3s ease;
       }
 
         .step.active {
-            background: var(--naver-green);
+            background: var(--accent-color);
         color: white;
       }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 20px 40px;
         }
 
         .spinner {
             width: 50px;
             height: 50px;
             border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--naver-green);
+            border-top: 5px solid var(--accent-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 12px;
         }
 
         @keyframes spin {
@@ -1068,60 +1079,98 @@
       }
 
         .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 20px;
+            background: rgba(255, 123, 84, 0.15);
+            color: #c75a2a;
+            padding: 12px 16px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 123, 84, 0.3);
+            font-size: 0.85rem;
+        }
+        
+        .success strong {
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .topic-card {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
       }
 
         .topic-card:hover {
-            border-color: var(--naver-green);
-            background: var(--naver-green-50);
+            border-color: var(--accent-color);
+            background: rgba(255, 123, 84, 0.1);
             transform: translateY(-2px);
         }
 
         .topic-card h3 {
             color: #333;
-            margin-bottom: 10px;
-            font-size: 1.2rem;
+            margin-bottom: 6px;
+            font-size: 1rem;
         }
 
         .topic-card p {
             color: #666;
-            margin-bottom: 10px;
-            line-height: 1.5;
+            margin-bottom: 6px;
+            line-height: 1.4;
+            font-size: 0.85rem;
         }
 
         .topic-card .keywords {
-            font-size: 0.9rem;
-            color: var(--naver-green);
+            font-size: 0.8rem;
+            color: var(--accent-color);
             font-weight: 600;
         }
 
         .blog-content {
             background: #f8f9fa;
             border-radius: 15px;
-            padding: 30px;
-            line-height: 1.8;
+            padding: 20px;
+            line-height: 1.6;
             white-space: pre-wrap;
-            font-size: 1rem;
+            font-size: 0.85rem;
+            width: 100%;
+            max-width: 100%;
         }
 
-        .blog-content h3 {
+        #blogTopics {
+            margin-top: 8px;
+        }
+        
+        #blogTopics h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
             color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
+        }
+        
+        #blogTopics p {
+            font-size: 0.85rem;
+            margin: 6px 0 12px 0;
+            color: #666;
+        }
+        
+        #blogContent h3 {
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        
+        .angle-info-box {
+            font-size: 0.875rem;
+        }
+        
+        .angle-info-box strong {
+            font-size: 0.875rem;
+        }
+        
+        .angle-info-box small {
+            font-size: 0.8rem;
         }
 
         /* AI 키워드 버튼 스타일 */
@@ -1276,12 +1325,99 @@
 
             .step-indicator {
                 flex-direction: column;
-                gap: 10px;
+                gap: 6px;
+                margin-bottom: 8px;
             }
 
             .step {
                 font-size: 0.85rem;
-                padding: 12px 8px;
+                padding: 10px 8px;
+                color: #495057;
+                background: #f8f9fa;
+            }
+            
+            .step.active {
+                color: white;
+                background: var(--accent-color);
+            }
+            
+            .loading {
+                padding: 12px 20px;
+            }
+            
+            .spinner {
+                margin: 0 auto 8px;
+            }
+            
+            .result-section {
+                padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+            }
+            
+            .result-content {
+                padding: 24px 16px;
+            }
+            
+            .success {
+                padding: 10px 12px;
+                margin-bottom: 6px;
+                font-size: 0.8rem;
+            }
+            
+            .success strong {
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            
+            .topic-card {
+                padding: 10px 12px;
+                margin-bottom: 6px;
+            }
+            
+            .topic-card h3 {
+                font-size: 0.9rem;
+                margin-bottom: 4px;
+            }
+            
+            .topic-card p {
+                font-size: 0.8rem;
+                margin-bottom: 4px;
+            }
+            
+            .topic-card .keywords {
+                font-size: 0.75rem;
+            }
+            
+            #blogTopics h3 {
+                font-size: 1rem;
+                margin-bottom: 4px;
+            }
+            
+            #blogTopics p {
+                font-size: 0.8rem;
+                margin: 4px 0 8px 0;
+            }
+            
+            #blogContent h3 {
+                font-size: 0.875rem;
+                margin-bottom: 12px;
+            }
+            
+            .angle-info-box {
+                font-size: 0.8rem;
+            }
+            
+            .angle-info-box strong {
+                font-size: 0.8rem;
+            }
+            
+            .angle-info-box small {
+                font-size: 0.75rem;
+            }
+            
+            .blog-content {
+                padding: 16px 12px;
+                font-size: 0.8rem;
+                line-height: 1.6;
             }
             .ai-keyword-btn {
                 padding: 9px 14px;
@@ -1432,7 +1568,7 @@
                 type="text"
                         id="companyName" 
                         name="companyName" 
-                        placeholder="예: 동흥안가"
+                        placeholder="예: 해운대국밥"
               />
                     <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
             </div>
@@ -1443,7 +1579,7 @@
                 type="text"
                         id="companyAddress" 
                         name="companyAddress" 
-                        placeholder="예: 부산광역시 해운대구 우동 1394-84"
+                        placeholder="예: 부산광역시 해운대구 우동 999-1"
                     />
                     <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
             </div>
@@ -1642,38 +1778,40 @@
           </div>
 
         <div class="result-section" id="resultSection">
-            <div class="step-indicator">
-                <div class="step" id="step1">1. 가게 정보 분석</div>
-                <div class="step" id="step2">2. 메뉴 분석</div>
-                <div class="step" id="step3">3. 주제 추천</div>
-                <div class="step" id="step4">4. 글 생성</div>
-          </div>
+            <div class="result-content">
+                <div class="step-indicator">
+                    <div class="step" id="step1">1. 가게 정보 분석</div>
+                    <div class="step" id="step2">2. 메뉴 분석</div>
+                    <div class="step" id="step3">3. 주제 추천</div>
+                    <div class="step" id="step4">4. 글 생성</div>
+                </div>
 
-            <div id="loadingDiv" class="loading">
-                <div class="spinner"></div>
-                <p>AI가 가게 정보를 분석하고 있습니다...</p>
+                <div id="loadingDiv" class="loading">
+                    <div class="spinner"></div>
+                    <p>AI가 가게 정보를 분석하고 있습니다...</p>
+                </div>
+
+                <div id="errorDiv" class="error" style="display: none;">
+                    <strong>오류가 발생했습니다:</strong>
+                    <p id="errorMessage"></p>
+                </div>
+
+                <div id="successDiv" class="success" style="display: none;">
+                    <strong>블로그가 성공적으로 생성되었습니다!</strong>
+                </div>
+
+                <div id="blogTopics" style="display: none;">
+                    <h3>추천 블로그 주제 (5개) - 클릭하여 선택</h3>
+                    <p>마음에 드는 주제를 클릭하시면 해당 주제로 블로그 글을 생성합니다</p>
+                    <div id="topicsList"></div>
+                </div>
+
+                <div id="blogContent" style="display: none;">
+                    <h3>생성된 블로그 글</h3>
+                    <div id="blogText" class="blog-content"></div>
+                </div>
+            </div>
         </div>
-
-            <div id="errorDiv" class="error" style="display: none;">
-                <strong>오류가 발생했습니다:</strong>
-                <p id="errorMessage"></p>
-            </div>
-
-            <div id="successDiv" class="success" style="display: none;">
-                <strong>블로그가 성공적으로 생성되었습니다!</strong>
-            </div>
-
-            <div id="blogTopics" style="display: none;">
-                <h3>추천 블로그 주제 (5개) - 클릭하여 선택</h3>
-                <p style="color: #666; margin: 10px 0;">마음에 드는 주제를 클릭하시면 해당 주제로 블로그 글을 생성합니다</p>
-                <div id="topicsList"></div>
-            </div>
-
-            <div id="blogContent" style="display: none;">
-                <h3>생성된 블로그 글</h3>
-                <div id="blogText" class="blog-content"></div>
-            </div>
-      </div>
     </div>
   </div>
 
@@ -2186,6 +2324,7 @@
                 // 앵글 정보 표시
                 if (metadata.writingAngle) {
                     const angleInfo = document.createElement('div');
+                    angleInfo.className = 'angle-info-box';
                     angleInfo.style.cssText = 'background: #e7f3ff; border: 1px solid #2196F3; border-radius: 10px; padding: 15px; margin-bottom: 20px; color: #1976D2;';
                     angleInfo.innerHTML = `<strong>📝 글쓰기 관점:</strong> ${metadata.writingAngle}<br><small>이 관점으로 글이 작성되었습니다. 다음에는 다른 관점으로 작성됩니다!</small>`;
                     blogContent.insertBefore(angleInfo, blogText);

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>사장픽(sajang pick) - 네이버 키워드 도구</title>
@@ -884,7 +884,7 @@
 
       @media (max-width: 768px) {
         .tab-content {
-          padding: 24px 16px;
+          padding: 16px 12px;
         }
         
         .tab-button {
@@ -905,7 +905,7 @@
       
       @media (max-width: 360px) {
         .tab-content {
-          padding: 20px 12px;
+          padding: 12px 8px;
         }
         
         .tab-button {
@@ -1265,7 +1265,7 @@
       @media (max-width: 768px) {
         .search-form {
           gap: 12px;
-          margin-bottom: 16px;
+          margin-bottom: 8px;
         }
         
         .search-btn {
@@ -1277,20 +1277,27 @@
         .search-options {
           justify-content: center;
           text-align: center;
-          padding: 12px 0;
-          margin-top: 16px;
+          padding: 6px 0;
+          margin-top: 4px;
+          margin-bottom: 4px;
         }
       }
       
       @media (max-width: 360px) {
         .search-form {
           gap: 10px;
-          margin-bottom: 12px;
+          margin-bottom: 6px;
         }
         
         .search-btn {
           padding: 12px 16px;
           font-size: 14px;
+        }
+
+        .search-options {
+          padding: 4px 0;
+          margin-top: 2px;
+          margin-bottom: 2px;
         }
       }
 
@@ -1370,6 +1377,20 @@
         color: var(--text-primary);
         border: none;
         box-shadow: none;
+      }
+
+      @media (max-width: 768px) {
+        .loading {
+          padding: 12px;
+          margin-bottom: 4px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .loading {
+          padding: 10px;
+          margin-bottom: 2px;
+        }
       }
 
       .loading i {
@@ -1462,6 +1483,7 @@
         border-bottom: 2px solid rgba(0, 0, 0, 0.1);
         white-space: nowrap;
         font-size: 13px;
+        line-height: 1.5;
       }
 
       .keyword-table td {
@@ -1470,6 +1492,7 @@
         text-align: center;
         color: var(--text-primary);
         font-size: 13px;
+        line-height: 1.5;
       }
 
       @media (max-width: 768px) {
@@ -1504,18 +1527,18 @@
         }
 
         .keyword-table th {
-          padding: 8px 6px;
+          padding: 10px 8px;
           font-size: 10px;
-          line-height: 1.3;
+          line-height: 1.5;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
         .keyword-table td {
-          padding: 8px 6px;
+          padding: 10px 8px;
           font-size: 10px;
-          line-height: 1.3;
+          line-height: 1.5;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -1575,13 +1598,15 @@
         }
 
         .keyword-table th {
-          padding: 6px 4px;
+          padding: 10px 6px;
           font-size: 9px;
+          line-height: 1.5;
         }
 
         .keyword-table td {
-          padding: 6px 4px;
+          padding: 10px 6px;
           font-size: 9px;
+          line-height: 1.5;
         }
 
         .keyword-table button {
@@ -1664,11 +1689,101 @@
         margin-bottom: 20px;
       }
 
+      @media (max-width: 768px) {
+        .keyword-preview-section {
+          margin-top: 0px !important;
+        }
+
+        .preview-header {
+          margin-bottom: 8px;
+        }
+
+        .preview-info-box {
+          margin: 6px 0 !important;
+          padding: 8px !important;
+        }
+
+        .stats {
+          padding: 8px 12px;
+          margin-bottom: 0px !important;
+        }
+
+        .keyword-table th {
+          padding: 10px 8px;
+          font-size: 10px;
+          line-height: 1.5;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .keyword-table td {
+          padding: 10px 8px;
+          font-size: 10px;
+          line-height: 1.5;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .keyword-preview-section {
+          margin-top: 0px !important;
+        }
+
+        .preview-header {
+          margin-bottom: 6px;
+        }
+
+        .preview-info-box {
+          margin: 5px 0 !important;
+          padding: 6px !important;
+        }
+
+        .stats {
+          padding: 6px 8px;
+          margin-bottom: 0px !important;
+          font-size: 12px;
+        }
+
+        .keyword-table th {
+          padding: 10px 6px;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .keyword-table td {
+          padding: 10px 6px;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+      }
+
       .preview-btn:hover {
         background: var(--accent-color) !important;
         color: white !important;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(255, 126, 70, 0.3);
+      }
+
+      /* 빈 상태 메시지 스타일 */
+      .empty-table-message {
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--text-secondary);
+      }
+
+      @media (max-width: 768px) {
+        .empty-table-message {
+          padding: 30px 15px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .empty-table-message {
+          padding: 20px 10px;
+        }
       }
 
       /* 페이지네이션 스타일 */
@@ -2473,11 +2588,40 @@
 
           <!-- 연관키워드 탭 -->
           <div id="related-keywords" class="tab-panel">
-            <div style="padding: 60px 20px;">
-              <p style="font-size: 16px; font-weight: 500; color: var(--text-secondary);">
-                연관키워드 기능은 추후 개발 예정입니다.
-              </p>
+            <div class="search-form">
+              <textarea
+                id="relatedKeywordQuery"
+                class="search-input"
+                placeholder="시드 키워드를 입력하세요 (한 줄에 하나씩)&#10;예:&#10;강남맛집&#10;부산맛집"
+                rows="6"
+                style="
+                  resize: none;
+                  overflow-y: auto;
+                  min-height: 120px;
+                  font-family: inherit;
+                "
+              ></textarea>
+              <button type="button" class="search-btn" id="relatedSearchBtn">
+                연관 키워드 검색
+              </button>
             </div>
+
+            <div class="search-options">
+              <span style="color: var(--text-secondary); font-size: 14px">
+                <span id="relatedKeywordCount">0</span>개 키워드
+              </span>
+            </div>
+
+            <div id="relatedLoadingDiv" class="loading" style="display: none">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>연관 키워드 검색 중입니다...</span>
+            </div>
+
+            <div id="relatedStatsDiv" class="stats" style="display: none"></div>
+
+            <div class="results" id="relatedResultsDiv"></div>
+
+            <div id="relatedErrorDiv" class="error" style="display: none"></div>
           </div>
         </div>
       </div>
@@ -2494,22 +2638,22 @@
       <div id="errorDiv" class="error" style="display: none"></div>
 
       <!-- 키워드 조회 결과 미리보기 -->
-      <div class="keyword-preview-section" style="margin-top: 20px;">
+      <div class="keyword-preview-section" id="keywordPreviewSection" style="margin-top: 20px;">
         <div class="preview-header">
-          <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0;">
+          <h2 id="previewTitle" style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0;">
             키워드 조회 결과
           </h2>
           <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="preview-btn" onclick="downloadSelectedKeywords()" style="padding: 8px 12px; border: 2px solid var(--accent-color); background: transparent; color: var(--accent-color); border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.3s ease;">
+            <button class="preview-btn" id="previewDownloadBtn" onclick="downloadSelectedKeywords()" style="padding: 8px 12px; border: 2px solid var(--accent-color); background: transparent; color: var(--accent-color); border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.3s ease;">
               다운로드
             </button>
-            <button class="preview-btn" onclick="resetSearchValues()" style="padding: 8px 12px; border: 2px solid var(--accent-color); background: transparent; color: var(--accent-color); border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.3s ease;">
+            <button class="preview-btn" id="previewResetBtn" onclick="resetSearchValues()" style="padding: 8px 12px; border: 2px solid var(--accent-color); background: transparent; color: var(--accent-color); border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.3s ease; display: none;">
               검색값초기화
             </button>
           </div>
         </div>
         
-        <div style="margin: 15px 0; padding: 12px; background: rgba(255, 126, 70, 0.05); border-radius: 8px;">
+        <div class="preview-info-box" style="margin: 15px 0; padding: 12px; background: rgba(255, 126, 70, 0.05); border-radius: 8px;">
           <p style="margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
             ※키워드를 선택하신 후 다운로드가 가능합니다.<br>
             ※키워드 클릭시 상세정보 제공
@@ -2528,8 +2672,6 @@
                   <th rowspan="2">키워드</th>
                   <th colspan="2">월간검색수</th>
                   <th rowspan="2">검색수합계</th>
-                  <th colspan="2">월간 블로그 발행</th>
-                  <th rowspan="2">네이버쇼핑 카테고리</th>
                   <th colspan="2">월평균클릭수</th>
                   <th colspan="2">월평균클릭율</th>
                   <th rowspan="2">경쟁정도</th>
@@ -2538,8 +2680,6 @@
                 <tr>
                   <th>PC</th>
                   <th>Mobile</th>
-                  <th>수량</th>
-                  <th>포화도</th>
                   <th>PC</th>
                   <th>Mobile</th>
                   <th>PC</th>
@@ -2548,7 +2688,7 @@
               </thead>
               <tbody id="previewTableBody">
                 <tr>
-                  <td colspan="15" style="padding: 60px 20px; text-align: center; color: var(--text-secondary);">
+                  <td colspan="12" class="empty-table-message">
                     키워드를 조회하십시오.
                   </td>
                 </tr>
@@ -2626,7 +2766,30 @@
     </div>
 
     <script>
-      // 백엔드 서버 설정: 상대 경로(`/api`) 사용
+      // 백엔드 서버 설정: 서버 포트 3003 사용
+      // Live Server(5501) 또는 다른 포트에서 실행 중이면 localhost:3003 사용
+      // 직접 서버에서 실행 중이면 상대 경로 사용
+      const API_BASE_URL = (() => {
+        const port = window.location.port;
+        const hostname = window.location.hostname;
+        
+        // localhost나 127.0.0.1이고 포트가 3003이 아니면 localhost:3003 사용
+        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3003') {
+          return 'http://localhost:3003';
+        }
+        
+        // 포트가 5501이거나 빈 문자열이면 localhost:3003 사용 (Live Server)
+        if (port === '5501' || port === '') {
+          return 'http://localhost:3003';
+        }
+        
+        // 그 외의 경우는 상대 경로 사용 (같은 서버에서 실행)
+        return '';
+      })();
+      
+      console.log('API_BASE_URL 설정:', API_BASE_URL);
+      console.log('현재 호스트:', window.location.hostname);
+      console.log('현재 포트:', window.location.port);
 
       // DOM 요소
       const searchQuery = document.getElementById("searchQuery");
@@ -2641,6 +2804,8 @@
 
       // 페이지네이션 변수
       let allResults = []; // 전체 검색 결과
+      let allKeywordResults = []; // 전체 키워드 결과 (입력 키워드 + 연관 키워드)
+      let searchedKeywords = []; // 입력한 키워드 목록
       let currentPage = 1;
       const itemsPerPage = 100;
 
@@ -2666,21 +2831,51 @@
         document.getElementById(tabName).classList.add("active");
 
         // 키워드 조회 결과 섹션 표시 제어
-        const previewSection = document.querySelector(".keyword-preview-section");
+        const previewSection = document.getElementById("keywordPreviewSection");
+        const previewTitle = document.getElementById("previewTitle");
+        const previewResetBtn = document.getElementById("previewResetBtn");
+        const previewDownloadBtn = document.getElementById("previewDownloadBtn");
+        
         if (previewSection) {
-          if (tabName === "keyword-search") {
+          if (tabName === "keyword-search" || tabName === "related-keywords") {
             previewSection.style.display = "block";
+            
+            // 탭에 따라 제목과 버튼 변경
+            if (tabName === "keyword-search") {
+              if (previewTitle) previewTitle.textContent = "키워드 조회 결과";
+              if (previewResetBtn) previewResetBtn.style.display = "inline-block";
+              if (previewDownloadBtn) {
+                previewDownloadBtn.onclick = downloadSelectedKeywords;
+                previewDownloadBtn.textContent = "다운로드";
+              }
+            } else if (tabName === "related-keywords") {
+              if (previewTitle) previewTitle.textContent = "연관 키워드 검색 결과";
+              if (previewResetBtn) previewResetBtn.style.display = "none";
+              if (previewDownloadBtn) {
+                previewDownloadBtn.onclick = downloadRelatedKeywords;
+                previewDownloadBtn.textContent = "다운로드";
+              }
+            }
           } else {
             previewSection.style.display = "none";
           }
         }
 
         // 결과 영역 초기화
-        if (tabName !== "keyword-search") {
+        if (tabName !== "keyword-search" && tabName !== "related-keywords") {
           resultsDiv.innerHTML = "";
           errorDiv.style.display = "none";
           statsDiv.style.display = "none";
           loadingDiv.style.display = "none";
+        }
+        
+        // 탭별 미리보기 테이블 업데이트
+        if (tabName === "keyword-search") {
+          // 키워드 조회 탭으로 전환 시 키워드 조회 결과 표시
+          updatePreviewTable();
+        } else if (tabName === "related-keywords") {
+          // 연관키워드 탭으로 전환 시 연관키워드 결과 표시
+          updateRelatedPreviewTable();
         }
       }
 
@@ -2828,7 +3023,7 @@
                     <div class="table-header">
                         <span>키워드 검색 결과</span>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <button onclick="downloadSelectedKeywords()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                            <button onclick="downloadSelectedKeywords()" style="padding: 8px 16px; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
                                 선택된 키워드 다운로드
                             </button>
                             <span class="pagination-info">${paginationInfo}</span>
@@ -3166,7 +3361,7 @@
           const trendSection = document.querySelector(".chart-section h3");
           trendSection.textContent = "월별 트렌드 데이터 로딩 중...";
 
-          const response = await fetch(`/api/keyword-trend`, {
+          const response = await fetch(`${API_BASE_URL}/api/keyword-trend`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -3206,7 +3401,7 @@
           console.log(`네이버 플레이스 검색: ${keyword}`);
 
           const response = await fetch(
-            `/api/search/local?query=${encodeURIComponent(keyword)}`
+            `${API_BASE_URL}/api/search/local?query=${encodeURIComponent(keyword)}`
           );
 
           if (response.ok) {
@@ -3613,6 +3808,31 @@
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       }
+      
+      // 연관 키워드 다운로드 함수 (미리보기 테이블 포함)
+      function downloadRelatedKeywords() {
+        const checkedBoxes = document.querySelectorAll(
+          'input[name="relatedKeywordCheck"]:checked, input[name="previewRelatedKeywordCheck"]:checked'
+        );
+
+        if (checkedBoxes.length === 0) {
+          alert("다운로드할 키워드를 선택해주세요.");
+          return;
+        }
+
+        const selectedKeywords = Array.from(checkedBoxes).map((checkbox) => checkbox.value);
+        const uniqueKeywords = [...new Set(selectedKeywords)];
+        const content = uniqueKeywords.join("\n");
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `related_keywords_${uniqueKeywords.length}개.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
 
       // 키워드 개수 업데이트
       function updateKeywordCount() {
@@ -3632,14 +3852,511 @@
       // 키워드 입력 시 실시간 카운팅
       searchQuery.addEventListener("input", updateKeywordCount);
 
+      // 연관 키워드 검색 관련 변수
+      let relatedKeywordResults = [];
+      let relatedCurrentPage = 1;
+      const relatedItemsPerPage = 100;
+
+      // 연관 키워드 개수 업데이트
+      function updateRelatedKeywordCount() {
+        const relatedQuery = document.getElementById("relatedKeywordQuery");
+        if (!relatedQuery) return;
+        
+        const keywords = relatedQuery.value
+          .trim()
+          .split("\n")
+          .filter((k) => k.trim() !== "");
+        const countEl = document.getElementById("relatedKeywordCount");
+        if (countEl) {
+          countEl.textContent = keywords.length;
+          if (keywords.length > 100) {
+            countEl.style.color = "#dc3545";
+          } else {
+            countEl.style.color = "#666";
+          }
+        }
+      }
+
+      // 연관 키워드 검색 함수
+      async function performRelatedKeywordSearch(query) {
+        try {
+          // 줄바꿈 또는 쉼표로 구분된 키워드들을 개별적으로 검색
+          const keywords = query
+            .split(/[,\n]/)
+            .map((k) => k.trim())
+            .filter((k) => k !== "");
+          
+          const seedKeywordItems = []; // 시드 키워드 항목 (맨 앞에 표시)
+          const allRelatedKeywords = []; // 연관 키워드 항목
+          const searchedKeywordSet = new Set(keywords.map(k => k.toLowerCase().replace(/\s+/g, "")));
+
+          console.log("=== 연관 키워드 검색 시작 ===");
+          console.log("시드 키워드:", keywords);
+
+          // 1단계: 각 시드 키워드에 대한 직접 검색 수행 (시드 키워드 자체의 데이터 가져오기)
+          for (const keyword of keywords) {
+            try {
+              console.log(`시드 키워드 "${keyword}" 직접 검색 중...`);
+              const searchData = await performSearch(keyword);
+              const searchItems = searchData.keywordList || [];
+              
+              // 시드 키워드와 정확히 일치하는 항목 찾기
+              const seedItem = searchItems.find((item) => {
+                const itemKeyword = extractKeyword(item);
+                const normalizedItemKeyword = itemKeyword.toLowerCase().replace(/\s+/g, "");
+                const normalizedSeedKeyword = keyword.toLowerCase().replace(/\s+/g, "");
+                return normalizedItemKeyword === normalizedSeedKeyword;
+              });
+              
+              if (seedItem) {
+                // 중복 방지: 이미 추가되지 않은 경우만 추가
+                const alreadyAdded = seedKeywordItems.some(seedItem => {
+                  const seedItemKeyword = extractKeyword(seedItem);
+                  return seedItemKeyword.toLowerCase().replace(/\s+/g, "") === keyword.toLowerCase().replace(/\s+/g, "");
+                });
+                if (!alreadyAdded) {
+                  seedKeywordItems.push(seedItem);
+                  console.log(`✓ 시드 키워드 데이터 추가: "${extractKeyword(seedItem)}"`);
+                }
+              } else {
+                console.warn(`⚠ 시드 키워드 "${keyword}"의 데이터를 찾을 수 없습니다.`);
+              }
+            } catch (error) {
+              console.warn(`시드 키워드 "${keyword}" 직접 검색 실패:`, error);
+              // 시드 키워드 검색 실패해도 연관 키워드 검색은 계속 진행
+            }
+          }
+
+          // 2단계: 각 시드 키워드에 대한 연관 키워드 검색 수행
+          for (const keyword of keywords) {
+            try {
+              const apiUrl = `${API_BASE_URL}/api/related-keywords?seed=${encodeURIComponent(keyword)}`;
+              console.log(`연관 키워드 API 호출: ${apiUrl}`);
+              
+              let response;
+              try {
+                response = await fetch(apiUrl, {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                });
+              } catch (fetchError) {
+                // 네트워크 오류 (서버가 실행되지 않음)
+                console.error("Fetch 오류:", fetchError);
+                throw new Error(`서버에 연결할 수 없습니다. 서버가 포트 3003에서 실행 중인지 확인해주세요.\n\n해결 방법:\n1. 터미널에서 "node server.js" 실행\n2. 또는 "서버시작.bat" 파일 실행`);
+              }
+
+              if (!response.ok) {
+                if (response.status === 404) {
+                  throw new Error(`서버에서 연관 키워드 API를 찾을 수 없습니다 (404). 서버가 실행 중인지 확인해주세요.`);
+                } else if (response.status === 500) {
+                  const errorData = await response.json().catch(() => ({}));
+                  throw new Error(`서버 오류 (500): ${errorData.error || '서버 내부 오류가 발생했습니다.'}`);
+                } else {
+                  const errorData = await response.json().catch(() => ({}));
+                  throw new Error(`API 오류 (${response.status}): ${errorData.error || '알 수 없는 오류'}`);
+                }
+              }
+
+              const data = await response.json();
+              const items = data.keywordList || [];
+            
+            console.log(`"${keyword}"에 대한 연관 키워드 ${items.length}개 수신`);
+            
+            // 연관 키워드만 필터링 (시드 키워드는 이미 위에서 추가했으므로 제외)
+            items.forEach((item) => {
+              const itemKeyword = extractKeyword(item);
+              const normalizedItemKeyword = itemKeyword.toLowerCase().replace(/\s+/g, "");
+              
+              // 시드 키워드가 아닌 경우만 연관 키워드 배열에 추가
+              if (!searchedKeywordSet.has(normalizedItemKeyword)) {
+                // 중복 방지: 이미 추가되지 않은 경우만 추가
+                const alreadyAdded = allRelatedKeywords.some(relatedItem => {
+                  const relatedItemKeyword = extractKeyword(relatedItem);
+                  return relatedItemKeyword.toLowerCase().replace(/\s+/g, "") === normalizedItemKeyword;
+                });
+                if (!alreadyAdded) {
+                  allRelatedKeywords.push(item);
+                }
+              }
+            });
+
+              console.log(`"${keyword}" - 연관 키워드 ${allRelatedKeywords.length}개 추가됨`);
+            } catch (error) {
+              console.error(`키워드 "${keyword}"에 대한 연관 키워드 검색 오류:`, error);
+              // 첫 번째 키워드에서 오류가 발생하면 전체 검색 중단하고 오류 전파
+              if (keywords.length === 1 || keyword === keywords[0]) {
+                throw error;
+              }
+              // 여러 키워드 중 일부만 실패한 경우 경고만 표시하고 계속 진행
+              console.warn(`키워드 "${keyword}"에 대한 연관 키워드 검색 실패, 다른 키워드 계속 검색`);
+            }
+          }
+
+          // 시드 키워드를 맨 앞에, 연관 키워드를 그 다음에 배치
+          const finalKeywordList = [...seedKeywordItems, ...allRelatedKeywords];
+          
+          console.log(`총 결과: 시드 키워드 ${seedKeywordItems.length}개 + 연관 키워드 ${allRelatedKeywords.length}개 = ${finalKeywordList.length}개`);
+          console.log("시드 키워드 목록:", seedKeywordItems.map(item => extractKeyword(item)));
+          console.log("=====================");
+
+          return { keywordList: finalKeywordList };
+        } catch (error) {
+          console.error("Related keyword search error:", error);
+          
+          // 연결 오류인 경우 더 명확한 메시지 제공
+          if (error.message.includes('Failed to fetch') || 
+              error.message.includes('ERR_CONNECTION_REFUSED') ||
+              error.message.includes('서버에 연결할 수 없습니다')) {
+            throw new Error(`❌ 서버 연결 실패\n\n백엔드 서버가 실행되지 않았습니다.\n\n해결 방법:\n1. 터미널을 열고 프로젝트 폴더로 이동\n2. "node server.js" 명령어 실행\n3. 또는 "서버시작.bat" 파일을 더블클릭\n\n서버는 포트 3003에서 실행되어야 합니다.`);
+          }
+          
+          if (error.message.includes("fetch")) {
+            throw new Error(
+              `백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.\n\n오류: ${error.message}`
+            );
+          }
+          throw error;
+        }
+      }
+
+      // 연관 키워드 결과 렌더링
+      function renderRelatedKeywordResults(data, query) {
+        const items = data.keywordList || [];
+        const relatedResultsDiv = document.getElementById("relatedResultsDiv");
+        const relatedStatsDiv = document.getElementById("relatedStatsDiv");
+
+        if (!relatedResultsDiv) {
+          console.error("relatedResultsDiv 요소를 찾을 수 없습니다.");
+          return;
+        }
+
+        if (items.length === 0) {
+          relatedKeywordResults = [];
+          relatedResultsDiv.innerHTML = `
+            <div class="error">
+              <h3>연관 키워드 검색 결과가 없습니다</h3>
+              <p>"${query}"에 대한 연관 키워드를 찾을 수 없습니다.</p>
+              <small>시드 키워드를 확인하거나 다른 키워드로 시도해보세요.</small>
+            </div>
+          `;
+          // 연관키워드 탭인 경우에만 미리보기 테이블 업데이트
+          const relatedKeywordsTab = document.getElementById('related-keywords');
+          if (relatedKeywordsTab && relatedKeywordsTab.classList.contains('active')) {
+            updateRelatedPreviewTable();
+          }
+          return;
+        }
+
+        relatedKeywordResults = items;
+        relatedCurrentPage = 1;
+
+        // 연관키워드 탭인 경우에만 미리보기 테이블 업데이트
+        const relatedKeywordsTab = document.getElementById('related-keywords');
+        if (relatedKeywordsTab && relatedKeywordsTab.classList.contains('active')) {
+          // 통계 정보
+          if (relatedStatsDiv) {
+            const keywordCount = query.split(/[,\n]/).filter((k) => k.trim()).length;
+            relatedStatsDiv.innerHTML = `
+              <strong>${keywordCount}개 시드 키워드</strong>에 대한 연관 키워드 
+              <strong>${items.length}</strong>개 표시
+            `;
+            relatedStatsDiv.style.display = "block";
+          }
+
+          // 미리보기 테이블 업데이트 (전체 결과 표시)
+          updateRelatedPreviewTable();
+        }
+        
+        // 상단 테이블 렌더링 (페이지네이션 포함)
+        renderRelatedKeywordTable();
+      }
+
+      // 연관 키워드 테이블 렌더링
+      function renderRelatedKeywordTable() {
+        const relatedResultsDiv = document.getElementById("relatedResultsDiv");
+        if (!relatedResultsDiv) {
+          console.error("relatedResultsDiv 요소를 찾을 수 없습니다.");
+          return;
+        }
+
+        const totalPages = Math.ceil(relatedKeywordResults.length / relatedItemsPerPage);
+        const startIndex = (relatedCurrentPage - 1) * relatedItemsPerPage;
+        const endIndex = startIndex + relatedItemsPerPage;
+        const currentData = relatedKeywordResults.slice(startIndex, endIndex);
+
+        const paginationInfo =
+          totalPages > 1
+            ? `${relatedCurrentPage}/${totalPages} 페이지 (${startIndex + 1}-${endIndex}번째 / 총 ${relatedKeywordResults.length}개)`
+            : `총 ${relatedKeywordResults.length}개`;
+
+        const tableHtml = `
+          <div class="results-table">
+            <div class="table-header">
+              <span>연관 키워드 검색 결과</span>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button onclick="downloadRelatedKeywords()" style="padding: 8px 16px; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease;">
+                  선택된 키워드 다운로드
+                </button>
+                <span class="pagination-info">${paginationInfo}</span>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="keyword-table">
+                <thead>
+                  <tr>
+                    <th class="checkbox-cell">
+                      <input type="checkbox" id="relatedSelectAll" onchange="toggleRelatedAllCheckboxes()">
+                    </th>
+                    <th>NO</th>
+                    <th>연관키워드</th>
+                    <th>월간검색수<br>PC</th>
+                    <th>월간검색수<br>모바일</th>
+                    <th>검색수합계</th>
+                    <th>월평균클릭수<br>PC</th>
+                    <th>월평균클릭수<br>모바일</th>
+                    <th>월평균클릭율<br>PC</th>
+                    <th>월평균클릭율<br>모바일</th>
+                    <th>경쟁정도</th>
+                    <th>월평균노출<br>광고수</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${currentData
+                    .map((item, index) => {
+                      const globalIndex = startIndex + index + 1;
+                      const keyword = extractKeyword(item);
+                      const pcCount = sanitizeData(item.monthlyPcQcCnt);
+                      const mobileCount = sanitizeData(item.monthlyMobileQcCnt);
+                      const totalCount = pcCount + mobileCount;
+                      const pcClick = parseFloat(item.monthlyAvePcClkCnt) || 0;
+                      const mobileClick = parseFloat(item.monthlyAveMobileClkCnt) || 0;
+                      const pcCtr = parseFloat(item.monthlyAvePcCtr) || 0;
+                      const mobileCtr = parseFloat(item.monthlyAveMobileCtr) || 0;
+                      const competition = sanitizeData(item.compIdx, "string");
+                      const adCount = extractAdCount(item);
+
+                      let competitionClass = "";
+                      if (competition === "높음") competitionClass = "competition-high";
+                      else if (competition === "중간") competitionClass = "competition-medium";
+                      else if (competition === "낮음") competitionClass = "competition-low";
+
+                      return `
+                        <tr>
+                          <td class="checkbox-cell">
+                            <input type="checkbox" name="relatedKeywordCheck" value="${keyword}">
+                          </td>
+                          <td>${globalIndex}</td>
+                          <td class="keyword-cell">
+                            <span class="keyword-link" onclick="showKeywordChart('${keyword}', ${JSON.stringify(item).replace(/"/g, "&quot;")})">
+                              ${keyword}
+                            </span>
+                          </td>
+                          <td class="number-cell">${pcCount.toLocaleString()}</td>
+                          <td class="number-cell">${mobileCount.toLocaleString()}</td>
+                          <td class="number-cell" style="font-weight: 700; color: #2c3e50;">${totalCount.toLocaleString()}</td>
+                          <td class="number-cell">${pcClick}</td>
+                          <td class="number-cell">${mobileClick}</td>
+                          <td>${pcCtr.toFixed(2)}%</td>
+                          <td>${mobileCtr.toFixed(2)}%</td>
+                          <td class="competition-cell ${competitionClass}">${competition}</td>
+                          <td class="number-cell">${adCount.toLocaleString()}</td>
+                        </tr>
+                      `;
+                    })
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          ${renderRelatedKeywordPagination(totalPages)}
+        `;
+
+        relatedResultsDiv.innerHTML = tableHtml;
+      }
+
+      // 연관 키워드 페이지네이션 렌더링
+      function renderRelatedKeywordPagination(totalPages) {
+        if (totalPages <= 1) return "";
+
+        let paginationHtml = `
+          <div class="pagination-container">
+            <div class="pagination">
+              <button class="pagination-btn nav-btn ${relatedCurrentPage === 1 ? "disabled" : ""}" 
+                      onclick="goToRelatedPage(1)" ${relatedCurrentPage === 1 ? "disabled" : ""}>
+                <i class="fas fa-angle-double-left"></i> 처음
+              </button>
+              <button class="pagination-btn nav-btn ${relatedCurrentPage === 1 ? "disabled" : ""}" 
+                      onclick="goToRelatedPage(${relatedCurrentPage - 1})" ${relatedCurrentPage === 1 ? "disabled" : ""}>
+                <i class="fas fa-angle-left"></i> 이전
+              </button>
+        `;
+
+        const startPage = Math.max(1, relatedCurrentPage - 5);
+        const endPage = Math.min(totalPages, relatedCurrentPage + 5);
+
+        if (startPage > 1) {
+          paginationHtml += `<button class="pagination-btn" onclick="goToRelatedPage(1)">1</button>`;
+          if (startPage > 2) {
+            paginationHtml += `<span class="pagination-btn disabled">...</span>`;
+          }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          paginationHtml += `
+            <button class="pagination-btn ${i === relatedCurrentPage ? "active" : ""}" 
+                    onclick="goToRelatedPage(${i})">${i}</button>
+          `;
+        }
+
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            paginationHtml += `<span class="pagination-btn disabled">...</span>`;
+          }
+          paginationHtml += `<button class="pagination-btn" onclick="goToRelatedPage(${totalPages})">${totalPages}</button>`;
+        }
+
+        paginationHtml += `
+              <button class="pagination-btn nav-btn ${relatedCurrentPage === totalPages ? "disabled" : ""}" 
+                      onclick="goToRelatedPage(${relatedCurrentPage + 1})" ${relatedCurrentPage === totalPages ? "disabled" : ""}>
+                다음 <i class="fas fa-angle-right"></i>
+              </button>
+              <button class="pagination-btn nav-btn ${relatedCurrentPage === totalPages ? "disabled" : ""}" 
+                      onclick="goToRelatedPage(${totalPages})" ${relatedCurrentPage === totalPages ? "disabled" : ""}>
+                마지막 <i class="fas fa-angle-double-right"></i>
+              </button>
+            </div>
+            <div class="pagination-jump">
+              <span>페이지 이동:</span>
+              <input type="number" id="relatedPageJumpInput" min="1" max="${totalPages}" value="${relatedCurrentPage}">
+              <button onclick="jumpToRelatedPage()">이동</button>
+            </div>
+          </div>
+        `;
+
+        return paginationHtml;
+      }
+
+      // 연관 키워드 미리보기 테이블 업데이트 함수 (전체 결과 표시)
+      function updateRelatedPreviewTable() {
+        const previewBody = document.getElementById('previewTableBody');
+        if (!previewBody) return;
+        
+        // 현재 탭이 연관키워드 탭인지 확인
+        const relatedKeywordsTab = document.getElementById('related-keywords');
+        if (!relatedKeywordsTab || !relatedKeywordsTab.classList.contains('active')) {
+          return; // 연관키워드 탭이 아니면 업데이트하지 않음
+        }
+        
+        if (!relatedKeywordResults || relatedKeywordResults.length === 0) {
+          previewBody.innerHTML = `
+            <tr>
+              <td colspan="12" class="empty-table-message">
+                연관 키워드를 검색하십시오.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+        
+        // 전체 결과 표시
+        previewBody.innerHTML = relatedKeywordResults.map((item, index) => {
+          const keyword = extractKeyword(item);
+          const pcCount = sanitizeData(item.monthlyPcQcCnt);
+          const mobileCount = sanitizeData(item.monthlyMobileQcCnt);
+          const totalCount = pcCount + mobileCount;
+          const pcClick = parseFloat(item.monthlyAvePcClkCnt) || 0;
+          const mobileClick = parseFloat(item.monthlyAveMobileClkCnt) || 0;
+          const pcCtr = parseFloat(item.monthlyAvePcCtr) || 0;
+          const mobileCtr = parseFloat(item.monthlyAveMobileCtr) || 0;
+          const competition = sanitizeData(item.compIdx, "string");
+          const adCount = extractAdCount(item);
+          
+          let competitionClass = "";
+          if (competition === "높음") competitionClass = "competition-high";
+          else if (competition === "중간") competitionClass = "competition-medium";
+          else if (competition === "낮음") competitionClass = "competition-low";
+          
+          return `
+            <tr>
+              <td class="checkbox-cell">
+                <input type="checkbox" name="previewRelatedKeywordCheck" value="${keyword}">
+              </td>
+              <td>${index + 1}</td>
+              <td class="keyword-cell">
+                <span class="keyword-link" onclick="showKeywordChart('${keyword}', ${JSON.stringify(item).replace(/"/g, "&quot;")})">
+                  ${keyword}
+                </span>
+              </td>
+              <td class="number-cell">${pcCount.toLocaleString()}</td>
+              <td class="number-cell">${mobileCount.toLocaleString()}</td>
+              <td class="number-cell" style="font-weight: 700; color: var(--text-primary);">${totalCount.toLocaleString()}</td>
+              <td class="number-cell">${pcClick.toLocaleString()}</td>
+              <td class="number-cell">${mobileClick.toLocaleString()}</td>
+              <td>${pcCtr.toFixed(2)}%</td>
+              <td>${mobileCtr.toFixed(2)}%</td>
+              <td class="competition-cell ${competitionClass}">${competition || '-'}</td>
+              <td class="number-cell">${adCount.toLocaleString()}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+      
+      // 연관 키워드 페이지 이동
+      function goToRelatedPage(page) {
+        const totalPages = Math.ceil(relatedKeywordResults.length / relatedItemsPerPage);
+        if (page < 1 || page > totalPages) return;
+
+        relatedCurrentPage = page;
+        renderRelatedKeywordTable();
+
+        const relatedResultsDiv = document.getElementById("relatedResultsDiv");
+        if (relatedResultsDiv) {
+          relatedResultsDiv.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }
+
+      function jumpToRelatedPage() {
+        const pageInput = document.getElementById("relatedPageJumpInput");
+        const page = parseInt(pageInput.value);
+        const totalPages = Math.ceil(relatedKeywordResults.length / relatedItemsPerPage);
+
+        if (page >= 1 && page <= totalPages) {
+          goToRelatedPage(page);
+        } else {
+          alert(`1부터 ${totalPages} 사이의 페이지 번호를 입력해주세요.`);
+          pageInput.value = relatedCurrentPage;
+        }
+      }
+
+      // 연관 키워드 전체 선택/해제
+      function toggleRelatedAllCheckboxes() {
+        const selectAll = document.getElementById("relatedSelectAll");
+        const checkboxes = document.querySelectorAll('input[name="relatedKeywordCheck"]');
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = selectAll.checked;
+        });
+      }
+
+
       // 서버 상태 확인
       async function checkServerStatus() {
+        // serverStatus 요소가 없으면 함수 종료 (선택적 기능)
+        if (!serverStatus || !statusText) {
+          return true; // 요소가 없어도 오류로 처리하지 않음
+        }
+
         try {
-          const response = await fetch(`/api/health`);
+          const response = await fetch(`${API_BASE_URL}/api/health`);
           if (response.ok) {
             serverStatus.className = "server-status";
             statusText.textContent =
               "✅ 백엔드 서버가 정상적으로 실행 중입니다.";
+            serverStatus.style.display = "block";
             return true;
           }
         } catch (error) {
@@ -3648,15 +4365,16 @@
                     ❌ 백엔드 서버에 연결할 수 없습니다.<br>
                     <strong>naver_search.js</strong>를 실행했는지 확인해주세요. (node naver_search.js)
                 `;
+          serverStatus.style.display = "block";
           return false;
         }
-        serverStatus.style.display = "block";
+        return false;
       }
 
       // 검색 함수 (키워드 검색만 사용)
       async function performSearch(query) {
         try {
-          const response = await fetch(`/api/keywords`, {
+          const response = await fetch(`${API_BASE_URL}/api/keywords`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -3850,17 +4568,51 @@
 
       // 검색 결과 렌더링 (페이지네이션 적용)
       function renderResults(data, query) {
-        const items = data.keywordList || [];
+        const allItems = data.keywordList || [];
+        
+        // 입력한 키워드 목록 저장 (원본과 정규화된 버전 모두 저장)
+        const rawKeywords = query
+          .split("\n")
+          .map((k) => k.trim())
+          .filter((k) => k !== "");
+        
+        // 정규화: 공백 제거, 소문자 변환 (비교용)
+        searchedKeywords = rawKeywords.map((k) => k.toLowerCase().replace(/\s+/g, ""));
 
         // 디버깅: API 응답 구조 확인
-        console.log("=== API 응답 디버깅 ===");
-        console.log("전체 응답:", data);
-        console.log("키워드 리스트:", items);
-        if (items.length > 0) {
-          console.log("첫 번째 아이템:", items[0]);
-          console.log("첫 번째 아이템의 모든 키:", Object.keys(items[0]));
+        console.log("=== 키워드 조회 필터링 디버깅 ===");
+        console.log("입력한 원본 키워드:", rawKeywords);
+        console.log("정규화된 키워드:", searchedKeywords);
+        console.log("전체 API 응답 키워드 수:", allItems.length);
+        if (allItems.length > 0) {
+          console.log("첫 번째 아이템 키워드:", extractKeyword(allItems[0]));
+          console.log("첫 번째 아이템의 모든 키:", Object.keys(allItems[0]));
         }
         console.log("=====================");
+
+        // 전체 결과 저장 (나중에 연관 키워드 탭에서 사용)
+        allKeywordResults = allItems;
+
+        // 입력한 키워드만 필터링 (키워드 조회 탭용)
+        // 네이버 API는 입력한 키워드와 정확히 일치하는 것도 반환하므로, 정확히 일치하는 것만 필터링
+        const items = allItems.filter((item) => {
+          const itemKeyword = extractKeyword(item);
+          // 공백 제거하고 소문자로 변환하여 비교
+          const normalizedItemKeyword = itemKeyword.toLowerCase().replace(/\s+/g, "");
+          
+          // 입력한 키워드 중 하나와 정확히 일치하는지 확인
+          const isExactMatch = searchedKeywords.some((searched) => {
+            return normalizedItemKeyword === searched;
+          });
+          
+          if (isExactMatch) {
+            console.log(`✓ 일치: "${itemKeyword}" (정규화: "${normalizedItemKeyword}")`);
+          }
+          
+          return isExactMatch;
+        });
+        
+        console.log(`필터링 결과: ${items.length}개 (전체 ${allItems.length}개 중)`);
 
         if (items.length === 0) {
           resultsDiv.innerHTML = `
@@ -3872,42 +4624,55 @@
           return;
         }
 
-        // 키워드 조회 결과 섹션 표시
-        const previewSection = document.querySelector(".keyword-preview-section");
-        if (previewSection) {
-          previewSection.style.display = "block";
-        }
-
-        // 전체 결과 저장 및 페이지 초기화
+        // 입력한 키워드 결과만 저장 및 페이지 초기화
         allResults = items;
         currentPage = 1;
         currentSort = { column: null, direction: "desc" }; // 정렬 상태 초기화
 
-        // 통계 정보
-        statsDiv.innerHTML = `
-                <strong>${
-                  query.split("\n").filter((k) => k.trim()).length
-                }개 키워드</strong>에 대한 키워드 검색 결과 
-                <strong>${items.length}</strong>개 표시
-            `;
-        statsDiv.style.display = "block";
+        // 키워드 조회 탭인 경우에만 미리보기 테이블 업데이트
+        const keywordSearchTab = document.getElementById('keyword-search');
+        if (keywordSearchTab && keywordSearchTab.classList.contains('active')) {
+          // 키워드 조회 결과 섹션 표시
+          const previewSection = document.getElementById("keywordPreviewSection");
+          if (previewSection) {
+            previewSection.style.display = "block";
+          }
 
-        // 첫 페이지 렌더링
-        renderCurrentPage();
-        
-        // 미리보기 테이블 업데이트
-        updatePreviewTable();
+          // 통계 정보
+          statsDiv.innerHTML = `
+                <strong>${
+                  searchedKeywords.length
+                }개 키워드</strong>에 대한 검색 결과 
+                <strong>${items.length}</strong>개 표시
+                <span style="color: var(--text-secondary); font-size: 13px;">
+                  (연관 키워드 ${allItems.length - items.length}개는 연관 키워드 탭에서 확인하세요)
+                </span>
+            `;
+          statsDiv.style.display = "block";
+
+          // 키워드 조회 탭에서는 상단 테이블 숨기고 미리보기 테이블만 표시
+          resultsDiv.innerHTML = "";
+          
+          // 미리보기 테이블 업데이트 (전체 결과 표시)
+          updatePreviewTable();
+        }
       }
       
-      // 미리보기 테이블 업데이트 함수
+      // 미리보기 테이블 업데이트 함수 (전체 결과 표시)
       function updatePreviewTable() {
         const previewBody = document.getElementById('previewTableBody');
         if (!previewBody) return;
         
+        // 현재 탭이 키워드 조회 탭인지 확인
+        const keywordSearchTab = document.getElementById('keyword-search');
+        if (!keywordSearchTab || !keywordSearchTab.classList.contains('active')) {
+          return; // 키워드 조회 탭이 아니면 업데이트하지 않음
+        }
+        
         if (!allResults || allResults.length === 0) {
           previewBody.innerHTML = `
             <tr>
-              <td colspan="15" style="padding: 60px 20px; text-align: center; color: var(--text-secondary);">
+              <td colspan="12" class="empty-table-message">
                 키워드를 조회하십시오.
               </td>
             </tr>
@@ -3915,10 +4680,8 @@
           return;
         }
         
-        // 최대 5개만 미리보기로 표시
-        const previewData = allResults.slice(0, 5);
-        
-        previewBody.innerHTML = previewData.map((item, index) => {
+        // 전체 결과 표시
+        previewBody.innerHTML = allResults.map((item, index) => {
           const keyword = extractKeyword(item);
           const pcCount = sanitizeData(item.monthlyPcQcCnt);
           const mobileCount = sanitizeData(item.monthlyMobileQcCnt);
@@ -3929,11 +4692,6 @@
           const mobileCtr = parseFloat(item.monthlyAveMobileCtr) || 0;
           const competition = sanitizeData(item.compIdx, "string");
           const adCount = extractAdCount(item);
-          
-          // 블로그 발행 수량과 포화도는 임시로 빈 값 처리 (API에 없을 수 있음)
-          const blogQuantity = '-';
-          const blogSaturation = '-';
-          const shoppingCategory = '-';
           
           let competitionClass = "";
           if (competition === "높음") competitionClass = "competition-high";
@@ -3954,9 +4712,6 @@
               <td class="number-cell">${pcCount.toLocaleString()}</td>
               <td class="number-cell">${mobileCount.toLocaleString()}</td>
               <td class="number-cell" style="font-weight: 700; color: var(--text-primary);">${totalCount.toLocaleString()}</td>
-              <td class="number-cell">${blogQuantity}</td>
-              <td class="number-cell">${blogSaturation}</td>
-              <td>${shoppingCategory}</td>
               <td class="number-cell">${pcClick.toLocaleString()}</td>
               <td class="number-cell">${mobileClick.toLocaleString()}</td>
               <td>${pcCtr.toFixed(2)}%</td>
@@ -3971,10 +4726,24 @@
       // 미리보기 테이블 전체 선택/해제
       function togglePreviewAllCheckboxes() {
         const selectAll = document.getElementById("previewSelectAll");
-        const checkboxes = document.querySelectorAll('input[name="previewKeywordCheck"]');
-        checkboxes.forEach((checkbox) => {
-          checkbox.checked = selectAll.checked;
-        });
+        
+        // 현재 활성화된 탭에 따라 다른 체크박스 선택
+        const keywordSearchTab = document.getElementById('keyword-search');
+        const relatedKeywordsTab = document.getElementById('related-keywords');
+        
+        if (keywordSearchTab && keywordSearchTab.classList.contains('active')) {
+          // 키워드 조회 탭
+          const checkboxes = document.querySelectorAll('input[name="previewKeywordCheck"]');
+          checkboxes.forEach((checkbox) => {
+            checkbox.checked = selectAll.checked;
+          });
+        } else if (relatedKeywordsTab && relatedKeywordsTab.classList.contains('active')) {
+          // 연관키워드 탭
+          const checkboxes = document.querySelectorAll('input[name="previewRelatedKeywordCheck"]');
+          checkboxes.forEach((checkbox) => {
+            checkbox.checked = selectAll.checked;
+          });
+        }
       }
       
       // 검색값 초기화 함수
@@ -4077,6 +4846,93 @@
         await checkServerStatus();
         checkLoginStatusNav(); // 로그인 상태 확인
         updatePreviewTable(); // 미리보기 테이블 초기화
+
+        // 연관 키워드 검색 버튼 이벤트 등록 (지연 등록으로 탭이 로드된 후에도 작동)
+        setTimeout(() => {
+          const relatedSearchBtn = document.getElementById("relatedSearchBtn");
+          const relatedKeywordQuery = document.getElementById("relatedKeywordQuery");
+          
+          if (relatedSearchBtn && relatedKeywordQuery) {
+            console.log("연관 키워드 검색 버튼 이벤트 등록 완료");
+            
+            // 기존 이벤트 리스너 제거 후 새로 등록 (중복 방지)
+            const newRelatedSearchBtn = relatedSearchBtn.cloneNode(true);
+            relatedSearchBtn.parentNode.replaceChild(newRelatedSearchBtn, relatedSearchBtn);
+            
+            newRelatedSearchBtn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              console.log("연관 키워드 검색 버튼 클릭됨");
+
+              const queryText = relatedKeywordQuery.value.trim();
+
+              if (!queryText) {
+                alert("시드 키워드를 입력해주세요.");
+                return;
+              }
+
+              const keywords = queryText.split("\n").filter((k) => k.trim() !== "");
+              if (keywords.length === 0) {
+                alert("최소 1개의 키워드를 입력해주세요.");
+                return;
+              }
+
+              if (keywords.length > 100) {
+                alert("최대 100개의 키워드까지 입력 가능합니다.");
+                return;
+              }
+
+              // 줄바꿈으로 구분된 키워드를 쉼표로 변환 (performRelatedKeywordSearch에서 처리)
+              const query = keywords.join(",");
+
+              newRelatedSearchBtn.disabled = true;
+              newRelatedSearchBtn.textContent = "검색 중...";
+              
+              const relatedLoadingDiv = document.getElementById("relatedLoadingDiv");
+              const relatedResultsDiv = document.getElementById("relatedResultsDiv");
+              const relatedErrorDiv = document.getElementById("relatedErrorDiv");
+              const relatedStatsDiv = document.getElementById("relatedStatsDiv");
+              
+              if (relatedLoadingDiv) relatedLoadingDiv.style.display = "block";
+              if (relatedResultsDiv) relatedResultsDiv.innerHTML = "";
+              if (relatedErrorDiv) relatedErrorDiv.style.display = "none";
+              if (relatedStatsDiv) relatedStatsDiv.style.display = "none";
+
+              try {
+                console.log("연관 키워드 검색 시작:", query);
+                const data = await performRelatedKeywordSearch(query);
+                console.log("연관 키워드 검색 완료:", data);
+                renderRelatedKeywordResults(data, queryText);
+              } catch (error) {
+                console.error("연관 키워드 검색 오류:", error);
+                if (relatedErrorDiv) {
+                  // 줄바꿈을 <br>로 변환
+                  const errorMessage = (error.message || "검색 중 오류가 발생했습니다.")
+                    .replace(/\n/g, '<br>');
+                  
+                  relatedErrorDiv.innerHTML = `
+                    <h3>❌ 연관 키워드 검색 오류</h3>
+                    <div style="line-height: 1.6;">${errorMessage}</div>
+                    <small style="display: block; margin-top: 10px; color: #666;">콘솔을 확인하여 자세한 오류 정보를 확인하세요.</small>
+                  `;
+                  relatedErrorDiv.style.display = "block";
+                } else {
+                  alert(`연관 키워드 검색 오류: ${error.message || "알 수 없는 오류"}`);
+                }
+              } finally {
+                newRelatedSearchBtn.disabled = false;
+                newRelatedSearchBtn.textContent = "연관 키워드 검색";
+                if (relatedLoadingDiv) relatedLoadingDiv.style.display = "none";
+              }
+            });
+
+            relatedKeywordQuery.addEventListener("input", updateRelatedKeywordCount);
+          } else {
+            console.warn("연관 키워드 검색 요소를 찾을 수 없습니다:", {
+              relatedSearchBtn: !!relatedSearchBtn,
+              relatedKeywordQuery: !!relatedKeywordQuery
+            });
+          }
+        }, 100); // DOM이 완전히 로드될 때까지 약간의 지연
       });
 
       // 로그인 상태 확인 및 UI 업데이트
