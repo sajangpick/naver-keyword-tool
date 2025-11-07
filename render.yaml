@@ -1,0 +1,49 @@
+services:
+  # 백엔드 API 서버
+  - type: web
+    name: sajangpick-kwon-teamjang
+    runtime: node
+    region: singapore  # 한국과 가까운 싱가포르 리전
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000  # Render의 기본 포트
+      # 네이버 광고 API
+      - key: NAVER_CUSTOMER_ID
+        sync: false  # 실제 값은 Render 대시보드에서 설정
+      - key: NAVER_API_KEY
+        sync: false
+      - key: NAVER_SECRET_KEY
+        sync: false
+      # 네이버 검색 API
+      - key: NAVER_SEARCH_CLIENT_ID
+        sync: false
+      - key: NAVER_SEARCH_CLIENT_SECRET
+        sync: false
+      # Supabase
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # OpenAI
+      - key: OPENAI_API_KEY
+        sync: false
+      # 기타 선택적 API 키들
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CLAUDE_API_KEY
+        sync: false
+      - key: KAKAO_REST_API_KEY
+        sync: false
+      - key: KAKAO_CLIENT_SECRET
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true  # 자동 생성
+      # CORS 설정
+      - key: CORS_ORIGIN
+        value: "https://sajangpick.vercel.app,https://sajangpick-kwon.vercel.app,http://localhost:3000,http://localhost:5173,http://localhost:5174"
+    autoDeploy: false  # GitHub 연동 시 자동 배포 (선택사항)
+    healthCheckPath: /api/health

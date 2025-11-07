@@ -11,12 +11,11 @@
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
-      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
       crossorigin="anonymous"
     />
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha384-i5Xn8N5iy7voNjn7S1+YtWVYa/jz2Z8ll3eZe2DQZrY4Lc5cWpSvOPMt4qVLEz4p" crossorigin="anonymous"></script>
-    <script src="/assets/common-header.js?v=20251022" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" crossorigin="anonymous"></script>
+    <!-- common-header.js 제거 (파일이 없음) -->
     <style>
       :root {
         --accent-color: #ff7b54;
@@ -2265,7 +2264,7 @@
   <body>
     <header class="header">
       <div class="header-inner">
-        <a href="/" class="logo-container">
+        <a href="../" class="logo-container">
           <div class="logo-icon">
             <i class="fa-solid fa-thumbtack"></i>
           </div>
@@ -2279,18 +2278,18 @@
             <div class="auth-user" id="authUser" style="display: none;">
               <div class="auth-user__avatar" id="userAvatar">U</div>
               <div class="auth-user__meta">
-                <a href="/mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
-                <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
+                <a href="../mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
+                <a href="../mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
               </div>
               <button class="auth-user__logout" id="logoutBtn" type="button">
                 로그아웃
               </button>
             </div>
-            <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+            <a href="../login.html" class="auth-btn auth-btn--primary" id="loginBtn">
               <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px;"></i>
               <span>로그인</span>
             </a>
-            <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+            <a href="../join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
               <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i>
               <span>회원가입</span>
             </a>
@@ -2300,31 +2299,31 @@
     </header>
 
     <aside class="side-nav" aria-label="사이드 네비게이션">
-      <a class="menu-item" href="/">
+      <a class="menu-item" href="../">
         <span class="ico"><i class="fa-solid fa-house"></i></span>
         <span>홈</span>
       </a>
-      <a class="menu-item active" href="/naver_search.html">
+      <a class="menu-item active" href="naver_search.html">
         <span class="ico"><i class="fa-solid fa-key"></i></span>
         <span>키워드</span>
       </a>
-      <a class="menu-item" href="/AI-Review.html">
+      <a class="menu-item" href="../AI-Review.html">
         <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
         <span>리뷰</span>
       </a>
-      <a class="menu-item" href="/Blog-Editor.html">
+      <a class="menu-item" href="../Blog-Editor.html">
         <span class="ico"><i class="fa-solid fa-blog"></i></span>
         <span>블로그</span>
       </a>
-      <a class="menu-item" href="/recipe-manager.html">
+      <a class="menu-item" href="../recipe-manager.html">
         <span class="ico"><i class="fa-solid fa-utensils"></i></span>
         <span>레시피</span>
       </a>
-      <a class="menu-item" href="/news-board.html">
+      <a class="menu-item" href="../news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
         <span>정보</span>
       </a>
-      <a class="menu-item" href="/policy-support.html">
+      <a class="menu-item" href="../policy-support.html">
         <span class="ico"><i class="fa-solid fa-coins"></i></span>
         <span>정책</span>
       </a>
@@ -2766,25 +2765,19 @@
     </div>
 
     <script>
-      // 백엔드 서버 설정: 서버 포트 3003 사용
-      // Live Server(5501) 또는 다른 포트에서 실행 중이면 localhost:3003 사용
-      // 직접 서버에서 실행 중이면 상대 경로 사용
+      // 백엔드 서버 설정
       const API_BASE_URL = (() => {
-        const port = window.location.port;
         const hostname = window.location.hostname;
+        const port = window.location.port;
         
-        // localhost나 127.0.0.1이고 포트가 3003이 아니면 localhost:3003 사용
-        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3003') {
+        // 로컬 개발 환경
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          // 로컬에서는 localhost:3003 사용
           return 'http://localhost:3003';
         }
         
-        // 포트가 5501이거나 빈 문자열이면 localhost:3003 사용 (Live Server)
-        if (port === '5501' || port === '') {
-          return 'http://localhost:3003';
-        }
-        
-        // 그 외의 경우는 상대 경로 사용 (같은 서버에서 실행)
-        return '';
+        // 배포 환경 - Render 서버 직접 연결
+        return 'https://sajangpick-kwon-teamjang.onrender.com';
       })();
       
       console.log('API_BASE_URL 설정:', API_BASE_URL);
@@ -3942,9 +3935,14 @@
                   },
                 });
               } catch (fetchError) {
-                // 네트워크 오류 (서버가 실행되지 않음)
+                // 네트워크 오류
                 console.error("Fetch 오류:", fetchError);
-                throw new Error(`서버에 연결할 수 없습니다. 서버가 포트 3003에서 실행 중인지 확인해주세요.\n\n해결 방법:\n1. 터미널에서 "node server.js" 실행\n2. 또는 "서버시작.bat" 파일 실행`);
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isLocal) {
+                  throw new Error(`로컬 서버에 연결할 수 없습니다.\n\n해결 방법:\n1. 터미널에서 "node server.js" 실행\n2. 또는 "서버시작.bat" 파일 실행\n3. 포트 3003이 사용 가능한지 확인`);
+                } else {
+                  throw new Error(`백엔드 서버에 연결할 수 없습니다.\n\n서버 상태를 확인 중입니다. 잠시만 기다려주세요.\n만약 문제가 지속되면 관리자에게 문의하세요.`);
+                }
               }
 
               if (!response.ok) {
@@ -4009,7 +4007,12 @@
           if (error.message.includes('Failed to fetch') || 
               error.message.includes('ERR_CONNECTION_REFUSED') ||
               error.message.includes('서버에 연결할 수 없습니다')) {
-            throw new Error(`❌ 서버 연결 실패\n\n백엔드 서버가 실행되지 않았습니다.\n\n해결 방법:\n1. 터미널을 열고 프로젝트 폴더로 이동\n2. "node server.js" 명령어 실행\n3. 또는 "서버시작.bat" 파일을 더블클릭\n\n서버는 포트 3003에서 실행되어야 합니다.`);
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            if (isLocal) {
+              throw new Error(`❌ 로컬 서버 연결 실패\n\n백엔드 서버가 실행되지 않았습니다.\n\n해결 방법:\n1. 터미널을 열고 프로젝트 폴더로 이동\n2. "node server.js" 명령어 실행\n3. 또는 "서버시작.bat" 파일을 더블클릭\n\n서버는 포트 3003에서 실행되어야 합니다.`);
+            } else {
+              throw new Error(`❌ 서버 연결 실패\n\n백엔드 서버가 일시적으로 응답하지 않습니다.\n잠시 후 다시 시도해주세요.\n\n문제가 지속되면 관리자에게 문의하세요.`);
+            }
           }
           
           if (error.message.includes("fetch")) {
@@ -5022,7 +5025,7 @@
               } finally {
                 localStorage.removeItem("isLoggedIn");
                 localStorage.removeItem("userData");
-                location.href = "/login.html";
+                location.href = "../login.html";
               }
             };
           }
@@ -5037,15 +5040,24 @@
 
       // 페이지 로드 시 실행
       (async function() {
-        // auth-state.js 로드 대기
-        while (!window.authState?.supabase) {
+        // auth-state.js 로드 확인 (최대 3초 대기)
+        let waitTime = 0;
+        const maxWaitTime = 3000;
+        
+        while (!window.authState?.supabase && waitTime < maxWaitTime) {
           await new Promise(resolve => setTimeout(resolve, 100));
+          waitTime += 100;
         }
         
-        await updateAuthUI();
-        window.addEventListener("auth:state-changed", updateAuthUI);
-        if (window.authState?.syncSession) {
-          window.authState.syncSession();
+        // auth-state.js가 로드되었을 때만 실행
+        if (window.authState?.supabase) {
+          await updateAuthUI();
+          window.addEventListener("auth:state-changed", updateAuthUI);
+          if (window.authState?.syncSession) {
+            window.authState.syncSession();
+          }
+        } else {
+          console.warn('auth-state.js를 로드할 수 없습니다. 인증 기능이 제한됩니다.');
         }
       })();
     </script>
@@ -5053,8 +5065,8 @@
       </div> <!-- container 끝 -->
     </div> <!-- main-content 끝 -->
 
-    <!-- 공통 인증 스크립트 -->
-    <script src="/assets/auth-state.js?v=202410" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+    <!-- 공통 인증 스크립트 (선택적 - 없어도 작동) -->
+    <script src="../assets/auth-state.js?v=202410" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
   </body>
 </html>
