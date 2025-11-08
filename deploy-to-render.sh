@@ -47,9 +47,9 @@ echo "1. Render 서비스 배포 중..."
 render up
 
 echo -e "\n${GREEN}✨ 배포가 완료되었습니다!${NC}"
-echo "URL: https://sajangpick-kwon-teamjang.onrender.com"
+echo "URL: https://naver-keyword-tool.onrender.com"
 echo ""
 echo "📌 다음 단계:"
 echo "1. Render 대시보드에서 로그 확인: https://dashboard.render.com"
-echo "2. 헬스체크: curl https://sajangpick-kwon-teamjang.onrender.com/api/health"
+echo "2. 헬스체크: curl https://naver-keyword-tool.onrender.com/api/health"
 echo "3. Vercel 프론트엔드에서 테스트"

@@ -1,7 +1,7 @@
 services:
   # 백엔드 API 서버
   - type: web
-    name: sajangpick-kwon-teamjang
+    name: naver-keyword-tool
     runtime: node
     region: singapore  # 한국과 가까운 싱가포르 리전
     buildCommand: npm install

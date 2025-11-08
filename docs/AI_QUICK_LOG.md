@@ -48,7 +48,7 @@
 
 2. **서버 포트**
    - 개발 서버: http://localhost:3003
-   - Render 배포: https://sajangpick-kwon-teamjang.onrender.com
+   - Render 배포: https://naver-keyword-tool.onrender.com
 
 3. **파일 정리 진행 중**
    - AI_LOG.md 분할 작업 중

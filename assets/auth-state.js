@@ -19,7 +19,7 @@
 
     // Render 백엔드 직접 호출 (Vercel 프록시 실패 시 대비)
     const renderOrigin = window.SUPABASE_CONFIG_FALLBACK_ORIGIN ||
-      "https://sajangpick-kwon-teamjang.onrender.com";
+      "https://naver-keyword-tool.onrender.com";
     if (renderOrigin && renderOrigin !== window.location.origin) {
       endpoints.push(`${renderOrigin}/api/config`);
     }

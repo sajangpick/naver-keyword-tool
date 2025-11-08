@@ -52,7 +52,7 @@ echo 1. Render.com 접속: https://render.com
 echo 2. Dashboard에서 "New +" → "Web Service" 클릭
 echo 3. GitHub 저장소 연결 또는 수동 배포 선택
 echo 4. 다음 설정 입력:
-echo    - Name: sajangpick-kwon-teamjang
+echo    - Name: naver-keyword-tool
 echo    - Build Command: npm install
 echo    - Start Command: node server.js
 echo 5. 환경변수 설정 (Dashboard에서)
@@ -60,7 +60,7 @@ echo 6. "Create Web Service" 클릭
 echo.
 
 echo %GREEN%🎉 배포 후 확인:%NC%
-echo URL: https://sajangpick-kwon-teamjang.onrender.com/api/health
+echo URL: https://naver-keyword-tool.onrender.com/api/health
 echo.
 
 echo 브라우저를 열어 Render 대시보드로 이동하시겠습니까?

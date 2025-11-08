@@ -136,7 +136,7 @@
     // API 기본 URL 결정
     const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
     const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
-    const FALLBACK_API_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
+    const FALLBACK_API_BASE = 'https://naver-keyword-tool.onrender.com';
 
     async function callChatAPI(message) {
       const apiUrl = API_BASE ? `${API_BASE}/api/chat` : `/api/chat`;

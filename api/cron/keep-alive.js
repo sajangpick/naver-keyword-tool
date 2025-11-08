@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
         
         // Render 서버의 health 엔드포인트 호출
         // vercel.json의 rewrites와 동일한 Render URL 사용
-        const renderUrl = 'https://sajangpick-kwon-teamjang.onrender.com/health';
+        const renderUrl = 'https://naver-keyword-tool.onrender.com/health';
         
         const response = await fetch(renderUrl, {
             method: 'GET',

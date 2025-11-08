@@ -603,7 +603,7 @@
       // 로컬 개발 환경과 프로덕션 환경 자동 감지
       const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
       const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
-      const PRIMARY_RENDER_BASE = 'https://sajangpick-kwon-teamjang.onrender.com';
+      const PRIMARY_RENDER_BASE = 'https://naver-keyword-tool.onrender.com';
       const LEGACY_RENDER_BASE = 'https://naver-keyword-tool.onrender.com';
       const FALLBACK_RENDER_BASES = [PRIMARY_RENDER_BASE, LEGACY_RENDER_BASE].filter(Boolean);
       const RETRYABLE_STATUS = new Set([404, 408, 500, 502, 503, 504, 521, 522, 523]);
