@@ -44,6 +44,6 @@ services:
         generateValue: true  # 자동 생성
       # CORS 설정
       - key: CORS_ORIGIN
-        value: "https://sajangpick.vercel.app,https://sajangpick-kwon.vercel.app,http://localhost:3000,http://localhost:5173,http://localhost:5174"
+        value: "https://sajangpick.co.kr,https://naver-keyword-tool.vercel.app,https://sajangpick.vercel.app,https://sajangpick-kwon.vercel.app,https://naver-keyword-tool-qxg0ccpi7-sajangpick-team.vercel.app,http://localhost:3003,http://localhost:5173,http://localhost:5174"
     autoDeploy: false  # GitHub 연동 시 자동 배포 (선택사항)
-    healthCheckPath: /api/health
+    healthCheckPath: /health
