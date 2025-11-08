@@ -253,6 +253,7 @@ app.get("/AI-Review.html", (req, res) => sendHtml(res, "AI-Review.html"));
 app.get("/Blog-Editor.html", (req, res) => sendHtml(res, "Blog-Editor.html"));
 app.get("/mypage.html", (req, res) => sendHtml(res, "mypage.html"));
 app.get("/sanao-book.html", (req, res) => sendHtml(res, "sanao-book.html"));
+app.get("/sajangpick-book.html", (req, res) => sendHtml(res, "sajangpick-book.html"));
 // 플순위는 어드민 전용으로만 접근 허용 (일반 경로는 홈으로 리다이렉트)
 app.get("/rank-report.html", (req, res) => res.redirect("/"));
 app.get("/admin/rank-report.html", (req, res) => sendHtml(res, "admin/rank-report.html"));
