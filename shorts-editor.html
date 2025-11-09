@@ -408,6 +408,21 @@
             font-weight: 600;
         }
 
+        .duration-edit {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--accent-color);
+            font-weight: 600;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .duration-edit:hover {
+            color: var(--primary-dark);
+        }
+
         /* Step 3: 콘텐츠 입력 */
         .input-section {
             background: var(--white);
@@ -1029,35 +1044,40 @@
                     <div class="style-icon">🎬</div>
                     <div class="style-name">럭셔리</div>
                     <div class="style-desc">고급스러운 음식 영상</div>
-                    <span class="style-duration">15초 권장</span>
+                    <span class="style-duration" data-style-duration="luxury">15초 권장</span>
+                    <button type="button" class="duration-edit" onclick="openDurationEditor(event, 'luxury')">권장시간 수정</button>
                 </div>
 
                 <div class="style-option" onclick="selectStyle('fast')" data-style="fast">
                     <div class="style-icon">⚡</div>
                     <div class="style-name">빠른 리듬</div>
                     <div class="style-desc">트렌디한 편집</div>
-                    <span class="style-duration">10초 권장</span>
+                    <span class="style-duration" data-style-duration="fast">10초 권장</span>
+                    <button type="button" class="duration-edit" onclick="openDurationEditor(event, 'fast')">권장시간 수정</button>
                 </div>
 
                 <div class="style-option" onclick="selectStyle('chef')" data-style="chef">
                     <div class="style-icon">👨‍🍳</div>
                     <div class="style-name">셰프의 손</div>
                     <div class="style-desc">조리 과정 강조</div>
-                    <span class="style-duration">12초 권장</span>
+                    <span class="style-duration" data-style-duration="chef">12초 권장</span>
+                    <button type="button" class="duration-edit" onclick="openDurationEditor(event, 'chef')">권장시간 수정</button>
                 </div>
 
                 <div class="style-option" onclick="selectStyle('plating')" data-style="plating">
                     <div class="style-icon">🍽️</div>
                     <div class="style-name">플레이팅</div>
                     <div class="style-desc">완성된 요리</div>
-                    <span class="style-duration">8초 권장</span>
+                    <span class="style-duration" data-style-duration="plating">8초 권장</span>
+                    <button type="button" class="duration-edit" onclick="openDurationEditor(event, 'plating')">권장시간 수정</button>
                 </div>
 
                 <div class="style-option" onclick="selectStyle('simple')" data-style="simple">
                     <div class="style-icon">🌟</div>
                     <div class="style-name">심플 클래식</div>
                     <div class="style-desc">깔끔한 구성</div>
-                    <span class="style-duration">10초 권장</span>
+                    <span class="style-duration" data-style-duration="simple">10초 권장</span>
+                    <button type="button" class="duration-edit" onclick="openDurationEditor(event, 'simple')">권장시간 수정</button>
                 </div>
             </div>
 
@@ -1171,6 +1191,14 @@
                     <div style="text-align: center; margin-top: 8px; font-size: 18px; font-weight: 700; color: var(--accent-color);">
                         <span id="durationDisplay">10</span>초
                     </div>
+                    <input type="number" class="form-input" id="videoDurationNumber" min="5" max="60" value="10"
+                        style="margin-top: 12px;" oninput="handleDurationNumber(this.value)" placeholder="초 단위 직접 입력 (최대 60초)">
+                    <small style="display:block; color: var(--text-secondary); margin-top: 6px;">
+                        권장 범위 5~30초 (최대 60초까지 설정 가능)
+                    </small>
+                    <small style="display:block; color: var(--error); margin-top: 4px; font-weight: 600;">
+                        ※ 영상 길이가 길어질수록 AI 처리 비용이 증가할 수 있습니다.
+                    </small>
                 </div>
             </div>
 
