@@ -86,6 +86,8 @@
                         <a class="app" href="/AI-Review.html"><div class="app-icon"><i class="fa-solid fa-robot" style="font-size:20px"></i></div><div class="app-label">AI채팅</div></a>
             <a class="app" href="/AI-Review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
             <a class="app" href="/Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
+            <a class="app" href="/shorts-editor.html"><div class="app-icon"><i class="fa-solid fa-film" style="font-size:20px"></i></div><div class="app-label">영상편집</div></a>
+            <a class="app" href="/sajangpick-book.html"><div class="app-icon"><i class="fa-solid fa-book-open" style="font-size:20px"></i></div><div class="app-label">전자책</div></a>
             <a class="app" href="/ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
             <a class="app" href="/news-board.html"><div class="app-icon"><i class="fa-solid fa-newspaper" style="font-size:20px"></i></div><div class="app-label">정보게시판</div></a>
           </div>
