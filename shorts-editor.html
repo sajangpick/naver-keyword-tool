@@ -1604,6 +1604,30 @@
             simple: 10,
         };
         let planHistory = [];
+        const currentUser = getCurrentUser();
+        const API_BASE = '';
+
+        function getCurrentUser() {
+            try {
+                const raw = localStorage.getItem('userData');
+                return raw ? JSON.parse(raw) : null;
+            } catch (error) {
+                console.warn('[shorts-editor] 사용자 정보를 읽을 수 없습니다:', error);
+                return null;
+            }
+        }
+
+        function getCurrentUserId() {
+            return currentUser?.id || currentUser?.user?.id || currentUser?.uid || null;
+        }
+
+        function ensureLoggedIn() {
+            const userId = getCurrentUserId();
+            if (!userId) {
+                alert('AI 기획 기능은 로그인 후 이용 가능합니다.');
+            }
+            return !!userId;
+        }
 
         function switchMode(mode) {
             if (currentMode === mode) return;
@@ -1884,19 +1908,40 @@
                 alert('AI 기획을 위해 키워드를 먼저 입력해주세요.');
                 return;
             }
+            if (!ensureLoggedIn()) return;
 
             setPlanLoading(true);
             try {
-                const { plan, script } = await simulatePlanAndScript(keywords);
+                const response = await fetch(`${API_BASE}/api/shorts/plan-and-script`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        keywords,
+                        userId: getCurrentUserId(),
+                        style: selectedStyle,
+                        duration: document.getElementById('videoDurationNumber')?.value || null,
+                    }),
+                });
+                const data = await response.json();
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.error || 'AI 기획 생성에 실패했습니다.');
+                }
+
                 document.getElementById('planScriptWrapper').style.display = 'block';
-                document.getElementById('aiPlanPreview').textContent = plan;
+                document.getElementById('aiPlanPreview').textContent = data.plan || '';
                 const scriptArea = document.getElementById('aiScriptPreview');
-                scriptArea.value = script;
+                scriptArea.value = data.script || '';
                 scriptArea.focus();
                 showToast('AI 초안이 생성되었습니다.');
+
+                if (data.entry) {
+                    upsertPlanHistoryEntry(data.entry);
+                } else {
+                    fetchPlanHistory();
+                }
             } catch (error) {
                 console.error('AI 기획 생성 실패:', error);
-                alert('기획 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                alert(error.message || '기획 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
             } finally {
                 setPlanLoading(false);
             }
@@ -1911,19 +1956,7 @@
                 : '<i class="fa-solid fa-robot"></i> AI로 기획 & 대본 초안 생성하기';
         }
 
-        // 실제 구현 시 /api/shorts/plan-and-script POST 호출로 대체
-        function simulatePlanAndScript(keywords) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve({
-                        plan: `• 목적: ${keywords.split(',')[0] || '주요 메뉴'} 홍보\n• 톤앤매너: 따뜻하고 공감 가는 분위기\n• 구성: 인트로(3초) – 메인컷(7초) – CTA(3초)\n• 강조 포인트: 신선한 재료, 셰프의 손길, 시즌 한정`,
-                        script: `1) 인트로 (3초)\n   - 나레이션: "오늘, 특별한 ${keywords.split(',')[0] || '메뉴'}가 준비됐습니다."\n2) 메인 (7초)\n   - 나레이션: "신선한 재료와 정성 가득한 손길로 완성되는 ${keywords.split(',')[0] || '요리'}."\n3) CTA (3초)\n   - 나레이션: "지금 예약하고, 따끈한 행복을 만나보세요!"`,
-                    });
-                }, 2000);
-            });
-        }
-
-        function savePlanAndScript() {
+        async function savePlanAndScript() {
             const planEl = document.getElementById('aiPlanPreview');
             const scriptEl = document.getElementById('aiScriptPreview');
             const plan = planEl.textContent.trim();
@@ -1932,16 +1965,36 @@
                 alert('저장할 초안이 없습니다. 먼저 AI 초안을 생성하거나 직접 작성해주세요.');
                 return;
             }
+            if (!ensureLoggedIn()) return;
 
-            const entry = {
-                id: Date.now(),
-                plan,
-                script,
-                timestamp: new Date(),
-            };
-            planHistory.unshift(entry);
-            renderPlanHistory();
-            showToast('초안이 저장되었습니다.');
+            try {
+                const response = await fetch(`${API_BASE}/api/shorts/plan-and-script`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manualSave: true,
+                        userId: getCurrentUserId(),
+                        keywords: document.getElementById('expertKeywords').value.trim(),
+                        style: selectedStyle,
+                        duration: document.getElementById('videoDurationNumber')?.value || null,
+                        plan,
+                        script,
+                    }),
+                });
+                const data = await response.json();
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.error || '초안을 저장하지 못했습니다.');
+                }
+                if (data.entry) {
+                    upsertPlanHistoryEntry(data.entry);
+                } else {
+                    fetchPlanHistory();
+                }
+                showToast('초안이 저장되었습니다.');
+            } catch (error) {
+                console.error('초안 저장 실패:', error);
+                alert(error.message || '초안을 저장하지 못했습니다.');
+            }
         }
 
         function renderPlanHistory() {
@@ -1961,7 +2014,10 @@
                 header.className = 'history-item-header';
                 const title = document.createElement('div');
                 title.className = 'history-item-title';
-                title.textContent = `저장된 초안 · ${item.timestamp.toLocaleString('ko-KR')}`;
+                const createdText = item.createdAt
+                    ? new Date(item.createdAt).toLocaleString('ko-KR')
+                    : '방금 저장';
+                title.textContent = `저장된 초안 · ${createdText}`;
                 const actions = document.createElement('div');
                 actions.className = 'history-item-actions';
                 const loadBtn = document.createElement('button');
@@ -1984,7 +2040,16 @@
                 planPreview.style.color = 'var(--text-secondary)';
                 planPreview.style.whiteSpace = 'pre-line';
                 planPreview.textContent = item.plan;
-                wrapper.append(header, planPreview);
+                if (item.keywords) {
+                    const keywordsEl = document.createElement('div');
+                    keywordsEl.style.marginTop = '6px';
+                    keywordsEl.style.fontSize = '11px';
+                    keywordsEl.style.color = 'var(--accent-color)';
+                    keywordsEl.textContent = `키워드: ${item.keywords}`;
+                    wrapper.append(header, planPreview, keywordsEl);
+                } else {
+                    wrapper.append(header, planPreview);
+                }
                 list.appendChild(wrapper);
             });
         }
@@ -1995,6 +2060,7 @@
             document.getElementById('planScriptWrapper').style.display = 'block';
             document.getElementById('aiPlanPreview').textContent = entry.plan;
             document.getElementById('aiScriptPreview').value = entry.script;
+            document.getElementById('expertKeywords').value = entry.keywords || '';
             showToast('저장된 초안을 불러왔습니다.');
         }
 
@@ -2006,8 +2072,64 @@
                 .catch(() => alert('복사에 실패했습니다.'));
         }
 
-        function removePlanFromHistory(id) {
-            planHistory = planHistory.filter((item) => item.id !== id);
+        async function removePlanFromHistory(id) {
+            if (!ensureLoggedIn()) return;
+            if (!confirm('선택한 초안을 삭제할까요?')) return;
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/shorts/plan-history/${id}?userId=${encodeURIComponent(getCurrentUserId())}`,
+                    { method: 'DELETE' }
+                );
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.error || '삭제하지 못했습니다.');
+                }
+                planHistory = planHistory.filter((item) => item.id !== id);
+                renderPlanHistory();
+                showToast('초안이 삭제되었습니다.');
+            } catch (error) {
+                console.error('초안 삭제 실패:', error);
+                alert(error.message || '삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function fetchPlanHistory() {
+            const userId = getCurrentUserId();
+            if (!userId) return;
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/shorts/plan-history?userId=${encodeURIComponent(userId)}`
+                );
+                const data = await response.json();
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.error || '저장된 초안을 불러오지 못했습니다.');
+                }
+                planHistory = (data.items || []).map(mapHistoryEntry).filter(Boolean);
+                renderPlanHistory();
+            } catch (error) {
+                console.error('초안 히스토리를 불러오지 못했습니다:', error);
+            }
+        }
+
+        function mapHistoryEntry(raw) {
+            if (!raw) return null;
+            return {
+                id: raw.id,
+                keywords: raw.keywords || '',
+                style: raw.style || null,
+                duration: raw.duration_sec ?? raw.duration ?? null,
+                plan: raw.plan_text || raw.plan || '',
+                script: raw.script_text || raw.script || '',
+                source: raw.source || 'manual',
+                createdAt: raw.created_at || raw.timestamp || new Date().toISOString(),
+            };
+        }
+
+        function upsertPlanHistoryEntry(raw) {
+            const mapped = mapHistoryEntry(raw);
+            if (!mapped) return;
+            planHistory = planHistory.filter((item) => item.id !== mapped.id);
+            planHistory.unshift(mapped);
             renderPlanHistory();
         }
 
@@ -2066,6 +2188,10 @@
                         }
                     }
                 });
+            }
+
+            if (getCurrentUserId()) {
+                fetchPlanHistory();
             }
         });
     </script>

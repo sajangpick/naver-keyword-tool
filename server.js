@@ -49,6 +49,10 @@ const NAVER_SEARCH = {
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+const OPENAI_SHORTS_MODEL =
+  process.env.OPENAI_SHORTS_MODEL ||
+  process.env.OPENAI_CHAT_MODEL ||
+  "gpt-4o-mini";
 
 // Supabase 설정
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -1434,6 +1438,194 @@ async function callClaude(prompt) {
         (error.response?.data?.error?.message || error.message)
     );
   }
+}
+
+async function callOpenAIForShortsPlan({ keywords, style, durationSec }) {
+  if (!OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY가 설정되어 있지 않습니다.");
+  }
+
+  const cleanedKeywords = (keywords || "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean)
+    .slice(0, 10);
+
+  const promptContext = `
+[요청 조건]
+- 영상 주제 키워드: ${cleanedKeywords.join(", ") || "미작성"}
+- 영상 스타일: ${style || "기본"}
+- 영상 길이: ${durationSec || 15}초
+- 목적: 식당/카페 홍보용 SNS 숏폼 영상
+
+[작성 가이드]
+1. plan_summary: 영상 핵심 메시지를 1문장으로 요약
+2. plan_outline: 컷별 구성(3~4컷) 배열. 각 요소는 {"cut":번호,"duration":"3초","description":"장면 설명","text":"자막/멘트"} 형태.
+3. script: 컷 순서에 맞춰 자연스럽게 이어지는 나레이션/자막 문장 (전체 ${durationSec ||
+    15}초 기준)
+4. tips: 촬영/편집 시 추가 팁 (선택)
+
+[출력 형식]
+JSON 객체로만 응답하며 key는 plan_summary, plan_outline, script, tips를 포함합니다.
+`;
+
+  try {
+    devLog("OpenAI 숏폼 기획 요청 중...");
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: OPENAI_SHORTS_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "당신은 소상공인 식당을 위한 SNS 숏폼 전문 영상 기획자입니다. 반드시 JSON으로만 응답하세요.",
+          },
+          { role: "user", content: promptContext },
+        ],
+        temperature: 0.6,
+        max_tokens: 900,
+        response_format: { type: "json_object" },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 45000,
+      }
+    );
+
+    const content = response.data.choices?.[0]?.message?.content;
+    if (!content) throw new Error("OpenAI 응답이 비어 있습니다.");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (error) {
+      throw new Error("OpenAI 응답을 JSON으로 파싱할 수 없습니다.");
+    }
+
+    const planSummary = parsed.plan_summary?.trim() || "";
+    const planOutline = Array.isArray(parsed.plan_outline)
+      ? parsed.plan_outline
+      : [];
+    const tips =
+      typeof parsed.tips === "string"
+        ? parsed.tips.trim()
+        : Array.isArray(parsed.tips)
+        ? parsed.tips.join(" ")
+        : "";
+    const planText =
+      `${planSummary}\n\n` +
+      planOutline
+        .map((item, idx) => {
+          const cut = item.cut || idx + 1;
+          const duration = item.duration ? ` (${item.duration})` : "";
+          const description = item.description || "";
+          const text = item.text ? `\n   - 자막/멘트: ${item.text}` : "";
+          return `${cut}컷${duration}: ${description}${text}`;
+        })
+        .join("\n") +
+      (tips ? `\n\n추가 팁: ${tips}` : "");
+
+    const script =
+      typeof parsed.script === "string"
+        ? parsed.script.trim()
+        : Array.isArray(parsed.script)
+        ? parsed.script.join("\n")
+        : "";
+
+    return { plan: planText.trim(), script };
+  } catch (error) {
+    devError(
+      "OpenAI 숏폼 기획 생성 오류:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      "AI 기획 생성에 실패했습니다: " +
+        (error.response?.data?.error?.message || error.message || "")
+    );
+  }
+}
+
+function ensureUserId(userId) {
+  if (!userId || typeof userId !== "string") {
+    const error = new Error("로그인이 필요합니다.");
+    error.statusCode = 401;
+    throw error;
+  }
+}
+
+async function savePlanHistoryEntry({
+  userId,
+  keywords,
+  style,
+  duration,
+  plan,
+  script,
+  source = "ai",
+}) {
+  if (!supabase) {
+    devError("Supabase가 초기화되지 않았습니다. 초안 저장을 건너뜁니다.");
+    return null;
+  }
+
+  const payload = {
+    user_id: userId,
+    keywords,
+    style: style || null,
+    duration_sec: duration || null,
+    plan_text: plan,
+    script_text: script,
+    source,
+  };
+
+  const { data, error } = await supabase
+    .from("shorts_plan_history")
+    .insert(payload)
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    devError("Supabase plan history 저장 실패:", error);
+    return null;
+  }
+  return data;
+}
+
+async function fetchPlanHistoryEntries(userId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("shorts_plan_history")
+    .select(
+      "id, keywords, style, duration_sec, plan_text, script_text, source, created_at"
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    devError("Supabase plan history 조회 실패:", error);
+    return [];
+  }
+  return data || [];
+}
+
+async function deletePlanHistoryEntry(userId, entryId) {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from("shorts_plan_history")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", entryId);
+
+  if (error) {
+    devError("Supabase plan history 삭제 실패:", error);
+    return false;
+  }
+  return true;
 }
 
 // ==================== ChatGPT 채팅 API ====================
@@ -3687,6 +3879,182 @@ app.use((error, req, res, next) => {
         : "서버 관리자에게 문의하세요.",
     timestamp: new Date().toISOString(),
   });
+});
+
+// 쇼츠 영상 기획/대본 API
+
+app.post("/api/shorts/plan-and-script", async (req, res) => {
+  try {
+    const {
+      keywords = "",
+      userId,
+      style = null,
+      duration = null,
+      manualSave = false,
+      plan: manualPlan,
+      script: manualScript,
+    } = req.body || {};
+
+    ensureUserId(userId);
+
+    let planText = "";
+    let scriptText = "";
+    let entry = null;
+
+    if (manualSave) {
+      planText = (manualPlan || "").trim();
+      scriptText = (manualScript || "").trim();
+      if (!planText && !scriptText) {
+        return res.status(400).json({
+          success: false,
+          error: "저장할 기획/대본 내용이 없습니다.",
+        });
+      }
+      entry = await savePlanHistoryEntry({
+        userId,
+        keywords,
+        style,
+        duration,
+        plan: planText,
+        script: scriptText,
+        source: "manual",
+      });
+      return res.json({
+        success: true,
+        from: "manual",
+        plan: planText,
+        script: scriptText,
+        entry,
+      });
+    }
+
+    if (!keywords || typeof keywords !== "string") {
+      return res.status(400).json({
+        success: false,
+        error: "키워드를 입력해주세요.",
+      });
+    }
+
+    const aiResult = await callOpenAIForShortsPlan({
+      keywords,
+      style,
+      durationSec: duration,
+    });
+
+    planText = aiResult.plan;
+    scriptText = aiResult.script;
+
+    entry = await savePlanHistoryEntry({
+      userId,
+      keywords,
+      style,
+      duration,
+      plan: planText,
+      script: scriptText,
+      source: "ai",
+    });
+
+    res.json({
+      success: true,
+      plan: planText,
+      script: scriptText,
+      entry,
+    });
+  } catch (error) {
+    devError("shorts plan-and-script 처리 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "AI 기획 생성 중 오류가 발생했습니다.",
+    });
+  }
+});
+
+app.get("/api/shorts/plan-history", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    ensureUserId(userId);
+    const items = await fetchPlanHistoryEntries(userId);
+    res.json({
+      success: true,
+      items,
+    });
+  } catch (error) {
+    devError("plan history 조회 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "저장된 초안을 불러오지 못했습니다.",
+    });
+  }
+});
+
+app.post("/api/shorts/plan-history", async (req, res) => {
+  try {
+    const {
+      userId,
+      keywords = "",
+      style = null,
+      duration = null,
+      plan = "",
+      script = "",
+      source = "manual",
+    } = req.body || {};
+
+    ensureUserId(userId);
+
+    if (!plan && !script) {
+      return res.status(400).json({
+        success: false,
+        error: "저장할 기획/대본 내용이 없습니다.",
+      });
+    }
+
+    const entry = await savePlanHistoryEntry({
+      userId,
+      keywords,
+      style,
+      duration,
+      plan,
+      script,
+      source,
+    });
+
+    res.json({
+      success: true,
+      entry,
+    });
+  } catch (error) {
+    devError("plan history 저장 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "초안을 저장하지 못했습니다.",
+    });
+  }
+});
+
+app.delete("/api/shorts/plan-history/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.query;
+    ensureUserId(userId);
+    if (!id) {
+      return res
+        .status(400)
+        .json({ success: false, error: "삭제할 항목 ID가 필요합니다." });
+    }
+    const ok = await deletePlanHistoryEntry(userId, id);
+    if (!ok) {
+      return res
+        .status(500)
+        .json({ success: false, error: "저장된 초안을 삭제하지 못했습니다." });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    devError("plan history 삭제 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "삭제 중 오류가 발생했습니다.",
+    });
+  }
 });
 
 // ==================== 서버 시작 ====================
