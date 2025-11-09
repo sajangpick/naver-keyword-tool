@@ -677,6 +677,56 @@
             background: var(--secondary);
         }
 
+        .history-section {
+            margin-top: 18px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            padding-top: 18px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .history-item {
+            border: 1px solid rgba(255, 123, 84, 0.2);
+            border-radius: 12px;
+            padding: 14px;
+            background: rgba(255, 123, 84, 0.04);
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .history-item-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .history-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .history-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .history-btn:hover {
+            color: var(--primary-dark);
+        }
+
         .file-upload-multi {
             border: 2px dashed var(--border);
             border-radius: 16px;
@@ -864,6 +914,24 @@
                 font-size: 24px;
             }
 
+            .page-subtitle {
+                font-size: 14px;
+            }
+
+            .mode-switch {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .mode-tab {
+                font-size: 14px;
+                padding: 12px;
+            }
+
+            .mode-description {
+                font-size: 13px;
+            }
+
             .steps-indicator {
                 flex-direction: column;
                 gap: 12px;
@@ -877,8 +945,24 @@
                 grid-template-columns: 1fr;
             }
 
+            .style-option {
+                padding: 18px;
+            }
+
             .music-options {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .input-section {
+                padding: 24px 18px;
+            }
+
+            .expert-hero {
+                padding: 26px 20px;
+            }
+
+            .expert-grid {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             }
 
             .action-buttons {
@@ -888,6 +972,66 @@
             .btn {
                 width: 100%;
                 justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 18px 12px;
+            }
+
+            .page-title {
+                font-size: 22px;
+            }
+
+            .mode-tab {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .style-option {
+                padding: 16px;
+            }
+
+            .music-options {
+                grid-template-columns: 1fr;
+            }
+
+            .expert-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .file-upload-multi {
+                padding: 20px;
+            }
+
+            .input-section {
+                padding: 20px 16px;
+            }
+
+            .progress-content {
+                padding: 32px 22px;
+            }
+
+            .progress-icon {
+                width: 64px;
+                height: 64px;
+            }
+
+            .progress-title {
+                font-size: 20px;
+            }
+
+            .progress-message {
+                font-size: 14px;
+            }
+
+            .form-input {
+                font-size: 14px;
+            }
+
+            .duration-edit {
+                font-size: 11px;
             }
         }
     </style>
@@ -930,7 +1074,7 @@
             </div>
         </div>
         <p class="mode-description" id="modeDescription">
-            클릭 3번으로 SNS 숏폼 영상을 자동 제작할 수 있습니다.
+            클릭 3번으로 SNS 숏폼 영상을 자동 제작할 수 있습니다. (최고등급 회원 하루 최대 3회 생성 가능)
         </p>
 
         <div id="selfMode">
@@ -1186,7 +1330,7 @@
                     <label class="form-label">
                         영상 길이 (초) - <span id="durationRecommend">10초 권장</span>
                     </label>
-                    <input type="range" class="form-input" id="videoDuration" min="5" max="30" value="10" 
+                    <input type="range" class="form-input" id="videoDuration" min="5" max="60" value="10" 
                         oninput="updateDurationDisplay(this.value)">
                     <div style="text-align: center; margin-top: 8px; font-size: 18px; font-weight: 700; color: var(--accent-color);">
                         <span id="durationDisplay">10</span>초
@@ -1212,6 +1356,9 @@
                     영상 생성하기
                 </button>
             </div>
+            <p style="text-align:center; font-size:12px; color:var(--text-secondary); margin-top:12px;">
+                ※ 하루 생성 가능 횟수는 최고등급 기준 최대 3회이며, 길이가 길수록 AI 처리 비용이 증가할 수 있습니다.
+            </p>
         </div>
         </div> <!-- selfMode -->
 
@@ -1221,11 +1368,11 @@
                 <h2>🎯 전문가에게 맡기는 프리미엄 영상 제작</h2>
                 <p>
                     브랜드 톤에 맞춘 고퀄리티 홍보 영상이 필요하신가요?<br>
-                    전문 디렉터 · 편집자가 직접 제작하여 크몽 수준 이상의 품질을 제공합니다.
+                    전달해주신 키워드만으로도 기획·대본·빙고 컷 편집까지 담당하는 전문가 팀이 크몽 이상 품질로 제작합니다.
                 </p>
                 <div class="expert-highlight">
                     <i class="fa-solid fa-star"></i>
-                    식당 대표 회원도 이용 가능 · 크몽 주문 동일 퀄리티
+                    키워드 기반 기획 + 대본 + 영상 제작 · 식당 대표 회원/크몽 주문 모두 지원
                 </div>
             </div>
 
@@ -1257,6 +1404,42 @@
                     <i class="fa-solid fa-clipboard-list"></i>
                     프로젝트 개요
                 </h3>
+                <div class="form-group">
+                    <label class="form-label">주요 키워드 / 주제 <span class="required">*</span></label>
+                    <textarea class="form-input form-textarea" id="expertKeywords" placeholder="예: 새우파스타, 겨울 한정 메뉴, 로맨틱 데이트, 크리스마스 이벤트"></textarea>
+                    <small style="color: var(--text-secondary);">
+                        키워드를 기반으로 기획/대본/컷 구성을 제안합니다.
+                    </small>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="generatePlanAndScript()">
+                        <i class="fa-solid fa-robot"></i>
+                        AI로 기획 & 대본 초안 생성하기
+                    </button>
+                </div>
+                <div class="form-group" id="planScriptWrapper" style="display: none;">
+                    <label class="form-label">AI 기획 초안</label>
+                    <div class="form-input" id="aiPlanPreview" style="min-height: 80px; white-space: pre-line; background: rgba(255, 123, 84, 0.06); border-color: rgba(255, 123, 84, 0.35);"></div>
+                    <label class="form-label" style="margin-top: 16px;">AI 대본 초안</label>
+                    <textarea class="form-input form-textarea" id="aiScriptPreview" rows="6"></textarea>
+                    <small style="color: var(--text-secondary);">
+                        초안을 기반으로 편집자가 보완합니다. 필요 시 자유롭게 수정해주세요.
+                    </small>
+                    <div class="action-buttons" style="margin-top: 18px; gap: 10px;">
+                        <button type="button" class="btn btn-secondary" onclick="generatePlanAndScript()">
+                            <i class="fa-solid fa-repeat"></i>
+                            다시 생성
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="savePlanAndScript()">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            초안 저장
+                        </button>
+                    </div>
+                    <div class="history-section" id="planHistorySection" style="display: none;">
+                        <div class="form-label" style="margin-bottom: 12px;">저장된 초안</div>
+                        <div class="history-list" id="planHistoryList"></div>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label class="form-label">영상 목적 <span class="required">*</span></label>
                     <div class="option-group" id="expertPurpose">
@@ -1413,6 +1596,14 @@
         let selectedStyle = null;
         let selectedMusic = 'auto';
         let uploadedImage = null;
+        const styleDurations = {
+            luxury: 15,
+            fast: 10,
+            chef: 12,
+            plating: 8,
+            simple: 10,
+        };
+        let planHistory = [];
 
         function switchMode(mode) {
             if (currentMode === mode) return;
@@ -1469,11 +1660,31 @@
         }
 
         function updateRecommendedDuration(style) {
-            const durations = { luxury: 15, fast: 10, chef: 12, plating: 8, simple: 10 };
-            const duration = durations[style] || 10;
+            const duration = styleDurations[style] || 10;
             document.getElementById('videoDuration').value = duration;
+            document.getElementById('videoDurationNumber').value = duration;
             document.getElementById('durationDisplay').textContent = duration;
             document.getElementById('durationRecommend').textContent = `${duration}초 권장`;
+        }
+
+        function openDurationEditor(event, style) {
+            event.stopPropagation();
+            const current = styleDurations[style] || 10;
+            const input = prompt('권장 시간을 입력하세요 (초 단위, 5~60초)', current);
+            if (!input) return;
+            const value = Number(input);
+            if (Number.isNaN(value) || value < 5 || value > 60) {
+                alert('5~60초 범위 안에서 입력해주세요.');
+                return;
+            }
+            styleDurations[style] = Math.round(value);
+            const label = document.querySelector(`[data-style-duration="${style}"]`);
+            if (label) {
+                label.textContent = `${styleDurations[style]}초 권장`;
+            }
+            if (selectedStyle === style) {
+                updateRecommendedDuration(style);
+            }
         }
 
         // Step 3: 콘텐츠 입력
@@ -1510,6 +1721,18 @@
 
         function updateDurationDisplay(value) {
             document.getElementById('durationDisplay').textContent = value;
+            document.getElementById('videoDurationNumber').value = value;
+        }
+
+        function handleDurationNumber(value) {
+            if (value === '') return;
+            let val = Number(value);
+            if (Number.isNaN(val)) return;
+            if (val < 5) val = 5;
+            if (val > 60) val = 60;
+            document.getElementById('videoDurationNumber').value = val;
+            document.getElementById('videoDuration').value = val;
+            document.getElementById('durationDisplay').textContent = val;
         }
 
         // 단계 이동 (셀프 모드)
@@ -1623,11 +1846,18 @@
                 return;
             }
 
+            const keywords = document.getElementById('expertKeywords').value.trim();
+            if (!keywords) {
+                alert('주요 키워드/주제를 입력해주세요.');
+                return;
+            }
+
             const durationValue = document.getElementById('expertDuration').value;
             const duration =
                 durationValue === 'custom' ? document.getElementById('customDuration').value : durationValue;
 
             const payload = {
+                keywords,
                 purpose: purposeChip.dataset.value,
                 duration,
                 brandColor: document.getElementById('brandColor').value,
@@ -1648,10 +1878,170 @@
             alert('전문가 의뢰 요청이 접수되었습니다. 담당자가 확인 후 연락드릴 예정입니다.');
         }
 
+        async function generatePlanAndScript() {
+            const keywords = document.getElementById('expertKeywords').value.trim();
+            if (!keywords) {
+                alert('AI 기획을 위해 키워드를 먼저 입력해주세요.');
+                return;
+            }
+
+            setPlanLoading(true);
+            try {
+                const { plan, script } = await simulatePlanAndScript(keywords);
+                document.getElementById('planScriptWrapper').style.display = 'block';
+                document.getElementById('aiPlanPreview').textContent = plan;
+                const scriptArea = document.getElementById('aiScriptPreview');
+                scriptArea.value = script;
+                scriptArea.focus();
+                showToast('AI 초안이 생성되었습니다.');
+            } catch (error) {
+                console.error('AI 기획 생성 실패:', error);
+                alert('기획 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            } finally {
+                setPlanLoading(false);
+            }
+        }
+
+        function setPlanLoading(isLoading) {
+            const button = document.querySelector('[onclick="generatePlanAndScript()"]');
+            if (!button) return;
+            button.disabled = isLoading;
+            button.innerHTML = isLoading
+                ? '<i class="fa-solid fa-spinner fa-spin"></i> 기획 생성 중...'
+                : '<i class="fa-solid fa-robot"></i> AI로 기획 & 대본 초안 생성하기';
+        }
+
+        // 실제 구현 시 /api/shorts/plan-and-script POST 호출로 대체
+        function simulatePlanAndScript(keywords) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve({
+                        plan: `• 목적: ${keywords.split(',')[0] || '주요 메뉴'} 홍보\n• 톤앤매너: 따뜻하고 공감 가는 분위기\n• 구성: 인트로(3초) – 메인컷(7초) – CTA(3초)\n• 강조 포인트: 신선한 재료, 셰프의 손길, 시즌 한정`,
+                        script: `1) 인트로 (3초)\n   - 나레이션: "오늘, 특별한 ${keywords.split(',')[0] || '메뉴'}가 준비됐습니다."\n2) 메인 (7초)\n   - 나레이션: "신선한 재료와 정성 가득한 손길로 완성되는 ${keywords.split(',')[0] || '요리'}."\n3) CTA (3초)\n   - 나레이션: "지금 예약하고, 따끈한 행복을 만나보세요!"`,
+                    });
+                }, 2000);
+            });
+        }
+
+        function savePlanAndScript() {
+            const planEl = document.getElementById('aiPlanPreview');
+            const scriptEl = document.getElementById('aiScriptPreview');
+            const plan = planEl.textContent.trim();
+            const script = scriptEl.value.trim();
+            if (!plan && !script) {
+                alert('저장할 초안이 없습니다. 먼저 AI 초안을 생성하거나 직접 작성해주세요.');
+                return;
+            }
+
+            const entry = {
+                id: Date.now(),
+                plan,
+                script,
+                timestamp: new Date(),
+            };
+            planHistory.unshift(entry);
+            renderPlanHistory();
+            showToast('초안이 저장되었습니다.');
+        }
+
+        function renderPlanHistory() {
+            const section = document.getElementById('planHistorySection');
+            const list = document.getElementById('planHistoryList');
+            if (!section || !list) return;
+            list.innerHTML = '';
+            if (planHistory.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = 'block';
+            planHistory.forEach((item) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'history-item';
+                const header = document.createElement('div');
+                header.className = 'history-item-header';
+                const title = document.createElement('div');
+                title.className = 'history-item-title';
+                title.textContent = `저장된 초안 · ${item.timestamp.toLocaleString('ko-KR')}`;
+                const actions = document.createElement('div');
+                actions.className = 'history-item-actions';
+                const loadBtn = document.createElement('button');
+                loadBtn.className = 'history-btn';
+                loadBtn.textContent = '불러오기';
+                loadBtn.onclick = () => loadPlanFromHistory(item.id);
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'history-btn';
+                copyBtn.textContent = '복사하기';
+                copyBtn.onclick = () => copyPlanToClipboard(item);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'history-btn';
+                deleteBtn.style.color = '#d92a2a';
+                deleteBtn.textContent = '삭제';
+                deleteBtn.onclick = () => removePlanFromHistory(item.id);
+                actions.append(loadBtn, copyBtn, deleteBtn);
+                header.append(title, actions);
+                const planPreview = document.createElement('div');
+                planPreview.style.fontSize = '12px';
+                planPreview.style.color = 'var(--text-secondary)';
+                planPreview.style.whiteSpace = 'pre-line';
+                planPreview.textContent = item.plan;
+                wrapper.append(header, planPreview);
+                list.appendChild(wrapper);
+            });
+        }
+
+        function loadPlanFromHistory(id) {
+            const entry = planHistory.find((item) => item.id === id);
+            if (!entry) return;
+            document.getElementById('planScriptWrapper').style.display = 'block';
+            document.getElementById('aiPlanPreview').textContent = entry.plan;
+            document.getElementById('aiScriptPreview').value = entry.script;
+            showToast('저장된 초안을 불러왔습니다.');
+        }
+
+        function copyPlanToClipboard(entry) {
+            const text = `기획\n${entry.plan}\n\n대본\n${entry.script}`;
+            navigator.clipboard
+                .writeText(text)
+                .then(() => showToast('초안이 클립보드에 복사되었습니다.'))
+                .catch(() => alert('복사에 실패했습니다.'));
+        }
+
+        function removePlanFromHistory(id) {
+            planHistory = planHistory.filter((item) => item.id !== id);
+            renderPlanHistory();
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.position = 'fixed';
+            toast.style.bottom = '24px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = 'rgba(32, 26, 23, 0.9)';
+            toast.style.color = '#fff';
+            toast.style.padding = '12px 20px';
+            toast.style.borderRadius = '999px';
+            toast.style.fontSize = '13px';
+            toast.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+            toast.style.zIndex = '2000';
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => document.body.removeChild(toast), 500);
+            }, 2000);
+        }
+
         // 초기화
         document.addEventListener('DOMContentLoaded', function () {
             selectMusic('auto');
             switchMode('self');
+            const rangeEl = document.getElementById('videoDuration');
+            const numberEl = document.getElementById('videoDurationNumber');
+            if (rangeEl && numberEl) {
+                numberEl.value = rangeEl.value;
+            }
 
             document.querySelectorAll('.option-chip').forEach((chip) => {
                 chip.addEventListener('click', () => {
