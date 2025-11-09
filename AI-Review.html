@@ -953,6 +953,13 @@
   </style>
 </head>
 <body>
+  <style>
+    @media (max-width: 600px) {
+      #replyPresetBox > div { flex-direction: column; align-items: stretch; }
+      #replyPresetBox select { width: 100%; max-width: 100%; }
+      #replyPresetBox button { width: 100%; }
+    }
+  </style>
   <header class="header">
     <div class="header-inner">
       <a href="/" class="logo-container">
@@ -1101,6 +1108,29 @@
                 </p>
                 <div id="aiPromoTags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
               </div>
+            </div>
+
+            <!-- 업종별 빠른 템플릿/리뷰유도 -->
+            <div id="replyPresetBox" style="display:block; margin-top:14px; background:#fff; border:1px solid rgba(255,126,70,0.25); border-radius:12px; padding:12px;">
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <strong style="color:#ff7e46; font-size:13px;">빠른 템플릿</strong>
+                <select id="replyIndustrySelect" class="input-field" style="max-width:220px; padding:6px 8px; height:auto;">
+                  <option value="restaurant">음식점</option>
+                  <option value="beauty">미용실</option>
+                  <option value="lodging">숙박업</option>
+                  <option value="clinic">병원/의원</option>
+                  <option value="fitness">운동시설</option>
+                  <option value="attraction">여행/명소</option>
+                  <option value="agency">대행사</option>
+                </select>
+                <button type="button" id="copyReviewPhraseBtn" class="btn" style="padding:8px 12px; border:1px solid rgba(255,126,70,0.35); background:#fff; color:#ff7e46;">
+                  리뷰 유도 문구 복사
+                </button>
+              </div>
+              <div id="replyChips" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+              <small style="display:block; color:#7a6a60; margin-top:8px;">
+                칩을 클릭하면 아래 ‘사장님 추천 포인트’에 자동으로 추가됩니다. 복사 버튼은 리뷰 유도 문구를 클립보드에 복사합니다.
+              </small>
             </div>
           </div>
 
@@ -1551,6 +1581,95 @@
           aiPromoTags.appendChild(tag);
         });
       }
+
+      // 업종별 빠른 템플릿/리뷰유도 프리셋
+      (function initReplyPresets(){
+        const PRESETS = {
+          restaurant: {
+            phrase: '영수증 리뷰로 남겨주시면 큰 힘이 됩니다. 다음 방문 때 더 좋은 서비스로 보답드릴게요!',
+            templates: [
+              '방문해주셔서 감사합니다! 다음에는 시그니처 메뉴를 추천드릴게요. 예약하시면 대기 없이 편하게 모실 수 있어요.',
+              '정성스러운 리뷰와 사진 감사드립니다. 단체석/주차 준비되어 있어 모임에도 좋아요. 또 뵙겠습니다!'
+            ]
+          },
+          beauty: {
+            phrase: '시술 후 소감 남겨주시면 디자이너에게 큰 힘이 됩니다. 다음 예약 시 더 맞춤 케어로 보답할게요!',
+            templates: [
+              '소중한 방문 감사합니다. 다음엔 원하시는 디자인으로 더 만족 드리겠습니다. 예약 문의 언제든지 남겨주세요!',
+              '정성스러운 후기 감사합니다. 시술 관리 팁도 안내드릴게요. 다음 시술 때 더 예쁘게 만들어드릴게요.'
+            ]
+          },
+          lodging: {
+            phrase: '후기 한 줄이 정말 큰 힘이 됩니다. 다음 방문 때도 편안한 숙박 제공하겠습니다.',
+            templates: [
+              '편안히 쉬셨다니 기쁩니다. 조식/주차/편의시설 더 개선하겠습니다. 다음에도 편히 쉬고 가세요!',
+              '소중한 후기 감사합니다. 계절별 특가 안내 드릴게요. 다음 여행에도 좋은 쉼이 되길 바랍니다.'
+            ]
+          },
+          clinic: {
+            phrase: '방문 소감 남겨주시면 진료 품질 개선에 큰 도움이 됩니다. 빠른 쾌유를 바랍니다.',
+            templates: [
+              '방문해주셔서 감사합니다. 다음 내원 시 대기 줄이도록 간편접수 이용을 권장드립니다.',
+              '소중한 후기 감사합니다. 증상 변화가 있으면 언제든지 문의주세요. 건강하세요.'
+            ]
+          },
+          fitness: {
+            phrase: '체험 후기 남겨주시면 프로그램 개선에 큰 도움이 됩니다. 함께 꾸준히 운동해요!',
+            templates: [
+              '오늘도 수고하셨습니다! 다음엔 난이도를 조절해 더 맞춤형으로 진행해드릴게요.',
+              '후기 감사합니다. 시간표/강사 변경 원하시면 언제든 말씀해주세요. 함께 성장해요!'
+            ]
+          },
+          attraction: {
+            phrase: '방문 소감 남겨주시면 운영에 큰 힘이 됩니다. 다음 방문 때 더 좋은 추억 만들어드릴게요.',
+            templates: [
+              '즐거운 시간 되셨다니 행복합니다. 포토스팟/길찾기 정보 더 보강하겠습니다. 다음에 또 만나요!',
+              '소중한 후기 감사합니다. 주차/대중교통 안내도 개선하겠습니다. 좋은 하루 되세요.'
+            ]
+          },
+          agency: {
+            phrase: '검수 완료 후 발행해주세요. 가이드 준수와 사실 기반 표현을 부탁드립니다.',
+            templates: [
+              '감사/공감 → 개선 약속 → CTA(예약/문의) 순으로 정리했습니다.',
+              '리뷰 감사 + 핵심 장점 2개 + 다음 방문 유도(예약/길찾기) 형태로 구성했습니다.'
+            ]
+          }
+        };
+        const select = document.getElementById('replyIndustrySelect');
+        const chips = document.getElementById('replyChips');
+        const copyBtn = document.getElementById('copyReviewPhraseBtn');
+        const tipsBox = document.getElementById('ownerTips');
+
+        function renderChips() {
+          if (!chips || !select) return;
+          const code = select.value || 'restaurant';
+          const set = PRESETS[code] || PRESETS.restaurant;
+          chips.innerHTML = '';
+          set.templates.forEach((t) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = t;
+            b.style.cssText = 'border:1px solid rgba(255,126,70,0.35); background:#fff; color:#ff7e46; border-radius:999px; padding:6px 10px; font-size:12px; cursor:pointer;';
+            b.addEventListener('click', () => {
+              const cur = (tipsBox?.value || '').trim();
+              if (tipsBox) {
+                tipsBox.value = cur ? (cur + '\\n- ' + t) : ('- ' + t);
+                tipsBox.focus();
+              }
+            });
+            chips.appendChild(b);
+          });
+        }
+        function copyPhrase() {
+          if (!select) return;
+          const code = select.value || 'restaurant';
+          const text = (PRESETS[code] || PRESETS.restaurant).phrase;
+          navigator.clipboard.writeText(text);
+        }
+        select?.addEventListener('change', renderChips);
+        copyBtn?.addEventListener('click', copyPhrase);
+        renderChips();
+      })();
 
       // 답글 생성 공통 함수 (스타일별)
       async function generateReply(style, buttonElement) {

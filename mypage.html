@@ -155,6 +155,23 @@
       box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
     }
 
+    /* 접기/펼치기 */
+    .section.collapsed .section-body { display: none; }
+    .collapse-btn {
+      margin-left: auto;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #555;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     .section-title {
       font-size: 18px;
       font-weight: 700;
@@ -728,6 +745,11 @@
   <div class="container">
     <h1 class="page-title">마이페이지</h1>
     <p class="page-subtitle">내 정보 및 서비스 이용 현황</p>
+
+    <!-- 안내문: 입력은 선택, 많이 입력할수록 품질 향상 -->
+    <div style="background:#fffaf0; border:1px solid #ffe1a3; color:#8a6d3b; border-radius:10px; padding:12px; text-align:center; font-size:13px; margin-bottom:16px;">
+      입력은 선택입니다. 단, 정보를 많이 입력할수록 AI 추천/생성 품질이 좋아집니다.
+    </div>
 
     <!-- 로딩 상태 -->
     <div id="loadingContainer" class="loading">
@@ -2364,6 +2386,74 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
     window.addEventListener('load', function() {
       initPage();
       setupLogoutButton();
+
+      // 섹션 접기/펼치기 초기화
+      (function initCollapsibles(){
+        const sections = Array.from(document.querySelectorAll('.content-grid .section, #tokenSection'));
+        sections.forEach((section, idx) => {
+          // id 보장
+          if (!section.id) {
+            const titleText = section.querySelector('.section-title')?.innerText?.trim() || 'sec';
+            section.id = 'sec-' + idx + '-' + titleText.replace(/\s+/g,'-').toLowerCase();
+          }
+          const sid = section.id;
+
+          // 제목 래퍼 및 버튼 주입
+          const h = section.querySelector('.section-title');
+          if (!h) return;
+          if (!h.classList.contains('section-title-wrap')) {
+            // 기존 h3 내용을 유지하면서 래퍼 클래스로 전환
+            h.classList.add('section-title-wrap');
+          }
+
+          // 본문 래핑(헤더 이후 모든 노드 이동)
+          if (!section.querySelector('.section-body')) {
+            const body = document.createElement('div');
+            body.className = 'section-body';
+            // 헤더 다음 형제들을 body로 이동
+            let cursor = h.nextSibling;
+            const movers = [];
+            while (cursor) { movers.push(cursor); cursor = cursor.nextSibling; }
+            movers.forEach(node => body.appendChild(node));
+            section.appendChild(body);
+          }
+
+          // 버튼 생성
+          const btn = document.createElement('button');
+          btn.className = 'collapse-btn';
+          function setLabel() {
+            btn.textContent = section.classList.contains('collapsed') ? '펼치기' : '접기';
+          }
+          // 상태 복원
+          try {
+            if (localStorage.getItem('collapse_'+sid) === '1') {
+              section.classList.add('collapsed');
+            }
+          } catch(_) {}
+          setLabel();
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            section.classList.toggle('collapsed');
+            setLabel();
+            try {
+              localStorage.setItem('collapse_'+sid, section.classList.contains('collapsed') ? '1':'0');
+            } catch(_) {}
+          });
+
+          // 제목 클릭으로도 토글(아이콘 제외)
+          h.addEventListener('click', (e) => {
+            if (e.target === btn) return;
+            section.classList.toggle('collapsed');
+            setLabel();
+            try {
+              localStorage.setItem('collapse_'+sid, section.classList.contains('collapsed') ? '1':'0');
+            } catch(_) {}
+          });
+
+          // 버튼 삽입(제목 오른쪽)
+          h.appendChild(btn);
+        });
+      })();
     });
   </script>
 

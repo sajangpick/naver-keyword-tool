@@ -2639,6 +2639,10 @@
                   <div class="center-icon"><i class="fa-solid fa-pen-nib"></i></div>
                   <span class="center-label">리뷰 답글</span>
                 </a>
+                <a href="#" class="center-menu-item" id="btn-open-checklist">
+                  <div class="center-icon"><i class="fa-solid fa-list-check"></i></div>
+                  <span class="center-label">업종 체크리스트</span>
+                </a>
                 <a href="/Blog-Editor.html" class="center-menu-item">
                   <div class="center-icon"><i class="fa-solid fa-blog"></i></div>
                   <span class="center-label">블로그 작성</span>
@@ -2845,6 +2849,207 @@
       if (window.authState?.syncSession) {
         window.authState.syncSession();
       }
+
+      /* ===== 업종 선택(선택사항) 모달: 최초 1회 노출 ===== */
+      (function(){
+        const OVERLAY_ID = 'industry-setup-modal';
+        const SEEN_KEY = 'industrySetupSeenV1';
+
+        function buildModal(){
+          if (document.getElementById(OVERLAY_ID)) return;
+          const overlay = document.createElement('div');
+          overlay.id = OVERLAY_ID;
+          overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;';
+          overlay.innerHTML = `
+            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);background:#fff;border-radius:16px;padding:18px;">
+              <h3 style="margin:0 0 8px 0;font-size:18px;font-weight:800;color:#201a17;">업종을 선택하시겠어요? <span style="color:#888;font-weight:600;">(선택)</span></h3>
+              <p style="margin:0 0 12px 0;color:#555;font-size:13px;">선택하면 맞춤 프리셋이 자동 적용됩니다. 나중에 마이페이지에서도 변경할 수 있어요.</p>
+              <select id="indSetupSelect" style="width:100%;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+                <option value="">선택 안 함</option>
+                <option value="restaurant">음식점</option>
+                <option value="beauty">미용실</option>
+                <option value="lodging">숙박업</option>
+                <option value="clinic">병원/의원</option>
+                <option value="fitness">운동시설</option>
+                <option value="attraction">여행/명소</option>
+                <option value="agency">대행사</option>
+              </select>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                <button id="indSetupLater" style="border:none;background:#f3f4f6;color:#111827;border-radius:10px;padding:10px 12px;cursor:pointer;">다음에</button>
+                <button id="indSetupSave" style="border:none;background:#03c75a;color:#fff;border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:800;">저장</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+        }
+
+        async function saveToProfile(code){
+          try {
+            if (!window.authState?.supabase) return false;
+            const { data: { session } } = await window.authState.supabase.auth.getSession();
+            const user = session?.user;
+            if (!user) return false;
+            const updates = { industry_code: code || null, updated_at: new Date().toISOString() };
+            if (code === 'agency') updates.user_type = 'agency';
+            const { error } = await window.authState.supabase.from('profiles').update(updates).eq('id', user.id);
+            if (error) throw new Error(error.message);
+            return true;
+          } catch(e){ console.warn('업종 저장 실패(프로필):', e); return false; }
+        }
+
+        function openModal(){ buildModal(); document.getElementById(OVERLAY_ID).style.display='block'; }
+        function closeModal(){ const el=document.getElementById(OVERLAY_ID); if (el) el.style.display='none'; }
+
+        function bindHandlers(){
+          const later = document.getElementById('indSetupLater');
+          const save = document.getElementById('indSetupSave');
+          later?.addEventListener('click', ()=>{ try{localStorage.setItem(SEEN_KEY,'1');}catch(_){} closeModal(); });
+          save?.addEventListener('click', async ()=>{
+            const code = (document.getElementById('indSetupSelect')?.value) || '';
+            try{ localStorage.setItem('pref_industry_code', code || ''); }catch(_){}
+            await saveToProfile(code);
+            try{ localStorage.setItem(SEEN_KEY,'1'); }catch(_){}
+            closeModal();
+          });
+          document.getElementById(OVERLAY_ID)?.addEventListener('click', (e)=>{ if (e.target.id===OVERLAY_ID) closeModal(); });
+        }
+
+        try {
+          const p = new URLSearchParams(location.search);
+          const force = p.get('industry-setup')==='1';
+          const seen = localStorage.getItem(SEEN_KEY)==='1';
+          if (force || !seen){
+            openModal(); bindHandlers();
+          }
+        } catch(_){}
+      })();
+
+      /* ===== 업종별 체크리스트 모달 (한 블록 삭제로 제거 가능) ===== */
+      (function(){
+        const ADMIN_URL = 'https://smartplace.naver.com/';
+        const CHECKLIST = {
+          restaurant: { title:'음식점', items:[
+            '예약/대기 ON(좌석·피크타임) 설정',
+            '메뉴·가격 최신화(대표 10개 사진 포함)',
+            '대표사진 5장(외관/내부/시그니처/단체석/주차)',
+            '영수증리뷰 유도 멘트 배치',
+            'CTA: “네이버로 예약하고 대기 없이 식사하세요”'
+          ]},
+          beauty: { title:'미용실', items:[
+            '디자이너별 예약 슬롯/가격 공개',
+            '시술 전·후 포트폴리오 10컷 이상',
+            '시술 카테고리/해시태그 구성',
+            '리뷰 리마인드(단골 혜택)',
+            'CTA: “원하는 디자이너로 바로 예약”'
+          ]},
+          lodging: { title:'숙박업', items:[
+            '실시간 예약/요금/환불정책 명확화',
+            '객실 타입/인원/편의시설 상세',
+            '시즌 요금·취소 규정 공지',
+            '교통/주차/조식 안내',
+            'CTA: “지금 예약하고 혜택 확인”'
+          ]},
+          clinic: { title:'병원/의원', items:[
+            '간편접수/대기 안내 설정',
+            '진료과·의료진·진료시간 명확화',
+            '비급여 가격표 링크(가능 시)',
+            '주차/접수 동선 안내',
+            'CTA: “네이버 간편접수로 대기 줄이기”'
+          ]},
+          fitness: { title:'운동시설', items:[
+            '체험 예약(시간표/난이도/준비물) 설정',
+            '시설 내부/락커/샤워 사진',
+            '프로그램 가격·혜택 공지',
+            '첫 방문 추천 코스 안내',
+            'CTA: “오늘 체험 예약하고 시작”'
+          ]},
+          attraction: { title:'여행/명소', items:[
+            '운영시간/입장료 최신화',
+            '포토스팟·코스 소개',
+            '날씨/혼잡도 팁 제공',
+            '주차/대중교통/길찾기 강조',
+            'CTA: “길찾기/주차 안내 바로보기”'
+          ]}
+        };
+
+        const overlay = document.createElement('div');
+        overlay.id = 'industry-checklist-modal';
+        overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;';
+        overlay.innerHTML = `
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(860px,92vw);max-height:88vh;overflow:auto;background:#fff;border-radius:16px;padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;">
+              <strong style="font-size:18px;color:#201a17;">업종별 체크리스트</strong>
+              <button id="icm-close" style="border:none;background:#f4f4f4;border-radius:10px;padding:6px 10px;cursor:pointer;">닫기</button>
+            </div>
+            <div id="icm-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+            <div id="icm-body"></div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        function renderTabs(active){
+          const tabs = document.getElementById('icm-tabs');
+          tabs.innerHTML = Object.keys(CHECKLIST).map(code=>{
+            const on = code===active;
+            return `<button class="icm-tab" data-code="${code}" style="border:1px solid ${on?'rgba(3,199,90,0.35)':'rgba(0,0,0,0.08)'};background:${on?'#f4fff7':'#fff'};border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:700;">${CHECKLIST[code].title}</button>`;
+          }).join('');
+        }
+        function renderBody(code){
+          const target = document.getElementById('icm-body');
+          const data = CHECKLIST[code]; if(!data||!target) return;
+          target.innerHTML = `
+            <div style="border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:12px;">
+              <h4 style="margin:0 0 8px 0;font-size:15px;color:#333;">${data.title} - 필수 5가지</h4>
+              <ol style="margin:0;padding-left:18px;color:#333;line-height:1.7;font-size:14px;">
+                ${data.items.map((t,i)=>`
+                  <li style="margin:6px 0;">
+                    ${t}
+                    <span style="margin-left:6px;">
+                      <button class="icm-copy" data-text="${t.replace(/"/g,'&quot;')}" style="border:1px solid rgba(3,199,90,0.3);background:#fff;color:#03c75a;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px;">복사</button>
+                      ${i===0?`<a href="${ADMIN_URL}" target="_blank" style="border:1px solid rgba(0,0,0,0.1);background:#fff;color:#555;border-radius:8px;padding:4px 8px;font-size:12px;text-decoration:none;">네이버 관리자 열기</a>`:''}
+                    </span>
+                  </li>
+                `).join('')}
+              </ol>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="icm-copy-all" style="border:none;background:#03c75a;color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:700;">모두 복사</button>
+                <a href="${ADMIN_URL}" target="_blank" style="border:none;background:#201a17;color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;text-decoration:none;">네이버 관리자 열기</a>
+              </div>
+            </div>
+          `;
+        }
+        function openModal(preselect){
+          const first = (preselect && CHECKLIST[preselect]) ? preselect : Object.keys(CHECKLIST)[0];
+          renderTabs(first);
+          renderBody(first);
+          overlay.style.display = 'block';
+        }
+        function closeModal(){ overlay.style.display='none'; }
+
+        overlay.addEventListener('click', (e)=>{
+          if (e.target.id==='industry-checklist-modal' || e.target.id==='icm-close') closeModal();
+          if (e.target.classList.contains('icm-tab')){
+            const code = e.target.getAttribute('data-code');
+            renderTabs(code); renderBody(code);
+          }
+          if (e.target.classList.contains('icm-copy')){
+            const text = e.target.getAttribute('data-text')||'';
+            navigator.clipboard.writeText(text);
+          }
+          if (e.target.classList.contains('icm-copy-all')){
+            const active = document.querySelector('.icm-tab[style*="#f4fff7"]')?.getAttribute('data-code') || Object.keys(CHECKLIST)[0];
+            const all = (CHECKLIST[active]?.items||[]).join('\\n• ');
+            navigator.clipboard.writeText('• '+all);
+          }
+        });
+        document.getElementById('btn-open-checklist')?.addEventListener('click', (ev)=>{ ev.preventDefault(); openModal(); });
+        window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+        try {
+          const p = new URLSearchParams(location.search);
+          const c = p.get('checklist'); if (c) openModal(c);
+        } catch(_) {}
+      })();
+      /* ===== /업종별 체크리스트 모달 ===== */
 
       // 모바일 브라우저 뷰포트 높이 문제 해결
       (function() {

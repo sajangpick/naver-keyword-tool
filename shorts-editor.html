@@ -1042,6 +1042,13 @@
     </style>
 </head>
 <body>
+    <style>
+        @media (max-width: 600px) {
+            #shortsIndustryPreset > div { flex-direction: column; align-items: stretch; }
+            #shortsIndustryPreset select { width: 100%; max-width: 100%; }
+            #shortsIndustryPreset button { width: 100%; }
+        }
+    </style>
     <!-- 헤더 -->
     <header class="header">
         <div class="header-inner">
@@ -1188,6 +1195,28 @@
             <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; text-align: center;">
                 영상 스타일을 선택하세요
             </h2>
+
+            <!-- 업종 프리셋 박스 -->
+            <div id="shortsIndustryPreset" style="display:block; margin:0 0 16px 0; background:#fff; border:1px solid rgba(255,126,70,0.25); border-radius:12px; padding:12px;">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <strong style="color:#ff7e46; font-size:13px;">업종 프리셋</strong>
+                    <select id="shortsIndustrySelect" class="form-input" style="max-width:240px; padding:8px 10px; height:auto;">
+                        <option value="">선택 안 함</option>
+                        <option value="restaurant">음식점</option>
+                        <option value="beauty">미용실</option>
+                        <option value="lodging">숙박업</option>
+                        <option value="clinic">병원/의원</option>
+                        <option value="fitness">운동시설</option>
+                        <option value="attraction">여행/명소</option>
+                        <option value="agency">대행사</option>
+                    </select>
+                    <button type="button" id="applyShortsPreset" class="select-button" style="width:auto; padding:10px 14px;">프리셋 적용</button>
+                    <button type="button" id="copyShortsCta" class="select-button" style="width:auto; padding:10px 14px; background:#fff; color:#ff7e46; border:2px solid rgba(255,126,70,0.35);">CTA 복사</button>
+                </div>
+                <div id="shortsPresetHint" style="margin-top:8px; color:#7a6a60; font-size:12px;">
+                    업종을 선택하면 권장 스타일/영상 길이를 자동으로 적용하고, 업종별 CTA 문구를 복사할 수 있습니다.
+                </div>
+            </div>
             <div class="style-grid">
                 <div class="style-option" onclick="selectStyle('luxury')" data-style="luxury">
                     <div class="style-icon">🎬</div>
@@ -1765,6 +1794,61 @@
             document.getElementById('videoDuration').value = val;
             document.getElementById('durationDisplay').textContent = val;
         }
+
+        // 업종 프리셋 (스타일/권장시간/CTA)
+        (function initShortsIndustryPreset(){
+            const PRESETS = {
+                restaurant: { style: 'chef', duration: 12, cta: '네이버로 예약하고 대기 없이 식사하세요' },
+                beauty:     { style: 'luxury', duration: 15, cta: '원하는 디자이너로 바로 예약하세요' },
+                lodging:    { style: 'simple', duration: 15, cta: '지금 예약하고 혜택을 확인해보세요' },
+                clinic:     { style: 'simple', duration: 15, cta: '네이버 간편접수로 대기 줄이고 진료받으세요' },
+                fitness:    { style: 'fast', duration: 10, cta: '오늘 체험 예약하고 시작해보세요' },
+                attraction: { style: 'plating', duration: 12, cta: '길찾기/주차 안내를 확인하고 편하게 방문하세요' },
+                agency:     { style: 'simple', duration: 10, cta: '검수 완료 후 발행해주세요' },
+            };
+            const select = document.getElementById('shortsIndustrySelect');
+            const hint = document.getElementById('shortsPresetHint');
+            const btnApply = document.getElementById('applyShortsPreset');
+            const btnCopy = document.getElementById('copyShortsCta');
+
+            function updateHint() {
+                const code = select?.value;
+                if (!code || !PRESETS[code]) {
+                    if (hint) hint.textContent = '업종을 선택하면 권장 스타일/영상 길이를 자동으로 적용하고, 업종별 CTA 문구를 복사할 수 있습니다.';
+                    return;
+                }
+                const p = PRESETS[code];
+                if (hint) hint.textContent = `권장 스타일: ${p.style} | 권장 길이: ${p.duration}초 | 권장 CTA: “${p.cta}”`;
+            }
+
+            function applyPreset() {
+                const code = select?.value;
+                const p = PRESETS[code];
+                if (!p) return;
+                // 스타일 적용
+                try { selectStyle(p.style); } catch (e) {}
+                // 길이 적용
+                try {
+                    document.getElementById('videoDuration').value = p.duration;
+                    document.getElementById('videoDurationNumber').value = p.duration;
+                    document.getElementById('durationDisplay').textContent = p.duration;
+                    document.getElementById('durationRecommend').textContent = `${p.duration}초 권장`;
+                } catch (e) {}
+                updateHint();
+            }
+
+            function copyCTA() {
+                const code = select?.value;
+                const p = PRESETS[code];
+                const text = (p?.cta) || '네이버로 예약하고 대기 없이 식사하세요';
+                navigator.clipboard.writeText(text);
+            }
+
+            select?.addEventListener('change', updateHint);
+            btnApply?.addEventListener('click', applyPreset);
+            btnCopy?.addEventListener('click', copyCTA);
+            updateHint();
+        })();
 
         // 단계 이동 (셀프 모드)
         function goToStep(step) {

@@ -1459,6 +1459,13 @@
     </style>
   </head>
   <body>
+    <style>
+      @media (max-width: 600px) {
+        #industryPresetBox > div { flex-direction: column; align-items: stretch; }
+        #industryPresetBox .form-input { width: 100%; max-width: 100%; }
+        #industryPresetBox button { width: 100%; }
+      }
+    </style>
   <header class="header">
     <div class="header-inner">
       <a href="/" class="logo-container">
@@ -1538,10 +1545,39 @@
 
         <div class="form-section">
             <div class="review-content">
+                <!-- 업종 프리셋 박스 -->
+                <div id="industryPresetBox" style="display: block; margin-bottom: 14px; background: #f6fff8; border: 1px solid rgba(3,199,90,0.25); border-radius: 12px; padding: 12px;">
+                  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <strong style="color:#03c75a; font-size:13px;">업종 프리셋</strong>
+                    <select id="industryPresetSelect" class="form-input" style="max-width: 220px; padding:8px 10px; height:auto;">
+                      <option value="">선택 안 함</option>
+                      <option value="restaurant">음식점</option>
+                      <option value="beauty">미용실</option>
+                      <option value="lodging">숙박업</option>
+                      <option value="clinic">병원/의원</option>
+                      <option value="fitness">운동시설</option>
+                      <option value="attraction">여행/명소</option>
+                      <option value="agency">대행사</option>
+                    </select>
+                    <button type="button" id="applyIndustryPresetBtn" class="btn btn-primary" style="padding:10px 14px;">
+                      프리셋 적용
+                    </button>
+                    <button type="button" id="copyCtaBtn" class="btn" style="padding:10px 14px; border:1px solid rgba(3,199,90,0.35); background:#fff; color:#03c75a;">
+                      CTA 복사
+                    </button>
+                    <button type="button" id="applyRestaurantQuick" class="btn" style="padding:10px 14px; border:1px solid rgba(3,199,90,0.35); background:#fff; color:#03c75a;">
+                      음식점 프리셋(빠르게)
+                    </button>
+                  </div>
+                  <div id="industryPresetHint" style="margin-top:8px; color:#555; font-size:12px; line-height:1.5;">
+                    업종을 고르면 키워드/권장 CTA가 자동으로 준비됩니다. 필요 시 “프리셋 적용”을 눌러 현재 폼에 반영하세요.
+                  </div>
+                </div>
                 <!-- 탭 네비게이션 (설명 아래) -->
                 <div class="tab-navigation" style="margin-bottom: 24px;">
                     <button class="tab-btn active" data-tab="our-store">우리매장</button>
                     <button class="tab-btn" data-tab="review-team">체험단리뷰</button>
+                    <button class="tab-btn" data-tab="pro-info">정보형(전문직)</button>
                 </div>
 
                 <!-- 우리매장 탭 -->
@@ -1664,6 +1700,108 @@
                         <p style="margin: 0; color: var(--accent-color); font-size: 14px;">
                         💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
                     </p>
+                </div>
+
+                <!-- 정보형(전문직) 탭 -->
+                <div class="tab-content" id="pro-info-tab">
+                  <div style="background: var(--primary-white); border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: var(--accent-color);">
+                      전문직/전문가 정보를 안전하게 안내하는 전용 탭입니다. 업종을 선택하면 템플릿이 자동 채워집니다.
+                    </p>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="proSpecialty">전문분야 선택</label>
+                    <select id="proSpecialty" class="form-input">
+                      <option value="clinic">병원/의원(의료)</option>
+                      <option value="law">법률(변호사)</option>
+                      <option value="tax">세무/회계</option>
+                      <option value="labor">노무/인사</option>
+                      <option value="education">교육/컨설팅</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group" style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" id="proApplyTemplate" class="btn btn-primary">템플릿 자동 채우기</button>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+                      <input type="checkbox" id="proCompliance" checked />
+                      컴플라이언스 모드(금지어 하이라이트 · 디스클레이머 자동삽입)
+                    </label>
+                    <button type="button" id="proLoadStoreBtn" class="btn">📥 우리매장 정보 불러오기</button>
+                    <button type="button" id="proSaveBtn" class="btn">📌 전문직 설정 저장</button>
+                  </div>
+
+                  <!-- 전문직 기본정보(우리매장 입력 붙여넣기) -->
+                  <div id="proBasicInfoBox" style="background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:12px; padding:12px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
+                      <strong style="color:#201a17; font-size:14px;">전문직 기본정보(붙여넣기)</strong>
+                      <small style="color:#777;">전문분야에 맞게 라벨과 예시가 자동으로 바뀝니다.</small>
+                    </div>
+
+                    <div class="form-group">
+                      <label id="proLabelCompanyName" for="proCompanyName">업체명</label>
+                      <input type="text" id="proCompanyName" class="form-input" placeholder="예: ○○의원" />
+                    </div>
+
+                    <div class="form-group">
+                      <label id="proLabelAddress" for="proCompanyAddress">업체주소</label>
+                      <input type="text" id="proCompanyAddress" class="form-input" placeholder="예: 서울 ○○구 ○○로 123, 5층" />
+                    </div>
+
+                    <div class="form-group">
+                      <label id="proLabelBusinessHours" for="proBusinessHours">영업/상담/진료 시간</label>
+                      <input type="text" id="proBusinessHours" class="form-input" placeholder="예: 평일 09:30-18:00 (점심 12:30-13:30), 토·일 휴무" />
+                    </div>
+
+                    <div class="form-group">
+                      <label id="proLabelPhone" for="proPhoneNumber">대표번호</label>
+                      <input type="tel" id="proPhoneNumber" class="form-input" placeholder="예: 02-123-4567" />
+                    </div>
+
+                    <div class="form-group">
+                      <label id="proLabelMain" for="proMainMenu">주요 서비스/분야</label>
+                      <textarea id="proMainMenu" class="form-input form-textarea" placeholder="예: 진료과목/대표시술 · 사건분야 · 주요 세무서비스 · 강좌/프로그램"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                      <label id="proLabelLandmarks" for="proLandmarks">오시는 길/주차·동선</label>
+                      <input type="text" id="proLandmarks" class="form-input" placeholder="예: 지하주차장 1시간 무료, 1층 안내 → 5층" />
+                    </div>
+
+                    <div class="form-group">
+                      <label id="proLabelKeywords" for="proKeywords">키워드</label>
+                      <input type="text" id="proKeywords" class="form-input" placeholder="예: 증상/검사/치료/부위 · 사건유형/지역/절차 · 세목/업종" />
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>서비스/진료(업무) 소개</label>
+                    <textarea id="proService" class="form-input form-textarea" placeholder="예: ○○ 클리닉은 비수술 통증치료를 중심으로 ..."></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>대상 · 금기/제한</label>
+                    <textarea id="proTarget" class="form-input form-textarea" placeholder="예: 해당 시술은 △△ 증상에 권장되며, 임산부/특정질환자는 제한될 수 있습니다."></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>절차 · 소요시간 · 비용 범위(고지)</label>
+                    <textarea id="proProcess" class="form-input form-textarea" placeholder="예: 1) 상담 → 2) 검사 → 3) 시술(10~20분), 비용은 OO~OO원 범위로 개인별 상이합니다."></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>주의사항 · 부작용/한계</label>
+                    <textarea id="proCautions" class="form-input form-textarea" placeholder="예: 일시적 통증/멍이 생길 수 있으며, 개인별 반응 차이가 있습니다. 효과가 보장되지는 않습니다."></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>위치/접수 · 상담 안내(안전형 CTA)</label>
+                    <textarea id="proLocation" class="form-input form-textarea" placeholder="예: 네이버 길찾기로 편하게 방문하세요. 사전 상담/예약은 전화 또는 네이버 간편접수로 가능합니다."></textarea>
+                  </div>
+
+                  <button type="button" id="proGenerateBtn" class="btn btn-primary" style="width:100%;">전문직 정보형 글 생성</button>
+
+                  <small style="display:block; color:#666; margin-top:8px;">출력은 아래 결과 영역에 표시되며, 컴플라이언스 모드가 켜져 있으면 위험 표현을 하이라이트합니다.</small>
                 </div>
 
                 <form id="reviewTeamForm">
@@ -2208,6 +2346,11 @@
                 
                 // 결과 섹션 숨기기
                 resultSection.classList.remove('show');
+
+                // 전문직 탭 최초 진입 시 템플릿/참조 자동 초기화
+                if (targetTab === 'pro-info' && window.__openProfessionalTab) {
+                  try { window.__openProfessionalTab(); } catch(_) {}
+                }
             });
         });
 
@@ -2251,6 +2394,379 @@
             errorDiv.style.display = 'none';
             successDiv.style.display = 'block';
         }
+
+        /* ===== 정보형(전문직) 생성 로직 ===== */
+        (function initProfessionalTab(){
+          const proTemplates = {
+            clinic: {
+              title: '의료(병원/의원)',
+              disclaimer: '본 정보는 일반적 안내이며, 진단·치료에 해당하지 않습니다. 개인에 따라 결과가 다를 수 있으며, 의학적 판단은 담당 전문의 상담 후 결정하세요.',
+              safeCta: '네이버 간편접수로 상담 일정을 잡아주세요.'
+            },
+            law: {
+              title: '법률(변호사)',
+              disclaimer: '본 콘텐츠는 일반적 정보 제공으로, 법률 자문이 아닙니다. 사건별 사정에 따라 결과가 달라질 수 있으므로 구체적 자문은 담당 변호사와 상담하세요. 결과 보장은 불가합니다.',
+              safeCta: '사건 개요를 남겨주시면 상담 가능 일정을 안내드립니다.'
+            },
+            tax: {
+              title: '세무/회계',
+              disclaimer: '본 정보는 일반적 세무 안내이며, 개별 상황에 따라 적용이 달라질 수 있습니다. 결정 전 담당 전문가와 상담하세요.',
+              safeCta: '문의 남겨주시면 맞춤 상담을 안내드립니다.'
+            },
+            labor: {
+              title: '노무/인사',
+              disclaimer: '본 정보는 일반적 노동법 안내이며, 구체 사안은 전문가 자문이 필요합니다.',
+              safeCta: '상담 예약 후 구체 사례를 검토해드리겠습니다.'
+            },
+            education: {
+              title: '교육/컨설팅',
+              disclaimer: '본 정보는 일반적 학습/컨설팅 안내입니다. 성과는 개인에 따라 다를 수 있습니다.',
+              safeCta: '일정/과정 안내를 위해 상담을 신청해주세요.'
+            }
+          };
+
+          // 전문분야별 라벨/플레이스홀더 매핑
+          const proFieldLabels = {
+            clinic: {
+              nameLabel:'병원/의원명', namePh:'예: ○○의원',
+              hoursLabel:'진료시간/점심/휴진', hoursPh:'예: 평일 09:30-18:00 (점심 12:30-13:30), 토·일 휴진',
+              mainLabel:'진료과목/대표시술', mainPh:'예: 내과, 소아과, 도수치료, 초음파',
+              landmarksLabel:'주차/접수 동선', landmarksPh:'예: 지하주차장 1시간 무료, 1층 안내 → 5층 접수',
+              keywordsLabel:'키워드(증상/검사/치료/부위)', keywordsPh:'예: 두통, 혈액검사, 도수치료, 어깨통증'
+            },
+            law: {
+              nameLabel:'로펌/법률사무소명', namePh:'예: ○○법률사무소',
+              hoursLabel:'상담시간', hoursPh:'예: 평일 10:00-18:00 (점심 12:30-13:30)',
+              mainLabel:'주요 사건 분야', mainPh:'예: 형사, 민사, 가사, 손해배상',
+              landmarksLabel:'오시는 길/주차', landmarksPh:'예: 건물 지하주차, 1층 로비 안내 후 7층',
+              keywordsLabel:'키워드(사건유형/지역/절차/서류명)', keywordsPh:'예: 형사, 합의, 조정, 재판, 소장'
+            },
+            tax: {
+              nameLabel:'세무회계사무소명', namePh:'예: ○○세무회계',
+              hoursLabel:'상담시간', hoursPh:'예: 평일 09:00-18:00',
+              mainLabel:'주요 서비스', mainPh:'예: 기장/신고, 절세 컨설팅, 상속/증여',
+              landmarksLabel:'오시는 길/주차', landmarksPh:'예: 건물 주차 30분 무료',
+              keywordsLabel:'키워드(세목/업종/신고유형)', keywordsPh:'예: 종합소득세, 부가세, 도소매, 간이과세'
+            },
+            labor: {
+              nameLabel:'노무법인/사무소명', namePh:'예: ○○노무법인',
+              hoursLabel:'상담시간', hoursPh:'예: 평일 09:00-18:00',
+              mainLabel:'주요 서비스', mainPh:'예: 인사규정, 임금체불, 산업재해',
+              landmarksLabel:'오시는 길/주차', landmarksPh:'예: 지상 주차장 이용',
+              keywordsLabel:'키워드(노사이슈/절차)', keywordsPh:'예: 징계, 해고, 복직, 합의'
+            },
+            education: {
+              nameLabel:'기관/브랜드명', namePh:'예: ○○어학원',
+              hoursLabel:'운영시간(시간표)', hoursPh:'예: 평일 10:00-21:00, 토 10:00-16:00',
+              mainLabel:'주요 강좌/프로그램', mainPh:'예: 초중등 영어, 수능특강, 1:1 튜터링',
+              landmarksLabel:'오시는 길/주차', landmarksPh:'예: 공영주차장 2시간 무료',
+              keywordsLabel:'키워드(과목/레벨/시험/지역)', keywordsPh:'예: 수학, 중3, 수능, 강남'
+            }
+          };
+
+          const dangerRe = /(완치|치료\\s*보장|승소\\s*보장|100%|부작용\\s*없|무조건|영구적|즉시\\s*효과|기적|전액\\s*환불)/gi;
+          const warnRe = /(최고|1위|유일|완벽|압도적|절대)/gi;
+
+          function highlightRisk(html) {
+            return html
+              .replace(dangerRe, (m) => `<mark style="background:#ffe2e2;color:#c00;padding:0 2px;">${m}</mark>`)
+              .replace(warnRe, (m) => `<mark style="background:#fff4cc;color:#a65a00;padding:0 2px;">${m}</mark>`);
+          }
+
+          const $ = (id) => document.getElementById(id);
+          const specialtyEl = $('proSpecialty');
+          const btnTpl = $('proApplyTemplate');
+          const btnGen = $('proGenerateBtn');
+          const complianceEl = $('proCompliance');
+          let initialized = false;
+
+          function applyProLabels() {
+            const code = specialtyEl?.value || 'clinic';
+            const lb = proFieldLabels[code] || proFieldLabels.clinic;
+            const map = [
+              ['proLabelCompanyName','textContent', lb.nameLabel],
+              ['proCompanyName','placeholder', lb.namePh],
+              ['proLabelAddress','textContent', '주소'],
+              ['proCompanyAddress','placeholder', '예: 서울 ○○구 ○○로 123, 5층'],
+              ['proLabelBusinessHours','textContent', lb.hoursLabel],
+              ['proBusinessHours','placeholder', lb.hoursPh],
+              ['proLabelPhone','textContent', '대표번호'],
+              ['proPhoneNumber','placeholder', '예: 02-123-4567'],
+              ['proLabelMain','textContent', lb.mainLabel],
+              ['proMainMenu','placeholder', lb.mainPh],
+              ['proLabelLandmarks','textContent', lb.landmarksLabel],
+              ['proLandmarks','placeholder', lb.landmarksPh],
+              ['proLabelKeywords','textContent', lb.keywordsLabel],
+              ['proKeywords','placeholder', lb.keywordsPh],
+            ];
+            map.forEach(([id, prop, val]) => {
+              const el = $(id);
+              if (!el) return;
+              if (prop === 'textContent') el.textContent = val;
+              else el.setAttribute(prop, val);
+            });
+          }
+
+          function applyTemplate() {
+            const code = specialtyEl?.value || 'clinic';
+            const t = proTemplates[code] || proTemplates.clinic;
+            if (!$('proService').value) $('proService').value = `${t.title} 분야에서 제공하는 서비스(진료)와 강점을 안내합니다.`;
+            if (!$('proTarget').value) $('proTarget').value = '권장 대상과 금기/제한 사항을 명확히 고지합니다.';
+            if (!$('proProcess').value) $('proProcess').value = '상담→절차 설명→진행(소요시간) 순으로 진행되며, 비용은 범위로 안내됩니다(개인별 상이).';
+            if (!$('proCautions').value) $('proCautions').value = '개인별 반응 차이가 있으며, 부작용/한계 가능성을 안내합니다. 효과는 보장되지 않습니다.';
+            if (!$('proLocation').value) $('proLocation').value = `${t.safeCta}`;
+          }
+
+          function buildHtml() {
+            const code = specialtyEl?.value || 'clinic';
+            const t = proTemplates[code] || proTemplates.clinic;
+            const svc = $('proService').value.trim();
+            const tgt = $('proTarget').value.trim();
+            const proc = $('proProcess').value.trim();
+            const cau = $('proCautions').value.trim();
+            const loc = $('proLocation').value.trim();
+
+            let html = [
+              `<h2>${t.title} 안내</h2>`,
+              svc && `<h3>서비스/진료 소개</h3><p>${svc}</p>`,
+              tgt && `<h3>대상 · 금기/제한</h3><p>${tgt}</p>`,
+              proc && `<h3>절차 · 소요시간 · 비용 범위</h3><p>${proc}</p>`,
+              cau && `<h3>주의사항 · 부작용/한계</h3><p>${cau}</p>`,
+              loc && `<h3>위치/접수 · 상담 안내</h3><p>${loc}</p>`
+            ].filter(Boolean).join('\\n');
+
+            if (complianceEl?.checked) {
+              html = highlightRisk(html);
+              html += `\\n<p style="margin-top:12px;padding:10px;border-left:4px solid #999;background:#f7f7f7;color:#444;font-size:13px;"><strong>디스클레이머:</strong> ${t.disclaimer}</p>`;
+            }
+            return html;
+          }
+
+          btnTpl?.addEventListener('click', applyTemplate);
+          // 저장 / 불러오기
+          $('proLoadStoreBtn')?.addEventListener('click', async () => {
+            await prefillFromStore();
+            alert('✅ 우리매장 정보를 참고하여 전문직 필드를 보강했습니다.');
+          });
+          $('proSaveBtn')?.addEventListener('click', async () => {
+            try {
+              const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+              const proFields = {
+                specialty: specialtyEl?.value || 'clinic',
+                service: $('proService').value,
+                target: $('proTarget').value,
+                process: $('proProcess').value,
+                cautions: $('proCautions').value,
+                location: $('proLocation').value,
+                compliance: !!(complianceEl?.checked),
+              };
+              // 우선 서버에 저장 시도 (프로 기본정보를 profiles에 반영)
+              const storeInfo = {
+                companyName: $('proCompanyName')?.value || '',
+                companyAddress: $('proCompanyAddress')?.value || '',
+                businessHours: $('proBusinessHours')?.value || '',
+                phoneNumber: $('proPhoneNumber')?.value || '',
+                mainMenu: $('proMainMenu')?.value || '',
+                landmarks: $('proLandmarks')?.value || '',
+                keywords: $('proKeywords')?.value || '',
+              };
+              if (userData?.id) {
+                await fetch('/api/store-info', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: userData.id, storeInfo, proFields })
+                }).catch(()=>{});
+              }
+              // 로컬에도 백업
+              localStorage.setItem('proFieldsBackup', JSON.stringify(proFields));
+              alert('✅ 전문직 설정을 저장했습니다.');
+            } catch (e) {
+              console.warn('pro save failed', e);
+              alert('저장 실패: ' + e.message);
+            }
+          });
+
+          // 생성: AI 파이프라인 우선, 실패 시 로컬 템플릿 대체
+          btnGen?.addEventListener('click', async () => {
+            const code = specialtyEl?.value || 'clinic';
+            const t = proTemplates[code] || proTemplates.clinic;
+            const proFields = {
+              specialty: code,
+              service: $('proService').value.trim(),
+              target: $('proTarget').value.trim(),
+              process: $('proProcess').value.trim(),
+              cautions: $('proCautions').value.trim(),
+              location: $('proLocation').value.trim(),
+              compliance: !!(complianceEl?.checked),
+            };
+
+            // our-store 폼에서 참조 가능한 값 확보
+            function getVal(origId, proId) {
+              const a = document.getElementById(origId)?.value;
+              const b = document.getElementById(proId)?.value;
+              return (a && a.trim()) ? a.trim() : (b && b.trim()) ? b.trim() : '';
+            }
+            const companyName = getVal('companyName','proCompanyName');
+            const companyAddress = getVal('companyAddress','proCompanyAddress');
+            const businessHours = getVal('businessHours','proBusinessHours');
+            const phoneNumber = getVal('phoneNumber','proPhoneNumber');
+            const mainMenu = getVal('mainMenu','proMainMenu');
+            const landmarks = getVal('landmarks','proLandmarks');
+            const keywords = getVal('keywords','proKeywords');
+
+            // 결과 패널 표시
+            resultSection.classList.add('show');
+            showLoading("전문직 정보와 우리매장 데이터를 결합하여 글을 생성하고 있습니다...");
+
+            try {
+              const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+              const userId = userData?.id || null;
+
+              // 1) 크롤/구조화 (우리매장 참조)
+              if (!window.globalPlaceInfo) {
+                const crawlRes = await fetch('/api/chatgpt-blog', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    step: 'crawl',
+                    data: {
+                      userId,
+                      placeUrl: null,
+                      companyName,
+                      companyAddress,
+                      businessHours,
+                      phone: phoneNumber,
+                      mainMenu,
+                      landmarks,
+                      keywords
+                    }
+                  })
+                });
+                const crawlText = await crawlRes.text();
+                if (!crawlRes.ok) throw new Error(crawlText);
+                const crawlJson = JSON.parse(crawlText);
+                if (!crawlJson.success) throw new Error(crawlJson.error || 'crawl failed');
+                window.globalPlaceInfo = crawlJson.data;
+              }
+
+              // 2) 분석
+              if (!window.globalMenuAnalysis) {
+                const analyzeRes = await fetch('/api/chatgpt-blog', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    step: 'analyze',
+                    data: { userId, placeInfo: window.globalPlaceInfo }
+                  })
+                });
+                const analyzeText = await analyzeRes.text();
+                if (!analyzeRes.ok) throw new Error(analyzeText);
+                const analyzeJson = JSON.parse(analyzeText);
+                if (!analyzeJson.success) throw new Error(analyzeJson.error || 'analyze failed');
+                window.globalMenuAnalysis = analyzeJson.data;
+              }
+
+              // 3) 생성(전문직 모드)
+              const genRes = await fetch('/api/chatgpt-blog', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  step: 'generate',
+                  data: {
+                    userId,
+                    mode: 'professional',
+                    placeInfo: window.globalPlaceInfo,
+                    menuAnalysis: window.globalMenuAnalysis,
+                    proFields
+                  }
+                })
+              });
+              const genText = await genRes.text();
+              if (!genRes.ok) throw new Error(genText);
+              const genJson = JSON.parse(genText);
+              if (!genJson.success) throw new Error(genJson.error || 'generate failed');
+
+              const content = genJson.data || '';
+              showSuccess();
+              blogContent.style.display = 'block';
+              blogTopics.style.display = 'none';
+              blogText.textContent = content;
+              window.scrollTo({ top: blogContent.offsetTop - 60, behavior: 'smooth' });
+            } catch (e) {
+              console.warn('AI generate failed, fallback to local template:', e);
+              const html = buildHtml();
+              showSuccess();
+              blogContent.style.display = 'block';
+              blogTopics.style.display = 'none';
+              blogText.innerHTML = html;
+              resultSection.classList.add('show');
+              window.scrollTo({ top: blogContent.offsetTop - 60, behavior: 'smooth' });
+            }
+          });
+
+          async function prefillFromStore() {
+            try {
+              const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+              if (!userData?.id) return;
+              const res = await fetch(`/api/store-info-all?userId=${userData.id}`);
+              if (!res.ok) return;
+              const { success, data } = await res.json();
+              if (!success || !data) return;
+              const basic = data.basic || {};
+              const menu = (data.menu?.items || []).slice(0,3).map(m=>m.name).filter(Boolean).join(', ');
+              if (basic.company_name && !$('proService').value) $('proService').value = `${basic.company_name}의 주요 서비스/강점을 소개합니다.`;
+              if (menu && !$('proTarget').value) $('proTarget').value = `권장 대상과 제한 사항을 고지합니다. 대표 키워드: ${menu}`;
+              if (basic.business_hours && !$('proProcess').value) $('proProcess').value = `상담→절차 설명→진행(소요시간 ${basic.business_hours} 기준 일부 변동 가능), 비용은 범위 안내(개인별 상이).`;
+              if (!$('proCautions').value) $('proCautions').value = '개인별 반응/결과 차이가 있으며, 부작용/한계 가능성을 안내합니다. 효과는 보장되지 않습니다.';
+              if (basic.place_url && !$('proLocation').value) $('proLocation').value = `네이버 길찾기(${basic.place_url})로 편하게 방문하세요. 사전 상담/예약은 전화 또는 간편접수로 가능합니다.`;
+              // 전문직 기본정보(붙여넣기) 채우기
+              if (basic.store_name && !$('proCompanyName').value) $('proCompanyName').value = basic.store_name;
+              if (basic.store_address && !$('proCompanyAddress').value) $('proCompanyAddress').value = basic.store_address;
+              if (basic.store_business_hours && !$('proBusinessHours').value) $('proBusinessHours').value = basic.store_business_hours;
+              if (basic.store_phone_number && !$('proPhoneNumber').value) $('proPhoneNumber').value = basic.store_phone_number;
+              if (basic.store_main_menu && !$('proMainMenu').value) $('proMainMenu').value = basic.store_main_menu;
+              if (basic.store_landmarks && !$('proLandmarks').value) $('proLandmarks').value = basic.store_landmarks;
+              if (basic.store_keywords && !$('proKeywords').value) $('proKeywords').value = basic.store_keywords;
+            } catch(_) {}
+          }
+
+          function initOnce() {
+            if (initialized) return;
+            initialized = true;
+            applyProLabels();
+            applyTemplate();
+            prefillFromStore();
+
+            // 우리매장 <-> 전문직 기본정보 양방향 동기화
+            const pairs = [
+              ['companyName','proCompanyName'],
+              ['companyAddress','proCompanyAddress'],
+              ['businessHours','proBusinessHours'],
+              ['phoneNumber','proPhoneNumber'],
+              ['mainMenu','proMainMenu'],
+              ['landmarks','proLandmarks'],
+              ['keywords','proKeywords'],
+            ];
+            let syncing = false;
+            function bindMirror(aId, bId) {
+              const a = document.getElementById(aId);
+              const b = document.getElementById(bId);
+              if (!a || !b) return;
+              a.addEventListener('input', () => {
+                if (syncing) return;
+                syncing = true; b.value = a.value; syncing = false;
+              });
+              b.addEventListener('input', () => {
+                if (syncing) return;
+                syncing = true; a.value = b.value; syncing = false;
+              });
+            }
+            pairs.forEach(([a,b]) => bindMirror(a,b));
+          }
+
+          window.__openProfessionalTab = initOnce;
+          specialtyEl?.addEventListener('change', applyProLabels);
+        })();
 
         // 주제 표시
         function showTopics(topics) {
@@ -2498,6 +3014,102 @@
                 generateBtn.textContent = "블로그 생성하기";
             }
         });
+
+        // 업종 프리셋 적용/복사
+        (function(){
+          const PRESETS = {
+            restaurant: {keywords:['시그니처메뉴','예약','대기없는','단체석','주차'], cta:'네이버로 예약하고 대기 없이 식사하세요'},
+            beauty:     {keywords:['디자이너지정','포트폴리오','시술가격','예약','리뷰'], cta:'원하는 디자이너로 바로 예약하세요'},
+            lodging:    {keywords:['객실타입','편의시설','조식','주차','최저가정책'], cta:'지금 예약하고 혜택을 확인해보세요'},
+            clinic:     {keywords:['증상안내','검사','진료','주의사항','간편접수'], cta:'네이버 간편접수로 대기 줄이고 진료받으세요'},
+            fitness:    {keywords:['체험예약','시간표','난이도','락커','샤워'], cta:'오늘 체험 예약하고 시작해보세요'},
+            attraction: {keywords:['운영시간','입장료','포토스팟','주차','길찾기'], cta:'길찾기/주차 안내를 확인하고 편하게 방문하세요'},
+            agency:     {keywords:['브랜딩','정보성','콘텐츠기획','CTA','캡션'], cta:'검수 완료 후 발행하세요'}
+          };
+          const sel = document.getElementById('industryPresetSelect');
+          const hint = document.getElementById('industryPresetHint');
+          const btnApply = document.getElementById('applyIndustryPresetBtn');
+          const btnCta = document.getElementById('copyCtaBtn');
+          const btnRestaurantQuick = document.getElementById('applyRestaurantQuick');
+
+          function updateHint() {
+            const code = sel?.value || '';
+            if (!code || !PRESETS[code]) {
+              if (hint) hint.textContent = '업종을 고르면 키워드/권장 CTA가 자동으로 준비됩니다. 필요 시 “프리셋 적용”을 눌러 현재 폼에 반영하세요.';
+              return;
+            }
+            const p = PRESETS[code];
+            if (hint) hint.textContent = `권장 키워드: ${p.keywords.join(', ')}  |  권장 CTA: “${p.cta}”`;
+          }
+
+          // 기본 업종 선택: 음식점(가장 많이 사용)
+          if (sel && !sel.value) sel.value = 'restaurant';
+
+          function applyPreset() {
+            const code = sel?.value || '';
+            const p = PRESETS[code]; if (!p) return;
+            const kw1 = document.getElementById('keywords');
+            if (kw1) {
+              const cur = kw1.value.trim();
+              const add = p.keywords.join(', ');
+              kw1.value = cur ? `${cur}, ${add}` : add;
+            }
+            const kw2 = document.getElementById('keywords2');
+            if (kw2) {
+              const cur2 = kw2.value.trim();
+              const add2 = p.keywords.join(', ');
+              kw2.value = cur2 ? `${cur2}, ${add2}` : add2;
+            }
+
+            // 전문직(정보형) 탭과 연동: 업종별 전문분야 매핑 후 즉시 전환/세팅
+            try {
+              const industryToSpecialty = {
+                clinic: 'clinic',
+                restaurant: 'education',
+                beauty: 'education',
+                lodging: 'education',
+                fitness: 'education',
+                attraction: 'education',
+                agency: 'education',
+              };
+              const mapped = industryToSpecialty[code];
+              if (mapped) {
+                // 탭 전환
+                const proBtn = document.querySelector('.tab-btn[data-tab="pro-info"]');
+                proBtn?.click();
+                // 초기화(템플릿/참조)
+                if (window.__openProfessionalTab) window.__openProfessionalTab();
+                const proSel = document.getElementById('proSpecialty');
+                if (proSel) {
+                  proSel.value = mapped;
+                  document.getElementById('proApplyTemplate')?.click();
+                }
+                // 사용자가 바로 보이도록 스크롤
+                setTimeout(() => {
+                  document.getElementById('pro-info-tab')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+              }
+            } catch (_) {}
+            updateHint();
+          }
+
+          function copyCTA() {
+            const code = sel?.value || '';
+            const text = PRESETS[code]?.cta || '네이버로 예약하고 대기 없이 식사하세요';
+            navigator.clipboard.writeText(text);
+          }
+
+          sel?.addEventListener('change', updateHint);
+          btnApply?.addEventListener('click', applyPreset);
+          btnCta?.addEventListener('click', copyCTA);
+          btnRestaurantQuick?.addEventListener('click', () => {
+            if (sel) sel.value = 'restaurant';
+            updateHint();
+            applyPreset();
+          });
+          if (sel && !sel.value) sel.value = 'restaurant';
+          updateHint();
+        })();
 
         // 체험단 리뷰 폼 제출
         reviewTeamForm.addEventListener("submit", async function (e) {
