@@ -696,6 +696,11 @@
             background: rgba(255, 123, 84, 0.04);
         }
 
+        .history-item.selected {
+            border-color: var(--accent-color);
+            background: rgba(255, 123, 84, 0.12);
+        }
+
         .history-item-header {
             display: flex;
             justify-content: space-between;
@@ -1604,6 +1609,7 @@
             simple: 10,
         };
         let planHistory = [];
+        let currentPlanEntryId = null;
         const currentUser = getCurrentUser();
         const API_BASE = '';
 
@@ -1644,7 +1650,8 @@
             if (mode === 'self') {
                 selfMode.style.display = 'block';
                 expertMode.style.display = 'none';
-                modeDescription.textContent = '클릭 3번으로 SNS 숏폼 영상을 자동 제작할 수 있습니다.';
+                modeDescription.textContent =
+                    '클릭 3번으로 SNS 숏폼 영상을 자동 제작할 수 있습니다. (최고등급 회원 하루 최대 3회 생성 가능)';
             } else {
                 selfMode.style.display = 'none';
                 expertMode.style.display = 'block';
@@ -1863,6 +1870,27 @@
             });
         }
 
+        function simulatePlanAndScript(keywords) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const mainKeyword = keywords.split(',')[0]?.trim() || '대표 메뉴';
+                    resolve({
+                        plan: [
+                            `• 오프닝: ${mainKeyword} 소개 (3초)`,
+                            '• 메인: 신선한 재료와 조리 과정 강조',
+                            '• 하이라이트: 완성된 플레이팅과 매력 포인트',
+                            '• CTA: 예약/방문 유도 멘트',
+                        ].join('\n'),
+                        script: [
+                            `1) 인트로 - "오늘 소개할 메뉴는 ${mainKeyword}입니다."`,
+                            '2) 메인 - "정성껏 준비한 신선한 재료와 셰프의 손길을 느껴보세요."' ,
+                            '3) 마무리 - "지금 예약하시고 따뜻한 한 끼를 즐겨보세요!"',
+                        ].join('\n'),
+                    });
+                }, 1200);
+            });
+        }
+
         function handleExpertSubmit() {
             const purposeChip = document.querySelector('#expertPurpose .option-chip.selected');
             if (!purposeChip) {
@@ -1910,6 +1938,11 @@
             }
             if (!ensureLoggedIn()) return;
 
+            const durationValue =
+                document.getElementById('videoDurationNumber')?.value ||
+                document.getElementById('videoDuration')?.value ||
+                null;
+
             setPlanLoading(true);
             try {
                 const response = await fetch(`${API_BASE}/api/shorts/plan-and-script`, {
@@ -1919,7 +1952,7 @@
                         keywords,
                         userId: getCurrentUserId(),
                         style: selectedStyle,
-                        duration: document.getElementById('videoDurationNumber')?.value || null,
+                        duration: durationValue ? Number(durationValue) : null,
                     }),
                 });
                 const data = await response.json();
@@ -1932,16 +1965,28 @@
                 const scriptArea = document.getElementById('aiScriptPreview');
                 scriptArea.value = data.script || '';
                 scriptArea.focus();
-                showToast('AI 초안이 생성되었습니다.');
 
                 if (data.entry) {
                     upsertPlanHistoryEntry(data.entry);
+                    currentPlanEntryId = data.entry.id;
                 } else {
-                    fetchPlanHistory();
+                    currentPlanEntryId = null;
                 }
+
+                showToast('AI 초안이 생성되었습니다.');
+                await fetchPlanHistory();
             } catch (error) {
                 console.error('AI 기획 생성 실패:', error);
-                alert(error.message || '기획 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                showToast(error.message || 'AI 서비스 연결에 문제가 있어 기본 초안을 제공합니다.');
+                try {
+                    const fallback = await simulatePlanAndScript(keywords);
+                    document.getElementById('planScriptWrapper').style.display = 'block';
+                    document.getElementById('aiPlanPreview').textContent = fallback.plan;
+                    document.getElementById('aiScriptPreview').value = fallback.script;
+                    currentPlanEntryId = null;
+                } catch (fallbackError) {
+                    console.error('Fallback 기획 생성 실패:', fallbackError);
+                }
             } finally {
                 setPlanLoading(false);
             }
@@ -1968,17 +2013,21 @@
             if (!ensureLoggedIn()) return;
 
             try {
-                const response = await fetch(`${API_BASE}/api/shorts/plan-and-script`, {
+                const durationValue =
+                    document.getElementById('videoDurationNumber')?.value ||
+                    document.getElementById('videoDuration')?.value ||
+                    null;
+                const response = await fetch(`${API_BASE}/api/shorts/plan-history`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        manualSave: true,
                         userId: getCurrentUserId(),
                         keywords: document.getElementById('expertKeywords').value.trim(),
                         style: selectedStyle,
-                        duration: document.getElementById('videoDurationNumber')?.value || null,
+                        duration: durationValue ? Number(durationValue) : null,
                         plan,
                         script,
+                        source: 'manual',
                     }),
                 });
                 const data = await response.json();
@@ -1987,9 +2036,9 @@
                 }
                 if (data.entry) {
                     upsertPlanHistoryEntry(data.entry);
-                } else {
-                    fetchPlanHistory();
+                    currentPlanEntryId = data.entry.id;
                 }
+                await fetchPlanHistory();
                 showToast('초안이 저장되었습니다.');
             } catch (error) {
                 console.error('초안 저장 실패:', error);
@@ -2010,6 +2059,9 @@
             planHistory.forEach((item) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'history-item';
+                if (item.id === currentPlanEntryId) {
+                    wrapper.classList.add('selected');
+                }
                 const header = document.createElement('div');
                 header.className = 'history-item-header';
                 const title = document.createElement('div');
@@ -2017,7 +2069,10 @@
                 const createdText = item.createdAt
                     ? new Date(item.createdAt).toLocaleString('ko-KR')
                     : '방금 저장';
-                title.textContent = `저장된 초안 · ${createdText}`;
+                const keywordText = item.keywords
+                    ? `${item.keywords.slice(0, 40)}${item.keywords.length > 40 ? '…' : ''}`
+                    : '저장된 초안';
+                title.textContent = `${keywordText} · ${createdText}`;
                 const actions = document.createElement('div');
                 actions.className = 'history-item-actions';
                 const loadBtn = document.createElement('button');
@@ -2039,17 +2094,10 @@
                 planPreview.style.fontSize = '12px';
                 planPreview.style.color = 'var(--text-secondary)';
                 planPreview.style.whiteSpace = 'pre-line';
-                planPreview.textContent = item.plan;
-                if (item.keywords) {
-                    const keywordsEl = document.createElement('div');
-                    keywordsEl.style.marginTop = '6px';
-                    keywordsEl.style.fontSize = '11px';
-                    keywordsEl.style.color = 'var(--accent-color)';
-                    keywordsEl.textContent = `키워드: ${item.keywords}`;
-                    wrapper.append(header, planPreview, keywordsEl);
-                } else {
-                    wrapper.append(header, planPreview);
-                }
+                planPreview.textContent = item.plan
+                    ? item.plan.split('\n').slice(0, 5).join('\n')
+                    : '(기획 내용 없음)';
+                wrapper.append(header, planPreview);
                 list.appendChild(wrapper);
             });
         }
@@ -2061,6 +2109,8 @@
             document.getElementById('aiPlanPreview').textContent = entry.plan;
             document.getElementById('aiScriptPreview').value = entry.script;
             document.getElementById('expertKeywords').value = entry.keywords || '';
+            currentPlanEntryId = entry.id;
+            renderPlanHistory();
             showToast('저장된 초안을 불러왔습니다.');
         }
 
@@ -2080,12 +2130,14 @@
                     `${API_BASE}/api/shorts/plan-history/${id}?userId=${encodeURIComponent(getCurrentUserId())}`,
                     { method: 'DELETE' }
                 );
-                if (!response.ok) {
-                    const data = await response.json().catch(() => ({}));
-                    throw new Error(data.error || '삭제하지 못했습니다.');
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || data.success === false) {
+                    throw new Error(data?.error || '삭제하지 못했습니다.');
                 }
-                planHistory = planHistory.filter((item) => item.id !== id);
-                renderPlanHistory();
+                if (currentPlanEntryId === id) {
+                    currentPlanEntryId = null;
+                }
+                await fetchPlanHistory();
                 showToast('초안이 삭제되었습니다.');
             } catch (error) {
                 console.error('초안 삭제 실패:', error);
@@ -2104,7 +2156,11 @@
                 if (!response.ok || data.success === false) {
                     throw new Error(data.error || '저장된 초안을 불러오지 못했습니다.');
                 }
+                const previousId = currentPlanEntryId;
                 planHistory = (data.items || []).map(mapHistoryEntry).filter(Boolean);
+                if (!planHistory.some((item) => item.id === previousId)) {
+                    currentPlanEntryId = planHistory.length ? planHistory[0].id : null;
+                }
                 renderPlanHistory();
             } catch (error) {
                 console.error('초안 히스토리를 불러오지 못했습니다:', error);
@@ -2128,8 +2184,8 @@
         function upsertPlanHistoryEntry(raw) {
             const mapped = mapHistoryEntry(raw);
             if (!mapped) return;
-            planHistory = planHistory.filter((item) => item.id !== mapped.id);
-            planHistory.unshift(mapped);
+            planHistory = [mapped, ...planHistory.filter((item) => item.id !== mapped.id)];
+            currentPlanEntryId = mapped.id;
             renderPlanHistory();
         }
 
