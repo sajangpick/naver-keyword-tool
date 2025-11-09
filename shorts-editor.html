@@ -1610,7 +1610,6 @@
         };
         let planHistory = [];
         let currentPlanEntryId = null;
-        const currentUser = getCurrentUser();
         const API_BASE = '';
 
         function getCurrentUser() {
@@ -1624,7 +1623,8 @@
         }
 
         function getCurrentUserId() {
-            return currentUser?.id || currentUser?.user?.id || currentUser?.uid || null;
+            const user = getCurrentUser();
+            return user?.id || user?.user?.id || user?.uid || null;
         }
 
         function ensureLoggedIn() {
