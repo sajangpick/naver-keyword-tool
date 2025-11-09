@@ -450,6 +450,22 @@
 
       <!-- 카카오 회원가입 -->
       <div class="social-login">
+        <!-- 업종 선택(선택사항) -->
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label" for="industrySelect">업종 선택 (선택사항)</label>
+          <select id="industrySelect" class="form-input">
+            <option value="">선택 안 함</option>
+            <option value="restaurant">음식점</option>
+            <option value="beauty">미용실</option>
+            <option value="lodging">숙박업</option>
+            <option value="clinic">병원/의원</option>
+            <option value="fitness">운동시설</option>
+            <option value="attraction">여행/명소</option>
+            <option value="agency">대행사</option>
+          </select>
+          <small style="display:block; margin-top:6px; color:#666;">선택해두면 가입 직후 마이페이지에 자동 반영됩니다. ‘대행사’를 선택하면 회원구분도 대행사로 저장됩니다.</small>
+        </div>
+
         <button class="kakao-btn" id="kakaoSignup">
           <span>💬</span>
           카카오톡 아이디로 회원가입
@@ -523,6 +539,56 @@
         }
         
         const supabaseClient = window.authState.supabase;
+
+        // 업종 선택값 로컬에 임시 저장
+        const industrySelect = document.getElementById('industrySelect');
+        if (industrySelect) {
+          industrySelect.addEventListener('change', () => {
+            const code = industrySelect.value || '';
+            try {
+              if (code) {
+                localStorage.setItem('pendingIndustryCode', code);
+                // 대행사 선택 시 회원구분도 대행사
+                if (code === 'agency') {
+                  localStorage.setItem('pendingUserType', 'agency');
+                } else {
+                  localStorage.removeItem('pendingUserType');
+                }
+              } else {
+                localStorage.removeItem('pendingIndustryCode');
+                localStorage.removeItem('pendingUserType');
+              }
+            } catch (e) {}
+          });
+        }
+
+        async function applyIndustrySelectionToProfile(session) {
+          try {
+            const code = localStorage.getItem('pendingIndustryCode');
+            const pendingUserType = localStorage.getItem('pendingUserType');
+            if (!code && !pendingUserType) return;
+            const updates = { updated_at: new Date().toISOString() };
+            if (code) updates.industry_code = code; // 예: restaurant/beauty/...
+            if (pendingUserType) {
+              updates.user_type = pendingUserType; // 'agency'
+            }
+            const userId = session?.user?.id;
+            if (!userId) return;
+            // upsert로 안전 저장
+            const { error } = await supabaseClient
+              .from('profiles')
+              .upsert([{ id: userId, ...updates }], { onConflict: 'id' });
+            if (error) {
+              console.warn('업종/회원구분 저장 실패(무시 가능):', error.message);
+            } else {
+              // 적용 후 임시 저장 삭제
+              localStorage.removeItem('pendingIndustryCode');
+              localStorage.removeItem('pendingUserType');
+            }
+          } catch (e) {
+            console.warn('업종/회원구분 저장 중 예외(무시 가능):', e);
+          }
+        }
         
         // URL 해시나 쿼리에 OAuth 관련 파라미터가 있으면 스킵
         const hasOAuthParams = window.location.hash.includes('access_token') || 
@@ -533,6 +599,7 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
               setLoggedInFromSession(session);
+              await applyIndustrySelectionToProfile(session);
               window.location.replace("index.html");
             }
           } catch (error) {
@@ -544,7 +611,10 @@
         supabaseClient.auth.onAuthStateChange((event, session) => {
           if (event === "SIGNED_IN") {
             setLoggedInFromSession(session);
-            window.location.replace("index.html");
+            // 업종/회원구분 반영 후 이동
+            applyIndustrySelectionToProfile(session).finally(() => {
+              window.location.replace("index.html");
+            });
           }
         });
       })();
