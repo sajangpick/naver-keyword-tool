@@ -662,10 +662,22 @@ app.get("/api/news-board", newsBoardHandler);
 app.post("/api/news-board", newsBoardHandler);
 app.put("/api/news-board", newsBoardHandler);
 app.delete("/api/news-board", newsBoardHandler);
+const newsCollectHandler = require("./api/news-collect");
+const naverSectionNewsHandler = require("./api/naver-section-news");
+app.post("/api/news-collect", newsCollectHandler);
+app.get("/api/naver-section-news", naverSectionNewsHandler);
 
 // AI 뉴스 추천 API
 const aiNewsRecommendHandler = require("./api/ai-news-recommend");
 app.post("/api/ai-news-recommend", aiNewsRecommendHandler);
+
+// AI 뉴스 해석 API
+const newsAiSummaryHandler = require("./api/news-ai-summary");
+app.post("/api/news-ai-summary", newsAiSummaryHandler);
+
+// 뉴스 원문 추출 API
+const newsFetchHandler = require("./api/news-fetch");
+app.get("/api/news-fetch", newsFetchHandler);
 
 // 뉴스 검색 API (소상공인/식당 특화)
 const newsSearchHandler = require("./api/news-search");

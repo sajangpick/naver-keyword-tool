@@ -1284,7 +1284,11 @@
 
         // 등급 필터
         if (currentLevel !== 'all') {
-          filtered = filtered.filter(m => m.membership_level === currentLevel);
+          filtered = filtered.filter(m => {
+            // free 등급을 seed로 변환하여 필터링
+            const level = (m.membership_level === 'free' || !m.membership_level) ? 'seed' : m.membership_level;
+            return level === currentLevel;
+          });
         }
 
         // 검색어 필터
@@ -1372,7 +1376,11 @@
 
         // 등급별 카운트
         levels.forEach(level => {
-          const count = filteredForCount.filter(m => m.membership_level === level).length;
+          const count = filteredForCount.filter(m => {
+            // free 등급을 seed로 변환하여 카운트
+            const memberLevel = (m.membership_level === 'free' || !m.membership_level) ? 'seed' : m.membership_level;
+            return memberLevel === level;
+          }).length;
           const element = document.getElementById(`count-${level}`);
           if (element) element.textContent = count;
         });
@@ -1410,6 +1418,10 @@
       // ==================== 등급 아이콘 ====================
 
       function getLevelIcon(level) {
+        // free 등급을 seed로 변환
+        if (level === 'free' || !level) {
+          level = 'seed';
+        }
         const icons = {
           'seed': '🌱',
           'power': '⚡',
@@ -1421,7 +1433,7 @@
           'platinum': '💎',
           'admin': '🛡️'
         };
-        return icons[level] || '👤';
+        return icons[level] || '🌱';
       }
 
       // ==================== 회원 선택 (테이블) ====================
@@ -1599,6 +1611,10 @@
       }
 
       function getLevelText(level) {
+        // free 등급을 seed로 변환
+        if (level === 'free' || !level) {
+          level = 'seed';
+        }
         const levels = {
           'seed': '씨앗',
           'power': '파워',
@@ -1610,7 +1626,7 @@
           'platinum': '플래티넘',
           'admin': '관리자'
         };
-        return levels[level] || level;
+        return levels[level] || '씨앗';
       }
 
       function showMessage(message, type) {

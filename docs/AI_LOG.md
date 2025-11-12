@@ -39,6 +39,26 @@ docs/
 
 ## 🔥 2025년 11월 작업 기록
 
+### 2025.11.09 - 블로그 에디터 전문직 탭 UI 삽입 (진행 중/화면구성 실패)
+
+**배경**:
+- `Blog-Editor.html`에 전문직(정보형) 탭을 강화하고, 우리매장 입력을 전문직 탭에서도 바로 활용할 수 있도록 요청됨.
+
+**작업 내용**:
+- 전문직 탭에 `전문직 기본정보(붙여넣기)` 섹션 추가: `proCompanyName/proCompanyAddress/proBusinessHours/proPhoneNumber/proMainMenu/proLandmarks/proKeywords`
+- 전문분야별 라벨/플레이스홀더 자동 변경(의료/법률/세무/노무/교육)
+- 우리매장 ↔ 전문직 기본정보 양방향 동기화
+- 전문직 저장 시 `/api/store-info` 반영, 불러오기 `/api/store-info-all` 프리필
+- 전문직 생성 시 our-store 값이 비어있으면 전문직 기본정보로 보강(fallback)
+- 커밋/푸시: `97c6f3f feat: 전문직 탭 기본정보/동기화/저장/생성 연계`
+
+**결과**:
+- ❌ 로컬 file:// 실행 환경에서 CSP/절대경로(/assets, /api) 차단으로 초기화 중단 → 화면 구성 미표시
+- ✅ 원인 파악: file 스킴으로 열면 `ERR_FILE_NOT_FOUND / origin 'null'` 발생, http(s) 환경에서 재검증 필요
+- 📌 후속: Render/Vercel 재배포 후 클라우드(http) 환경에서 재확인 예정
+
+---
+
 ### 2025.11.09 - 쇼츠 에디터 V1 공개 & 전자책 메뉴 노출
 
 **배경**:

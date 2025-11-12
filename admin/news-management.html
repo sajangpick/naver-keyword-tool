@@ -23,6 +23,325 @@
         gap: 12px;
         margin-bottom: 24px;
         flex-wrap: wrap;
+        position: sticky;
+        top: var(--header-height, 72px);
+        z-index: 90;
+        background: white;
+        padding: 20px 0;
+        margin-top: 0;
+        margin-left: -32px;
+        margin-right: -32px;
+        padding-left: 32px;
+        padding-right: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-bottom: 1px solid var(--border);
+      }
+      
+      @media (max-width: 768px) {
+        .news-controls {
+          top: var(--header-height, 72px);
+          margin-left: -20px;
+          margin-right: -20px;
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+      }
+
+      .naver-section-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .naver-section-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid var(--border);
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .naver-section-tab {
+        padding: 12px 24px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .naver-section-tab:hover {
+        color: var(--accent);
+        background: rgba(3, 199, 90, 0.05);
+      }
+
+      .naver-section-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+        background: rgba(3, 199, 90, 0.05);
+      }
+
+      .naver-sort-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .naver-sort-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .naver-sort-btn:hover {
+        background: rgba(3, 199, 90, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .naver-sort-btn.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+
+      .naver-section-content {
+        display: none;
+      }
+
+      .naver-section-content.active {
+        display: block;
+      }
+
+      .naver-section-group {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fafafa;
+        padding: 20px;
+      }
+
+      .naver-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .naver-section-title {
+        font-size: 20px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .naver-section-link {
+        font-size: 13px;
+        color: var(--accent);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .naver-section-link:hover {
+        text-decoration: underline;
+      }
+
+      .naver-news-meta {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+      }
+
+      .naver-section-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .naver-section-item {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        padding: 14px 16px;
+        position: relative;
+      }
+
+      .naver-section-item-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: var(--text);
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .naver-section-item-title a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .naver-section-item-title a:hover {
+        text-decoration: underline;
+      }
+
+      .naver-section-item-time {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 400;
+        white-space: nowrap;
+      }
+
+      .naver-section-item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      .naver-section-item-summary {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      .naver-section-item-source {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        word-break: break-all;
+      }
+
+      .naver-section-item-source a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .naver-section-item-source a:hover {
+        text-decoration: underline;
+      }
+
+      .naver-section-edit-btn {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        border: 1px solid var(--info);
+        background: white;
+        color: var(--info);
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+      }
+
+      .naver-section-edit-btn:hover {
+        background: rgba(59, 130, 246, 0.08);
+      }
+
+      .naver-news-loading {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 24px;
+        color: var(--text-secondary);
+        font-size: 15px;
+      }
+
+      .naver-news-error {
+        display: none;
+        padding: 16px;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: pre-line;
+        line-height: 1.6;
+      }
+
+      .naver-news-loading i {
+        font-size: 18px;
+      }
+
+      .naver-news-meta-view {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        background: #f8f9fb;
+        margin-bottom: 20px;
+      }
+
+      .naver-news-meta-view h3 {
+        font-size: 18px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .naver-news-meta-content {
+        display: grid;
+        gap: 12px;
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+
+      .naver-news-meta-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .naver-news-meta-row strong {
+        color: var(--text);
+      }
+
+      .naver-news-meta-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .naver-news-badge {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        padding: 4px 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
       }
 
       .category-filter {
@@ -52,6 +371,33 @@
         border-color: var(--accent);
       }
 
+      .category-selectors {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .category-pill {
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .category-pill:hover {
+        background: rgba(3, 199, 90, 0.1);
+        border-color: var(--accent);
+      }
+
+      .category-pill.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+
       .news-grid {
         display: grid;
         gap: 16px;
@@ -69,6 +415,47 @@
 
       .news-card:hover {
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .panel-sorts {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .sort-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .sort-btn.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+
+      .sort-btn:hover {
+        background: rgba(3, 199, 90, 0.1);
+        border-color: var(--accent);
+      }
+
+      .panel-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
       .news-image {
@@ -138,6 +525,7 @@
         color: var(--text-secondary);
         margin-bottom: 12px;
         display: -webkit-box;
+        line-clamp: 2;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
@@ -268,6 +656,31 @@
         outline: none;
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1);
+      }
+
+      .form-input-with-action {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .form-input-with-action .form-input {
+        flex: 1;
+      }
+
+      .form-action-btn {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--accent);
+        background: white;
+        color: var(--accent);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .form-action-btn:hover {
+        background: rgba(3, 199, 90, 0.1);
       }
 
       .form-select {
@@ -486,44 +899,45 @@
           <button class="btn btn-primary" onclick="openModal()">
             <i class="fas fa-plus"></i> 새 뉴스 작성
           </button>
+          <button class="btn btn-secondary" id="collectNewsButton" onclick="collectNewsData()">
+            <i class="fas fa-database"></i> 뉴스 데이터 수집
+          </button>
 
-          <div class="category-filter">
-            <button class="category-btn active" data-category="all" onclick="filterCategory('all')">
-              전체
-            </button>
-            <button class="category-btn" data-category="policy" onclick="filterCategory('policy')">
-              🏛️ 정책/법규
-            </button>
-            <button class="category-btn" data-category="trend" onclick="filterCategory('trend')">
-              📈 트렌드
-            </button>
-            <button class="category-btn" data-category="management" onclick="filterCategory('management')">
-              💡 경영 팁
-            </button>
-            <button class="category-btn" data-category="ingredients" onclick="filterCategory('ingredients')">
-              🍽️ 식자재
-            </button>
-            <button class="category-btn" data-category="technology" onclick="filterCategory('technology')">
-              🛠️ 기술/도구
-            </button>
-          </div>
         </div>
 
-        <!-- 뉴스 목록 -->
-        <div class="panel">
+        <!-- 네이버 뉴스 패널 -->
+        <div class="panel" id="naverNewsPanel" style="display: none;">
           <div class="panel-header">
-            <h2 class="panel-title">📰 뉴스 목록</h2>
+            <h2 class="panel-title">🌐 네이버 사회·경제 최신 뉴스</h2>
+            <div class="naver-news-meta" id="naverNewsTimestamp"></div>
           </div>
-          
-          <div class="news-grid" id="newsList">
-            <div class="loading">
-              <i class="fas fa-spinner fa-spin"></i>
-              <div>로딩 중...</div>
+          <div class="naver-news-loading" id="naverNewsLoading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>네이버 뉴스를 불러오는 중입니다...</span>
+          </div>
+          <div class="naver-news-error" id="naverNewsError"></div>
+          <div class="naver-section-tabs" id="naverSectionTabs" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+              <button class="naver-section-tab active" data-section="social" onclick="switchNaverSection('social')">
+                <span>👥</span> 사회
+              </button>
+              <button class="naver-section-tab" data-section="economy" onclick="switchNaverSection('economy')">
+                <span>💰</span> 경제
+              </button>
+            </div>
+            <div class="naver-sort-controls" style="display: flex; gap: 8px; align-items: center;">
+              <button class="naver-sort-btn active" data-sort="latest" onclick="setNaverSort('latest')">
+                <i class="fas fa-clock"></i> 최신순
+              </button>
+              <button class="naver-sort-btn" data-sort="views" onclick="setNaverSort('views')">
+                <i class="fas fa-eye"></i> 조회순
+              </button>
             </div>
           </div>
-
-          <div class="pagination" id="pagination"></div>
+          <div class="naver-section-container" id="naverNewsList"></div>
         </div>
+
+
       </div>
     </main>
 
@@ -545,38 +959,32 @@
 
           <div class="form-group">
             <label class="form-label">카테고리 *</label>
-            <select class="form-select" id="newsCategory" required>
-              <option value="">선택하세요</option>
-              <option value="policy">🏛️ 정책/법규</option>
-              <option value="trend">📈 트렌드</option>
-              <option value="management">💡 경영 팁</option>
-              <option value="ingredients">🍽️ 식자재</option>
-              <option value="technology">🛠️ 기술/도구</option>
-            </select>
+            <input type="hidden" id="newsCategoryInput" />
+            <div class="category-selectors" role="group" aria-label="뉴스 카테고리 선택">
+              <button type="button" class="category-pill" data-category="policy" onclick="setModalCategory('policy')">🏛️ 정책/법규</button>
+              <button type="button" class="category-pill" data-category="trend" onclick="setModalCategory('trend')">📈 트렌드</button>
+              <button type="button" class="category-pill" data-category="management" onclick="setModalCategory('management')">💡 경영 팁</button>
+              <button type="button" class="category-pill" data-category="ingredients" onclick="setModalCategory('ingredients')">🍽️ 식자재</button>
+              <button type="button" class="category-pill" data-category="technology" onclick="setModalCategory('technology')">🛠️ 기술/도구</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">원문 링크</label>
+            <div class="form-input-with-action">
+              <input type="url" class="form-input" id="newsSource" placeholder="https://example.com/article" />
+              <button type="button" class="form-action-btn" onclick="crawlSourceLink()">크롤링</button>
+            </div>
           </div>
 
           <div class="form-group">
             <label class="form-label">내용 *</label>
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-              <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" onclick="toggleHTMLMode()">
-                <i class="fas fa-code"></i> HTML 모드
-              </button>
-              <span id="htmlModeIndicator" style="display: none; color: #EF6C00; font-size: 13px; font-weight: 600; align-self: center;">
-                📝 HTML 직접 입력 모드
-              </span>
-            </div>
             <div class="editor-container" id="editor"></div>
-            <textarea id="htmlEditor" style="display: none; width: 100%; height: 200px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px;"></textarea>
           </div>
 
           <div class="form-group">
             <label class="form-label">이미지 URL (선택)</label>
             <input type="url" class="form-input" id="newsImage" placeholder="https://example.com/image.jpg" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">원문 링크 (선택)</label>
-            <input type="url" class="form-input" id="newsSource" placeholder="https://example.com/article" />
           </div>
 
           <div class="form-checkbox">
@@ -592,6 +1000,73 @@
       </div>
     </div>
 
+    <!-- 네이버 뉴스 수정 모달 -->
+    <div class="modal" id="naverNewsModal">
+      <div class="modal-content" style="max-width: 640px;">
+        <div class="modal-header">
+          <div class="modal-title">네이버 뉴스 수정</div>
+          <button type="button" class="modal-close" onclick="closeNaverNewsModal()">&times;</button>
+        </div>
+        <div class="naver-news-meta-view" id="naverNewsMetaView" style="display: none;">
+          <h3>🧾 기사 정보</h3>
+          <div class="naver-news-meta-content" id="naverNewsMetaContent"></div>
+        </div>
+        <form id="naverNewsForm">
+          <div class="form-group">
+            <label class="form-label" for="naverNewsTitle">제목</label>
+            <input id="naverNewsTitle" class="form-input" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsLink">링크</label>
+            <input id="naverNewsLink" class="form-input" type="url" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsPress">언론사</label>
+            <input id="naverNewsPress" class="form-input" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsJournalist">기자</label>
+            <input id="naverNewsJournalist" class="form-input" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsPublished">입력 시각</label>
+            <input id="naverNewsPublished" class="form-input" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsModified">수정 시각</label>
+            <input id="naverNewsModified" class="form-input" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsSource">출처</label>
+            <input id="naverNewsSource" class="form-input" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsImage">이미지 URL</label>
+            <div class="form-input-with-action">
+              <input id="naverNewsImage" class="form-input" type="url" placeholder="https://example.com/image.jpg" onchange="updateNaverNewsImagePreview(this.value)" onblur="if(this.value.trim()) updateNaverNewsImagePreview(this.value)" />
+              <button type="button" class="form-action-btn" onclick="previewNaverNewsImage()">미리보기</button>
+            </div>
+            <div id="naverNewsImagePreview" style="margin-top: 8px; display: none;">
+              <img id="naverNewsImagePreviewImg" src="" alt="이미지 미리보기" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--border);" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="naverNewsSummary" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>내용</span>
+              <button type="button" class="btn btn-secondary" onclick="analyzeNaverNews()" style="padding: 6px 12px; font-size: 13px; margin-left: 8px;">
+                <i class="fas fa-brain"></i> AI뉴스해석
+              </button>
+            </label>
+            <textarea id="naverNewsSummary" class="form-input" style="min-height: 120px;"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeNaverNewsModal()">취소</button>
+            <button type="submit" class="btn btn-primary">저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- 스크립트 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
@@ -600,6 +1075,78 @@
     <script src="/admin/assets/admin-utils.js"></script>
     
     <script>
+      // 출처 포맷팅 관련 유틸리티 함수들
+      function normalizeUrl(value) {
+        if (!value) return '';
+        const trimmed = value.trim();
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+        if (trimmed.startsWith('//')) return `https:${trimmed}`;
+        if (trimmed.startsWith('/')) return `https://news.naver.com${trimmed}`;
+        if (trimmed.includes('.')) return `https://${trimmed}`;
+        return '';
+      }
+
+      function formatPublicationDate(value) {
+        if (!value) return '';
+        const trimmed = value.trim();
+        if (/^\d{4}\.\d{1,2}\.\d{1,2}/.test(trimmed)) return trimmed;
+        if (/^\d{4}-\d{1,2}-\d{1,2}/.test(trimmed)) {
+          return trimmed.replace(/-/g, '.').replace(/\s+/, ' ');
+        }
+        return trimmed;
+      }
+
+      function buildSourceCitationString({ press, title, publishedAt }) {
+        const parts = [];
+        if (press && press.trim()) {
+          parts.push(press.trim());
+        }
+        if (title && title.trim()) {
+          parts.push(`「${title.trim()}」`);
+        }
+        let citation = parts.join(' ');
+        const datePart = formatPublicationDate(publishedAt);
+        if (datePart) {
+          citation = citation ? `${citation} (${datePart})` : `(${datePart})`;
+        }
+        return citation.trim();
+      }
+
+      function splitCitationAndUrl(value) {
+        if (!value) return { citation: '', url: '' };
+        const urlMatch = value.match(/https?:\/\/\S+/);
+        if (!urlMatch) return { citation: value.trim(), url: '' };
+        const url = urlMatch[0].replace(/[),.]+$/, '');
+        let citation = value.replace(urlMatch[0], '').replace(/[,\s]+$/, '').trim();
+        citation = citation.replace(/^출처[:：]\s*/i, '').trim();
+        return { citation, url };
+      }
+
+      function formatSourceDisplay(item) {
+        if (!item || typeof item !== 'object') return '';
+
+        const citationBase =
+          (item.sourceCitation && item.sourceCitation.trim()) ||
+          buildSourceCitationString({
+            press: item.press,
+            title: item.title,
+            publishedAt: item.publishedAt,
+          });
+        const url = normalizeUrl(item.sourceUrl || item.link || '');
+
+        if (!citationBase && !url) return '';
+
+        let output = '출처: ';
+        if (citationBase) {
+          output += escapeHtml(citationBase);
+        }
+        if (url) {
+          output += citationBase ? ', ' : '';
+          output += `<a href="${url}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`;
+        }
+        return output;
+      }
+
       // 로컬 개발 환경과 프로덕션 환경 자동 감지
       const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
       const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
@@ -607,6 +1154,18 @@
       const LEGACY_RENDER_BASE = 'https://naver-keyword-tool.onrender.com';
       const FALLBACK_RENDER_BASES = [PRIMARY_RENDER_BASE, LEGACY_RENDER_BASE].filter(Boolean);
       const RETRYABLE_STATUS = new Set([404, 408, 500, 502, 503, 504, 521, 522, 523]);
+      const NAVER_SECTION_CONFIG = {
+        social: {
+          label: '사회',
+          icon: '👥',
+          sectionUrl: 'https://news.naver.com/section/102'
+        },
+        economy: {
+          label: '경제',
+          icon: '💰',
+          sectionUrl: 'https://news.naver.com/section/101'
+        }
+      };
 
       function cloneRequestOptions(options) {
         if (!options) return undefined;
@@ -679,35 +1238,1328 @@
         throw new Error('API 요청에 실패했습니다.');
       }
 
-      async function fetchJson(path, options) {
-        const response = await fetchWithFallback(path, options);
-        const text = await response.text();
-        let data = {};
+    function buildNewsSectionHtml(sectionKey, items = []) {
+      const config = NAVER_SECTION_CONFIG[sectionKey];
+      if (!config) return '';
 
-        if (text) {
-          try {
-            data = JSON.parse(text);
-          } catch (parseError) {
-            data = { error: text };
+      if (!Array.isArray(items) || items.length === 0) {
+        return `
+          <div class="naver-section-content" data-section="${sectionKey}">
+            <div class="naver-section-group">
+              <div class="naver-section-header">
+                <div class="naver-section-title">${config.icon} ${config.label} 주요 뉴스</div>
+                <a class="naver-section-link" href="${config.sectionUrl}" target="_blank" rel="noopener">섹션 바로가기</a>
+              </div>
+              <div class="naver-section-item-summary">표시할 뉴스가 없습니다. 잠시 후 다시 시도해주세요.</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 정렬 적용
+      const sortedItems = sortNaverNewsItems(items);
+
+      const listHtml = sortedItems.map((item, index) => {
+        const order = index + 1;
+        const titleText = escapeHtml(item?.title || '');
+        const summary = item?.summary ? escapeHtml(item.summary) : '';
+        const press = item?.press ? escapeHtml(item.press) : '';
+        const journalist = item?.journalist ? escapeHtml(item.journalist) : '';
+        const published = item?.publishedAt ? escapeHtml(item.publishedAt) : '';
+        const modified = item?.modifiedAt ? escapeHtml(item.modifiedAt) : '';
+        const sourceDisplay = formatSourceDisplay(item);
+
+        let linkHtml = titleText;
+        if (item?.link) {
+          const safeLink = item.link.startsWith('http')
+            ? item.link
+            : `https://news.naver.com${item.link}`;
+          linkHtml = `<a href="${safeLink}" target="_blank" rel="noopener">${titleText}</a>`;
+        }
+
+        // 시간 포맷팅
+        let timeDisplay = '';
+        
+        // publishedAt이 이미 "2025.11.11. 오후 4:58" 형식이면 그대로 사용
+        if (published) {
+          // 이미 포맷팅된 형식인지 확인 (예: "2025.11.11. 오후 4:58")
+          if (/^\d{4}\.\d{2}\.\d{2}\. (오전|오후) \d{1,2}:\d{2}$/.test(published)) {
+            timeDisplay = `<span class="naver-section-item-time">${published}</span>`;
+          } else {
+            // 포맷팅되지 않은 경우 파싱 시도
+            try {
+              // "2025-11-12 00:06:32" 형식인지 확인
+              let dateToParse = published;
+              if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(published)) {
+                dateToParse = published.replace(' ', 'T');
+              }
+              const publishedDate = new Date(dateToParse);
+              if (!Number.isNaN(publishedDate.getTime())) {
+                const year = publishedDate.getFullYear();
+                const month = String(publishedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(publishedDate.getDate()).padStart(2, '0');
+                const hours = publishedDate.getHours();
+                const minutes = String(publishedDate.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? '오후' : '오전';
+                const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+                const timeText = `${year}.${month}.${day}. ${ampm} ${displayHours}:${minutes}`;
+                timeDisplay = `<span class="naver-section-item-time">${timeText}</span>`;
+              } else {
+                // 파싱 실패 시 원본 문자열 사용
+                timeDisplay = `<span class="naver-section-item-time">${published}</span>`;
+              }
+            } catch (e) {
+              // 파싱 실패 시 원본 문자열 사용
+              timeDisplay = `<span class="naver-section-item-time">${published}</span>`;
+            }
+          }
+        } else if (item?._collectedAt) {
+          // publishedAt이 없으면 _collectedAt 사용
+          const collectedDate = new Date(item._collectedAt);
+          if (!Number.isNaN(collectedDate.getTime())) {
+            const year = collectedDate.getFullYear();
+            const month = String(collectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(collectedDate.getDate()).padStart(2, '0');
+            const hours = collectedDate.getHours();
+            const minutes = String(collectedDate.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? '오후' : '오전';
+            const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+            const timeText = `${year}.${month}.${day}. ${ampm} ${displayHours}:${minutes}`;
+            timeDisplay = `<span class="naver-section-item-time">${timeText}</span>`;
           }
         }
 
-        if (!response.ok) {
-          const message = data?.error || `요청 실패 (${response.status})`;
-          const error = new Error(message);
-          error.status = response.status;
-          error.data = data;
-          throw error;
+        const metaParts = [];
+        if (press) metaParts.push(`🗞️ ${press}`);
+        if (journalist) metaParts.push(`✍️ ${journalist}`);
+        if (published) metaParts.push(`📆 ${published}`);
+        if (modified) metaParts.push(`🛠️ ${modified}`);
+
+        return `
+          <div class="naver-section-item">
+            <button class="naver-section-edit-btn" onclick="openNaverNewsModal('${sectionKey}', ${index})">
+              <i class="fas fa-edit"></i> 수정
+            </button>
+            <div class="naver-section-item-title">
+              <span>${order}. ${linkHtml}</span>
+              ${timeDisplay}
+            </div>
+            ${metaParts.length > 0 ? `<div class="naver-section-item-meta">${metaParts.map((part) => `<span>${part}</span>`).join('')}</div>` : ''}
+            ${sourceDisplay ? `<div class="naver-section-item-source">${sourceDisplay}</div>` : ''}
+            ${summary ? `<div class="naver-section-item-summary">${summary}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="naver-section-content" data-section="${sectionKey}">
+          <div class="naver-section-group">
+            <div class="naver-section-header">
+              <div class="naver-section-title">${config.icon} ${config.label} 주요 뉴스</div>
+              <a class="naver-section-link" href="${config.sectionUrl}" target="_blank" rel="noopener">섹션 바로가기</a>
+            </div>
+            <div class="naver-section-list">
+              ${listHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    let currentNaverSection = 'social'; // 기본값: 사회
+    let currentNaverSort = 'latest'; // 기본값: 최신순
+
+    function switchNaverSection(sectionKey) {
+      currentNaverSection = sectionKey;
+      
+      // 탭 버튼 활성화 상태 업데이트
+      document.querySelectorAll('.naver-section-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.section === sectionKey);
+      });
+      
+      // 섹션 콘텐츠 표시/숨김
+      document.querySelectorAll('.naver-section-content').forEach(content => {
+        content.classList.toggle('active', content.dataset.section === sectionKey);
+      });
+    }
+
+    function setNaverSort(sort) {
+      if (currentNaverSort === sort) {
+        return;
+      }
+
+      currentNaverSort = sort;
+
+      // 정렬 버튼 활성화 상태 업데이트
+      document.querySelectorAll('.naver-sort-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.sort === sort);
+      });
+
+      // 뉴스 목록 다시 렌더링
+      renderNaverNews();
+    }
+
+    // 뉴스 아이템 정렬 함수
+    function sortNaverNewsItems(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        return items;
+      }
+
+      const sorted = [...items];
+
+      if (currentNaverSort === 'views') {
+        // 조회순 정렬 (조회수가 높은 순)
+        sorted.sort((a, b) => {
+          const viewsA = parseInt(a.views || a.viewCount || 0);
+          const viewsB = parseInt(b.views || b.viewCount || 0);
+          return viewsB - viewsA;
+        });
+      } else {
+        // 최신순 정렬 (발행일이 최신인 순)
+        sorted.sort((a, b) => {
+          const dateA = new Date(a.publishedAt || a._collectedAt || 0);
+          const dateB = new Date(b.publishedAt || b._collectedAt || 0);
+          return dateB.getTime() - dateA.getTime();
+        });
+      }
+
+      return sorted;
+    }
+
+    // localStorage에 네이버 뉴스 데이터 저장
+    function saveNaverNewsToStorage() {
+      try {
+        const dataToSave = {
+          sections: naverSectionData.sections,
+          fetchedAt: naverSectionData.fetchedAt instanceof Date 
+            ? naverSectionData.fetchedAt.toISOString() 
+            : (naverSectionData.fetchedAt || null)
+        };
+        localStorage.setItem('naverNewsData', JSON.stringify(dataToSave));
+      } catch (error) {
+        console.warn('네이버 뉴스 데이터 저장 실패:', error);
+      }
+    }
+
+    // localStorage에서 네이버 뉴스 데이터 불러오기
+    function loadNaverNewsFromStorage() {
+      try {
+        const savedData = localStorage.getItem('naverNewsData');
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          naverSectionData.sections = parsed.sections || {};
+          if (parsed.fetchedAt) {
+            const date = new Date(parsed.fetchedAt);
+            naverSectionData.fetchedAt = Number.isNaN(date.getTime()) ? null : date;
+          } else {
+            naverSectionData.fetchedAt = null;
+          }
+          return true;
+        }
+      } catch (error) {
+        console.warn('네이버 뉴스 데이터 불러오기 실패:', error);
+      }
+      return false;
+    }
+
+    function renderNaverNews() {
+      const list = document.getElementById('naverNewsList');
+      const timestampEl = document.getElementById('naverNewsTimestamp');
+      const tabsEl = document.getElementById('naverSectionTabs');
+      if (!list || !timestampEl) return;
+
+      if (naverSectionData.fetchedAt instanceof Date) {
+        timestampEl.textContent = `가져온 시각: ${naverSectionData.fetchedAt.toLocaleString('ko-KR')}`;
+      } else {
+        timestampEl.textContent = '';
+      }
+
+      const sections = naverSectionData.sections || {};
+      ensureNaverSectionDefaults();
+      const sectionHtml = Object.keys(NAVER_SECTION_CONFIG)
+        .map((key) => buildNewsSectionHtml(key, sections[key] || []))
+        .join('');
+
+      if (sectionHtml.trim()) {
+        list.innerHTML = sectionHtml;
+        
+        // 탭 표시
+        if (tabsEl) {
+          tabsEl.style.display = 'flex';
+        }
+        
+        // 기본적으로 첫 번째 섹션(사회) 활성화
+        switchNaverSection(currentNaverSection);
+      } else {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📰</div>
+            <div>표시할 네이버 뉴스가 없습니다</div>
+          </div>
+        `;
+        if (tabsEl) {
+          tabsEl.style.display = 'none';
+        }
+      }
+
+      // 데이터가 변경되었으므로 localStorage에 저장
+      saveNaverNewsToStorage();
+    }
+
+    function ensureNaverSectionDefaults() {
+      if (!naverSectionData.sections || typeof naverSectionData.sections !== 'object') {
+        return;
+      }
+
+      Object.keys(naverSectionData.sections).forEach((key) => {
+        const items = naverSectionData.sections[key];
+        if (!Array.isArray(items)) return;
+
+        items.forEach((item) => {
+          if (item && typeof item === 'object') {
+            const normalizedUrl = normalizeUrl(item.sourceUrl || item.source || item.link || '');
+            item.sourceUrl = normalizedUrl;
+            item.source = normalizedUrl;
+            if (item.sourceCitation) {
+              const { citation, url } = splitCitationAndUrl(item.sourceCitation);
+              item.sourceCitation = citation;
+              if (!item.sourceUrl && url) {
+                item.sourceUrl = normalizeUrl(url);
+                item.source = item.sourceUrl;
+              }
+            }
+            if (!item.journalist) {
+              item.journalist = '';
+            }
+            if (!item.publishedAt) {
+              item.publishedAt = item.datetime || '';
+            }
+            if (!item.modifiedAt) {
+              item.modifiedAt = '';
+            }
+            if (item.datetime) {
+              delete item.datetime;
+            }
+            if (!item.sourceCitation) {
+              item.sourceCitation = buildSourceCitationString({
+                press: item.press,
+                title: item.title,
+                publishedAt: item.publishedAt,
+              });
+            }
+          }
+        });
+      });
+    }
+
+    async function collectNewsData() {
+      const button = document.getElementById('collectNewsButton');
+      const panel = document.getElementById('naverNewsPanel');
+      const list = document.getElementById('naverNewsList');
+      const loadingEl = document.getElementById('naverNewsLoading');
+      const errorEl = document.getElementById('naverNewsError');
+      const timestampEl = document.getElementById('naverNewsTimestamp');
+
+      if (!panel || !list || !loadingEl || !errorEl || !timestampEl) {
+        console.warn('네이버 뉴스 영역을 초기화할 수 없습니다.');
+        return;
+      }
+
+      panel.style.display = 'block';
+      list.innerHTML = '';
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+      loadingEl.style.display = 'flex';
+      timestampEl.textContent = '';
+
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 불러오는 중...';
+      }
+
+      try {
+        // 기존 데이터를 먼저 불러오기 (localStorage에서)
+        const hasExistingData = loadNaverNewsFromStorage();
+        const existingSections = hasExistingData ? (naverSectionData.sections || {}) : {};
+        
+        const result = await fetchJson('/api/naver-section-news');
+
+        if (!result.success || !result.data) {
+          throw new Error(result.error || '네이버 뉴스를 불러오지 못했습니다.');
         }
 
-        return data;
+        // fetchedAt을 항상 현재 시각으로 업데이트 (데이터 수집 시각)
+        const now = new Date();
+        naverSectionData.fetchedAt = now;
+        
+        // 새로운 데이터와 기존 데이터 병합 (최신 데이터가 위로 오도록)
+        const newSections = result.data || {};
+        
+        // 각 섹션별로 병합
+        Object.keys(NAVER_SECTION_CONFIG).forEach(sectionKey => {
+          const newItems = newSections[sectionKey] || [];
+          const existingItems = existingSections[sectionKey] || [];
+          
+          // 중복 제거를 위한 Set (링크 기준)
+          const linkSet = new Set();
+          const mergedItems = [];
+          
+          // 새로운 데이터를 먼저 추가 (최신이 위로)
+          newItems.forEach(item => {
+            const link = item?.link || '';
+            if (link && !linkSet.has(link)) {
+              linkSet.add(link);
+              mergedItems.push({
+                ...item,
+                _collectedAt: now.getTime() // 수집 시각 추가
+              });
+            }
+          });
+          
+          // 기존 데이터 추가 (중복 제외)
+          existingItems.forEach(item => {
+            const link = item?.link || '';
+            if (link && !linkSet.has(link)) {
+              linkSet.add(link);
+              mergedItems.push(item);
+            }
+          });
+          
+          // 날짜 기준으로 정렬 (최신이 위로)
+          mergedItems.sort((a, b) => {
+            const dateA = new Date(a.publishedAt || a._collectedAt || 0);
+            const dateB = new Date(b.publishedAt || b._collectedAt || 0);
+            return dateB.getTime() - dateA.getTime();
+          });
+          
+          existingSections[sectionKey] = mergedItems;
+        });
+        
+        naverSectionData.sections = existingSections;
+        
+        // 렌더링 전에 fetchedAt이 제대로 설정되었는지 확인
+        console.log('데이터 수집 완료:', {
+          fetchedAt: naverSectionData.fetchedAt,
+          fetchedAtString: naverSectionData.fetchedAt?.toLocaleString('ko-KR'),
+          socialCount: naverSectionData.sections?.social?.length || 0,
+          economyCount: naverSectionData.sections?.economy?.length || 0,
+          newSocialCount: newSections.social?.length || 0,
+          newEconomyCount: newSections.economy?.length || 0
+        });
+        
+        renderNaverNews();
+        // localStorage에 저장 (renderNaverNews에서도 저장하지만 명시적으로 한 번 더)
+        saveNaverNewsToStorage();
+        // 상단에 유지하기 위해 스크롤 이동 제거
+      } catch (error) {
+        console.error('네이버 섹션 뉴스 로드 실패:', error);
+        
+        // 더 자세한 에러 메시지 생성
+        let errorMessage = '뉴스를 불러오는데 실패했습니다.';
+        
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.status) {
+          errorMessage = `서버 오류가 발생했습니다 (상태 코드: ${error.status})`;
+        }
+        
+        // 네트워크 에러인 경우
+        if (error?.name === 'TypeError' || error?.message?.includes('fetch')) {
+          const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+          if (isLocal) {
+            errorMessage = '서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.\n\n로컬 환경에서는 다음 명령어로 서버를 실행하세요:\nnode server.js (또는 npm run dev)';
+          } else {
+            errorMessage = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
+          }
+        }
+        
+        errorEl.textContent = errorMessage;
+        errorEl.style.display = 'block';
+        list.innerHTML = '';
+      } finally {
+        loadingEl.style.display = 'none';
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+        }
+      }
+    }
+
+    function openNaverNewsModal(sectionKey, index) {
+      const modal = document.getElementById('naverNewsModal');
+      const form = document.getElementById('naverNewsForm');
+      if (!modal || !form) return;
+
+      const sectionItems = naverSectionData.sections?.[sectionKey];
+      if (!Array.isArray(sectionItems) || !sectionItems[index]) {
+        alert('뉴스 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      const item = sectionItems[index];
+      naverEditingState = { sectionKey, index };
+
+      const titleInput = document.getElementById('naverNewsTitle');
+      const linkInput = document.getElementById('naverNewsLink');
+      const pressInput = document.getElementById('naverNewsPress');
+      const journalistInput = document.getElementById('naverNewsJournalist');
+      const publishedInput = document.getElementById('naverNewsPublished');
+      const modifiedInput = document.getElementById('naverNewsModified');
+      const summaryInput = document.getElementById('naverNewsSummary');
+      const sourceInput = document.getElementById('naverNewsSource');
+      const imageInput = document.getElementById('naverNewsImage');
+      const metaView = document.getElementById('naverNewsMetaView');
+      const metaContent = document.getElementById('naverNewsMetaContent');
+
+      if (titleInput) titleInput.value = item?.title || '';
+      if (linkInput) linkInput.value = item?.link || '';
+      if (pressInput) pressInput.value = item?.press || '';
+      if (journalistInput) journalistInput.value = item?.journalist || '';
+      if (publishedInput) publishedInput.value = item?.publishedAt || '';
+      if (modifiedInput) modifiedInput.value = item?.modifiedAt || '';
+      if (sourceInput) sourceInput.value = item?.source || item?.link || '';
+      if (summaryInput) summaryInput.value = item?.summary || '';
+      if (imageInput) {
+        imageInput.value = item?.imageUrl || item?.image || '';
+        if (imageInput.value) {
+          updateNaverNewsImagePreview(imageInput.value);
+        } else {
+          hideNaverNewsImagePreview();
+        }
+      }
+
+      if (metaView && metaContent) {
+        metaView.style.display = 'none';
+        metaContent.innerHTML = '';
+      }
+
+      modal.classList.add('active');
+      if (summaryInput) {
+        const fallbackSummary = item?.summary || '';
+        summaryInput.value = fallbackSummary;
+        populateNaverNewsSummaryFromLink(item?.link, fallbackSummary);
+      }
+    }
+
+    function closeNaverNewsModal() {
+      const modal = document.getElementById('naverNewsModal');
+      const form = document.getElementById('naverNewsForm');
+      const metaView = document.getElementById('naverNewsMetaView');
+      const metaContent = document.getElementById('naverNewsMetaContent');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+      if (form) {
+        form.reset();
+      }
+      if (metaView) {
+        metaView.style.display = 'none';
+      }
+      if (metaContent) {
+        metaContent.innerHTML = '';
+      }
+      naverEditingState = null;
+    }
+
+    function handleNaverNewsSubmit(event) {
+      event.preventDefault();
+      if (!naverEditingState) {
+        closeNaverNewsModal();
+        return;
+      }
+
+      const { sectionKey, index } = naverEditingState;
+      const sectionItems = naverSectionData.sections?.[sectionKey];
+      if (!Array.isArray(sectionItems) || !sectionItems[index]) {
+        alert('뉴스 정보를 찾을 수 없습니다.');
+        closeNaverNewsModal();
+        return;
+      }
+
+      const title = document.getElementById('naverNewsTitle')?.value?.trim() || '';
+      const link = document.getElementById('naverNewsLink')?.value?.trim() || '';
+      const press = document.getElementById('naverNewsPress')?.value?.trim() || '';
+      const journalist = document.getElementById('naverNewsJournalist')?.value?.trim() || '';
+      const publishedAt = document.getElementById('naverNewsPublished')?.value?.trim() || '';
+      const modifiedAt = document.getElementById('naverNewsModified')?.value?.trim() || '';
+      const summary = document.getElementById('naverNewsSummary')?.value?.trim() || '';
+      const imageUrl = document.getElementById('naverNewsImage')?.value?.trim() || '';
+      const sourceInputValue = (document.getElementById('naverNewsSource')?.value || '').trim();
+      const { citation: sourceCitation, url: citationUrl } = splitCitationAndUrl(sourceInputValue);
+      const sourceInput = document.getElementById('naverNewsSource');
+      if (sourceInput) {
+        sourceInput.value = sourceCitation;
+      }
+      const sourceUrl =
+        normalizeUrl(citationUrl) ||
+        sectionItems[index].sourceUrl ||
+        normalizeUrl(link) ||
+        '';
+
+      sectionItems[index] = {
+        ...sectionItems[index],
+        title,
+        link,
+        press,
+        journalist,
+        publishedAt,
+        modifiedAt,
+        summary,
+        imageUrl,
+        image: imageUrl,
+        sourceCitation,
+        sourceUrl,
+        source: sourceUrl
+      };
+
+      renderNaverNews();
+      // localStorage에 저장
+      saveNaverNewsToStorage();
+      closeNaverNewsModal();
+    }
+
+    async function populateNaverNewsSummaryFromLink(link, fallbackSummary = '') {
+      const summaryInput = document.getElementById('naverNewsSummary');
+      if (!summaryInput || !link) return;
+
+      const originalPlaceholder = summaryInput.getAttribute('placeholder') || '';
+      summaryInput.disabled = true;
+      summaryInput.placeholder = '기사 본문을 불러오는 중입니다...';
+
+      try {
+        const encodedUrl = encodeURIComponent(link);
+        const result = await fetchJson(`/api/news-fetch?url=${encodedUrl}`);
+
+        if (!result.success || !result.data) {
+          throw new Error(result.error || '기사 본문을 불러오지 못했습니다.');
+        }
+
+        const details = extractArticleDetails(result.data);
+        summaryInput.value = details.summary || fallbackSummary || '';
+
+        // 이미지 URL 설정
+        const imageInput = document.getElementById('naverNewsImage');
+        if (imageInput && result.data.imageUrl) {
+          imageInput.value = result.data.imageUrl;
+          updateNaverNewsImagePreview(result.data.imageUrl);
+        }
+
+        const journalistInput = document.getElementById('naverNewsJournalist');
+        if (journalistInput) {
+          const journalistValue =
+            details.journalist ||
+            journalistInput.value?.trim() ||
+            details.meta?.journalistName ||
+            '';
+          journalistInput.value = journalistValue;
+        }
+
+        const publishedInput = document.getElementById('naverNewsPublished');
+        if (publishedInput) {
+          // data-date-time 속성을 우선 사용하여 포맷팅
+          let publishedValue = '';
+          if (details.meta?.publishedAtRaw) {
+            try {
+              const date = new Date(details.meta.publishedAtRaw.replace(' ', 'T'));
+              if (!Number.isNaN(date.getTime())) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = date.getHours();
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? '오후' : '오전';
+                const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+                publishedValue = `${year}.${month}.${day}. ${ampm} ${displayHours}:${minutes}`;
+              }
+            } catch (e) {
+              // 파싱 실패 시 다른 값 사용
+            }
+          }
+          
+          if (!publishedValue) {
+            publishedValue =
+              details.publishedAt ||
+              publishedInput.value?.trim() ||
+              details.meta?.publishedAtDisplay ||
+              '';
+          }
+          publishedInput.value = publishedValue;
+        }
+
+        const modifiedInput = document.getElementById('naverNewsModified');
+        if (modifiedInput) {
+          // data-modify-date-time 속성을 우선 사용하여 포맷팅
+          let modifiedValue = '';
+          if (details.meta?.modifiedAtRaw) {
+            try {
+              const date = new Date(details.meta.modifiedAtRaw.replace(' ', 'T'));
+              if (!Number.isNaN(date.getTime())) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = date.getHours();
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? '오후' : '오전';
+                const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+                modifiedValue = `${year}.${month}.${day}. ${ampm} ${displayHours}:${minutes}`;
+              }
+            } catch (e) {
+              // 파싱 실패 시 다른 값 사용
+            }
+          }
+          
+          if (!modifiedValue) {
+            modifiedValue =
+              details.modifiedAt ||
+              modifiedInput.value?.trim() ||
+              details.meta?.modifiedAtDisplay ||
+              '';
+          }
+          modifiedInput.value = modifiedValue;
+        }
+
+        const pressInput = document.getElementById('naverNewsPress');
+        const sourceInput = document.getElementById('naverNewsSource');
+        const titleInput = document.getElementById('naverNewsTitle');
+        const normalizedSourceUrl = normalizeUrl(details.sourceUrl || link);
+        const pressValue =
+          pressInput?.value?.trim() ||
+          details.press ||
+          details.meta?.pressName ||
+          '';
+        if (pressInput) {
+          pressInput.value = pressValue;
+        }
+        const citationTitle =
+          titleInput?.value?.trim() ||
+          details.articleTitle ||
+          details.meta?.articleTitle ||
+          details.title ||
+          '';
+        const publishedValue =
+          document.getElementById('naverNewsPublished')?.value?.trim() ||
+          details.publishedAt ||
+          details.meta?.publishedAtDisplay ||
+          '';
+        const citationValue =
+          buildSourceCitationString({
+            press: pressValue,
+            title: citationTitle,
+            publishedAt: publishedValue,
+          }) || sourceInput?.value?.trim() || '';
+
+        if (sourceInput) {
+          sourceInput.value = citationValue;
+        }
+
+        renderNaverNewsMeta(details.meta);
+
+        if (naverEditingState) {
+          const { sectionKey, index } = naverEditingState;
+          const items = naverSectionData.sections?.[sectionKey];
+          if (Array.isArray(items) && items[index]) {
+            const target = items[index];
+            target.title = titleInput?.value?.trim() || target.title;
+            target.press = pressValue || target.press;
+            target.journalist = document.getElementById('naverNewsJournalist')?.value?.trim() || target.journalist;
+            // publishedAt은 이미 포맷팅된 값이므로 그대로 사용
+            target.publishedAt = publishedInput?.value?.trim() || target.publishedAt;
+            target.modifiedAt = modifiedInput?.value?.trim() || target.modifiedAt;
+            target.summary = summaryInput.value?.trim() || target.summary;
+            target.imageUrl = imageInput?.value?.trim() || target.imageUrl;
+            target.image = target.imageUrl;
+            target.sourceCitation = citationValue;
+            target.sourceUrl = normalizedSourceUrl || target.sourceUrl;
+            target.source = target.sourceUrl;
+          }
+        }
+        // 데이터가 변경되었으므로 localStorage에 저장
+        saveNaverNewsToStorage();
+      } catch (error) {
+        console.error('네이버 뉴스 본문 로드 실패:', error);
+        summaryInput.value = fallbackSummary || '';
+        alert('기사 본문을 불러오지 못했습니다. 링크를 다시 확인해주세요.');
+        renderNaverNewsMeta(null);
+      } finally {
+        summaryInput.disabled = false;
+        summaryInput.placeholder = originalPlaceholder;
+      }
+    }
+
+    function previewNaverNewsImage() {
+      const imageInput = document.getElementById('naverNewsImage');
+      if (!imageInput) return;
+      
+      const imageUrl = imageInput.value.trim();
+      if (!imageUrl) {
+        alert('이미지 URL을 입력해주세요.');
+        return;
+      }
+      
+      updateNaverNewsImagePreview(imageUrl);
+    }
+
+    function updateNaverNewsImagePreview(imageUrl) {
+      const previewDiv = document.getElementById('naverNewsImagePreview');
+      const previewImg = document.getElementById('naverNewsImagePreviewImg');
+      
+      if (!previewDiv || !previewImg) return;
+      
+      if (imageUrl) {
+        previewImg.src = imageUrl;
+        previewImg.onerror = function() {
+          alert('이미지를 불러올 수 없습니다. URL을 확인해주세요.');
+          hideNaverNewsImagePreview();
+        };
+        previewDiv.style.display = 'block';
+      } else {
+        hideNaverNewsImagePreview();
+      }
+    }
+
+    function hideNaverNewsImagePreview() {
+      const previewDiv = document.getElementById('naverNewsImagePreview');
+      if (previewDiv) {
+        previewDiv.style.display = 'none';
+      }
+    }
+
+    async function analyzeNaverNews() {
+      const titleInput = document.getElementById('naverNewsTitle');
+      const summaryInput = document.getElementById('naverNewsSummary');
+      const linkInput = document.getElementById('naverNewsLink');
+      
+      if (!titleInput || !summaryInput) {
+        alert('뉴스 정보를 불러올 수 없습니다.');
+        return;
+      }
+      
+      const title = titleInput.value.trim();
+      const content = summaryInput.value.trim();
+      const link = linkInput?.value?.trim() || '';
+      
+      if (!title && !content) {
+        alert('제목 또는 내용을 입력해주세요.');
+        return;
+      }
+      
+      // 버튼 비활성화 및 로딩 표시
+      const analyzeBtn = event?.target?.closest('button');
+      const originalText = analyzeBtn ? analyzeBtn.innerHTML : '';
+      if (analyzeBtn) {
+        analyzeBtn.disabled = true;
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI 분석 중...';
+      }
+      
+      try {
+        const result = await fetchJson('/api/news-ai-summary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title,
+            content,
+            url: link
+          })
+        });
+        
+        if (!result.success) {
+          throw new Error(result.error || 'AI 뉴스 해석에 실패했습니다.');
+        }
+        
+        // 해석 결과를 내용에 추가
+        const analysis = result.analysis || result.data;
+        if (analysis) {
+          const analysisText = `\n\n--- AI 뉴스 해석 ---\n\n${analysis.summary || analysis.content || ''}`;
+          summaryInput.value = summaryInput.value + analysisText;
+        } else {
+          alert('AI 해석 결과를 받을 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('AI 뉴스 해석 실패:', error);
+        alert('AI 뉴스 해석 실패: ' + (error.message || error));
+      } finally {
+        if (analyzeBtn) {
+          analyzeBtn.disabled = false;
+          analyzeBtn.innerHTML = originalText || '<i class="fas fa-brain"></i> AI뉴스해석';
+        }
+      }
+    }
+
+    function extractArticleDetails(articleData) {
+      const details = {
+        summary: '',
+        publishedAt: '',
+        modifiedAt: '',
+        journalist: '',
+        title: '',
+        sourceUrl: '',
+        meta: null
+      };
+
+      if (!articleData || typeof articleData !== 'object') {
+        return details;
+      }
+
+      details.title = articleData.title || articleData.articleTitle || '';
+      details.press = articleData.press || articleData.publisher || articleData.sourceName || '';
+
+      if (articleData.byline && !details.journalist) {
+        details.journalist = String(articleData.byline).trim();
+      }
+
+      if (articleData.journalist) {
+        details.journalist = String(articleData.journalist).trim();
+      }
+      if (articleData.publishedAt || articleData.datetime || articleData.date) {
+        const candidate = articleData.publishedAt || articleData.datetime || articleData.date;
+        if (candidate) {
+          details.publishedAt = String(candidate).trim();
+        }
+      }
+      if (articleData.modifiedAt || articleData.updateDate) {
+        const candidate = articleData.modifiedAt || articleData.updateDate;
+        if (candidate) {
+          details.modifiedAt = String(candidate).trim();
+        }
+      }
+      if (articleData.sourceUrl || articleData.url) {
+        details.sourceUrl = String(articleData.sourceUrl || articleData.url).trim();
+      }
+
+      const htmlCandidates = [articleData.content, articleData.rawHtml].filter(Boolean);
+      for (const html of htmlCandidates) {
+        const text = normalizeArticleText(htmlToPlainText(html));
+        if (text) {
+          details.summary = text;
+          break;
+        }
+      }
+
+      if (!details.summary) {
+        const textCandidates = [articleData.text, articleData.rawText].filter(Boolean);
+        for (const text of textCandidates) {
+          const normalized = normalizeArticleText(text);
+          if (normalized) {
+            details.summary = normalized;
+            break;
+          }
+        }
+      }
+
+      const publishedAtCandidates = [
+        articleData.publishedAt,
+        articleData.pubDate,
+        articleData.publishDate,
+        articleData.date,
+        articleData.createdAt
+      ].filter((value) => typeof value === 'string' && value.trim().length > 0);
+      if (publishedAtCandidates.length > 0) {
+      details.publishedAt = publishedAtCandidates[0].trim();
+      }
+
+      const sourceCandidates = [
+        articleData.sourceUrl,
+        articleData.source,
+        articleData.originUrl,
+        articleData.originalUrl,
+        articleData.link
+      ].filter((value) => typeof value === 'string' && value.trim().length > 0);
+      if (sourceCandidates.length > 0) {
+        details.sourceUrl = sourceCandidates[0].trim();
+      }
+
+      const metaInfo = parseArticleMeta(articleData);
+      if (metaInfo) {
+        details.meta = metaInfo;
+        // data-date-time 속성을 우선 사용 (형식: "2025-11-12 00:06:32")
+        if (metaInfo.publishedAtRaw) {
+          try {
+            const date = new Date(metaInfo.publishedAtRaw.replace(' ', 'T'));
+            if (!Number.isNaN(date.getTime())) {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const hours = date.getHours();
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              const ampm = hours >= 12 ? '오후' : '오전';
+              const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+              details.publishedAt = `${year}.${month}.${day}. ${ampm} ${displayHours}:${minutes}`;
+            }
+          } catch (e) {
+            // 파싱 실패 시 원본 사용
+            if (!details.publishedAt && metaInfo.publishedAtDisplay) {
+              details.publishedAt = metaInfo.publishedAtDisplay;
+            }
+          }
+        } else if (!details.publishedAt && metaInfo.publishedAtDisplay) {
+          details.publishedAt = metaInfo.publishedAtDisplay;
+        }
+        
+        // data-modify-date-time 속성을 우선 사용
+        if (metaInfo.modifiedAtRaw) {
+          try {
+            const date = new Date(metaInfo.modifiedAtRaw.replace(' ', 'T'));
+            if (!Number.isNaN(date.getTime())) {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const hours = date.getHours();
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              const ampm = hours >= 12 ? '오후' : '오전';
+              const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+              details.modifiedAt = `${year}.${month}.${day}. ${ampm} ${displayHours}:${minutes}`;
+            }
+          } catch (e) {
+            // 파싱 실패 시 원본 사용
+            if (!details.modifiedAt && metaInfo.modifiedAtDisplay) {
+              details.modifiedAt = metaInfo.modifiedAtDisplay;
+            }
+          }
+        } else if (!details.modifiedAt && metaInfo.modifiedAtDisplay) {
+          details.modifiedAt = metaInfo.modifiedAtDisplay;
+        }
+        
+        if (!details.journalist && metaInfo.journalistName) {
+          details.journalist = metaInfo.journalistName;
+        }
+        if (!details.sourceUrl && metaInfo.originalLink) {
+          details.sourceUrl = metaInfo.originalLink;
+        }
+        if (!details.title && metaInfo.articleTitle) {
+          details.title = metaInfo.articleTitle;
+        }
+      }
+
+      return details;
+    }
+
+    function parseArticleMeta(articleData) {
+      const rawHtml =
+        articleData?.rawPage ||
+        articleData?.fullHtml ||
+        articleData?.html ||
+        articleData?.rawHtml ||
+        '';
+
+      if (!rawHtml || typeof rawHtml !== 'string') {
+        return null;
+      }
+
+      let doc;
+      try {
+        const parser = new DOMParser();
+        doc = parser.parseFromString(rawHtml, 'text/html');
+      } catch (error) {
+        console.warn('기사 메타 파싱 실패:', error);
+        return null;
+      }
+
+      if (!doc) return null;
+
+      const journalistEl = doc.querySelector('.media_end_head_journalist_name');
+      const journalistLinkEl = doc.querySelector('.media_end_head_journalist_box');
+      const publishedEl = doc.querySelector('.media_end_head_info_datestamp_time._ARTICLE_DATE_TIME');
+      const modifiedEl = doc.querySelector('.media_end_head_info_datestamp_time._ARTICLE_MODIFY_DATE_TIME');
+      const originalLinkEl = doc.querySelector('.media_end_head_origin_link');
+      const reactionTotalEl = doc.querySelector('._reactionModule .u_likeit_text._count');
+      const reactionItems = Array.from(doc.querySelectorAll('.u_likeit_list'));
+      const commentCountEl = doc.querySelector('#comment_count');
+      const pressLogoAlt = doc.querySelector('.media_end_head_top_logo img')?.getAttribute('alt')?.trim();
+      const pressMeta = doc.querySelector('meta[property="og:article:author"]')?.getAttribute('content')?.trim();
+
+      const reactions = reactionItems
+        .map((item) => {
+          const label = item.querySelector('._label')?.textContent?.trim();
+          const count = item.querySelector('._count')?.textContent?.trim();
+          if (!label || !count) return null;
+          return { label, count };
+        })
+        .filter(Boolean);
+
+      const journalistLinkRaw = journalistLinkEl?.getAttribute('href') || '';
+      const journalistLink =
+        journalistLinkRaw && journalistLinkRaw.startsWith('http')
+          ? journalistLinkRaw
+          : journalistLinkRaw
+          ? `https://media.naver.com${journalistLinkRaw}`
+          : '';
+
+      const originalLinkRaw = originalLinkEl?.getAttribute('href') || '';
+      const originalLink =
+        originalLinkRaw && originalLinkRaw.startsWith('http')
+          ? originalLinkRaw
+          : originalLinkRaw
+          ? `https://n.news.naver.com${originalLinkRaw}`
+          : '';
+
+      return {
+        journalistName: journalistEl?.textContent?.trim() || '',
+        journalistLink,
+        publishedAtDisplay: publishedEl?.textContent?.trim() || '',
+        publishedAtRaw: publishedEl?.getAttribute('data-date-time') || '',
+        modifiedAtDisplay: modifiedEl?.textContent?.trim() || '',
+        modifiedAtRaw: modifiedEl?.getAttribute('data-modify-date-time') || '',
+        originalLink,
+        originalLinkLabel: originalLinkEl?.textContent?.trim() || '',
+        articleTitle:
+          doc.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
+          doc.title ||
+          '',
+        pressName: pressLogoAlt || pressMeta || '',
+        reactionTotal: reactionTotalEl?.textContent?.trim() || '',
+        reactions,
+        commentCount: commentCountEl?.textContent?.trim() || '',
+      };
+    }
+
+    function renderNaverNewsMeta(meta) {
+      const metaView = document.getElementById('naverNewsMetaView');
+      const metaContent = document.getElementById('naverNewsMetaContent');
+      if (!metaView || !metaContent) return;
+
+      if (!meta) {
+        metaView.style.display = 'none';
+        metaContent.innerHTML = '';
+        return;
+      }
+
+      const rows = [];
+
+      if (meta.journalistName) {
+        const journalistLink = meta.journalistLink
+          ? `<a href="${meta.journalistLink}" target="_blank" rel="noopener">${escapeHtml(meta.journalistName)}</a>`
+          : escapeHtml(meta.journalistName);
+        rows.push(`
+          <div class="naver-news-meta-row">
+            <strong>기자</strong>
+            <span>${journalistLink}</span>
+          </div>
+        `);
+      }
+
+      if (meta.publishedAtDisplay || meta.modifiedAtDisplay) {
+        rows.push(`
+          <div class="naver-news-meta-row">
+            <strong>발행·수정</strong>
+            <span>
+              ${meta.publishedAtDisplay ? `입력: ${escapeHtml(meta.publishedAtDisplay)}` : ''}
+              ${meta.modifiedAtDisplay ? `<br/>수정: ${escapeHtml(meta.modifiedAtDisplay)}` : ''}
+            </span>
+          </div>
+        `);
+      }
+
+      if (meta.originalLink) {
+        const label = meta.originalLinkLabel || meta.originalLink;
+        rows.push(`
+          <div class="naver-news-meta-row">
+            <strong>원문</strong>
+            <a href="${meta.originalLink}" target="_blank" rel="noopener">${escapeHtml(label)}</a>
+          </div>
+        `);
+      }
+
+      if (meta.reactionTotal || (Array.isArray(meta.reactions) && meta.reactions.length > 0)) {
+        const badges = Array.isArray(meta.reactions)
+          ? meta.reactions
+              .map(
+                (reaction) => `
+                <span class="naver-news-badge">
+                  ${escapeHtml(reaction.label)}
+                  <span>${escapeHtml(reaction.count)}</span>
+                </span>
+              `,
+              )
+              .join('')
+          : '';
+        rows.push(`
+          <div class="naver-news-meta-row">
+            <strong>반응</strong>
+            <div class="naver-news-meta-badges">
+              ${meta.reactionTotal ? `<span class="naver-news-badge">총 반응 ${escapeHtml(meta.reactionTotal)}</span>` : ''}
+              ${badges}
+            </div>
+          </div>
+        `);
+      }
+
+      if (meta.commentCount) {
+        rows.push(`
+          <div class="naver-news-meta-row">
+            <strong>댓글</strong>
+            <span>${escapeHtml(meta.commentCount)}</span>
+          </div>
+        `);
+      }
+
+      metaContent.innerHTML = rows.join('');
+      metaView.style.display = rows.length > 0 ? 'block' : 'none';
+    }
+
+    function htmlToPlainText(html) {
+      if (!html) return '';
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      return temp.textContent || temp.innerText || '';
+    }
+
+    function normalizeArticleText(value) {
+      if (!value) return '';
+      return String(value)
+        .replace(/\r\n/g, '\n')
+        .replace(/\u00a0/g, ' ')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .join('\n\n');
+    }
+
+    async function crawlSourceLink() {
+      const sourceInput = document.getElementById('newsSource');
+      if (!sourceInput) return;
+
+      const url = sourceInput.value.trim();
+      if (!url) {
+        alert('먼저 원문 링크를 입력해주세요.');
+        sourceInput.focus();
+        return;
+      }
+
+      const button = document.querySelector('.form-action-btn[onclick="crawlSourceLink()"]');
+      const originalLabel = button ? button.innerHTML : '';
+
+      try {
+        if (button) {
+          button.disabled = true;
+          button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        const encodedUrl = encodeURIComponent(url);
+        const result = await fetchJson(`/api/news-fetch?url=${encodedUrl}`);
+
+        if (!result.success || !result.data) {
+          throw new Error(result.error || '원문을 불러오지 못했습니다.');
+        }
+
+        const { title, content, sourceUrl, text, rawHtml, rawText } = result.data;
+        const titleInput = document.getElementById('newsTitle');
+        if (title && titleInput && !titleInput.value.trim()) {
+          titleInput.value = title;
+        }
+
+        const finalSource = sourceUrl || url;
+        sourceInput.value = finalSource;
+
+        const sanitizeLength = (html) => {
+          if (!html) return 0;
+          const tmp = document.createElement('div');
+          tmp.innerHTML = html;
+          return tmp.textContent.replace(/\s+/g, ' ').trim().length;
+        };
+
+        const textToHtml = (value) => {
+          if (!value) return '';
+          return value
+            .split(/\n+/)
+            .map((segment) => segment.trim())
+            .filter((segment) => segment.length > 0)
+            .map((segment) => `<p>${escapeHtml(segment)}</p>`)
+            .join('');
+        };
+
+        let htmlContent = '';
+        const contentLength = sanitizeLength(content);
+
+        if (content && contentLength >= 40) {
+          htmlContent = content.trim();
+        } else if (rawHtml && sanitizeLength(rawHtml) >= 40) {
+          htmlContent = rawHtml.trim();
+        } else if (text && text.trim()) {
+          htmlContent = textToHtml(text);
+        } else if (rawText && rawText.trim()) {
+          htmlContent = textToHtml(rawText);
+        }
+
+        if (!htmlContent) {
+          throw new Error('기사 본문을 찾을 수 없습니다.');
+        }
+
+        if (finalSource && !htmlContent.includes(finalSource)) {
+          htmlContent += `<p><br></p><p>출처: <a href="${finalSource}" target="_blank" rel="noopener">${finalSource}</a></p>`;
+        }
+
+        quill.root.innerHTML = htmlContent;
+        alert('✅ 원문을 불러와서 에디터에 채웠습니다.');
+      } catch (error) {
+        console.error('crawlSourceLink error:', error);
+        alert('원문을 불러오는데 실패했습니다: ' + (error?.message || error));
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalLabel || '크롤링';
+        }
+      }
+    }
+
+      async function fetchJson(path, options) {
+        try {
+          const response = await fetchWithFallback(path, options);
+          const text = await response.text();
+          let data = {};
+
+          if (text) {
+            try {
+              data = JSON.parse(text);
+            } catch (parseError) {
+              data = { error: text };
+            }
+          }
+
+          if (!response.ok) {
+            const message = data?.error || `요청 실패 (${response.status})`;
+            const error = new Error(message);
+            error.status = response.status;
+            error.data = data;
+            throw error;
+          }
+
+          return data;
+        } catch (error) {
+          // 네트워크 에러인 경우 원본 에러 정보를 유지
+          if (error.name === 'TypeError' || error.message?.includes('fetch') || error.message?.includes('Failed')) {
+            // 원본 에러를 그대로 전달하여 상위에서 처리할 수 있도록 함
+            throw error;
+          }
+          // 다른 에러도 그대로 전달
+          throw error;
+        }
       }
 
       let quill;
-      let currentPage = 1;
-      let currentCategory = 'all';
       let editingNewsId = null;
-      let isHTMLMode = false;
+      let naverSectionData = {
+        sections: {},
+        fetchedAt: null
+      };
+      let naverEditingState = null;
+
+      function setModalCategory(category) {
+        const input = document.getElementById('newsCategoryInput');
+        if (input) {
+          input.value = category || '';
+        }
+
+        document.querySelectorAll('.category-pill').forEach((button) => {
+          button.classList.toggle('active', button.dataset.category === category);
+        });
+      }
+
+      function getModalCategory() {
+        const input = document.getElementById('newsCategoryInput');
+        return input ? input.value : '';
+      }
 
       // Quill 에디터 초기화
       document.addEventListener('DOMContentLoaded', () => {
@@ -727,186 +2579,32 @@
           }
         });
 
-        loadNews();
+        // localStorage에서 네이버 뉴스 데이터 불러오기
+        if (loadNaverNewsFromStorage()) {
+          const panel = document.getElementById('naverNewsPanel');
+          if (panel && Object.keys(naverSectionData.sections || {}).length > 0) {
+            panel.style.display = 'block';
+            renderNaverNews();
+          }
+        }
 
         // 폼 제출
         document.getElementById('newsForm').addEventListener('submit', async (e) => {
           e.preventDefault();
           await saveNews();
         });
+
+        const naverForm = document.getElementById('naverNewsForm');
+        if (naverForm) {
+          naverForm.addEventListener('submit', handleNaverNewsSubmit);
+        }
       });
-
-      // 뉴스 목록 로드
-      async function loadNews(page = 1) {
-        currentPage = page;
-        const newsList = document.getElementById('newsList');
-        
-        try {
-          const params = new URLSearchParams({
-            page,
-            limit: 10
-          });
-
-          if (currentCategory !== 'all') {
-            params.append('category', currentCategory);
-          }
-
-          const result = await fetchJson(`/api/news-board?${params.toString()}`);
-
-          if (!result.success || !result.data) {
-            throw new Error(result.error || '뉴스를 불러올 수 없습니다.');
-          }
-
-          if (result.data.length === 0) {
-            newsList.innerHTML = `
-              <div class="empty-state">
-                <div class="empty-state-icon">📰</div>
-                <div>등록된 뉴스가 없습니다</div>
-              </div>
-            `;
-            document.getElementById('pagination').innerHTML = '';
-            return;
-          }
-
-          // 뉴스 카드 생성
-          newsList.innerHTML = result.data.map(news => {
-            const categoryLabels = {
-              policy: '정책/법규',
-              trend: '트렌드',
-              management: '경영 팁',
-              ingredients: '식자재',
-              technology: '기술/도구'
-            };
-
-            const excerpt = news.content.replace(/<[^>]*>/g, '').substring(0, 150);
-            const createdAt = new Date(news.created_at).toLocaleDateString('ko-KR');
-
-            return `
-              <div class="news-card">
-                ${news.image_url 
-                  ? `<img src="${news.image_url}" alt="${news.title}" class="news-image" />`
-                  : `<div class="news-placeholder">📰</div>`
-                }
-                <div class="news-content">
-                  <div class="news-header">
-                    <span class="news-category category-${news.category}">
-                      ${categoryLabels[news.category] || news.category}
-                    </span>
-                    ${news.is_featured ? '<span class="news-featured">⭐ 중요</span>' : ''}
-                  </div>
-                  <div class="news-title">${news.title}</div>
-                  <div class="news-excerpt">${excerpt}...</div>
-                  <div class="news-meta">
-                    <span><i class="fas fa-calendar"></i> ${createdAt}</span>
-                    <span><i class="fas fa-eye"></i> ${news.views}회</span>
-                    ${news.source_url ? '<span><i class="fas fa-link"></i> 원문 링크</span>' : ''}
-                  </div>
-                  <div class="news-actions">
-                    <button class="news-btn edit" onclick="editNews(${news.id})">
-                      <i class="fas fa-edit"></i> 수정
-                    </button>
-                    <button class="news-btn delete" onclick="deleteNews(${news.id})">
-                      <i class="fas fa-trash"></i> 삭제
-                    </button>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('');
-
-          // 페이지네이션
-          renderPagination(result.pagination);
-
-        } catch (error) {
-          console.error('Load news error:', error);
-          newsList.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-state-icon">⚠️</div>
-              <div>뉴스를 불러오는데 실패했습니다</div>
-              <div style="font-size: 14px; margin-top: 8px;">${error.message}</div>
-            </div>
-          `;
-        }
-      }
-
-      // 페이지네이션 렌더링
-      function renderPagination(pagination) {
-        const paginationEl = document.getElementById('pagination');
-        if (!pagination || pagination.totalPages <= 1) {
-          paginationEl.innerHTML = '';
-          return;
-        }
-
-        let html = '';
-        
-        // 이전 버튼
-        if (pagination.page > 1) {
-          html += `<button class="page-btn" onclick="loadNews(${pagination.page - 1})">←</button>`;
-        }
-
-        // 페이지 번호
-        for (let i = 1; i <= pagination.totalPages; i++) {
-          if (i === pagination.page) {
-            html += `<button class="page-btn active">${i}</button>`;
-          } else if (i === 1 || i === pagination.totalPages || Math.abs(i - pagination.page) <= 2) {
-            html += `<button class="page-btn" onclick="loadNews(${i})">${i}</button>`;
-          } else if (i === pagination.page - 3 || i === pagination.page + 3) {
-            html += `<span style="padding: 8px;">...</span>`;
-          }
-        }
-
-        // 다음 버튼
-        if (pagination.page < pagination.totalPages) {
-          html += `<button class="page-btn" onclick="loadNews(${pagination.page + 1})">→</button>`;
-        }
-
-        paginationEl.innerHTML = html;
-      }
-
-      // 카테고리 필터
-      function filterCategory(category) {
-        currentCategory = category;
-        
-        // 버튼 활성화 상태
-        document.querySelectorAll('.category-btn').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.category === category);
-        });
-
-        loadNews(1);
-      }
-
-      // HTML 모드 토글
-      function toggleHTMLMode() {
-        isHTMLMode = !isHTMLMode;
-        const editor = document.getElementById('editor');
-        const htmlEditor = document.getElementById('htmlEditor');
-        const indicator = document.getElementById('htmlModeIndicator');
-
-        if (isHTMLMode) {
-          // HTML 모드로 전환
-          htmlEditor.value = quill.root.innerHTML;
-          editor.style.display = 'none';
-          htmlEditor.style.display = 'block';
-          indicator.style.display = 'inline';
-        } else {
-          // 에디터 모드로 전환
-          quill.root.innerHTML = htmlEditor.value;
-          htmlEditor.style.display = 'none';
-          editor.style.display = 'block';
-          indicator.style.display = 'none';
-        }
-      }
 
       // 모달 열기
       function openModal(newsId = null) {
         editingNewsId = newsId;
         document.getElementById('newsModal').classList.add('active');
-        
-        // HTML 모드 초기화
-        isHTMLMode = false;
-        document.getElementById('editor').style.display = 'block';
-        document.getElementById('htmlEditor').style.display = 'none';
-        document.getElementById('htmlModeIndicator').style.display = 'none';
+        setModalCategory(null);
         
         if (newsId) {
           document.getElementById('modalTitle').textContent = '뉴스 수정';
@@ -916,6 +2614,7 @@
           document.getElementById('newsForm').reset();
           quill.setContents([]);
           editingNewsId = null;
+          setModalCategory(null);
         }
       }
 
@@ -925,6 +2624,7 @@
         document.getElementById('newsForm').reset();
         quill.setContents([]);
         editingNewsId = null;
+        setModalCategory(null);
       }
 
       // 뉴스 상세 로드
@@ -940,7 +2640,7 @@
           if (result.success && result.data) {
             document.getElementById('newsId').value = result.data.id;
             document.getElementById('newsTitle').value = result.data.title;
-            document.getElementById('newsCategory').value = result.data.category;
+            setModalCategory(result.data.category);
             document.getElementById('newsImage').value = result.data.image_url || '';
             document.getElementById('newsSource').value = result.data.source_url || '';
             document.getElementById('newsFeatured').checked = result.data.is_featured;
@@ -955,12 +2655,9 @@
       // 뉴스 저장
       async function saveNews() {
         const title = document.getElementById('newsTitle').value.trim();
-        const category = document.getElementById('newsCategory').value;
+        const category = getModalCategory();
         
-        // HTML 모드일 경우 textarea에서, 아니면 에디터에서 가져오기
-        const content = isHTMLMode 
-          ? document.getElementById('htmlEditor').value 
-          : quill.root.innerHTML;
+        const content = quill.root.innerHTML;
         
         const image_url = document.getElementById('newsImage').value.trim();
         const source_url = document.getElementById('newsSource').value.trim();
@@ -1002,44 +2699,10 @@
 
           alert(editingNewsId ? '뉴스가 수정되었습니다.' : '뉴스가 등록되었습니다.');
           closeModal();
-          loadNews(currentPage);
 
         } catch (error) {
           console.error('Save news error:', error);
           alert('뉴스 저장에 실패했습니다: ' + error.message);
-        }
-      }
-
-      // 뉴스 수정
-      function editNews(id) {
-        openModal(id);
-      }
-
-      // 뉴스 삭제
-      async function deleteNews(id) {
-        if (!confirm('정말 이 뉴스를 삭제하시겠습니까?')) {
-          return;
-        }
-
-        try {
-          const token = localStorage.getItem('access_token');
-          const result = await fetchJson(`/api/news-board?id=${id}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          if (!result.success) {
-            throw new Error(result.error || '삭제에 실패했습니다.');
-          }
-
-          alert('뉴스가 삭제되었습니다.');
-          loadNews(currentPage);
-
-        } catch (error) {
-          console.error('Delete news error:', error);
-          alert('뉴스 삭제에 실패했습니다: ' + error.message);
         }
       }
 
@@ -1198,14 +2861,25 @@
       }
 
       // 검색 결과를 편집 모달로
-      function editFromSearch(index) {
+      async function editFromSearch(index) {
+        const triggerBtn = event?.currentTarget;
+        const originalBtnLabel = triggerBtn ? triggerBtn.innerHTML : '';
         const item = window.searchResults[index];
+        const sourceUrl = item.originallink || item.link;
+        const loadingMessage = '<p>원문 전체 내용을 불러오는 중입니다...</p>';
+
+        if (triggerBtn) {
+          triggerBtn.disabled = true;
+          triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 불러오는 중...';
+        }
+
         openModal();
-        
-        // 폼에 데이터 채우기
+
+        // 폼에 기본 데이터 채우기
         document.getElementById('newsTitle').value = item.title;
-        quill.root.innerHTML = `<p>${item.description}</p><p><br></p><p>원문: <a href="${item.link}" target="_blank">${item.link}</a></p>`;
-        
+        document.getElementById('newsSource').value = sourceUrl || '';
+        quill.root.innerHTML = loadingMessage;
+
         // 카테고리 자동 선택
         const categoryMap = {
           '정책/지원금': 'policy',
@@ -1215,10 +2889,49 @@
           '식재료/원가': 'ingredients'
         };
         
-        const categorySelect = document.getElementById('newsCategory');
-        if (categoryMap[item.category]) {
-          categorySelect.value = categoryMap[item.category];
+        const mappedCategory = categoryMap[item.category];
+        setModalCategory(mappedCategory || null);
+
+        try {
+          const encodedUrl = encodeURIComponent(sourceUrl || item.link);
+          const result = await fetchJson(`/api/news-fetch?url=${encodedUrl}`);
+
+          if (result.success && result.data && result.data.content) {
+            const articleContent = result.data.content.trim();
+            const finalSource = result.data.sourceUrl || sourceUrl || item.link;
+            document.getElementById('newsSource').value = finalSource || '';
+            quill.root.innerHTML = articleContent
+              ? `${articleContent}<p><br></p><p>출처: <a href="${finalSource}" target="_blank" rel="noopener">${finalSource}</a></p>`
+              : createFallbackContent(item, sourceUrl);
+          } else {
+            document.getElementById('newsSource').value = sourceUrl || item.link || '';
+            quill.root.innerHTML = createFallbackContent(item, sourceUrl);
+            alert('원문을 모두 가져오지 못했습니다. 요약본으로 채워둘게요.');
+          }
+        } catch (error) {
+          console.error('원문 불러오기 실패:', error);
+          document.getElementById('newsSource').value = sourceUrl || item.link || '';
+          quill.root.innerHTML = createFallbackContent(item, sourceUrl);
+          alert('원문을 불러오는데 실패했습니다. 요약본으로 채워둘게요.');
+        } finally {
+          if (triggerBtn) {
+            triggerBtn.disabled = false;
+            triggerBtn.innerHTML = originalBtnLabel || '<i class="fas fa-edit"></i> 편집하여 발행';
+          }
         }
+      }
+
+      function createFallbackContent(item, sourceUrl) {
+        const safeText = (item.description || '').replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+        const link = sourceUrl || item.link;
+        const linkHtml = link
+          ? `<p>출처: <a href="${link}" target="_blank" rel="noopener">${link}</a></p>`
+          : '';
+        return `<p>${safeText}</p><p><br></p>${linkHtml}`;
       }
 
       // AI 뉴스 추천 (기존 함수 유지)
@@ -1237,7 +2950,7 @@
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-              category: currentCategory === 'all' ? null : currentCategory
+              category: null
             })
           });
 
@@ -1280,11 +2993,33 @@
 
         openModal();
         document.getElementById('newsTitle').value = suggestion.title;
-        document.getElementById('newsCategory').value = suggestion.category;
+        setModalCategory(suggestion.category || null);
         quill.root.innerHTML = suggestion.content;
         
         // 모달이 열리면 AI 섹션 닫기
         document.getElementById('aiSuggestions').innerHTML = '';
+      }
+
+      function mapCategoryToClass(category) {
+        if (!category) return 'policy';
+        const normalized = category.toLowerCase();
+
+        if (normalized.includes('정책') || normalized.includes('지원')) return 'policy';
+        if (normalized.includes('트렌드')) return 'trend';
+        if (normalized.includes('성공') || normalized.includes('경영')) return 'management';
+        if (normalized.includes('식재료') || normalized.includes('원가')) return 'ingredients';
+        if (normalized.includes('기술') || normalized.includes('플랫폼') || normalized.includes('배달')) return 'technology';
+
+        return 'policy';
+      }
+
+      function escapeHtml(text = '') {
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
       }
     </script>
   </body>

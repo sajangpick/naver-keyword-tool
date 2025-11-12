@@ -1788,7 +1788,6 @@
         const news = result.data;
         const createdAt = new Date(news.created_at).toLocaleDateString('ko-KR');
 
-        // XSS 방지를 위해 안전하게 콘텐츠 생성
         content.innerHTML = `
           ${news.image_url ? `<img src="${news.image_url}" alt="${news.title}" class="modal-image" />` : ''}
           <span class="modal-category category-${news.category}">
@@ -1808,13 +1807,47 @@
             </div>
           ` : ''}
         `;
-        
-        // HTML 콘텐츠를 안전하게 렌더링 (HTML 태그 허용이 필요한 경우)
+
         const modalBodyContent = document.getElementById('modalBodyContent');
         if (modalBodyContent) {
-          // 서버에서 이미 sanitize된 HTML이라면 innerHTML 사용
-          // 그렇지 않다면 textContent 사용
-          modalBodyContent.innerHTML = news.content;
+          const initialContent = news.content && news.content.trim().length > 0
+            ? news.content
+            : '<p>뉴스 내용이 없습니다.</p>';
+
+          modalBodyContent.innerHTML = initialContent;
+
+          const shouldExpand =
+            (initialContent.replace(/<[^>]*>/g, '').trim().length < 300) &&
+            news.source_url;
+
+          if (shouldExpand) {
+            const loadingEl = document.createElement('div');
+            loadingEl.className = 'loading';
+            loadingEl.style.marginTop = '16px';
+            loadingEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 원문을 불러오는 중입니다...';
+            modalBodyContent.appendChild(loadingEl);
+
+            try {
+              const encodedUrl = encodeURIComponent(news.source_url);
+              const fullResult = await fetchJson(`/api/news-fetch?url=${encodedUrl}`);
+
+              if (fullResult.success && fullResult.data && fullResult.data.content) {
+                const finalSource = fullResult.data.sourceUrl || news.source_url;
+                modalBodyContent.innerHTML = `${fullResult.data.content}<p><br></p><p style="font-size:13px;color:#666;">출처: <a href="${finalSource}" target="_blank" rel="noopener">${finalSource}</a></p>`;
+              } else {
+                loadingEl.innerHTML = '원문을 모두 가져오지 못했습니다.';
+              }
+            } catch (fetchError) {
+              console.error('Full article fetch error:', fetchError);
+              loadingEl.innerHTML = '원문을 가져오는 도중 오류가 발생했습니다.';
+            } finally {
+              setTimeout(() => {
+                if (loadingEl.parentNode === modalBodyContent) {
+                  modalBodyContent.removeChild(loadingEl);
+                }
+              }, 1500);
+            }
+          }
         }
 
       } catch (error) {

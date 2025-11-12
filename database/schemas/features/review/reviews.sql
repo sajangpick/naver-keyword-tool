@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   place_id VARCHAR(50),                            -- 연결된 네이버 플레이스 ID
   
   -- 구독 정보
-  subscription_plan VARCHAR(50) DEFAULT 'free',   -- free, basic, premium
+  subscription_plan VARCHAR(50) DEFAULT 'seed',   -- seed, power, big_power, premium
   subscription_expires_at TIMESTAMP,
   
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -136,7 +136,7 @@ CREATE INDEX idx_reply_templates_user_id ON reply_templates(user_id);
 
 -- 테스트 사용자
 INSERT INTO users (kakao_id, email, name, business_name, subscription_plan) 
-VALUES ('test_kakao_123', 'test@example.com', '홍길동', '맛있는 식당', 'free');
+VALUES ('test_kakao_123', 'test@example.com', '홍길동', '맛있는 식당', 'seed');
 
 -- 테스트 리뷰
 INSERT INTO reviews (user_id, review_text, owner_tips, status) 

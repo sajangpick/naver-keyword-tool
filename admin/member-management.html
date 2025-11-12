@@ -1240,9 +1240,11 @@
           document.getElementById('detail-user-type').innerHTML = 
             `<span class="badge ${member.user_type}">${userTypeText}</span>`;
           
-          const levelText = LEVEL_NAMES[member.membership_level] || member.membership_level;
+          // free 등급을 seed로 변환
+          const memberLevel = (member.membership_level === 'free' || !member.membership_level) ? 'seed' : member.membership_level;
+          const levelText = LEVEL_NAMES[memberLevel] || memberLevel;
           document.getElementById('detail-level').innerHTML = 
-            `<span class="badge ${member.membership_level}">${levelText}</span>`;
+            `<span class="badge ${memberLevel}">${levelText}</span>`;
           
           document.getElementById('detail-created').textContent = 
             new Date(member.created_at).toLocaleDateString('ko-KR', { 
@@ -1264,9 +1266,10 @@
           document.getElementById('detail-store-landmarks').textContent = member.store_landmarks || '-';
           document.getElementById('detail-store-keywords').textContent = member.store_keywords || '-';
 
-          // 사용량 통계
-          const reviewLimit = LIMITS[member.user_type]?.[member.membership_level]?.review;
-          const blogLimit = LIMITS[member.user_type]?.[member.membership_level]?.blog;
+          // 사용량 통계 (free 등급을 seed로 변환)
+          const memberLevel = (member.membership_level === 'free' || !member.membership_level) ? 'seed' : member.membership_level;
+          const reviewLimit = LIMITS[member.user_type]?.[memberLevel]?.review;
+          const blogLimit = LIMITS[member.user_type]?.[memberLevel]?.blog;
           
           const reviewUsage = member.monthly_review_count || 0;
           const blogUsage = member.monthly_blog_count || 0;
@@ -1502,8 +1505,10 @@
         }
 
         tbody.innerHTML = members.map(member => {
-          const reviewLimit = LIMITS[member.user_type]?.[member.membership_level]?.review;
-          const blogLimit = LIMITS[member.user_type]?.[member.membership_level]?.blog;
+          // free 등급을 seed로 변환
+          const memberLevel = (member.membership_level === 'free' || !member.membership_level) ? 'seed' : member.membership_level;
+          const reviewLimit = LIMITS[member.user_type]?.[memberLevel]?.review;
+          const blogLimit = LIMITS[member.user_type]?.[memberLevel]?.blog;
 
           const reviewUsage = member.monthly_review_count || 0;
           const blogUsage = member.monthly_blog_count || 0;
@@ -1525,8 +1530,8 @@
                 </span>
               </td>
               <td>
-                <span class="badge ${member.membership_level}">
-                  ${LEVEL_NAMES[member.membership_level] || member.membership_level}
+                <span class="badge ${(member.membership_level === 'free' || !member.membership_level) ? 'seed' : member.membership_level}">
+                  ${LEVEL_NAMES[(member.membership_level === 'free' || !member.membership_level) ? 'seed' : member.membership_level] || ((member.membership_level === 'free' || !member.membership_level) ? 'seed' : member.membership_level)}
                 </span>
               </td>
               <td>

@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
 
     // GET: 뉴스 목록 또는 단일 뉴스 조회
     if (req.method === 'GET') {
-      const { id, category, page = 1, limit = 10, featured } = req.query;
+      const { id, category, page = 1, limit = 10, featured, sort = 'latest' } = req.query;
 
       // 단일 뉴스 조회
       if (id) {
@@ -70,8 +70,12 @@ module.exports = async (req, res) => {
       // 뉴스 목록 조회
       let query = supabase
         .from('news_board')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' });
+      if (sort === 'views') {
+        query = query.order('views', { ascending: false }).order('created_at', { ascending: false, nullsFirst: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
 
       // 카테고리 필터
       if (category) {

@@ -97,9 +97,9 @@ module.exports = async (req, res) => {
           result = await applyBonusTokens(targetGroup);
           break;
 
-        case 'free_upgrade':
-          // 무료 업그레이드
-          result = await applyFreeUpgrade(targetGroup);
+        case 'upgrade':
+          // 업그레이드
+          result = await applyUpgrade(targetGroup);
           break;
 
         case 'discount':
@@ -220,9 +220,9 @@ async function applyBonusTokens(targetGroup = '1month') {
 }
 
 /**
- * 무료 업그레이드
+ * 업그레이드
  */
-async function applyFreeUpgrade(targetGroup = '1month') {
+async function applyUpgrade(targetGroup = '1month') {
   try {
     const now = new Date();
     const dateFilter = targetGroup === '3months' 
@@ -245,7 +245,7 @@ async function applyFreeUpgrade(targetGroup = '1month') {
     return { applied: data?.length || 0, failed: 0 };
 
   } catch (error) {
-    console.error('무료 업그레이드 오류:', error);
+    console.error('업그레이드 오류:', error);
     throw error;
   }
 }
