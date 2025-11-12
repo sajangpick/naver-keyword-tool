@@ -24,6 +24,10 @@ const DEFAULT_HEADERS = {
 };
 
 const ARTICLE_SELECTORS = [
+  '#dic_area',
+  'article#dic_area',
+  'article._article_content',
+  'article.go_trans',
   'article',
   '#articleBody',
   '#articeBody',
@@ -45,6 +49,7 @@ const ARTICLE_SELECTORS = [
   '.article_txt',
   '.article_content',
   '.article-content',
+  '._article_content',
   '.articleText',
   '.view-content',
   '.view_cont',
@@ -89,7 +94,7 @@ module.exports = async (req, res) => {
 
   try {
     const { html, finalUrl } = await fetchArticleHtml(targetUrl.toString());
-    const { articleHtml, plainText, rawHtml, rawText, title, byline, excerpt, imageUrl } = parseArticle(html, finalUrl);
+    const { articleHtml, plainText, rawHtml, rawText, title, byline, excerpt, imageUrl, press } = parseArticle(html, finalUrl);
 
     if (!articleHtml) {
       throw new Error('본문을 추출할 수 없습니다.');
@@ -103,9 +108,11 @@ module.exports = async (req, res) => {
         excerpt,
         content: articleHtml,
         text: plainText,
+        plainText: plainText, // plainText 필드도 명시적으로 추가
         rawHtml,
         rawText,
         imageUrl,
+        press: press || '', // 언론사 정보 추가
         wordCount: countWords(plainText || rawText),
         sourceUrl: finalUrl,
         rawPage: html,
@@ -198,6 +205,162 @@ function parseArticle(html, baseUrl) {
 
   // 이미지 추출 (메타 태그 우선, 그 다음 본문)
   const imageUrl = extractImageUrl(document, baseUrl);
+  
+  // 언론사 정보 추출 (Naver 뉴스)
+  let pressName = '';
+  // Naver 뉴스의 경우 여러 방법으로 언론사 추출 시도
+  const pressSelectors = [
+    'meta[property="og:article:author"]',
+    'meta[name="og:article:author"]',
+    '.media_end_head_top a',
+    '.press_logo',
+    '[class*="press"]',
+    '[class*="media"]',
+    'meta[property="article:publisher"]',
+    'meta[name="article:publisher"]'
+  ];
+  
+  for (const selector of pressSelectors) {
+    const element = document.querySelector(selector);
+    if (element) {
+      if (element.tagName === 'META') {
+        pressName = element.getAttribute('content') || '';
+      } else {
+        pressName = element.textContent?.trim() || element.getAttribute('alt') || element.getAttribute('title') || '';
+      }
+      if (pressName) break;
+    }
+  }
+  
+  // URL에서 언론사 코드 추출 시도 (n.news.naver.com/mnews/article/{pressCode}/...)
+  if (!pressName && baseUrl.includes('n.news.naver.com')) {
+    const urlMatch = baseUrl.match(/\/mnews\/article\/(\d+)\//);
+    if (urlMatch) {
+      // 언론사 코드를 이름으로 변환하는 로직은 복잡하므로 일단 URL에서 추출
+      // 실제로는 언론사 코드 매핑이 필요하지만, 일단은 페이지에서 추출한 값 사용
+    }
+  }
+
+  // 네이버 뉴스의 경우 #dic_area를 우선 확인
+  const dicArea = document.querySelector('#dic_area');
+  console.log('[news-fetch] #dic_area 찾기:', {
+    found: !!dicArea,
+    textLength: dicArea ? dicArea.textContent?.trim().length : 0,
+    preview: dicArea ? dicArea.textContent?.substring(0, 100) : 'not found'
+  });
+  
+  if (dicArea && dicArea.textContent && dicArea.textContent.trim().length > 60) {
+    // #dic_area의 HTML을 복사하여 처리
+    const dicAreaClone = dicArea.cloneNode(true);
+    
+    // 불필요한 요소 제거 (비디오 플레이어, 광고, 스크립트, 제보 섹션 등)
+    // 이미지는 유지 (end_photo_org, img 등)
+    dicAreaClone.querySelectorAll('script, style, noscript, iframe, form, .ad, .advertisement, .sns_area, .share_area, .vod_player_wrap, .VOD_PLAYER_ERROR_WRAP, .video_area, ._VIDEO_AREA, .pzp, [class*="pzp"], [id*="video"], [id*="VOD"], [class*="vod"], .artical-btm, [class*="artical"]').forEach((node) => {
+      try { node.remove(); } catch (e) {}
+    });
+    
+    // 비디오 관련 요소도 제거 (이미지는 유지)
+    const videoElements = dicAreaClone.querySelectorAll('video, canvas, [class*="player"]:not([class*="photo"]), [class*="Player"]');
+    videoElements.forEach((node) => {
+      try { 
+        // 부모 요소가 비디오 관련이면 부모도 제거
+        let parent = node.parentElement;
+        while (parent && parent !== dicAreaClone) {
+          if (parent.classList.contains('vod_player_wrap') || 
+              parent.classList.contains('_VIDEO_AREA_WRAP') ||
+              parent.id?.includes('video') ||
+              parent.id?.includes('VOD')) {
+            parent.remove();
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        if (!parent || parent === dicAreaClone) {
+          node.remove();
+        }
+      } catch (e) {}
+    });
+    
+    // SVG는 비디오 플레이어 관련만 제거 (이미지 설명용 SVG는 유지)
+    const svgElements = dicAreaClone.querySelectorAll('svg');
+    svgElements.forEach((svg) => {
+      let parent = svg.parentElement;
+      let shouldRemove = false;
+      while (parent && parent !== dicAreaClone) {
+        if (parent.classList.contains('pzp') || 
+            parent.classList.contains('vod_player_wrap') ||
+            parent.id?.includes('video') ||
+            parent.id?.includes('VOD')) {
+          shouldRemove = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      if (shouldRemove) {
+        let svgParent = svg.parentElement;
+        while (svgParent && svgParent !== dicAreaClone) {
+          if (svgParent.classList.contains('vod_player_wrap') || 
+              svgParent.classList.contains('_VIDEO_AREA_WRAP')) {
+            svgParent.remove();
+            break;
+          }
+          svgParent = svgParent.parentElement;
+        }
+      }
+    });
+    
+    // <br> 태그를 줄바꿈으로 변환 (연속된 <br><br>는 하나의 줄바꿈으로)
+    const brElements = dicAreaClone.querySelectorAll('br');
+    brElements.forEach((br, index) => {
+      // 이전 요소가 <br>이면 현재 <br>는 무시 (연속된 <br> 처리)
+      const prevSibling = br.previousSibling;
+      if (prevSibling && prevSibling.nodeType === 3 && prevSibling.textContent === '\n') {
+        br.remove();
+      } else {
+        const newline = document.createTextNode('\n');
+        br.replaceWith(newline);
+      }
+    });
+    
+    // 텍스트 추출
+    let dicAreaText = dicAreaClone.textContent || dicAreaClone.innerText || '';
+    
+    // 불필요한 공백 정리
+    dicAreaText = dicAreaText
+      .replace(/\u00a0/g, ' ')
+      .replace(/\r?\n{3,}/g, '\n\n') // 연속된 줄바꿈을 2개로
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter((line) => line.length > 0)
+      .join('\n\n');
+    
+    if (dicAreaText.length > 0) {
+      // 직접 추출한 텍스트를 우선 사용 (가장 확실한 방법)
+      const finalText = dicAreaText;
+      
+      // HTML도 정리하여 추출 (이미지 URL 등을 위해)
+      const normalized = normalizeContent(dicArea.innerHTML, baseUrl);
+      const finalHtml = normalized.html || wrapPlainText(dicAreaText);
+      
+      console.log('[news-fetch] #dic_area에서 텍스트 추출 성공:', {
+        textLength: finalText.length,
+        preview: finalText.substring(0, 100)
+      });
+      
+      return {
+        articleHtml: finalHtml,
+        plainText: finalText,
+        text: finalText, // text 필드도 추가
+        rawHtml: dicArea.innerHTML.trim(),
+        rawText: dicAreaText,
+        title: document.querySelector('meta[property="og:title"]')?.getAttribute('content') || document.title || '',
+        byline: '',
+        excerpt: finalText.slice(0, 200),
+        imageUrl: imageUrl || normalized.imageUrl || null,
+        press: pressName || '',
+      };
+    }
+  }
 
   const reader = new Readability(document);
   const article = reader.parse();
@@ -207,12 +370,14 @@ function parseArticle(html, baseUrl) {
     return {
       articleHtml: normalized.html,
       plainText: normalized.text,
+      text: normalized.text, // text 필드도 추가
       rawHtml: normalized.rawHtml,
       rawText: normalized.rawText,
       title: article.title || document.title || '',
       byline: article.byline || '',
       excerpt: article.excerpt || '',
       imageUrl: imageUrl || normalized.imageUrl || null,
+      press: pressName || '',
     };
   }
 
@@ -221,12 +386,14 @@ function parseArticle(html, baseUrl) {
   return {
     articleHtml: fallback.html,
     plainText: fallback.text,
+    text: fallback.text, // text 필드도 추가
     rawHtml: fallback.rawHtml,
     rawText: fallback.rawText,
     title: document.title || '',
     byline: '',
     excerpt: fallback.text.slice(0, 200),
     imageUrl: imageUrl || fallback.imageUrl || null,
+    press: pressName || '',
   };
 }
 
@@ -285,7 +452,27 @@ function extractImageUrl(document, baseUrl) {
     }
   }
 
-  // 3. article 내부의 첫 번째 이미지 확인
+  // 3. #dic_area 내부의 첫 번째 이미지 확인 (네이버 뉴스 우선)
+  const dicArea = document.querySelector('#dic_area');
+  if (dicArea) {
+    const dicAreaImg = dicArea.querySelector('img');
+    if (dicAreaImg) {
+      const src = dicAreaImg.getAttribute('src') || dicAreaImg.getAttribute('data-src');
+      if (src) {
+        try {
+          const absoluteUrl = new URL(src, baseUrl).toString();
+          // 광고나 아이콘 이미지는 제외 (작은 이미지나 특정 경로)
+          if (!absoluteUrl.includes('icon') && !absoluteUrl.includes('logo') && !absoluteUrl.includes('ad')) {
+            return absoluteUrl;
+          }
+        } catch (error) {
+          // continue
+        }
+      }
+    }
+  }
+
+  // 4. article 내부의 첫 번째 이미지 확인
   const article = document.querySelector('article');
   if (article) {
     const articleImg = article.querySelector('img');
@@ -305,8 +492,9 @@ function extractImageUrl(document, baseUrl) {
     }
   }
 
-  // 4. 본문 영역의 적절한 크기의 이미지 찾기
+  // 5. 본문 영역의 적절한 크기의 이미지 찾기 (다양한 선택자)
   const contentSelectors = [
+    '#dic_area img',
     '#articleBody img',
     '.article_body img',
     '.articleBody img',
@@ -360,10 +548,19 @@ function normalizeContent(contentHtml, baseUrl) {
 
   document.querySelectorAll('script, style, noscript, iframe, form').forEach((node) => node.remove());
 
+  // <br> 태그를 줄바꿈으로 변환 (연속된 <br>는 하나의 줄바꿈으로)
+  let brCount = 0;
   document.querySelectorAll('br').forEach((br) => {
+    brCount++;
     const newline = document.createTextNode('\n');
     br.replaceWith(newline);
   });
+  
+  // 연속된 줄바꿈 정리
+  if (brCount > 0) {
+    const bodyText = document.body.innerHTML;
+    document.body.innerHTML = bodyText.replace(/\n{3,}/g, '\n\n');
+  }
 
   document.querySelectorAll('img').forEach((img) => {
     const src = img.getAttribute('src') || img.getAttribute('data-src');
@@ -404,6 +601,7 @@ function normalizeContent(contentHtml, baseUrl) {
     }
   });
 
+  // 텍스트 추출: p 태그 우선, 없으면 div나 다른 블록 요소, 마지막으로 전체 텍스트
   const paragraphs = Array.from(document.querySelectorAll('p'))
     .map((p) => p.textContent.replace(/\s+/g, ' ').trim())
     .filter((text) => text.length > 0);
@@ -412,17 +610,40 @@ function normalizeContent(contentHtml, baseUrl) {
   if (paragraphs.length > 0) {
     plainText = paragraphs.join('\n\n');
   } else {
-    const rawNodes = Array.from(document.body.childNodes)
-      .map((node) => node.textContent)
-      .filter(Boolean)
-      .join('\n');
-    plainText = rawNodes
-      .replace(/\u00a0/g, ' ')
-      .replace(/\r?\n+/g, '\n')
-      .split('\n')
-      .map((line) => line.replace(/\s+/g, ' ').trim())
-      .filter((line) => line.length > 0)
-      .join('\n\n');
+    // p 태그가 없으면 div나 다른 블록 요소에서 텍스트 추출
+    const divs = Array.from(document.querySelectorAll('div, span, article, section'))
+      .map((el) => {
+        const text = el.textContent?.replace(/\s+/g, ' ').trim() || '';
+        // 자식 요소가 있으면 제외 (중복 방지)
+        if (el.children.length > 0 && text.length < 100) return '';
+        return text;
+      })
+      .filter((text) => text.length > 20); // 최소 20자 이상만
+    
+    if (divs.length > 0) {
+      plainText = divs.join('\n\n');
+    } else {
+      // 마지막으로 전체 텍스트 추출
+      const rawNodes = Array.from(document.body.childNodes)
+        .map((node) => {
+          if (node.nodeType === 3) { // 텍스트 노드
+            return node.textContent;
+          } else if (node.nodeType === 1) { // 요소 노드
+            return node.textContent;
+          }
+          return '';
+        })
+        .filter(Boolean)
+        .join('\n');
+      
+      plainText = rawNodes
+        .replace(/\u00a0/g, ' ')
+        .replace(/\r?\n+/g, '\n')
+        .split('\n')
+        .map((line) => line.replace(/\s+/g, ' ').trim())
+        .filter((line) => line.length > 0)
+        .join('\n\n');
+    }
   }
 
   const rawHtml = contentHtml || '';
