@@ -2107,29 +2107,68 @@
         // 먼저 newSections를 정의해야 함
         const newSections = result.data || {};
         
+        // 디버깅: 실제 데이터 구조 확인
+        console.log('🔍 newSections 구조 확인:', {
+          keys: Object.keys(newSections),
+          social: Array.isArray(newSections.social) ? `배열 (${newSections.social.length}개)` : typeof newSections.social,
+          economy: Array.isArray(newSections.economy) ? `배열 (${newSections.economy.length}개)` : typeof newSections.economy,
+          socialSample: newSections.social?.slice(0, 2),
+          economySample: newSections.economy?.slice(0, 2)
+        });
+        
         // 데이터가 비어있는지 확인
         const hasAnyData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
           const items = newSections[key] || [];
-          return items.length > 0;
+          return Array.isArray(items) && items.length > 0;
         });
         
         if (!hasAnyData) {
           console.warn('⚠️ API 응답은 성공했지만 모든 섹션의 데이터가 비어있습니다.');
-          if (button) {
-            button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 데이터 없음';
-            button.style.background = '#ef4444';
-            button.style.color = 'white';
-            setTimeout(() => {
-              button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
-              button.style.background = '';
-              button.style.color = '';
-            }, 3000);
+          console.warn('📋 newSections 상세:', JSON.stringify(newSections, null, 2));
+          
+          // 기존 데이터가 있으면 유지하고 경고만 표시
+          const hasExistingData = Object.keys(existingSections).some(key => {
+            const items = existingSections[key] || [];
+            return Array.isArray(items) && items.length > 0;
+          });
+          
+          if (hasExistingData) {
+            // 기존 데이터는 유지하고 경고만 표시
+            console.log('✅ 기존 데이터는 유지합니다.');
+            errorEl.textContent = '⚠️ 새로운 뉴스가 없습니다.\n\nAPI에서 받은 데이터가 모두 비어있습니다.\n\n기존 뉴스는 계속 표시됩니다.';
+            errorEl.style.display = 'block';
+            errorEl.style.background = 'rgba(245, 158, 11, 0.1)';
+            errorEl.style.borderColor = '#f59e0b';
+            
+            if (button) {
+              button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 새 뉴스 없음';
+              button.style.background = '#f59e0b';
+              button.style.color = 'white';
+              setTimeout(() => {
+                button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+                button.style.background = '';
+                button.style.color = '';
+              }, 3000);
+            }
+            return; // 기존 데이터는 이미 표시되어 있으므로 종료
+          } else {
+            // 기존 데이터도 없으면 에러 표시
+            if (button) {
+              button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 데이터 없음';
+              button.style.background = '#ef4444';
+              button.style.color = 'white';
+              setTimeout(() => {
+                button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+                button.style.background = '';
+                button.style.color = '';
+              }, 3000);
+            }
+            errorEl.textContent = '⚠️ API 응답은 성공했지만 데이터가 비어있습니다.\n\n서버의 크롤링 로직을 확인해주세요.';
+            errorEl.style.display = 'block';
+            errorEl.style.background = 'rgba(239, 68, 68, 0.1)';
+            errorEl.style.borderColor = '#ef4444';
+            return; // 더 이상 진행하지 않음
           }
-          errorEl.textContent = '⚠️ API 응답은 성공했지만 데이터가 비어있습니다.\n\n서버의 크롤링 로직을 확인해주세요.';
-          errorEl.style.display = 'block';
-          errorEl.style.background = 'rgba(239, 68, 68, 0.1)';
-          errorEl.style.borderColor = '#ef4444';
-          return; // 더 이상 진행하지 않음
         }
 
         // fetchedAt을 항상 현재 시각으로 업데이트 (데이터 수집 시각)
