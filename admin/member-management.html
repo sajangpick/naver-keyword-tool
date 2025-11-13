@@ -1706,12 +1706,28 @@
 
       function showError(message) {
         const container = document.getElementById('errorContainer');
+        const tableContainer = document.getElementById('tableContainer');
+        
         container.innerHTML = `
           <div class="error">
-            <i class="fas fa-exclamation-triangle"></i> ${message}
+            <i class="fas fa-exclamation-triangle"></i> 
+            <strong>오류 발생:</strong> ${message}
+            <br><br>
+            <small style="color: #666;">
+              💡 해결 방법:<br>
+              1. 브라우저 콘솔(F12)에서 자세한 오류 확인<br>
+              2. 서버가 실행 중인지 확인 (Render 서버)<br>
+              3. 네트워크 탭에서 API 응답 확인<br>
+              4. 새로고침 버튼을 클릭해 다시 시도
+            </small>
           </div>
         `;
         container.style.display = 'block';
+        
+        // 테이블은 숨기고 에러만 표시
+        if (tableContainer) {
+          tableContainer.style.display = 'none';
+        }
       }
 
       function hideError() {
