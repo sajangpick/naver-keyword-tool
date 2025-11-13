@@ -1800,9 +1800,21 @@
             ? naverSectionData.fetchedAt.toISOString() 
             : (naverSectionData.fetchedAt || null)
         };
+        
+        // 저장 전 데이터 확인
+        const totalCount = Object.keys(dataToSave.sections || {}).reduce((sum, key) => {
+          const items = dataToSave.sections[key] || [];
+          return sum + (Array.isArray(items) ? items.length : 0);
+        }, 0);
+        
         localStorage.setItem('naverNewsData', JSON.stringify(dataToSave));
+        
+        console.log(`💾 localStorage 저장 성공: 총 ${totalCount}개의 뉴스 저장됨`);
+        return true;
       } catch (error) {
-        console.warn('네이버 뉴스 데이터 저장 실패:', error);
+        console.error('❌ 네이버 뉴스 데이터 저장 실패:', error);
+        // 저장 실패 시에도 계속 진행 (안전)
+        return false;
       }
     }
 
@@ -1822,7 +1834,7 @@
           // NAVER_SECTION_CONFIG에 정의된 섹션만 유지
           const validSections = {};
           Object.keys(NAVER_SECTION_CONFIG).forEach(key => {
-            if (sections[key]) {
+            if (sections[key] && Array.isArray(sections[key])) {
               validSections[key] = sections[key];
             }
           });
@@ -1838,12 +1850,20 @@
           // 정리된 데이터를 다시 저장
           if (Object.keys(validSections).length > 0) {
             saveNaverNewsToStorage();
+            
+            const totalCount = Object.keys(validSections).reduce((sum, key) => {
+              const items = validSections[key] || [];
+              return sum + (Array.isArray(items) ? items.length : 0);
+            }, 0);
+            
+            console.log(`📥 localStorage에서 뉴스 데이터 불러오기 완료: 총 ${totalCount}개`);
+            return true;
           }
           
-          return Object.keys(validSections).length > 0;
+          return false;
         }
       } catch (error) {
-        console.warn('네이버 뉴스 데이터 불러오기 실패:', error);
+        console.error('❌ 네이버 뉴스 데이터 불러오기 실패:', error);
       }
       return false;
     }
@@ -2031,13 +2051,14 @@
           const newItems = newSections[sectionKey] || [];
           const existingItems = existingSections[sectionKey] || [];
           
-          console.log(`${sectionKey} 섹션: 새 데이터 ${newItems.length}개, 기존 데이터 ${existingItems.length}개`);
+          console.log(`📊 ${sectionKey} 섹션: 새 데이터 ${newItems.length}개, 기존 데이터 ${existingItems.length}개`);
           
           // 중복 제거를 위한 Set (링크 기준)
           const linkSet = new Set();
           const mergedItems = [];
           
           // 새로운 데이터를 먼저 추가 (최신이 위로)
+          let newAddedCount = 0;
           newItems.forEach(item => {
             const link = item?.link || '';
             if (link && !linkSet.has(link)) {
@@ -2046,17 +2067,22 @@
                 ...item,
                 _collectedAt: now.getTime() // 수집 시각 추가
               });
+              newAddedCount++;
             }
           });
           
           // 기존 데이터 추가 (중복 제외) - 기존 데이터는 계속 유지
+          let existingKeptCount = 0;
           existingItems.forEach(item => {
             const link = item?.link || '';
             if (link && !linkSet.has(link)) {
               linkSet.add(link);
               mergedItems.push(item);
+              existingKeptCount++;
             }
           });
+          
+          console.log(`✅ ${sectionKey} 섹션 병합 완료: 새로 추가 ${newAddedCount}개, 기존 유지 ${existingKeptCount}개, 총 ${mergedItems.length}개`);
           
           // 날짜 기준으로 정렬 (최신이 위로)
           mergedItems.sort((a, b) => {
@@ -2065,17 +2091,30 @@
             return dateB.getTime() - dateA.getTime();
           });
           
-          // 최대 100개까지 저장 (오래된 데이터는 자동으로 제거되지 않지만, 너무 많으면 제한)
-          existingSections[sectionKey] = mergedItems.slice(0, 100);
+          // 무제한 저장 (모든 뉴스를 저장)
+          existingSections[sectionKey] = mergedItems;
+          
+          console.log(`💾 ${sectionKey} 섹션 저장: ${existingSections[sectionKey].length}개 (무제한)`);
         });
         
+        // naverSectionData에 할당 (중요: 이렇게 해야 renderNaverNews()에서 사용 가능)
         naverSectionData.sections = existingSections;
         
-        // 항상 localStorage에 저장 (뉴스가 계속 쌓이도록)
-        saveNaverNewsToStorage();
+        console.log('📦 전체 섹션 데이터 할당 완료:', {
+          social: naverSectionData.sections?.social?.length || 0,
+          economy: naverSectionData.sections?.economy?.length || 0,
+          total: Object.keys(naverSectionData.sections).reduce((sum, key) => {
+            const items = naverSectionData.sections[key] || [];
+            return sum + (Array.isArray(items) ? items.length : 0);
+          }, 0)
+        });
+        
+        // localStorage에 저장 (렌더링 전에 먼저 저장)
+        const saveResult = saveNaverNewsToStorage();
+        console.log('💾 localStorage 저장 완료:', saveResult ? '성공' : '실패');
         
         // 렌더링 전에 fetchedAt이 제대로 설정되었는지 확인
-        console.log('데이터 수집 완료:', {
+        console.log('📊 데이터 수집 완료 요약:', {
           fetchedAt: naverSectionData.fetchedAt,
           fetchedAtString: naverSectionData.fetchedAt?.toLocaleString('ko-KR'),
           socialCount: naverSectionData.sections?.social?.length || 0,
@@ -2089,14 +2128,34 @@
         // 페이지를 1로 리셋 (새 데이터 수집 시 첫 페이지로)
         currentNaverPage = 1;
         
-        // 뉴스 목록 강제 업데이트
+        // 뉴스 목록 강제 업데이트 (데이터가 제대로 반영되도록)
+        console.log('🔄 뉴스 목록 렌더링 시작...');
         renderNaverNews();
+        console.log('✅ 뉴스 목록 렌더링 완료');
         
-        // localStorage에 저장 (renderNaverNews에서도 저장하지만 명시적으로 한 번 더)
+        // localStorage에 다시 한 번 저장 (확실하게)
         saveNaverNewsToStorage();
         
         // 업데이트 완료 메시지
-        console.log('✅ 뉴스 목록 업데이트 완료');
+        const totalNewsCount = Object.keys(naverSectionData.sections).reduce((sum, key) => {
+          const items = naverSectionData.sections[key] || [];
+          return sum + (Array.isArray(items) ? items.length : 0);
+        }, 0);
+        
+        console.log(`✅ 뉴스 목록 업데이트 완료! 총 ${totalNewsCount}개의 뉴스가 저장되었습니다.`);
+        
+        // 사용자에게 알림 (선택사항)
+        if (button) {
+          const originalText = button.innerHTML;
+          button.innerHTML = '<i class="fas fa-check-circle"></i> 수집 완료!';
+          button.style.background = '#03c75a';
+          button.style.color = 'white';
+          setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.background = '';
+            button.style.color = '';
+          }, 2000);
+        }
         
         // 정상적으로 로드되었으므로 에러 메시지 숨기기 (빨간 박스 제거)
         errorEl.style.display = 'none';
@@ -3076,7 +3135,12 @@
               </button>
             </div>`;
             
-            // 이미지 HTML 생성 (본문 위에)
+            // 기사 제목 HTML 생성 (이미지 위에 표시)
+            const newsTitleHtml = newsTitle ? `<div style="margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
+              <h2 style="color: var(--text); font-size: 20px; font-weight: 700; margin: 0; line-height: 1.4;">${escapeHtml(newsTitle)}</h2>
+            </div>` : '';
+            
+            // 이미지 HTML 생성 (제목 아래, 본문 위에)
             const imageHtml = newsImage ? `<div style="margin-bottom: 16px;"><img src="${escapeHtml(newsImage)}" alt="뉴스 이미지" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border);" /></div>` : '';
             
             // 편집 불가능한 영역 (기본 상태) - 뉴스 제목 제거 (중복 방지)
@@ -3092,7 +3156,7 @@
               </button>
             </div>`;
             
-            resultEl.innerHTML = titleAndEditHtml + editableContent + sourceInfoHtml + uploadButtonHtml;
+            resultEl.innerHTML = titleAndEditHtml + newsTitleHtml + editableContent + sourceInfoHtml + uploadButtonHtml;
           }
         } else {
           if (resultEl) {
