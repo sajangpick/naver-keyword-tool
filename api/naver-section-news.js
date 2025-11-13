@@ -426,7 +426,7 @@ async function crawlSection(sectionKey, url) {
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 뉴스 목록 추출 (섹션 헤드라인 + 일반 뉴스)
-    const newsItems = await page.evaluate(() => {
+    const newsItems = await page.evaluate((sectionKey) => {
       const items = [];
       const foundLinks = new Set();
 
@@ -731,7 +731,7 @@ async function crawlSection(sectionKey, url) {
       console.log(`섹션 ${sectionKey} 뉴스 수집: 총 ${uniqueItems.length}개 (헤드라인 포함)`);
       // 필터링 전에 더 많이 수집 (소상공인 필터링 후에도 충분한 수를 확보하기 위해)
       return uniqueItems.slice(0, 80); // 최대 80개 수집
-    });
+    }, sectionKey);
 
     console.log(`[naver-section-news] ${sectionKey} 섹션 ${newsItems.length}개 뉴스 수집 완료`);
 
