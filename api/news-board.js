@@ -309,22 +309,29 @@ module.exports = async (req, res) => {
 
       // 관리자가 작성하지 않은 뉴스만 삭제 (nonAdmin=true인 경우)
       if (nonAdmin === 'true') {
-        // 관리자가 작성하지 않은 뉴스 ID 가져오기
-        const { data: nonAdminNews, error: selectError } = await supabase
+        // 먼저 전체 뉴스 확인
+        const { data: allNews, error: selectAllError } = await supabase
           .from('news_board')
-          .select('id')
-          .neq('author', 'ADMIN');
+          .select('id, author');
 
-        if (selectError) {
-          return res.status(500).json({ success: false, error: selectError.message });
+        if (selectAllError) {
+          return res.status(500).json({ success: false, error: selectAllError.message });
         }
+
+        // 관리자가 작성하지 않은 뉴스 필터링 (author가 'ADMIN'이 아니거나 NULL인 경우)
+        const nonAdminNews = (allNews || []).filter(news => {
+          const author = news.author;
+          return !author || author !== 'ADMIN';
+        });
 
         // 삭제할 뉴스가 없으면 바로 성공 반환
         if (!nonAdminNews || nonAdminNews.length === 0) {
           return res.status(200).json({ 
             success: true, 
             message: '삭제할 뉴스가 없습니다. (모든 뉴스가 관리자가 작성한 뉴스입니다.)',
-            deletedCount: 0
+            deletedCount: 0,
+            totalCount: allNews?.length || 0,
+            adminCount: allNews?.length || 0
           });
         }
 
@@ -342,7 +349,8 @@ module.exports = async (req, res) => {
         return res.status(200).json({ 
           success: true, 
           message: '관리자가 작성하지 않은 뉴스가 삭제되었습니다.',
-          deletedCount: nonAdminNews.length
+          deletedCount: nonAdminNews.length,
+          remainingCount: (allNews?.length || 0) - nonAdminNews.length
         });
       }
 
