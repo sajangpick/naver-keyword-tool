@@ -1800,6 +1800,7 @@
           <div class="empty-state">
             <div class="empty-state-icon">📰</div>
             <div>표시할 네이버 뉴스가 없습니다</div>
+            <div style="margin-top: 8px; font-size: 14px; color: #666;">"뉴스 데이터 수집" 버튼을 클릭하여 뉴스를 가져오세요.</div>
           </div>
         `;
         if (tabsEl) {
@@ -1807,7 +1808,7 @@
         }
       }
 
-      // 데이터가 변경되었으므로 localStorage에 저장
+      // 데이터가 변경되었으므로 localStorage에 저장 (뉴스가 계속 유지되도록)
       saveNaverNewsToStorage();
     }
 
@@ -1944,7 +1945,7 @@
             }
           });
           
-          // 기존 데이터 추가 (중복 제외)
+          // 기존 데이터 추가 (중복 제외) - 기존 데이터는 계속 유지
           existingItems.forEach(item => {
             const link = item?.link || '';
             if (link && !linkSet.has(link)) {
@@ -1960,10 +1961,14 @@
             return dateB.getTime() - dateA.getTime();
           });
           
-          existingSections[sectionKey] = mergedItems;
+          // 최대 100개까지 저장 (오래된 데이터는 자동으로 제거되지 않지만, 너무 많으면 제한)
+          existingSections[sectionKey] = mergedItems.slice(0, 100);
         });
         
         naverSectionData.sections = existingSections;
+        
+        // 항상 localStorage에 저장 (뉴스가 계속 쌓이도록)
+        saveNaverNewsToStorage();
         
         // 렌더링 전에 fetchedAt이 제대로 설정되었는지 확인
         console.log('데이터 수집 완료:', {
@@ -3472,12 +3477,23 @@
           }
         });
 
-        // localStorage에서 네이버 뉴스 데이터 불러오기
+        // localStorage에서 네이버 뉴스 데이터 불러오기 (페이지 로드 시 자동 로드)
         if (loadNaverNewsFromStorage()) {
           const panel = document.getElementById('naverNewsPanel');
-          if (panel && Object.keys(naverSectionData.sections || {}).length > 0) {
+          const sections = naverSectionData.sections || {};
+          const hasData = Object.keys(sections).some(key => {
+            const items = sections[key] || [];
+            return Array.isArray(items) && items.length > 0;
+          });
+          
+          if (panel && hasData) {
             panel.style.display = 'block';
             renderNaverNews();
+            console.log('✅ localStorage에서 뉴스 데이터 로드 완료:', {
+              headline: sections.headline?.length || 0,
+              social: sections.social?.length || 0,
+              economy: sections.economy?.length || 0,
+            });
           }
         }
 

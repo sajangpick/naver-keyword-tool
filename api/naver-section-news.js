@@ -209,34 +209,59 @@ async function crawlHeadline(sectionKey, url) {
     page.setDefaultTimeout(60000);
 
     console.log(`[naver-section-news] ${sectionKey} 헤드라인 페이지 로딩 중...`);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // 동적 콘텐츠 로딩 대기 (더 긴 대기 시간)
+    console.log(`[naver-section-news] ${sectionKey} 헤드라인 페이지 대기 중...`);
+    await new Promise((resolve) => setTimeout(resolve, 8000));
+    
+    // 스크롤하여 추가 콘텐츠 로드 (헤드라인 뉴스가 동적으로 로드될 수 있음)
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight / 3);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight / 2);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 헤드라인 뉴스 추출
     const headlineNews = await page.evaluate(() => {
       const items = [];
-      
-      // 헤드라인 선택자들
-      const headlineSelectors = [
-        '.hdline_article_tit a',
-        '.hdline_article_list a',
-        '.cluster_head a',
-        '.cluster_text_headline a',
-        '.nclicks(fls.list) a',
-        '.nclicks(fls.more) a',
-        '.cluster_head_topic a',
-        '.newsnow_tx_inner a',
-        '.sa_text_title a',
-        '.sa_text_lede a',
-        'article a[href*="/article/"]',
-        '.main_news_list a[href*="/article/"]',
-        '.newsnow_tx_area a[href*="/article/"]',
-      ];
-
       const foundLinks = new Set();
       
-      headlineSelectors.forEach(selector => {
+      // 네이버 뉴스 메인 페이지의 헤드라인 선택자들 (우선순위 높은 것부터)
+      const headlineSelectors = [
+        // 메인 헤드라인
+        '.hdline_article_tit a',
+        '.hdline_article_list a',
+        '.hdline_article_list li a',
+        '.cluster_head a',
+        '.cluster_text_headline a',
+        '.cluster_head_topic a',
+        '.cluster_text_topic a',
+        // 섹션 헤드라인
+        '.section_headline a',
+        '.section_headline_list a',
+        '.newsnow_tx_inner a',
+        '.newsnow_tx_area a',
+        '.main_news_list a',
+        '.sa_text_title a',
+        '.sa_text_lede a',
+        // 일반 뉴스 링크
+        'article a[href*="/article/"]',
+        '.main_news_list a[href*="/article/"]',
+        '.list_body a[href*="/article/"]',
+      ];
+
+      // 우선순위 높은 선택자부터 시도
+      for (const selector of headlineSelectors) {
         try {
           const elements = document.querySelectorAll(selector);
           elements.forEach(element => {
@@ -245,9 +270,22 @@ async function crawlHeadline(sectionKey, url) {
             
             if (href && href.includes('/article/') && title && title.length > 10 && !foundLinks.has(href)) {
               foundLinks.add(href);
+              
+              // 링크 정규화
+              let normalizedLink = href;
+              if (href.startsWith('/')) {
+                normalizedLink = `https://news.naver.com${href}`;
+              } else if (!href.startsWith('http')) {
+                try {
+                  normalizedLink = new URL(href, window.location.href).toString();
+                } catch (e) {
+                  return; // 잘못된 URL은 스킵
+                }
+              }
+              
               items.push({
                 title: title.substring(0, 500),
-                link: href.startsWith('/') ? `https://news.naver.com${href}` : href,
+                link: normalizedLink,
                 summary: '',
                 press: '',
                 publishedAt: new Date().toISOString(),
@@ -258,9 +296,9 @@ async function crawlHeadline(sectionKey, url) {
         } catch (e) {
           console.error(`헤드라인 선택자 ${selector} 처리 실패:`, e);
         }
-      });
+      }
 
-      // 추가로 메인 페이지의 모든 뉴스 링크 찾기
+      // 추가로 메인 페이지의 모든 뉴스 링크 찾기 (헤드라인 위주로)
       const allMainLinks = document.querySelectorAll('a[href*="/article/"]');
       allMainLinks.forEach(link => {
         const href = link.getAttribute('href');
@@ -268,9 +306,22 @@ async function crawlHeadline(sectionKey, url) {
         
         if (href && href.includes('/article/') && title && title.length > 10 && !foundLinks.has(href)) {
           foundLinks.add(href);
+          
+          // 링크 정규화
+          let normalizedLink = href;
+          if (href.startsWith('/')) {
+            normalizedLink = `https://news.naver.com${href}`;
+          } else if (!href.startsWith('http')) {
+            try {
+              normalizedLink = new URL(href, window.location.href).toString();
+            } catch (e) {
+              return;
+            }
+          }
+          
           items.push({
             title: title.substring(0, 500),
-            link: href.startsWith('/') ? `https://news.naver.com${href}` : href,
+            link: normalizedLink,
             summary: '',
             press: '',
             publishedAt: new Date().toISOString(),
@@ -279,7 +330,7 @@ async function crawlHeadline(sectionKey, url) {
         }
       });
 
-      // 중복 제거
+      // 중복 제거 (링크 기준)
       const uniqueItems = [];
       const linkSet = new Set();
       items.forEach(item => {
@@ -289,7 +340,8 @@ async function crawlHeadline(sectionKey, url) {
         }
       });
 
-      return uniqueItems.slice(0, 100); // 헤드라인은 최대 100개 수집 (필터링 후에도 충분한 수를 확보)
+      console.log(`헤드라인 뉴스 수집: 총 ${uniqueItems.length}개`);
+      return uniqueItems.slice(0, 150); // 더 많이 수집 (필터링 후에도 충분한 수를 확보)
     });
 
     console.log(`[naver-section-news] ${sectionKey} 헤드라인 ${headlineNews.length}개 수집 완료`);
@@ -364,7 +416,7 @@ async function crawlSection(sectionKey, url) {
 
     // 페이지 로드
     console.log(`[naver-section-news] ${sectionKey} 페이지 로딩 중...`);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
 
     // 동적 콘텐츠 로딩 대기 (더 긴 대기 시간)
     // Puppeteer 최신 버전에서는 waitForTimeout 대신 Promise + setTimeout 사용
@@ -382,11 +434,64 @@ async function crawlSection(sectionKey, url) {
     });
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // 뉴스 목록 추출
+    // 뉴스 목록 추출 (섹션 헤드라인 + 일반 뉴스)
     const newsItems = await page.evaluate(() => {
       const items = [];
+      const foundLinks = new Set();
 
-      // 네이버 뉴스 섹션 페이지의 다양한 선택자 시도
+      // 1단계: 섹션 페이지 상단의 헤드라인 뉴스 수집
+      const headlineSelectors = [
+        '.section_headline a',
+        '.section_headline_list a',
+        '.hdline_article_tit a',
+        '.hdline_article_list a',
+        '.cluster_head a',
+        '.cluster_text_headline a',
+        '.newsnow_tx_inner a',
+        '.newsnow_tx_area a',
+        '.main_news_list a',
+        '.sa_text_title a',
+        '.sa_text_lede a',
+      ];
+
+      headlineSelectors.forEach(selector => {
+        try {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(element => {
+            const href = element.getAttribute('href');
+            const title = element.textContent?.trim() || element.innerText?.trim() || '';
+            
+            if (href && href.includes('/article/') && title && title.length > 10 && !foundLinks.has(href)) {
+              foundLinks.add(href);
+              
+              let normalizedLink = href;
+              if (href.startsWith('/')) {
+                normalizedLink = `https://news.naver.com${href}`;
+              } else if (!href.startsWith('http')) {
+                try {
+                  normalizedLink = new URL(href, window.location.href).toString();
+                } catch (e) {
+                  return;
+                }
+              }
+              
+              items.push({
+                title: title.substring(0, 500),
+                link: normalizedLink,
+                summary: '',
+                press: '',
+                publishedAt: new Date().toISOString(),
+                imageUrl: '',
+                _isHeadline: true, // 헤드라인 뉴스 표시
+              });
+            }
+          });
+        } catch (e) {
+          console.error(`섹션 헤드라인 선택자 ${selector} 처리 실패:`, e);
+        }
+      });
+
+      // 2단계: 네이버 뉴스 섹션 페이지의 일반 뉴스 수집
       const selectors = [
         '.sa_list li',
         '.sa_item',
@@ -413,31 +518,35 @@ async function crawlSection(sectionKey, url) {
       // 선택자가 작동하지 않으면 전체 페이지에서 뉴스 링크 찾기
       if (newsElements.length === 0) {
         const allLinks = document.querySelectorAll('a[href*="/article/"]');
-        const uniqueLinks = new Set();
-        const linkMap = new Map();
-
         allLinks.forEach((link) => {
           const href = link.getAttribute('href');
+          const title = link.textContent?.trim() || link.innerText?.trim() || '';
+          
           if (
             href &&
             href.includes('/article/') &&
             !href.includes('#') &&
-            !href.includes('javascript:')
+            !href.includes('javascript:') &&
+            title &&
+            title.length > 10 &&
+            !foundLinks.has(href)
           ) {
-            if (!uniqueLinks.has(href)) {
-              uniqueLinks.add(href);
-              linkMap.set(href, link);
+            foundLinks.add(href);
+            
+            let normalizedLink = href;
+            if (href.startsWith('/')) {
+              normalizedLink = `https://news.naver.com${href}`;
+            } else if (!href.startsWith('http')) {
+              try {
+                normalizedLink = new URL(href, window.location.href).toString();
+              } catch (e) {
+                return;
+              }
             }
-          }
-        });
-
-        // 각 링크에 대해 뉴스 아이템 생성
-        linkMap.forEach((link, href) => {
-          const title = link.textContent?.trim() || link.innerText?.trim() || '';
-          if (title && title.length > 10) {
+            
             items.push({
               title: title.substring(0, 500),
-              link: href.startsWith('/') ? `https://news.naver.com${href}` : href,
+              link: normalizedLink,
               summary: '',
               press: '',
               publishedAt: new Date().toISOString(),
@@ -445,8 +554,6 @@ async function crawlSection(sectionKey, url) {
             });
           }
         });
-
-        return items.slice(0, 20);
       }
 
       // 각 뉴스 요소에서 정보 추출
@@ -602,22 +709,37 @@ async function crawlSection(sectionKey, url) {
             }
           }
 
-          items.push({
-            title: title.substring(0, 500),
-            link,
-            summary: summary || '',
-            press: press || '',
-            publishedAt: publishedAt || new Date().toISOString(),
-            imageUrl: imageUrl || '',
-            _collectedAt: new Date().toISOString(),
-          });
+          // 링크가 이미 수집되었는지 확인
+          if (!foundLinks.has(link)) {
+            foundLinks.add(link);
+            items.push({
+              title: title.substring(0, 500),
+              link,
+              summary: summary || '',
+              press: press || '',
+              publishedAt: publishedAt || new Date().toISOString(),
+              imageUrl: imageUrl || '',
+              _collectedAt: new Date().toISOString(),
+            });
+          }
         } catch (error) {
           console.error('뉴스 아이템 추출 실패:', error);
         }
       });
 
+      // 중복 제거 (링크 기준)
+      const uniqueItems = [];
+      const linkSet = new Set();
+      items.forEach(item => {
+        if (!linkSet.has(item.link)) {
+          linkSet.add(item.link);
+          uniqueItems.push(item);
+        }
+      });
+
+      console.log(`섹션 ${sectionKey} 뉴스 수집: 총 ${uniqueItems.length}개 (헤드라인 포함)`);
       // 필터링 전에 더 많이 수집 (소상공인 필터링 후에도 충분한 수를 확보하기 위해)
-      return items.slice(0, 50); // 최대 50개 수집
+      return uniqueItems.slice(0, 80); // 최대 80개 수집
     });
 
     console.log(`[naver-section-news] ${sectionKey} 섹션 ${newsItems.length}개 뉴스 수집 완료`);
@@ -626,8 +748,8 @@ async function crawlSection(sectionKey, url) {
     const filteredNews = newsItems.filter(item => isSMERelated(item));
     console.log(`[naver-section-news] ${sectionKey} 섹션 필터링 후 ${filteredNews.length}개 (소상공인 관련, 전체: ${newsItems.length}개)`);
 
-    // 최대 20개만 반환
-    return filteredNews.slice(0, 20);
+    // 최대 30개만 반환 (헤드라인 + 일반 뉴스)
+    return filteredNews.slice(0, 30);
   } catch (error) {
     console.error(`[naver-section-news] ${sectionKey} 섹션 크롤링 실패:`, error);
     throw error;
