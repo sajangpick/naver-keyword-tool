@@ -2103,6 +2103,10 @@
           return; // 더 이상 진행하지 않음
         }
         
+        // 새로운 데이터와 기존 데이터 병합 (최신 데이터가 위로 오도록)
+        // 먼저 newSections를 정의해야 함
+        const newSections = result.data || {};
+        
         // 데이터가 비어있는지 확인
         const hasAnyData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
           const items = newSections[key] || [];
@@ -2131,9 +2135,6 @@
         // fetchedAt을 항상 현재 시각으로 업데이트 (데이터 수집 시각)
         const now = new Date();
         naverSectionData.fetchedAt = now;
-        
-        // 새로운 데이터와 기존 데이터 병합 (최신 데이터가 위로 오도록)
-        const newSections = result.data || {};
         
         // API 응답에서 counts 정보 확인
         if (result.counts) {
