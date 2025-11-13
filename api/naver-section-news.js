@@ -1,8 +1,16 @@
-const puppeteer = require('puppeteer');
-const chromium = require('@sparticuz/chromium');
-
-// 프로덕션 환경 확인
+// 프로덕션(Render/Vercel)에서는 chromium 사용, 로컬에서만 puppeteer 사용
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
+let chromium, puppeteer;
+
+if (isProduction) {
+  // Render/Vercel: @sparticuz/chromium 사용
+  chromium = require('@sparticuz/chromium');
+  puppeteer = require('puppeteer-core');
+} else {
+  // 로컬: 일반 puppeteer 사용
+  puppeteer = require('puppeteer');
+}
 
 // 네이버 뉴스 섹션 URL 매핑
 const SECTION_URLS = {
@@ -28,28 +36,51 @@ module.exports = async (req, res) => {
   try {
     // 두 섹션 모두 크롤링
     const sections = {};
+    const errors = {};
     
     // 사회 섹션 크롤링
     try {
+      console.log('[naver-section-news] 사회 섹션 크롤링 시작...');
       const socialNews = await crawlSection('social', SECTION_URLS.social);
-      sections.social = socialNews;
+      sections.social = socialNews || [];
+      console.log(`[naver-section-news] 사회 섹션 크롤링 완료: ${sections.social.length}개 뉴스`);
     } catch (error) {
-      console.error('[naver-section-news] 사회 섹션 크롤링 실패:', error);
+      console.error('[naver-section-news] 사회 섹션 크롤링 실패:', {
+        message: error.message,
+        stack: error.stack,
+      });
       sections.social = [];
+      errors.social = error.message;
     }
 
     // 경제 섹션 크롤링
     try {
+      console.log('[naver-section-news] 경제 섹션 크롤링 시작...');
       const economyNews = await crawlSection('economy', SECTION_URLS.economy);
-      sections.economy = economyNews;
+      sections.economy = economyNews || [];
+      console.log(`[naver-section-news] 경제 섹션 크롤링 완료: ${sections.economy.length}개 뉴스`);
     } catch (error) {
-      console.error('[naver-section-news] 경제 섹션 크롤링 실패:', error);
+      console.error('[naver-section-news] 경제 섹션 크롤링 실패:', {
+        message: error.message,
+        stack: error.stack,
+      });
       sections.economy = [];
+      errors.economy = error.message;
     }
+
+    // 전체 뉴스 개수 확인
+    const totalCount = (sections.social?.length || 0) + (sections.economy?.length || 0);
+    console.log(`[naver-section-news] 전체 크롤링 완료: 총 ${totalCount}개 뉴스 (사회: ${sections.social?.length || 0}, 경제: ${sections.economy?.length || 0})`);
 
     return res.status(200).json({
       success: true,
       data: sections,
+      errors: Object.keys(errors).length > 0 ? errors : undefined,
+      counts: {
+        social: sections.social?.length || 0,
+        economy: sections.economy?.length || 0,
+        total: totalCount,
+      },
     });
   } catch (error) {
     console.error('[naver-section-news] 크롤링 오류:', {
@@ -114,14 +145,26 @@ async function crawlSection(sectionKey, url) {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
     );
 
-    page.setDefaultNavigationTimeout(30000);
-    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultTimeout(60000);
 
     // 페이지 로드
     console.log(`[naver-section-news] ${sectionKey} 페이지 로딩 중...`);
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-    // 동적 콘텐츠 로딩 대기
+    // 동적 콘텐츠 로딩 대기 (더 긴 대기 시간)
+    console.log(`[naver-section-news] ${sectionKey} 페이지 대기 중...`);
+    await page.waitForTimeout(5000);
+
+    // 스크롤하여 추가 콘텐츠 로드
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight / 2);
+    });
+    await page.waitForTimeout(2000);
+    
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight);
+    });
     await page.waitForTimeout(2000);
 
     // 뉴스 목록 추출

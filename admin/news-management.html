@@ -1329,9 +1329,11 @@
 
       // 로컬 개발 환경과 프로덕션 환경 자동 감지
       const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const isProduction = !isLocalhost; // 배포 환경 확인
       const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
-      const PRIMARY_RENDER_BASE = 'https://naver-keyword-tool.onrender.com';
-      const LEGACY_RENDER_BASE = 'https://naver-keyword-tool.onrender.com';
+      // 배포 환경에서는 Vercel 프록시만 사용 (CORS 문제 방지)
+      const PRIMARY_RENDER_BASE = isProduction ? null : 'https://naver-keyword-tool.onrender.com';
+      const LEGACY_RENDER_BASE = isProduction ? null : 'https://naver-keyword-tool.onrender.com';
       const FALLBACK_RENDER_BASES = [PRIMARY_RENDER_BASE, LEGACY_RENDER_BASE].filter(Boolean);
       const RETRYABLE_STATUS = new Set([404, 408, 500, 502, 503, 504, 521, 522, 523]);
       const NAVER_SECTION_CONFIG = {
@@ -1374,19 +1376,29 @@
       async function fetchWithFallback(path, options) {
         const targets = [];
 
+        // 로컬 환경: localhost 먼저 시도
         if (API_BASE) {
           targets.push(`${API_BASE}${path}`);
-        } else {
-          targets.push(path);
+        }
+        
+        // 배포 환경: Vercel 프록시 경로만 사용 (CORS 문제 방지)
+        // 로컬 환경: Vercel 프록시 경로도 시도 (서버가 없을 때)
+        if (!API_BASE || isLocalhost) {
+          targets.push(path); // Vercel 프록시 경로: /api/naver-section-news
         }
 
-        FALLBACK_RENDER_BASES.forEach((host) => {
-          if (!host) return;
-          const absolutePath = `${host}${path}`;
-          if (!targets.includes(absolutePath)) {
-            targets.push(absolutePath);
-          }
-        });
+        // 로컬 환경에서만 직접 Render 서버 연결 시도 (fallback)
+        if (isLocalhost && FALLBACK_RENDER_BASES.length > 0) {
+          FALLBACK_RENDER_BASES.forEach((host) => {
+            if (!host) return;
+            const absolutePath = `${host}${path}`;
+            if (!targets.includes(absolutePath)) {
+              targets.push(absolutePath);
+            }
+          });
+        }
+
+        console.log(`[fetchWithFallback] 요청 대상: ${targets.join(', ')}`);
 
         let lastError = null;
         let lastResponse = null;
@@ -1395,26 +1407,37 @@
           const target = targets[index];
 
           try {
+            console.log(`[fetchWithFallback] 시도 ${index + 1}/${targets.length}: ${target}`);
             const response = await fetch(target, cloneRequestOptions(options));
 
             if (response.ok) {
+              console.log(`[fetchWithFallback] 성공: ${target}`);
               return response;
             }
 
+            console.warn(`[fetchWithFallback] 실패 (${response.status}): ${target}`);
             lastResponse = response;
 
             if (RETRYABLE_STATUS.has(response.status) && index < targets.length - 1) {
+              console.log(`[fetchWithFallback] 재시도 가능한 상태 코드: ${response.status}`);
               continue;
             }
 
             return response;
           } catch (error) {
+            console.error(`[fetchWithFallback] 에러 (${target}):`, error);
             lastError = error;
           }
         }
 
-        if (lastResponse) return lastResponse;
-        if (lastError) throw lastError;
+        if (lastResponse) {
+          console.error(`[fetchWithFallback] 모든 시도 실패, 마지막 응답 반환: ${lastResponse.status}`);
+          return lastResponse;
+        }
+        if (lastError) {
+          console.error(`[fetchWithFallback] 모든 시도 실패, 에러 발생:`, lastError);
+          throw lastError;
+        }
         throw new Error('API 요청에 실패했습니다.');
       }
 
@@ -1858,8 +1881,14 @@
         
         const result = await fetchJson('/api/naver-section-news');
 
-        if (!result.success || !result.data) {
+        console.log('API 응답:', result);
+
+        if (!result.success) {
           throw new Error(result.error || '네이버 뉴스를 불러오지 못했습니다.');
+        }
+
+        if (!result.data) {
+          throw new Error('서버에서 데이터를 받지 못했습니다.');
         }
 
         // fetchedAt을 항상 현재 시각으로 업데이트 (데이터 수집 시각)
@@ -1869,10 +1898,26 @@
         // 새로운 데이터와 기존 데이터 병합 (최신 데이터가 위로 오도록)
         const newSections = result.data || {};
         
+        // API 응답에서 counts 정보 확인
+        if (result.counts) {
+          console.log('크롤링 결과:', {
+            사회: result.counts.social,
+            경제: result.counts.economy,
+            전체: result.counts.total,
+          });
+        }
+
+        // 에러가 있으면 로그 출력
+        if (result.errors) {
+          console.warn('크롤링 중 일부 에러 발생:', result.errors);
+        }
+        
         // 각 섹션별로 병합
         Object.keys(NAVER_SECTION_CONFIG).forEach(sectionKey => {
           const newItems = newSections[sectionKey] || [];
           const existingItems = existingSections[sectionKey] || [];
+          
+          console.log(`${sectionKey} 섹션: 새 데이터 ${newItems.length}개, 기존 데이터 ${existingItems.length}개`);
           
           // 중복 제거를 위한 Set (링크 기준)
           const linkSet = new Set();
@@ -1918,7 +1963,9 @@
           socialCount: naverSectionData.sections?.social?.length || 0,
           economyCount: naverSectionData.sections?.economy?.length || 0,
           newSocialCount: newSections.social?.length || 0,
-          newEconomyCount: newSections.economy?.length || 0
+          newEconomyCount: newSections.economy?.length || 0,
+          apiCounts: result.counts,
+          apiErrors: result.errors,
         });
         
         renderNaverNews();
@@ -1927,23 +1974,41 @@
         // 상단에 유지하기 위해 스크롤 이동 제거
       } catch (error) {
         console.error('네이버 섹션 뉴스 로드 실패:', error);
+        console.error('에러 상세 정보:', {
+          name: error?.name,
+          message: error?.message,
+          status: error?.status,
+          stack: error?.stack,
+          hostname: window.location.hostname,
+          href: window.location.href,
+        });
         
         // 더 자세한 에러 메시지 생성
         let errorMessage = '뉴스를 불러오는데 실패했습니다.';
         
-        if (error?.message) {
+        // HTTP 상태 코드 에러
+        if (error?.status) {
+          if (error.status === 404) {
+            errorMessage = 'API 엔드포인트를 찾을 수 없습니다. (404)';
+          } else if (error.status === 500) {
+            errorMessage = '서버 내부 오류가 발생했습니다. (500) 잠시 후 다시 시도해주세요.';
+          } else if (error.status >= 502 && error.status <= 504) {
+            errorMessage = '서버가 일시적으로 사용할 수 없습니다. (502-504) 잠시 후 다시 시도해주세요.';
+          } else {
+            errorMessage = `서버 오류가 발생했습니다. (상태 코드: ${error.status})`;
+          }
+        } else if (error?.message) {
           errorMessage = error.message;
-        } else if (error?.status) {
-          errorMessage = `서버 오류가 발생했습니다 (상태 코드: ${error.status})`;
         }
         
         // 네트워크 에러인 경우
-        if (error?.name === 'TypeError' || error?.message?.includes('fetch')) {
-          const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        if (error?.name === 'TypeError' || error?.message?.includes('fetch') || error?.message?.includes('Failed')) {
           if (isLocal) {
-            errorMessage = '서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.\n\n로컬 환경에서는 다음 명령어로 서버를 실행하세요:\nnode server.js (또는 npm run dev)';
+            errorMessage = '서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.\n\n로컬 환경에서는 다음 명령어로 서버를 실행하세요:\nnode server.js (또는 pnpm run dev)';
           } else {
-            errorMessage = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
+            // 배포 환경에서는 더 친절한 메시지
+            errorMessage = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.\n\n문제가 지속되면 관리자에게 문의하세요.';
           }
         }
         
