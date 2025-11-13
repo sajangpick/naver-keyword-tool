@@ -169,22 +169,36 @@ module.exports = async (req, res) => {
       // content_html이 있으면 사용, 없으면 content 사용
       const finalContent = content_html || content;
 
+      // source_citation 컬럼이 없을 수 있으므로, 먼저 테이블 구조 확인
+      const insertData = {
+        title,
+        content: finalContent,
+        category,
+        image_url: image_url || null,
+        source_url: source_url || null,
+        is_featured,
+        author: 'ADMIN'
+      };
+
+      // source_citation이 있으면 추가 (컬럼이 있을 때만)
+      if (source_citation !== undefined && source_citation !== null) {
+        insertData.source_citation = source_citation;
+      }
+
       const { data: newNews, error } = await supabase
         .from('news_board')
-        .insert([{
-          title,
-          content: finalContent,
-          category,
-          image_url,
-          source_url,
-          source_citation: source_citation || null,
-          is_featured,
-          author: 'ADMIN'
-        }])
+        .insert([insertData])
         .select()
         .single();
 
       if (error) {
+        // source_citation 컬럼이 없는 경우 명확한 에러 메시지
+        if (error.message && error.message.includes('source_citation')) {
+          return res.status(500).json({ 
+            success: false, 
+            error: '데이터베이스에 source_citation 컬럼이 없습니다. Supabase에서 다음 SQL을 실행해주세요:\n\nALTER TABLE news_board ADD COLUMN IF NOT EXISTS source_citation TEXT;' 
+          });
+        }
         return res.status(500).json({ success: false, error: error.message });
       }
 

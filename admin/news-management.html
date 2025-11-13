@@ -1063,10 +1063,7 @@
           <button class="btn btn-secondary" id="collectNewsButton" onclick="collectNewsData()">
             <i class="fas fa-database"></i> 뉴스 데이터 수집
           </button>
-          <button class="btn" id="deleteNonAdminNewsButton" onclick="deleteNonAdminNews()" style="background: #f59e0b; color: white; border-color: #f59e0b;">
-            <i class="fas fa-filter"></i> 관리자 외 뉴스 삭제
-          </button>
-          <button class="btn" id="deleteAllNewsButton" onclick="deleteAllNews()" style="background: #ef4444; color: white; border-color: #ef4444;">
+          <button class="btn" id="deleteAllNewsButton" onclick="deleteAllNews()" style="background: #ef4444; color: white; border-color: #ef4444; margin-left: auto;">
             <i class="fas fa-trash-alt"></i> 모든 뉴스 삭제
           </button>
         </div>
@@ -1906,12 +1903,11 @@
       }
 
       panel.style.display = 'block';
-      list.innerHTML = '';
+      // 리스트를 비우지 않고 기존 데이터 유지
       errorEl.style.display = 'none';
       errorEl.textContent = '';
       // 로딩 메시지 숨김 (사용자 요청)
       loadingEl.style.display = 'none';
-      timestampEl.textContent = '';
 
       if (button) {
         button.disabled = true;
@@ -1922,6 +1918,13 @@
         // 기존 데이터를 먼저 불러오기 (localStorage에서)
         const hasExistingData = loadNaverNewsFromStorage();
         const existingSections = hasExistingData ? (naverSectionData.sections || {}) : {};
+        
+        // 기존 데이터가 있으면 먼저 표시 (불러오는 중에도 뉴스가 보이도록)
+        if (hasExistingData && Object.keys(existingSections).length > 0) {
+          naverSectionData.sections = existingSections;
+          renderNaverNews();
+          console.log('✅ 기존 뉴스 데이터를 먼저 표시했습니다.');
+        }
         
         const result = await fetchJson('/api/naver-section-news');
 
@@ -2074,7 +2077,8 @@
         
         errorEl.textContent = errorMessage;
         errorEl.style.display = 'block';
-        list.innerHTML = '';
+        // 에러 발생 시에도 기존 데이터는 유지 (리스트를 비우지 않음)
+        // list.innerHTML = ''; // 제거: 기존 뉴스가 보이도록 유지
       } finally {
         loadingEl.style.display = 'none';
         if (button) {
