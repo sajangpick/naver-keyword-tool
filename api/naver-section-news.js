@@ -67,31 +67,16 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // 헤드라인, 사회, 경제 섹션 모두 크롤링
+    // 사회, 경제 섹션 크롤링 (각 섹션의 헤드라인 + 소상공인 관련 뉴스 포함)
     const sections = {};
     const errors = {};
     
-    // 헤드라인 크롤링
+    // 사회 섹션 크롤링 (헤드라인 + 소상공인 관련 뉴스)
     try {
-      console.log('[naver-section-news] 헤드라인 크롤링 시작...');
-      const headlineNews = await crawlHeadline('headline', SECTION_URLS.headline);
-      sections.headline = headlineNews || [];
-      console.log(`[naver-section-news] 헤드라인 크롤링 완료: ${sections.headline.length}개 뉴스`);
-    } catch (error) {
-      console.error('[naver-section-news] 헤드라인 크롤링 실패:', {
-        message: error.message,
-        stack: error.stack,
-      });
-      sections.headline = [];
-      errors.headline = error.message;
-    }
-    
-    // 사회 섹션 크롤링
-    try {
-      console.log('[naver-section-news] 사회 섹션 크롤링 시작...');
+      console.log('[naver-section-news] 사회 섹션 크롤링 시작... (헤드라인 + 소상공인 관련 뉴스)');
       const socialNews = await crawlSection('social', SECTION_URLS.social);
       sections.social = socialNews || [];
-      console.log(`[naver-section-news] 사회 섹션 크롤링 완료: ${sections.social.length}개 뉴스`);
+      console.log(`[naver-section-news] 사회 섹션 크롤링 완료: ${sections.social.length}개 뉴스 (헤드라인 포함)`);
     } catch (error) {
       console.error('[naver-section-news] 사회 섹션 크롤링 실패:', {
         message: error.message,
@@ -101,12 +86,12 @@ module.exports = async (req, res) => {
       errors.social = error.message;
     }
 
-    // 경제 섹션 크롤링
+    // 경제 섹션 크롤링 (헤드라인 + 소상공인 관련 뉴스)
     try {
-      console.log('[naver-section-news] 경제 섹션 크롤링 시작...');
+      console.log('[naver-section-news] 경제 섹션 크롤링 시작... (헤드라인 + 소상공인 관련 뉴스)');
       const economyNews = await crawlSection('economy', SECTION_URLS.economy);
       sections.economy = economyNews || [];
-      console.log(`[naver-section-news] 경제 섹션 크롤링 완료: ${sections.economy.length}개 뉴스`);
+      console.log(`[naver-section-news] 경제 섹션 크롤링 완료: ${sections.economy.length}개 뉴스 (헤드라인 포함)`);
     } catch (error) {
       console.error('[naver-section-news] 경제 섹션 크롤링 실패:', {
         message: error.message,
@@ -117,15 +102,14 @@ module.exports = async (req, res) => {
     }
 
     // 전체 뉴스 개수 확인
-    const totalCount = (sections.headline?.length || 0) + (sections.social?.length || 0) + (sections.economy?.length || 0);
-    console.log(`[naver-section-news] 전체 크롤링 완료: 총 ${totalCount}개 뉴스 (헤드라인: ${sections.headline?.length || 0}, 사회: ${sections.social?.length || 0}, 경제: ${sections.economy?.length || 0})`);
+    const totalCount = (sections.social?.length || 0) + (sections.economy?.length || 0);
+    console.log(`[naver-section-news] 전체 크롤링 완료: 총 ${totalCount}개 뉴스 (사회: ${sections.social?.length || 0}, 경제: ${sections.economy?.length || 0})`);
 
     return res.status(200).json({
       success: true,
       data: sections,
       errors: Object.keys(errors).length > 0 ? errors : undefined,
       counts: {
-        headline: sections.headline?.length || 0,
         social: sections.social?.length || 0,
         economy: sections.economy?.length || 0,
         total: totalCount,

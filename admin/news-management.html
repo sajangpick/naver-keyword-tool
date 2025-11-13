@@ -273,7 +273,7 @@
       }
 
       .naver-news-loading {
-        display: none;
+        display: none !important; /* 로딩 메시지 숨김 (사용자 요청) */
         align-items: center;
         justify-content: center;
         gap: 8px;
@@ -1079,10 +1079,7 @@
           <div class="naver-news-error" id="naverNewsError"></div>
           <div class="naver-section-tabs" id="naverSectionTabs" style="display: none;">
             <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-              <button class="naver-section-tab active" data-section="headline" onclick="switchNaverSection('headline')">
-                <span>📰</span> 헤드라인
-              </button>
-              <button class="naver-section-tab" data-section="social" onclick="switchNaverSection('social')">
+              <button class="naver-section-tab active" data-section="social" onclick="switchNaverSection('social')">
                 <span>👥</span> 사회
               </button>
               <button class="naver-section-tab" data-section="economy" onclick="switchNaverSection('economy')">
@@ -1340,11 +1337,6 @@
       const FALLBACK_RENDER_BASES = [PRIMARY_RENDER_BASE, LEGACY_RENDER_BASE].filter(Boolean);
       const RETRYABLE_STATUS = new Set([404, 408, 500, 502, 503, 504, 521, 522, 523]);
       const NAVER_SECTION_CONFIG = {
-        headline: {
-          label: '헤드라인',
-          icon: '📰',
-          sectionUrl: 'https://news.naver.com/main/home'
-        },
         social: {
           label: '사회',
           icon: '👥',
@@ -1668,7 +1660,7 @@
       }
     }
 
-    let currentNaverSection = 'headline'; // 기본값: 헤드라인
+    let currentNaverSection = 'social'; // 기본값: 사회
     let currentNaverSort = 'latest'; // 기본값: 최신순
     let currentNaverPage = 1; // 현재 페이지
     const ITEMS_PER_PAGE = 10; // 페이지당 아이템 수
@@ -1875,7 +1867,8 @@
       list.innerHTML = '';
       errorEl.style.display = 'none';
       errorEl.textContent = '';
-      loadingEl.style.display = 'flex';
+      // 로딩 메시지 숨김 (사용자 요청)
+      loadingEl.style.display = 'none';
       timestampEl.textContent = '';
 
       if (button) {
@@ -1916,7 +1909,6 @@
         // API 응답에서 counts 정보 확인
         if (result.counts) {
           console.log('크롤링 결과:', {
-            헤드라인: result.counts.headline,
             사회: result.counts.social,
             경제: result.counts.economy,
             전체: result.counts.total,
@@ -1980,10 +1972,8 @@
         console.log('데이터 수집 완료:', {
           fetchedAt: naverSectionData.fetchedAt,
           fetchedAtString: naverSectionData.fetchedAt?.toLocaleString('ko-KR'),
-          headlineCount: naverSectionData.sections?.headline?.length || 0,
           socialCount: naverSectionData.sections?.social?.length || 0,
           economyCount: naverSectionData.sections?.economy?.length || 0,
-          newHeadlineCount: newSections.headline?.length || 0,
           newSocialCount: newSections.social?.length || 0,
           newEconomyCount: newSections.economy?.length || 0,
           apiCounts: result.counts,
@@ -2534,8 +2524,6 @@
     function toggleAIAnalysisEdit() {
       const editableContent = document.getElementById('aiAnalysisEditableContent');
       const editBtn = document.getElementById('aiEditBtn');
-      const titleHeader = document.getElementById('aiTitleHeader');
-      const resultEl = document.getElementById('aiAnalysisContent');
       
       if (!editableContent || !editBtn) return;
       
@@ -2551,22 +2539,17 @@
         // 편집된 내용 저장
         saveAIAnalysisContent();
       } else {
-        // 편집 모드 시작 - 제목과 버튼을 맨 위로 이동
+        // 편집 모드 시작
         editableContent.contentEditable = 'true';
         editBtn.innerHTML = '<i class="fas fa-check" style="font-size: 12px; color: white !important;"></i> <span style="color: white !important;">완료</span>';
         editBtn.style.setProperty('background', '#02b350', 'important');
         editBtn.style.setProperty('color', 'white', 'important');
         editBtn.style.setProperty('border-color', '#02b350', 'important');
         
-        // 제목과 버튼을 사이드바 컨텐츠 영역의 맨 위로 이동
-        if (titleHeader && resultEl) {
-          const contentEl = document.getElementById('aiAnalysisContent');
-          if (contentEl) {
-            // 제목 헤더를 사이드바 컨텐츠 영역의 맨 위로 이동
-            contentEl.insertBefore(titleHeader, contentEl.firstChild);
-            // 스크롤을 맨 위로
-            contentEl.scrollTop = 0;
-          }
+        // 스크롤을 맨 위로
+        const contentEl = document.getElementById('aiAnalysisContent');
+        if (contentEl) {
+          contentEl.scrollTop = 0;
         }
         
         // 포커스 주기
@@ -2933,10 +2916,9 @@
             }
             sourceInfoHtml += '</div></div>';
             
-            // AI뉴스 해석 제목 (편집 버튼 포함) - 맨 위에 배치
-            const aiTitleHtml = `<div id="aiTitleHeader" style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-              <h3 style="color: var(--primary); font-size: 18px; font-weight: 700; margin: 0;">AI뉴스 해석</h3>
-              <button id="aiEditBtn" type="button" onclick="toggleAIAnalysisEdit()" style="padding: 6px 14px; background: #03c75a !important; color: white !important; border: 2px solid #03c75a !important; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 6px rgba(3, 199, 90, 0.25); transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">
+            // 편집 버튼만 별도로 배치 (사이드바 헤더에 제목이 이미 있으므로 제목 제거)
+            const editButtonHtml = `<div style="margin-bottom: 12px; display: flex; justify-content: flex-end;">
+              <button id="aiEditBtn" type="button" onclick="toggleAIAnalysisEdit()" style="padding: 8px 16px; background: #03c75a !important; color: white !important; border: 2px solid #03c75a !important; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 6px rgba(3, 199, 90, 0.25); transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">
                 <i class="fas fa-edit" style="font-size: 12px; color: white !important;"></i> <span style="color: white !important;">편집</span>
               </button>
             </div>`;
@@ -2957,7 +2939,7 @@
               </button>
             </div>`;
             
-            resultEl.innerHTML = aiTitleHtml + editableContent + sourceInfoHtml + uploadButtonHtml;
+            resultEl.innerHTML = editButtonHtml + editableContent + sourceInfoHtml + uploadButtonHtml;
           }
         } else {
           if (resultEl) {
@@ -3526,7 +3508,6 @@
             panel.style.display = 'block';
             renderNaverNews();
             console.log('✅ localStorage에서 뉴스 데이터 로드 완료:', {
-              headline: sections.headline?.length || 0,
               social: sections.social?.length || 0,
               economy: sections.economy?.length || 0,
             });
