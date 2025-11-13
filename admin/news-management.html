@@ -2744,13 +2744,8 @@
           }
         }
 
-        // 업로드 성공 메시지
-        alert('사장픽에 성공적으로 업로드되었습니다!\n뉴스 게시판으로 이동합니다.');
-        
-        // 업로드 후 뉴스 게시판으로 이동
-        setTimeout(() => {
-          window.location.href = '/news-board.html';
-        }, 100);
+        // 업로드 성공 모달 표시
+        showUploadSuccessModal();
 
       } catch (error) {
         console.error('사장픽 업로드 실패:', error);
@@ -4001,6 +3996,194 @@
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#039;');
       }
+    </script>
+
+    <!-- 업로드 성공 모달 -->
+    <div id="uploadSuccessModal" class="upload-success-modal" style="display: none;">
+      <div class="upload-success-modal-overlay"></div>
+      <div class="upload-success-modal-content">
+        <div class="upload-success-modal-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <h2 class="upload-success-modal-title">업로드 완료!</h2>
+        <p class="upload-success-modal-message">사장픽에 성공적으로 업로드되었습니다.</p>
+        <div class="upload-success-modal-buttons">
+          <button class="upload-success-btn upload-success-btn-primary" onclick="goToNewsBoard()">
+            <i class="fas fa-external-link-alt"></i> 사장픽으로 이동
+          </button>
+          <button class="upload-success-btn upload-success-btn-secondary" onclick="closeUploadSuccessModal()">
+            <i class="fas fa-times"></i> 닫기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .upload-success-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .upload-success-modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+      }
+
+      .upload-success-modal-content {
+        position: relative;
+        background: white;
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        animation: modalSlideIn 0.3s ease-out;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .upload-success-modal-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 24px;
+        background: linear-gradient(135deg, #03c75a 0%, #02a84a 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        color: white;
+        box-shadow: 0 8px 24px rgba(3, 199, 90, 0.3);
+      }
+
+      .upload-success-modal-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 12px;
+      }
+
+      .upload-success-modal-message {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin: 0 0 32px;
+        line-height: 1.6;
+      }
+
+      .upload-success-modal-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+      }
+
+      .upload-success-btn {
+        padding: 14px 28px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        min-width: 140px;
+        justify-content: center;
+      }
+
+      .upload-success-btn-primary {
+        background: var(--accent, #03c75a);
+        color: white;
+        box-shadow: 0 4px 12px rgba(3, 199, 90, 0.3);
+      }
+
+      .upload-success-btn-primary:hover {
+        background: #02a84a;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(3, 199, 90, 0.4);
+      }
+
+      .upload-success-btn-secondary {
+        background: #f5f5f5;
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+      }
+
+      .upload-success-btn-secondary:hover {
+        background: #e8e8e8;
+        transform: translateY(-2px);
+      }
+
+      @media (max-width: 480px) {
+        .upload-success-modal-content {
+          padding: 32px 24px;
+        }
+
+        .upload-success-modal-buttons {
+          flex-direction: column;
+        }
+
+        .upload-success-btn {
+          width: 100%;
+        }
+      }
+    </style>
+
+    <script>
+      // 업로드 성공 모달 표시
+      function showUploadSuccessModal() {
+        const modal = document.getElementById('uploadSuccessModal');
+        if (modal) {
+          modal.style.display = 'flex';
+        }
+      }
+
+      // 업로드 성공 모달 닫기
+      function closeUploadSuccessModal() {
+        const modal = document.getElementById('uploadSuccessModal');
+        if (modal) {
+          modal.style.display = 'none';
+        }
+      }
+
+      // 뉴스 게시판으로 이동
+      function goToNewsBoard() {
+        window.location.href = '/news-board.html';
+      }
+
+      // 모달 외부 클릭 시 닫기
+      document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('uploadSuccessModal');
+        if (modal) {
+          const overlay = modal.querySelector('.upload-success-modal-overlay');
+          if (overlay) {
+            overlay.addEventListener('click', closeUploadSuccessModal);
+          }
+        }
+      });
     </script>
   </body>
 </html>
