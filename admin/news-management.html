@@ -2070,6 +2070,23 @@
           counts: result.counts,
           errors: result.errors
         });
+        
+        // counts와 errors 상세 확인
+        if (result.counts) {
+          console.log('📊 크롤링 결과 상세:', {
+            사회: result.counts.social || 0,
+            경제: result.counts.economy || 0,
+            전체: result.counts.total || 0
+          });
+          
+          if (result.counts.total === 0) {
+            console.warn('⚠️ 서버에서 크롤링한 뉴스가 0개입니다. 서버 로그를 확인해주세요.');
+          }
+        }
+        
+        if (result.errors && Object.keys(result.errors).length > 0) {
+          console.error('❌ 크롤링 에러 발생:', result.errors);
+        }
 
         if (!result.success) {
           console.error('❌ API 호출 실패:', result.error);

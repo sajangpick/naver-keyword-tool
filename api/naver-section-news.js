@@ -334,6 +334,13 @@ async function crawlHeadline(sectionKey, url) {
     const filteredNews = headlineNews.filter(item => isSMERelated(item));
     console.log(`[naver-section-news] ${sectionKey} 헤드라인 필터링 후 ${filteredNews.length}개 (소상공인 관련, 전체: ${headlineNews.length}개)`);
 
+    // 필터링 후 뉴스가 없으면 필터링 없이 일부 반환 (임시 해결책)
+    if (filteredNews.length === 0 && headlineNews.length > 0) {
+      console.warn(`[naver-section-news] ⚠️ ${sectionKey} 헤드라인: 필터링 후 뉴스가 0개입니다. 필터링 없이 상위 5개를 반환합니다.`);
+      // 필터링 없이 상위 5개만 반환
+      return headlineNews.slice(0, 5);
+    }
+
     // 최대 30개만 반환
     return filteredNews.slice(0, 30);
   } catch (error) {
@@ -731,6 +738,13 @@ async function crawlSection(sectionKey, url) {
     // 소상공인 관련 뉴스만 필터링
     const filteredNews = newsItems.filter(item => isSMERelated(item));
     console.log(`[naver-section-news] ${sectionKey} 섹션 필터링 후 ${filteredNews.length}개 (소상공인 관련, 전체: ${newsItems.length}개)`);
+
+    // 필터링 후 뉴스가 없으면 필터링 없이 일부 반환 (임시 해결책)
+    if (filteredNews.length === 0 && newsItems.length > 0) {
+      console.warn(`[naver-section-news] ⚠️ ${sectionKey} 섹션: 필터링 후 뉴스가 0개입니다. 필터링 없이 상위 10개를 반환합니다.`);
+      // 필터링 없이 상위 10개만 반환
+      return newsItems.slice(0, 10);
+    }
 
     // 최대 30개만 반환 (헤드라인 + 일반 뉴스)
     return filteredNews.slice(0, 30);
