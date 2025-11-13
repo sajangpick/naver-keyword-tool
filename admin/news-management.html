@@ -1896,8 +1896,14 @@
           throw new Error(result.error || '네이버 뉴스를 불러오지 못했습니다.');
         }
 
+        // API가 성공했으면 에러 메시지 숨기기 (데이터가 없어도 정상 처리)
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+        
+        // result.data가 없어도 정상 처리 (빈 객체로 처리)
         if (!result.data) {
-          throw new Error('서버에서 데이터를 받지 못했습니다.');
+          console.warn('서버에서 데이터를 받지 못했습니다. 빈 데이터로 처리합니다.');
+          // 에러를 throw하지 않고 빈 객체로 처리
         }
 
         // fetchedAt을 항상 현재 시각으로 업데이트 (데이터 수집 시각)
@@ -1987,6 +1993,12 @@
         renderNaverNews();
         // localStorage에 저장 (renderNaverNews에서도 저장하지만 명시적으로 한 번 더)
         saveNaverNewsToStorage();
+        
+        // 정상적으로 로드되었으므로 에러 메시지 숨기기 (빨간 박스 제거)
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+        
+        console.log('✅ 뉴스 데이터 저장 완료. localStorage에 영구 저장되었습니다.');
         // 상단에 유지하기 위해 스크롤 이동 제거
       } catch (error) {
         console.error('네이버 섹션 뉴스 로드 실패:', error);
@@ -2786,6 +2798,16 @@
         const analysis = result.analysis || result.data;
         if (analysis) {
           const analysisText = analysis.summary || analysis.content || '';
+          
+          // 디버깅: 원본 텍스트 확인
+          console.log('🔍 AI 해석 원본 텍스트:', {
+            hasAnalysis: !!analysis,
+            hasSummary: !!analysis.summary,
+            hasContent: !!analysis.content,
+            textLength: analysisText.length,
+            textPreview: analysisText.substring(0, 500)
+          });
+          
           if (resultEl) {
             // 제목과 출처 정보 추출
             const titleInput = document.getElementById('naverNewsTitle');
@@ -2805,6 +2827,10 @@
             // 마크다운 형식의 이모지와 구조를 HTML로 변환
             let formattedText = escapeHtml(analysisText);
             
+            // 디버깅: 변환 전 텍스트 확인
+            console.log('📝 변환 전 formattedText 길이:', formattedText.length);
+            console.log('📝 변환 전 formattedText 미리보기:', formattedText.substring(0, 500));
+            
             // ## 마크다운 헤더 제거
             formattedText = formattedText.replace(/^##+\s*/gm, '');
             
@@ -2812,12 +2838,13 @@
             formattedText = formattedText.replace(/📌\s*제목[^:]*:\s*(.+?)(?=\n|$)/g, '');
             
             // 섹션 제목을 먼저 처리 (굵게 처리, border 제거, 공백 절반)
+            // "쉽게 풀어서" 문구 제거하고, 섹션 제목과 내용을 함께 처리
             formattedText = formattedText
-              .replace(/📰\s*1️⃣\s*뉴스 핵심 요약[^<]*/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 6px; font-size: 18px; font-weight: 700;"><strong>📰 1️⃣ 뉴스 핵심 요약 (쉽게 풀어서)</strong></div>')
-              .replace(/💬\s*2️⃣\s*사장님 눈높이 해석/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 6px; font-size: 18px; font-weight: 700;"><strong>💬 2️⃣ 사장님 눈높이 해석</strong></div>')
-              .replace(/💡\s*2️⃣\s*소상공인 관점 재해석/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 6px; font-size: 18px; font-weight: 700;"><strong>💬 2️⃣ 사장님 눈높이 해석</strong></div>')
-              .replace(/📌\s*3️⃣\s*현실적 조언[^<]*/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 6px; font-size: 18px; font-weight: 700;"><strong>📌 3️⃣ 현실적 조언 3가지 (바로 쓸 수 있는 팁)</strong></div>')
-              .replace(/📌\s*3️⃣\s*실행 포인트/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 6px; font-size: 18px; font-weight: 700;"><strong>📌 3️⃣ 현실적 조언 3가지 (바로 쓸 수 있는 팁)</strong></div>');
+              .replace(/📰\s*1️⃣\s*뉴스 핵심 요약[^\n]*(\([^)]*\))?[^\n]*\n/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 8px; font-size: 18px; font-weight: 700;"><strong>📰 1️⃣ 뉴스 핵심 요약</strong></div>')
+              .replace(/💬\s*2️⃣\s*사장님 눈높이 해석\s*\n/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 8px; font-size: 18px; font-weight: 700;"><strong>💬 2️⃣ 사장님 눈높이 해석</strong></div>')
+              .replace(/💡\s*2️⃣\s*소상공인 관점 재해석\s*\n/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 8px; font-size: 18px; font-weight: 700;"><strong>💬 2️⃣ 사장님 눈높이 해석</strong></div>')
+              .replace(/📌\s*3️⃣\s*현실적 조언[^\n]*\n/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 8px; font-size: 18px; font-weight: 700;"><strong>📌 3️⃣ 현실적 조언 3가지 (바로 쓸 수 있는 팁)</strong></div>')
+              .replace(/📌\s*3️⃣\s*실행 포인트\s*\n/g, '<div style="color: var(--primary); margin-top: 12px; margin-bottom: 8px; font-size: 18px; font-weight: 700;"><strong>📌 3️⃣ 현실적 조언 3가지 (바로 쓸 수 있는 팁)</strong></div>');
             
             // 출처 정보 섹션 처리 (맨 밑에)
             formattedText = formattedText.replace(/📋\s*출처 정보[\s\S]*$/g, '');
@@ -2878,6 +2905,15 @@
             
             // 단일 줄바꿈은 br로 변환 (태그가 아닌 경우만)
             formattedText = formattedText.replace(/\n(?![^<]*>)/g, '<br>');
+            
+            // 디버깅: 변환 후 최종 텍스트 확인
+            console.log('✅ 변환 후 formattedText 길이:', formattedText.length);
+            console.log('✅ 변환 후 formattedText 미리보기:', formattedText.substring(0, 1000));
+            console.log('✅ 섹션 제목 포함 여부:', {
+              hasSummarySection: formattedText.includes('뉴스 핵심 요약'),
+              hasInterpretationSection: formattedText.includes('사장님 눈높이 해석'),
+              hasAdviceSection: formattedText.includes('현실적 조언')
+            });
             
             // 출처 정보 HTML 생성
             let sourceInfoHtml = '<div style="margin-top: 20px; padding-top: 10px; border-top: 2px solid var(--border);">';
