@@ -1688,10 +1688,7 @@
     }
 
     function setNaverSort(sort) {
-      if (currentNaverSort === sort) {
-        return;
-      }
-
+      // 같은 정렬을 선택해도 다시 렌더링 (사용자가 다시 정렬하고 싶을 수 있음)
       currentNaverSort = sort;
 
       // 정렬 버튼 활성화 상태 업데이트
@@ -1699,8 +1696,14 @@
         btn.classList.toggle('active', btn.dataset.sort === sort);
       });
 
+      // 페이지를 1로 리셋 (정렬 변경 시 첫 페이지로)
+      currentNaverPage = 1;
+
       // 뉴스 목록 다시 렌더링
       renderNaverNews();
+      
+      // 정렬 완료 메시지 (선택사항)
+      console.log(`✅ 정렬 완료: ${sort === 'latest' ? '최신순' : '조회순'}`);
     }
 
     // 뉴스 아이템 정렬 함수
@@ -1716,13 +1719,71 @@
         sorted.sort((a, b) => {
           const viewsA = parseInt(a.views || a.viewCount || 0);
           const viewsB = parseInt(b.views || b.viewCount || 0);
+          // 조회수가 같으면 최신순으로 정렬
+          if (viewsA === viewsB) {
+            const dateA = new Date(a.publishedAt || a._collectedAt || 0);
+            const dateB = new Date(b.publishedAt || b._collectedAt || 0);
+            return dateB.getTime() - dateA.getTime();
+          }
           return viewsB - viewsA;
         });
       } else {
-        // 최신순 정렬 (발행일이 최신인 순)
+        // 최신순 정렬 (발행일이 최신인 순) - 기본값
         sorted.sort((a, b) => {
-          const dateA = new Date(a.publishedAt || a._collectedAt || 0);
-          const dateB = new Date(b.publishedAt || b._collectedAt || 0);
+          // publishedAt을 우선 사용, 없으면 _collectedAt 사용
+          let dateA = null;
+          let dateB = null;
+          
+          // publishedAt 파싱 시도
+          if (a.publishedAt) {
+            // "2025.11.13. 오전 5:00" 형식인 경우
+            if (typeof a.publishedAt === 'string' && a.publishedAt.includes('.')) {
+              try {
+                // "2025.11.13. 오전 5:00" -> "2025-11-13 05:00" 변환
+                const dateStr = a.publishedAt
+                  .replace(/(\d{4})\.(\d{1,2})\.(\d{1,2})\.\s*(오전|오후)\s*(\d{1,2}):(\d{2})/, (match, year, month, day, ampm, hour, minute) => {
+                    let h = parseInt(hour);
+                    if (ampm === '오후' && h !== 12) h += 12;
+                    if (ampm === '오전' && h === 12) h = 0;
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${h.toString().padStart(2, '0')}:${minute}:00`;
+                  });
+                dateA = new Date(dateStr);
+              } catch (e) {
+                dateA = new Date(a.publishedAt);
+              }
+            } else {
+              dateA = new Date(a.publishedAt);
+            }
+          }
+          
+          if (b.publishedAt) {
+            if (typeof b.publishedAt === 'string' && b.publishedAt.includes('.')) {
+              try {
+                const dateStr = b.publishedAt
+                  .replace(/(\d{4})\.(\d{1,2})\.(\d{1,2})\.\s*(오전|오후)\s*(\d{1,2}):(\d{2})/, (match, year, month, day, ampm, hour, minute) => {
+                    let h = parseInt(hour);
+                    if (ampm === '오후' && h !== 12) h += 12;
+                    if (ampm === '오전' && h === 12) h = 0;
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${h.toString().padStart(2, '0')}:${minute}:00`;
+                  });
+                dateB = new Date(dateStr);
+              } catch (e) {
+                dateB = new Date(b.publishedAt);
+              }
+            } else {
+              dateB = new Date(b.publishedAt);
+            }
+          }
+          
+          // publishedAt이 없거나 유효하지 않으면 _collectedAt 사용
+          if (!dateA || isNaN(dateA.getTime())) {
+            dateA = a._collectedAt ? new Date(a._collectedAt) : new Date(0);
+          }
+          if (!dateB || isNaN(dateB.getTime())) {
+            dateB = b._collectedAt ? new Date(b._collectedAt) : new Date(0);
+          }
+          
+          // 최신이 위로 (큰 값이 위로)
           return dateB.getTime() - dateA.getTime();
         });
       }
@@ -2025,9 +2086,17 @@
           apiErrors: result.errors,
         });
         
+        // 페이지를 1로 리셋 (새 데이터 수집 시 첫 페이지로)
+        currentNaverPage = 1;
+        
+        // 뉴스 목록 강제 업데이트
         renderNaverNews();
+        
         // localStorage에 저장 (renderNaverNews에서도 저장하지만 명시적으로 한 번 더)
         saveNaverNewsToStorage();
+        
+        // 업데이트 완료 메시지
+        console.log('✅ 뉴스 목록 업데이트 완료');
         
         // 정상적으로 로드되었으므로 에러 메시지 숨기기 (빨간 박스 제거)
         errorEl.style.display = 'none';
