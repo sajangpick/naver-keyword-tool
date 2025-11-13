@@ -1229,8 +1229,13 @@
     <!-- AI 뉴스 해석 팝업 (오른쪽 슬라이드) -->
     <div class="ai-analysis-sidebar" id="aiAnalysisSidebar">
       <div class="ai-analysis-sidebar-header">
-        <div class="ai-analysis-sidebar-title">
-          <i class="fas fa-brain"></i> AI 뉴스 해석
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+          <button type="button" class="ai-analysis-sidebar-back" onclick="closeAIAnalysisSidebar()" style="padding: 8px; background: transparent; border: none; color: white; cursor: pointer; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+            <i class="fas fa-arrow-left" style="font-size: 18px;"></i>
+          </button>
+          <div class="ai-analysis-sidebar-title">
+            <i class="fas fa-brain"></i> AI 뉴스 해석
+          </div>
         </div>
         <button type="button" class="ai-analysis-sidebar-close" onclick="closeAIAnalysisSidebar()">
           <i class="fas fa-times"></i>
@@ -2951,21 +2956,24 @@
             }
             sourceInfoHtml += '</div></div>';
             
-            // 편집 버튼만 별도로 배치 (사이드바 헤더에 제목이 이미 있으므로 제목 제거)
-            const editButtonHtml = `<div style="margin-bottom: 12px; display: flex; justify-content: flex-end;">
+            // AI뉴스 해석 제목과 편집 버튼
+            const titleAndEditHtml = `<div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="color: var(--primary); font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-brain" style="color: var(--primary);"></i> AI뉴스 해석
+              </h3>
               <button id="aiEditBtn" type="button" onclick="toggleAIAnalysisEdit()" style="padding: 8px 16px; background: #03c75a !important; color: white !important; border: 2px solid #03c75a !important; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 6px rgba(3, 199, 90, 0.25); transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">
                 <i class="fas fa-edit" style="font-size: 12px; color: white !important;"></i> <span style="color: white !important;">편집</span>
               </button>
             </div>`;
             
-            // 제목을 맨 위에, 출처 정보를 맨 밑에 배치
-            const titleHtml = newsTitle ? `<h2 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 700; padding-bottom: 6px; border-bottom: 3px solid var(--primary);">📌 ${escapeHtml(newsTitle)}</h2>` : '';
+            // 뉴스 제목과 이미지
+            const newsTitleHtml = newsTitle ? `<h2 style="color: var(--text); margin-bottom: 12px; font-size: 20px; font-weight: 700; padding-bottom: 8px; border-bottom: 2px solid var(--border);">📌 ${escapeHtml(newsTitle)}</h2>` : '';
             
-            // 이미지 HTML 생성 (제목 밑에)
-            const imageHtml = newsImage ? `<div style="margin-bottom: 12px;"><img src="${escapeHtml(newsImage)}" alt="뉴스 이미지" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border);" /></div>` : '';
+            // 이미지 HTML 생성 (뉴스 제목 밑에)
+            const imageHtml = newsImage ? `<div style="margin-bottom: 16px;"><img src="${escapeHtml(newsImage)}" alt="뉴스 이미지" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border);" /></div>` : '';
             
             // 편집 불가능한 영역 (기본 상태)
-            const editableContent = `<div id="aiAnalysisEditableContent" contenteditable="false" style="line-height: 1.8; color: var(--text); min-height: 200px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">${titleHtml}${imageHtml}${formattedText}</div>`;
+            const editableContent = `<div id="aiAnalysisEditableContent" contenteditable="false" style="line-height: 1.8; color: var(--text); min-height: 200px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">${newsTitleHtml}${imageHtml}${formattedText}</div>`;
             
             // 사장픽 업로드 버튼 HTML
             const uploadButtonHtml = `<div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid var(--border);">
@@ -2974,7 +2982,7 @@
               </button>
             </div>`;
             
-            resultEl.innerHTML = editButtonHtml + editableContent + sourceInfoHtml + uploadButtonHtml;
+            resultEl.innerHTML = titleAndEditHtml + editableContent + sourceInfoHtml + uploadButtonHtml;
           }
         } else {
           if (resultEl) {
