@@ -2016,6 +2016,10 @@
       // AbortController 생성
       collectNewsAbortController = new AbortController();
 
+      // 원래 버튼 상태 저장 (함수 스코프에서 접근 가능하도록)
+      let originalButtonText = button ? button.innerHTML : '';
+      let originalButtonOnclick = button ? button.onclick : null;
+
       if (button) {
         button.disabled = false; // 취소를 위해 비활성화하지 않음
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 불러오는 중... (클릭하여 취소)';
@@ -2024,9 +2028,11 @@
           if (collectNewsAbortController) {
             collectNewsAbortController.abort();
             collectNewsAbortController = null;
+            // 버튼 상태 복구
             button.disabled = false;
-            button.innerHTML = '<i class="fas fa-database"></i> 뉴스 데이터 수집';
-            button.onclick = collectNewsData;
+            button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+            button.onclick = originalButtonOnclick || collectNewsData;
+            button.style.cursor = 'pointer';
             errorEl.textContent = '요청이 취소되었습니다.';
             errorEl.style.display = 'block';
           }
@@ -2046,13 +2052,21 @@
         }
         
         // 타임아웃 2분으로 설정
+        console.log('🔄 API 호출 시작: /api/naver-section-news');
         const result = await fetchJson('/api/naver-section-news', {
           signal: collectNewsAbortController.signal
         }, 120000);
 
-        console.log('API 응답:', result);
+        console.log('✅ API 응답 받음:', {
+          success: result.success,
+          hasData: !!result.data,
+          dataKeys: result.data ? Object.keys(result.data) : [],
+          counts: result.counts,
+          errors: result.errors
+        });
 
         if (!result.success) {
+          console.error('❌ API 호출 실패:', result.error);
           throw new Error(result.error || '네이버 뉴스를 불러오지 못했습니다.');
         }
 
@@ -2062,8 +2076,9 @@
         
         // result.data가 없어도 정상 처리 (빈 객체로 처리)
         if (!result.data) {
-          console.warn('서버에서 데이터를 받지 못했습니다. 빈 데이터로 처리합니다.');
+          console.warn('⚠️ 서버에서 데이터를 받지 못했습니다. 빈 데이터로 처리합니다.');
           // 에러를 throw하지 않고 빈 객체로 처리
+          // 기존 데이터는 유지되므로 문제없음
         }
 
         // fetchedAt을 항상 현재 시각으로 업데이트 (데이터 수집 시각)
@@ -2170,9 +2185,19 @@
         currentNaverPage = 1;
         
         // 뉴스 목록 강제 업데이트 (데이터가 제대로 반영되도록)
-        console.log('🔄 뉴스 목록 렌더링 시작...');
+        console.log('🔄 뉴스 목록 렌더링 시작...', {
+          sectionsCount: Object.keys(naverSectionData.sections || {}).length,
+          socialCount: naverSectionData.sections?.social?.length || 0,
+          economyCount: naverSectionData.sections?.economy?.length || 0
+        });
         renderNaverNews();
         console.log('✅ 뉴스 목록 렌더링 완료');
+        
+        // 렌더링 후 패널이 보이는지 확인
+        if (panel && panel.style.display === 'none') {
+          panel.style.display = 'block';
+          console.log('📋 패널 표시됨');
+        }
         
         // localStorage에 다시 한 번 저장 (확실하게)
         saveNaverNewsToStorage();
@@ -2187,12 +2212,11 @@
         
         // 사용자에게 알림 (선택사항)
         if (button) {
-          const originalText = button.innerHTML;
           button.innerHTML = '<i class="fas fa-check-circle"></i> 수집 완료!';
           button.style.background = '#03c75a';
           button.style.color = 'white';
           setTimeout(() => {
-            button.innerHTML = originalText;
+            button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
             button.style.background = '';
             button.style.color = '';
           }, 2000);
@@ -2218,7 +2242,17 @@
         // 취소된 요청인 경우 에러 메시지 표시하지 않음
         if (error?.name === 'AbortError') {
           console.log('요청이 취소되었습니다.');
+          // 기존 데이터는 유지하고 렌더링
+          if (naverSectionData.sections && Object.keys(naverSectionData.sections).length > 0) {
+            renderNaverNews();
+          }
           return;
+        }
+        
+        // 에러 발생 시에도 기존 데이터는 유지하고 렌더링
+        if (naverSectionData.sections && Object.keys(naverSectionData.sections).length > 0) {
+          console.log('⚠️ 에러 발생했지만 기존 데이터는 유지합니다.');
+          renderNaverNews();
         }
         
         // 더 자세한 에러 메시지 생성
@@ -2268,9 +2302,14 @@
         loadingEl.style.display = 'none';
         if (button) {
           button.disabled = false;
-          button.innerHTML = '<i class="fas fa-database"></i> 뉴스 데이터 수집';
-          button.onclick = collectNewsData;
-          button.style.cursor = 'pointer';
+          // 원래 상태로 복구 (성공 시에는 이미 복구되었을 수 있음)
+          if (button.innerHTML.includes('불러오는 중') || button.innerHTML.includes('수집 완료')) {
+            button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+            button.onclick = originalButtonOnclick || collectNewsData;
+            button.style.cursor = 'pointer';
+            button.style.background = '';
+            button.style.color = '';
+          }
         }
       }
     }
