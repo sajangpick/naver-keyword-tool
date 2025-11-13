@@ -1069,7 +1069,7 @@
         <!-- 네이버 뉴스 패널 -->
         <div class="panel" id="naverNewsPanel" style="display: none;">
           <div class="panel-header">
-            <h2 class="panel-title">🌐 네이버 사회·경제 최신 뉴스</h2>
+            <h2 class="panel-title">🌐 네이버 소상공인 관련 뉴스</h2>
             <div class="naver-news-meta" id="naverNewsTimestamp"></div>
           </div>
           <div class="naver-news-loading" id="naverNewsLoading">
@@ -1079,7 +1079,10 @@
           <div class="naver-news-error" id="naverNewsError"></div>
           <div class="naver-section-tabs" id="naverSectionTabs" style="display: none;">
             <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-              <button class="naver-section-tab active" data-section="social" onclick="switchNaverSection('social')">
+              <button class="naver-section-tab active" data-section="headline" onclick="switchNaverSection('headline')">
+                <span>📰</span> 헤드라인
+              </button>
+              <button class="naver-section-tab" data-section="social" onclick="switchNaverSection('social')">
                 <span>👥</span> 사회
               </button>
               <button class="naver-section-tab" data-section="economy" onclick="switchNaverSection('economy')">
@@ -1337,6 +1340,11 @@
       const FALLBACK_RENDER_BASES = [PRIMARY_RENDER_BASE, LEGACY_RENDER_BASE].filter(Boolean);
       const RETRYABLE_STATUS = new Set([404, 408, 500, 502, 503, 504, 521, 522, 523]);
       const NAVER_SECTION_CONFIG = {
+        headline: {
+          label: '헤드라인',
+          icon: '📰',
+          sectionUrl: 'https://news.naver.com/main/home'
+        },
         social: {
           label: '사회',
           icon: '👥',
@@ -1660,7 +1668,7 @@
       }
     }
 
-    let currentNaverSection = 'social'; // 기본값: 사회
+    let currentNaverSection = 'headline'; // 기본값: 헤드라인
     let currentNaverSort = 'latest'; // 기본값: 최신순
     let currentNaverPage = 1; // 현재 페이지
     const ITEMS_PER_PAGE = 10; // 페이지당 아이템 수
@@ -1785,7 +1793,7 @@
           tabsEl.style.display = 'flex';
         }
         
-        // 기본적으로 첫 번째 섹션(사회) 활성화
+        // 기본적으로 첫 번째 섹션(헤드라인) 활성화
         switchNaverSection(currentNaverSection);
       } else {
         list.innerHTML = `
@@ -1901,6 +1909,7 @@
         // API 응답에서 counts 정보 확인
         if (result.counts) {
           console.log('크롤링 결과:', {
+            헤드라인: result.counts.headline,
             사회: result.counts.social,
             경제: result.counts.economy,
             전체: result.counts.total,
@@ -1960,8 +1969,10 @@
         console.log('데이터 수집 완료:', {
           fetchedAt: naverSectionData.fetchedAt,
           fetchedAtString: naverSectionData.fetchedAt?.toLocaleString('ko-KR'),
+          headlineCount: naverSectionData.sections?.headline?.length || 0,
           socialCount: naverSectionData.sections?.social?.length || 0,
           economyCount: naverSectionData.sections?.economy?.length || 0,
+          newHeadlineCount: newSections.headline?.length || 0,
           newSocialCount: newSections.social?.length || 0,
           newEconomyCount: newSections.economy?.length || 0,
           apiCounts: result.counts,
