@@ -122,6 +122,41 @@
         border-color: var(--accent);
       }
 
+      .naver-category-filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+
+      .naver-category-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+      }
+
+      .naver-category-btn:hover {
+        background: rgba(3, 199, 90, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .naver-category-btn.active {
+        background: #f59e0b;
+        color: white;
+        border-color: #f59e0b;
+      }
+
       .naver-section-content {
         display: none;
       }
@@ -1457,6 +1492,61 @@
         throw new Error('API 요청에 실패했습니다.');
       }
 
+    // 카테고리 필터 HTML 생성
+    function buildCategoryFiltersHtml(sectionKey) {
+      const categoryButtons = Object.keys(NAVER_CATEGORIES).map(catKey => {
+        const cat = NAVER_CATEGORIES[catKey];
+        const isActive = currentNaverCategory === catKey;
+        return `
+          <button 
+            class="naver-category-btn ${isActive ? 'active' : ''}" 
+            data-category="${catKey}"
+            onclick="setNaverCategory('${catKey}')"
+          >
+            ${cat.icon ? `${cat.icon} ` : ''}${cat.label}
+          </button>
+        `;
+      }).join('');
+      
+      return `
+        <div class="naver-category-filters" data-section="${sectionKey}">
+          ${categoryButtons}
+        </div>
+      `;
+    }
+
+    // 뉴스 아이템의 카테고리 자동 감지
+    function detectNewsCategory(item) {
+      if (!item || !item.title) return 'all';
+      
+      const title = (item.title || '').toLowerCase();
+      const summary = (item.summary || '').toLowerCase();
+      const text = `${title} ${summary}`;
+      
+      // 정책/법규
+      if (text.match(/정책|법규|법률|규제|지원금|보조금|지원|정부|국가|공공|의무|점검|인허가|허가|신고/)) {
+        return 'policy';
+      }
+      // 트렌드
+      if (text.match(/트렌드|유행|인기|화제|이슈|주목|관심|핫|베스트|인기|선호/)) {
+        return 'trend';
+      }
+      // 경영 팁
+      if (text.match(/경영|운영|관리|마케팅|홍보|광고|고객|서비스|매출|수익|성공|사례|팁|조언|노하우/)) {
+        return 'management';
+      }
+      // 식자재 정보
+      if (text.match(/식자재|원재료|재료|식품|가격|동향|수급|공급|수입|수출|농산물|축산물|수산물|가격|원가/)) {
+        return 'ingredients';
+      }
+      // 기술/도구
+      if (text.match(/기술|도구|시스템|앱|애플리케이션|소프트웨어|하드웨어|디지털|온라인|플랫폼|배달|주문|포스|키오스크/)) {
+        return 'technology';
+      }
+      
+      return 'all';
+    }
+
     function buildNewsSectionHtml(sectionKey, items = []) {
       const config = NAVER_SECTION_CONFIG[sectionKey];
       if (!config) return '';
@@ -1469,14 +1559,24 @@
                 <div class="naver-section-title">${config.icon} ${config.label} 주요 뉴스</div>
                 <a class="naver-section-link" href="${config.sectionUrl}" target="_blank" rel="noopener">섹션 바로가기</a>
               </div>
+              ${buildCategoryFiltersHtml(sectionKey)}
               <div class="naver-section-item-summary">표시할 뉴스가 없습니다. 잠시 후 다시 시도해주세요.</div>
             </div>
           </div>
         `;
       }
 
+      // 카테고리 필터링 적용
+      let filteredItems = items;
+      if (currentNaverCategory !== 'all') {
+        filteredItems = items.filter(item => {
+          const detectedCategory = detectNewsCategory(item);
+          return detectedCategory === currentNaverCategory;
+        });
+      }
+
       // 정렬 적용
-      const sortedItems = sortNaverNewsItems(items);
+      const sortedItems = sortNaverNewsItems(filteredItems);
 
       // 페이지네이션 계산
       const totalPages = Math.ceil(sortedItems.length / ITEMS_PER_PAGE);
@@ -1584,6 +1684,16 @@
               <div class="naver-section-title">${config.icon} ${config.label} 주요 뉴스</div>
               <a class="naver-section-link" href="${config.sectionUrl}" target="_blank" rel="noopener">섹션 바로가기</a>
             </div>
+            ${buildCategoryFiltersHtml(sectionKey)}
+            ${filteredItems.length !== items.length ? `<div style="margin-bottom: 12px; padding: 8px 12px; background: #f0f9ff; border-radius: 6px; font-size: 13px; color: var(--text-secondary);">
+              <strong>전체 ${items.length}개</strong> 중 <strong style="color: var(--accent);">${filteredItems.length}개</strong> 표시 중
+              ${currentNaverCategory !== 'all' ? `(${NAVER_CATEGORIES[currentNaverCategory]?.label || currentNaverCategory} 필터 적용)` : ''}
+            </div>` : ''}
+            ${filteredItems.length === 0 && items.length > 0 ? `<div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+              <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+              <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">${NAVER_CATEGORIES[currentNaverCategory]?.label || currentNaverCategory} 카테고리의 뉴스가 없습니다</div>
+              <div style="font-size: 14px;">다른 카테고리를 선택하거나 "전체"를 선택해주세요.</div>
+            </div>` : ''}
             <div class="naver-section-list">
               ${listHtml}
             </div>
@@ -1591,6 +1701,26 @@
           </div>
         </div>
       `;
+    }
+    
+    // 카테고리 필터 설정 함수
+    function setNaverCategory(category) {
+      currentNaverCategory = category;
+      currentNaverPage = 1; // 카테고리 변경 시 첫 페이지로 리셋
+      
+      // 카테고리 버튼 활성화 상태 업데이트
+      document.querySelectorAll('.naver-category-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === category);
+      });
+      
+      // 뉴스 목록 다시 렌더링
+      renderNaverNews();
+      
+      // 필터 영역으로 스크롤
+      const filters = document.querySelector('.naver-category-filters');
+      if (filters) {
+        filters.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
 
     // 페이지네이션 HTML 생성
@@ -1661,7 +1791,16 @@
       if (page < 1) return;
       
       const sections = naverSectionData.sections || {};
-      const currentSectionItems = sections[currentNaverSection] || [];
+      let currentSectionItems = sections[currentNaverSection] || [];
+      
+      // 카테고리 필터링 적용
+      if (currentNaverCategory !== 'all') {
+        currentSectionItems = currentSectionItems.filter(item => {
+          const detectedCategory = detectNewsCategory(item);
+          return detectedCategory === currentNaverCategory;
+        });
+      }
+      
       const totalPages = Math.ceil(currentSectionItems.length / ITEMS_PER_PAGE);
       
       if (page > totalPages) return;
@@ -1679,7 +1818,18 @@
     let currentNaverSection = 'social'; // 기본값: 사회
     let currentNaverSort = 'latest'; // 기본값: 최신순
     let currentNaverPage = 1; // 현재 페이지
+    let currentNaverCategory = 'all'; // 기본값: 전체
     const ITEMS_PER_PAGE = 10; // 페이지당 아이템 수
+    
+    // 카테고리 정의
+    const NAVER_CATEGORIES = {
+      all: { label: '전체', icon: '' },
+      policy: { label: '정책/법규', icon: '🏛️' },
+      trend: { label: '트렌드', icon: '📈' },
+      management: { label: '경영 팁', icon: '💡' },
+      ingredients: { label: '식자재 정보', icon: '🍽️' },
+      technology: { label: '기술/도구', icon: '🛠️' }
+    };
 
     function switchNaverSection(sectionKey) {
       currentNaverSection = sectionKey;
