@@ -177,6 +177,7 @@ module.exports = async (req, res) => {
           category,
           image_url,
           source_url,
+          source_citation: source_citation || null,
           is_featured,
           author: 'ADMIN'
         }])
@@ -304,8 +305,52 @@ module.exports = async (req, res) => {
         });
       }
 
-      const { id } = req.query;
+      const { id, all } = req.query;
 
+      // 전체 삭제 (all=true인 경우)
+      if (all === 'true') {
+        // 먼저 전체 개수 확인
+        const { count } = await supabase
+          .from('news_board')
+          .select('*', { count: 'exact', head: true });
+
+        // 모든 뉴스 ID 가져오기
+        const { data: allNews, error: selectError } = await supabase
+          .from('news_board')
+          .select('id');
+
+        if (selectError) {
+          return res.status(500).json({ success: false, error: selectError.message });
+        }
+
+        // 뉴스가 없으면 바로 성공 반환
+        if (!allNews || allNews.length === 0) {
+          return res.status(200).json({ 
+            success: true, 
+            message: '삭제할 뉴스가 없습니다.',
+            deletedCount: 0
+          });
+        }
+
+        // 모든 뉴스 삭제
+        const ids = allNews.map(news => news.id);
+        const { error: deleteError } = await supabase
+          .from('news_board')
+          .delete()
+          .in('id', ids);
+
+        if (deleteError) {
+          return res.status(500).json({ success: false, error: deleteError.message });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: '모든 뉴스가 삭제되었습니다.',
+          deletedCount: count || allNews.length
+        });
+      }
+
+      // 단일 뉴스 삭제
       if (!id) {
         return res.status(400).json({ success: false, error: '뉴스 ID가 필요합니다.' });
       }

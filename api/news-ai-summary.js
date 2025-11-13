@@ -62,6 +62,42 @@ module.exports = async (req, res) => {
       });
     }
 
+    // 카테고리 자동 분류 함수
+    function categorizeNews(title, content) {
+      const text = `${title} ${content}`.toLowerCase();
+      
+      // 정책/법규: 지원금, 정책, 법규, 위생, 세금, 규제, 의무사항
+      if (text.match(/(지원금|보조금|정책|법규|위생|세금|규제|의무사항|행정|정부|지자체|시청|구청|국세청|식약처)/)) {
+        return 'policy';
+      }
+      
+      // 트렌드: 트렌드, 유행, 인기, 소비 패턴, 외식 트렌드, MZ세대
+      if (text.match(/(트렌드|유행|인기|소비 패턴|외식 트렌드|mz세대|밀레니얼|젠z|소비자|선호|인기 메뉴|유행 메뉴)/)) {
+        return 'trend';
+      }
+      
+      // 경영 팁: 경영, 마케팅, 매출, 성공, 운영, 인건비, 비용 절감, 고객 관리
+      if (text.match(/(경영|마케팅|매출|성공|운영|인건비|비용 절감|고객 관리|영업|매장|사업|창업|경영 노하우|운영 팁)/)) {
+        return 'management';
+      }
+      
+      // 식자재 정보: 식자재, 원가, 가격, 원산지, 식품 안전, 재료, 농산물
+      if (text.match(/(식자재|원가|가격|원산지|식품 안전|재료|농산물|축산물|수산물|채소|과일|고기|생선|식품 가격|식재료 가격)/)) {
+        return 'ingredients';
+      }
+      
+      // 기술/도구: 기술, 도구, POS, 배달앱, 키오스크, 플랫폼, 앱, 시스템
+      if (text.match(/(기술|도구|pos|배달앱|키오스크|플랫폼|앱|시스템|디지털|온라인|인터넷|소프트웨어|하드웨어|배민|쿠팡이츠|요기요)/)) {
+        return 'technology';
+      }
+      
+      // 기본값: 정책/법규
+      return 'policy';
+    }
+
+    // 카테고리 자동 분류
+    const category = categorizeNews(title || '', content || '');
+
     // 프롬프트 생성
     const prompt = `다음은 소상공인을 위한 뉴스 기사입니다. 아래 형식에 맞춰 해석을 작성해주세요.
 
@@ -158,12 +194,15 @@ ${url ? `원문 링크: ${url}` : '원문 링크: (정보 없음)'}
       success: true,
       analysis: {
         summary: analysis,
-        content: analysis
+        content: analysis,
+        category: category
       },
       data: {
         summary: analysis,
-        content: analysis
-      }
+        content: analysis,
+        category: category
+      },
+      category: category
     });
 
   } catch (error) {

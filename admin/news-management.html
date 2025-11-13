@@ -1063,7 +1063,9 @@
           <button class="btn btn-secondary" id="collectNewsButton" onclick="collectNewsData()">
             <i class="fas fa-database"></i> 뉴스 데이터 수집
           </button>
-
+          <button class="btn" id="deleteAllNewsButton" onclick="deleteAllNews()" style="background: #ef4444; color: white; border-color: #ef4444;">
+            <i class="fas fa-trash-alt"></i> 모든 뉴스 삭제
+          </button>
         </div>
 
         <!-- 네이버 뉴스 패널 -->
@@ -2648,15 +2650,27 @@
           .replace(/<[^>]+>/g, '') // 나머지 HTML 태그 제거
           .trim();
 
+        // 출처 정보를 구조화된 형식으로 저장
+        const sourceCitation = {
+          press: newsPress || '',
+          journalist: newsJournalist || '',
+          publishedAt: newsPublished || '',
+          link: newsLink || ''
+        };
+
+        // 카테고리 결정: AI가 감지한 카테고리 또는 기본값
+        const newsCategory = window.detectedNewsCategory || '정책/법규';
+        console.log('📂 업로드할 카테고리:', newsCategory);
+
         // 뉴스 게시판에 저장
         const body = {
           title: newsTitle,
           content: textContent,
           content_html: content, // HTML 버전도 저장
-          category: '정책/법규',
+          category: newsCategory, // AI가 감지한 카테고리 사용
           image_url: newsImage || null,
           source_url: newsLink || null,
-          source_citation: newsPress ? `${newsPress} ${newsJournalist ? `· ${newsJournalist}` : ''} ${newsPublished ? `(${newsPublished})` : ''}` : '',
+          source_citation: JSON.stringify(sourceCitation), // JSON 형식으로 저장
           is_featured: false
         };
 
@@ -2814,6 +2828,26 @@
         
         // 해석 결과를 사이드바에 표시
         const analysis = result.analysis || result.data;
+        
+        // 카테고리 자동 선택
+        const detectedCategory = result.category || analysis?.category || result.data?.category;
+        if (detectedCategory) {
+          console.log('✅ AI가 감지한 카테고리:', detectedCategory);
+          // 카테고리 매핑: API의 카테고리 코드를 DB 카테고리로 변환
+          const categoryMap = {
+            'policy': '정책/법규',
+            'trend': '트렌드',
+            'management': '경영 팁',
+            'ingredients': '식자재 정보',
+            'technology': '기술/도구'
+          };
+          const dbCategory = categoryMap[detectedCategory] || '정책/법규';
+          
+          // 전역 변수에 카테고리 저장 (업로드 시 사용)
+          window.detectedNewsCategory = dbCategory;
+          console.log('💾 저장된 카테고리:', dbCategory);
+        }
+        
         if (analysis) {
           const analysisText = analysis.summary || analysis.content || '';
           
@@ -2823,7 +2857,8 @@
             hasSummary: !!analysis.summary,
             hasContent: !!analysis.content,
             textLength: analysisText.length,
-            textPreview: analysisText.substring(0, 500)
+            textPreview: analysisText.substring(0, 500),
+            detectedCategory: detectedCategory
           });
           
           if (resultEl) {
@@ -3995,6 +4030,64 @@
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#039;');
+      }
+
+      // 모든 뉴스 삭제
+      async function deleteAllNews() {
+        if (!confirm('⚠️ 정말로 모든 뉴스를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) {
+          return;
+        }
+
+        if (!confirm('⚠️ 한 번 더 확인합니다.\n\n정말로 모든 뉴스를 삭제하시겠습니까?')) {
+          return;
+        }
+
+        const button = document.getElementById('deleteAllNewsButton');
+        const originalText = button.innerHTML;
+
+        try {
+          button.disabled = true;
+          button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 삭제 중...';
+
+          // AdminUtils를 사용하여 인증된 요청 보내기
+          let result;
+          if (window.AdminUtils && typeof window.AdminUtils.adminFetch === 'function') {
+            result = await window.AdminUtils.adminFetch('/api/news-board?all=true', {
+              method: 'DELETE'
+            });
+          } else {
+            // AdminUtils가 없으면 직접 처리
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+              throw new Error('로그인이 필요합니다.');
+            }
+
+            result = await fetchJson('/api/news-board?all=true', {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+          }
+
+          if (!result.success) {
+            throw new Error(result.error || '삭제에 실패했습니다.');
+          }
+
+          alert(`✅ 성공!\n\n모든 뉴스가 삭제되었습니다.\n삭제된 뉴스 수: ${result.deletedCount || '알 수 없음'}`);
+          
+          // 페이지 새로고침 (선택사항)
+          if (confirm('페이지를 새로고침하시겠습니까?')) {
+            window.location.reload();
+          }
+
+        } catch (error) {
+          console.error('모든 뉴스 삭제 실패:', error);
+          alert('❌ 삭제 실패: ' + (error.message || error));
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }
       }
     </script>
 

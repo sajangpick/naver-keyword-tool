@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3003 http://127.0.0.1:3003 https://*.supabase.co https://naver-keyword-tool.onrender.com https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-  <title>정보 게시판 - 사장픽</title>
+  <title>뉴스 게시판 - 사장픽</title>
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E"
@@ -1357,7 +1357,7 @@
       </a>
       <a class="menu-item active" href="/news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
-        <span>정보</span>
+        <span>뉴스</span>
       </a>
       <a class="menu-item" href="/policy-support.html">
         <span class="ico"><i class="fa-solid fa-coins"></i></span>
@@ -1372,8 +1372,8 @@
         <!-- 헤더 섹션 -->
         <div class="header-section">
           <div class="page-header">
-            <h1>정보 게시판 <span class="beta-badge">준비중</span></h1>
-            <p>식당 대표님들을 위한 유용한 정보를 모았습니다.</p>
+            <h1>뉴스 게시판 <span class="beta-badge">준비중</span></h1>
+            <p>식당 대표님들을 위한 유용한 뉴스를 모았습니다.</p>
           </div>
         </div>
 
@@ -1401,19 +1401,6 @@
       </button>
     </div>
           </div>
-
-    <!-- 중요 뉴스 -->
-    <div class="featured-section" id="featuredSection">
-      <h2 class="section-title">
-        <span>중요 뉴스</span>
-      </h2>
-      <div class="featured-grid" id="featuredNews">
-        <div class="loading">
-          <i class="fas fa-spinner fa-spin"></i>
-          <div>로딩 중...</div>
-        </div>
-      </div>
-    </div>
 
     <!-- 전체 뉴스 -->
     <div>
@@ -1567,62 +1554,33 @@
       trend: '트렌드',
       management: '경영 팁',
       ingredients: '식자재 정보',
-      technology: '기술/도구'
+      technology: '기술/도구',
+      // 한글 카테고리도 지원 (DB에 한글로 저장된 경우)
+      '정책/법규': '정책/법규',
+      '트렌드': '트렌드',
+      '경영 팁': '경영 팁',
+      '식자재 정보': '식자재 정보',
+      '기술/도구': '기술/도구'
     };
+    
+    // 카테고리를 CSS 클래스로 변환하는 함수
+    function getCategoryClass(category) {
+      if (!category) return 'policy';
+      const normalized = category.toLowerCase();
+      
+      if (normalized.includes('정책') || normalized.includes('법규') || normalized === 'policy') return 'policy';
+      if (normalized.includes('트렌드') || normalized === 'trend') return 'trend';
+      if (normalized.includes('경영') || normalized.includes('팁') || normalized === 'management') return 'management';
+      if (normalized.includes('식자재') || normalized.includes('정보') || normalized === 'ingredients') return 'ingredients';
+      if (normalized.includes('기술') || normalized.includes('도구') || normalized === 'technology') return 'technology';
+      
+      return 'policy';
+    }
 
     // 페이지 로드 시 뉴스 불러오기
     document.addEventListener('DOMContentLoaded', () => {
-      loadFeaturedNews();
       loadNews();
     });
-
-    // 중요 뉴스 로드
-    async function loadFeaturedNews() {
-      const featuredNews = document.getElementById('featuredNews');
-      const featuredSection = document.getElementById('featuredSection');
-
-      try {
-  const result = await fetchJson('/api/news-board?featured=true&limit=3');
-
-        if (!result.success || !result.data || result.data.length === 0) {
-          featuredSection.style.display = 'none';
-          return;
-        }
-
-        featuredNews.innerHTML = result.data.map(news => {
-          const excerpt = news.content.replace(/<[^>]*>/g, '').substring(0, 120);
-          const createdAt = new Date(news.created_at).toLocaleDateString('ko-KR');
-
-          return `
-            <div class="featured-card" onclick="openNews(${news.id})">
-              <div class="featured-badge">⭐ 중요</div>
-              ${news.image_url 
-                ? `<img src="${news.image_url}" alt="${news.title}" class="news-image" />`
-                : `<div class="news-placeholder">📰</div>`
-              }
-              <div class="news-content">
-                <span class="news-category category-${news.category}">
-                  ${categoryLabels[news.category] || news.category}
-                </span>
-                <h3 class="news-title">${escapeHtml(news.title)}</h3>
-                <p class="news-excerpt">${excerpt}...</p>
-                <div class="news-meta">
-                  <span><i class="fas fa-calendar"></i> ${createdAt}</span>
-                  <span><i class="fas fa-eye"></i> ${news.views}회</span>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-      } catch (error) {
-        console.error('Load featured news error:', error);
-        // 서버 연결 실패 시에는 중요 뉴스 섹션을 숨김 (기본 목록에서 오류 표시)
-        if (!error.message.includes('Failed to fetch') && !error.message.includes('NetworkError')) {
-          featuredSection.style.display = 'none';
-        }
-      }
-    }
 
     // 뉴스 목록 로드
     async function loadNews(page = 1) {
@@ -1636,7 +1594,16 @@
         });
 
         if (currentCategory !== 'all') {
-          params.append('category', currentCategory);
+          // 영문 코드를 한글 카테고리로 변환
+          const categoryMap = {
+            'policy': '정책/법규',
+            'trend': '트렌드',
+            'management': '경영 팁',
+            'ingredients': '식자재 정보',
+            'technology': '기술/도구'
+          };
+          const dbCategory = categoryMap[currentCategory] || currentCategory;
+          params.append('category', dbCategory);
         }
 
   const result = await fetchJson(`/api/news-board?${params.toString()}`);
@@ -1668,10 +1635,9 @@
                 : `<div class="news-item-placeholder">📰</div>`
               }
               <div class="news-item-content">
-                <span class="news-category category-${news.category}">
+                <span class="news-category category-${getCategoryClass(news.category)}">
                   ${categoryLabels[news.category] || news.category}
                 </span>
-                ${news.is_featured ? '<span class="news-category" style="background: #FFE082; color: #F57F17;">⭐ 중요</span>' : ''}
                 <h3 class="news-item-title">${escapeHtml(news.title)}</h3>
                 <p class="news-item-excerpt">${excerpt}...</p>
                 <div class="news-meta">
@@ -1770,6 +1736,73 @@
     }
 
 
+    // 출처 정보 렌더링 함수
+    function renderSourceInfo(news) {
+      let sourceInfo = '';
+      
+      // source_citation이 JSON 형식인 경우 파싱
+      let citation = null;
+      if (news.source_citation) {
+        try {
+          citation = JSON.parse(news.source_citation);
+        } catch (e) {
+          // JSON이 아니면 텍스트로 처리
+          citation = { text: news.source_citation };
+        }
+      }
+      
+      // 출처 정보가 있으면 표시
+      if (citation && (citation.press || citation.journalist || citation.publishedAt || citation.link || citation.text)) {
+        sourceInfo = '<div class="modal-source-info" style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #f0f0f0;">';
+        sourceInfo += '<h4 style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">';
+        sourceInfo += '<i class="fas fa-clipboard-list"></i> 출처 정보';
+        sourceInfo += '</h4>';
+        sourceInfo += '<div style="font-size: 14px; color: var(--text-secondary); line-height: 1.8;">';
+        
+        // JSON 형식인 경우
+        if (citation.press || citation.journalist || citation.publishedAt || citation.link) {
+          if (citation.press) {
+            sourceInfo += `<div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">`;
+            sourceInfo += `<i class="fas fa-newspaper" style="color: var(--text-secondary); width: 16px;"></i>`;
+            sourceInfo += `<span>언론사: <strong>${escapeHtml(citation.press)}</strong></span>`;
+            sourceInfo += `</div>`;
+          }
+          if (citation.journalist) {
+            sourceInfo += `<div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">`;
+            sourceInfo += `<i class="fas fa-user" style="color: var(--text-secondary); width: 16px;"></i>`;
+            sourceInfo += `<span>기자: <strong>${escapeHtml(citation.journalist)}</strong></span>`;
+            sourceInfo += `</div>`;
+          }
+          if (citation.publishedAt) {
+            sourceInfo += `<div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">`;
+            sourceInfo += `<i class="fas fa-clock" style="color: var(--text-secondary); width: 16px;"></i>`;
+            sourceInfo += `<span>입력 시각: <strong>${escapeHtml(citation.publishedAt)}</strong></span>`;
+            sourceInfo += `</div>`;
+          }
+          if (citation.link || news.source_url) {
+            const link = citation.link || news.source_url;
+            sourceInfo += `<div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">`;
+            sourceInfo += `<i class="fas fa-link" style="color: var(--text-secondary); width: 16px;"></i>`;
+            sourceInfo += `<span>원문 링크: <a href="${escapeHtml(link)}" target="_blank" rel="noopener" style="color: #03C75A; text-decoration: underline; word-break: break-all;">${escapeHtml(link)}</a></span>`;
+            sourceInfo += `</div>`;
+          }
+        } else if (citation.text) {
+          // 텍스트 형식인 경우
+          sourceInfo += `<div style="margin-bottom: 8px;">${escapeHtml(citation.text)}</div>`;
+        }
+        
+        sourceInfo += '</div></div>';
+      } else if (news.source_url) {
+        // source_citation이 없지만 source_url이 있는 경우
+        sourceInfo = '<div class="modal-source" style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #f0f0f0;">';
+        sourceInfo += '<i class="fas fa-external-link-alt"></i>';
+        sourceInfo += `<a href="${escapeHtml(news.source_url)}" target="_blank" rel="noopener">원문 보기</a>`;
+        sourceInfo += '</div>';
+      }
+      
+      return sourceInfo;
+    }
+
     // 뉴스 상세 보기
     async function openNews(id) {
       const modal = document.getElementById('newsModal');
@@ -1791,22 +1824,16 @@
         // XSS 방지를 위해 안전하게 콘텐츠 생성
         // 이미지는 content_html에 포함되어 있으므로 상단에 별도로 표시하지 않음
         content.innerHTML = `
-          <span class="modal-category category-${news.category}">
+          <span class="modal-category category-${getCategoryClass(news.category)}">
             ${categoryLabels[news.category] || news.category}
           </span>
-          ${news.is_featured ? '<span class="modal-category" style="background: #FFE082; color: #F57F17;">⭐ 중요</span>' : ''}
           <h1 class="modal-title">${escapeHtml(news.title)}</h1>
           <div class="modal-meta">
             <span><i class="fas fa-calendar"></i> ${createdAt}</span>
             <span><i class="fas fa-eye"></i> ${news.views}회</span>
           </div>
           <div class="modal-body" id="modalBodyContent"></div>
-          ${news.source_url ? `
-            <div class="modal-source">
-              <i class="fas fa-external-link-alt"></i>
-              <a href="${news.source_url}" target="_blank" rel="noopener">원문 보기</a>
-            </div>
-          ` : ''}
+          ${renderSourceInfo(news)}
         `;
         
         // HTML 콘텐츠를 안전하게 렌더링 (HTML 태그 허용이 필요한 경우)
