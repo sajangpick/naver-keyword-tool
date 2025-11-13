@@ -130,17 +130,20 @@ module.exports = async (req, res) => {
         return res.status(403).json({ success: false, error: '권한이 없습니다.' });
       }
 
-      const { title, content, category, image_url, source_url, is_featured = false } = req.body;
+      const { title, content, content_html, category, image_url, source_url, source_citation, is_featured = false } = req.body;
 
       if (!title || !content || !category) {
         return res.status(400).json({ success: false, error: '필수 항목을 입력해주세요.' });
       }
 
+      // content_html이 있으면 사용, 없으면 content 사용
+      const finalContent = content_html || content;
+
       const { data: newNews, error } = await supabase
         .from('news_board')
         .insert([{
           title,
-          content,
+          content: finalContent,
           category,
           image_url,
           source_url,
