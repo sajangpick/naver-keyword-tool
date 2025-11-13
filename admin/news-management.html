@@ -1414,6 +1414,11 @@
           const target = targets[index];
 
           try {
+            // signal이 있으면 취소되었는지 확인
+            if (options?.signal?.aborted) {
+              throw new DOMException('요청이 취소되었습니다.', 'AbortError');
+            }
+
             console.log(`[fetchWithFallback] 시도 ${index + 1}/${targets.length}: ${target}`);
             const response = await fetch(target, cloneRequestOptions(options));
 
@@ -1432,6 +1437,10 @@
 
             return response;
           } catch (error) {
+            // AbortError인 경우 즉시 중단
+            if (error.name === 'AbortError' || options?.signal?.aborted) {
+              throw error;
+            }
             console.error(`[fetchWithFallback] 에러 (${target}):`, error);
             lastError = error;
           }
@@ -1970,6 +1979,9 @@
       });
     }
 
+    // 진행 중인 요청 취소를 위한 변수
+    let collectNewsAbortController = null;
+
     async function collectNewsData() {
       const button = document.getElementById('collectNewsButton');
       const panel = document.getElementById('naverNewsPanel');
@@ -1983,6 +1995,17 @@
         return;
       }
 
+      // 이미 진행 중이면 취소
+      if (collectNewsAbortController) {
+        collectNewsAbortController.abort();
+        collectNewsAbortController = null;
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+        }
+        return;
+      }
+
       panel.style.display = 'block';
       // 리스트를 비우지 않고 기존 데이터 유지
       errorEl.style.display = 'none';
@@ -1990,9 +2013,24 @@
       // 로딩 메시지 숨김 (사용자 요청)
       loadingEl.style.display = 'none';
 
+      // AbortController 생성
+      collectNewsAbortController = new AbortController();
+
       if (button) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 불러오는 중...';
+        button.disabled = false; // 취소를 위해 비활성화하지 않음
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 불러오는 중... (클릭하여 취소)';
+        button.style.cursor = 'pointer';
+        button.onclick = () => {
+          if (collectNewsAbortController) {
+            collectNewsAbortController.abort();
+            collectNewsAbortController = null;
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+            button.onclick = collectNewsData;
+            errorEl.textContent = '요청이 취소되었습니다.';
+            errorEl.style.display = 'block';
+          }
+        };
       }
 
       try {
@@ -2007,7 +2045,10 @@
           console.log('✅ 기존 뉴스 데이터를 먼저 표시했습니다.');
         }
         
-        const result = await fetchJson('/api/naver-section-news');
+        // 타임아웃 2분으로 설정
+        const result = await fetchJson('/api/naver-section-news', {
+          signal: collectNewsAbortController.signal
+        }, 120000);
 
         console.log('API 응답:', result);
 
@@ -2174,12 +2215,22 @@
           href: window.location.href,
         });
         
+        // 취소된 요청인 경우 에러 메시지 표시하지 않음
+        if (error?.name === 'AbortError') {
+          console.log('요청이 취소되었습니다.');
+          return;
+        }
+        
         // 더 자세한 에러 메시지 생성
         let errorMessage = '뉴스를 불러오는데 실패했습니다.';
         const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
         
+        // 타임아웃 에러 처리
+        if (error?.name === 'TimeoutError' || error?.message?.includes('시간이 초과')) {
+          errorMessage = '⚠️ 요청 시간이 초과되었습니다. (2분)\n\n서버 응답이 너무 느립니다. 잠시 후 다시 시도해주세요.\n\n로컬 환경인 경우 서버가 정상적으로 실행 중인지 확인해주세요.';
+        }
         // 네트워크 에러인 경우 (먼저 체크)
-        if (error?.name === 'TypeError' || error?.message?.includes('fetch') || error?.message?.includes('Failed') || error?.message?.includes('CORS')) {
+        else if (error?.name === 'TypeError' || error?.message?.includes('fetch') || error?.message?.includes('Failed') || error?.message?.includes('CORS')) {
           if (isLocal) {
             errorMessage = '⚠️ 서버에 연결할 수 없습니다.\n\n로컬 환경에서는 서버를 실행해야 합니다:\n\n1. 터미널을 열고\n2. 다음 명령어 실행:\n   node server.js\n   또는\n   pnpm run dev\n\n서버가 실행되면 http://localhost:3003 에서 API를 제공합니다.';
           } else {
@@ -2211,10 +2262,15 @@
         // 에러 발생 시에도 기존 데이터는 유지 (리스트를 비우지 않음)
         // list.innerHTML = ''; // 제거: 기존 뉴스가 보이도록 유지
       } finally {
+        // AbortController 정리
+        collectNewsAbortController = null;
+        
         loadingEl.style.display = 'none';
         if (button) {
           button.disabled = false;
           button.innerHTML = '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+          button.onclick = collectNewsData;
+          button.style.cursor = 'pointer';
         }
       }
     }
@@ -3636,9 +3692,21 @@
       }
     }
 
-      async function fetchJson(path, options) {
+      async function fetchJson(path, options, timeout = 120000) {
+        // 타임아웃 설정 (기본 120초 = 2분)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
         try {
-          const response = await fetchWithFallback(path, options);
+          // options에 signal 추가
+          const fetchOptions = {
+            ...options,
+            signal: controller.signal
+          };
+          
+          const response = await fetchWithFallback(path, fetchOptions);
+          clearTimeout(timeoutId);
+          
           const text = await response.text();
           let data = {};
 
@@ -3660,6 +3728,15 @@
 
           return data;
         } catch (error) {
+          clearTimeout(timeoutId);
+          
+          // 타임아웃 에러 처리
+          if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+            const timeoutError = new Error(`요청 시간이 초과되었습니다. (${timeout / 1000}초)`);
+            timeoutError.name = 'TimeoutError';
+            throw timeoutError;
+          }
+          
           // 네트워크 에러인 경우 원본 에러 정보를 유지
           if (error.name === 'TypeError' || error.message?.includes('fetch') || error.message?.includes('Failed')) {
             // 원본 에러를 그대로 전달하여 상위에서 처리할 수 있도록 함
