@@ -2975,8 +2975,9 @@
               hasAdviceSection: formattedText.includes('현실적 조언')
             });
             
-            // 출처 정보 HTML 생성
-            let sourceInfoHtml = '<div style="margin-top: 20px; padding-top: 10px; border-top: 2px solid var(--border);">';
+            // 출처 정보 HTML 생성 (본문이 있을 때만 위쪽 여백 추가)
+            const sourceMarginTop = formattedText.trim() ? '20px' : '12px';
+            let sourceInfoHtml = `<div style="margin-top: ${sourceMarginTop}; padding-top: 10px; border-top: 2px solid var(--border);">`;
             sourceInfoHtml += '<h4 style="color: var(--text-secondary); margin-bottom: 6px; font-size: 14px; font-weight: 600;">📋 출처 정보</h4>';
             sourceInfoHtml += '<div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">';
             if (newsPress) {
@@ -3003,17 +3004,17 @@
               </button>
             </div>`;
             
-            // 뉴스 제목과 이미지
-            const newsTitleHtml = newsTitle ? `<h2 style="color: var(--text); margin-bottom: 12px; font-size: 20px; font-weight: 700; padding-bottom: 8px; border-bottom: 2px solid var(--border);">📌 ${escapeHtml(newsTitle)}</h2>` : '';
-            
-            // 이미지 HTML 생성 (뉴스 제목 밑에)
+            // 이미지 HTML 생성 (본문 위에)
             const imageHtml = newsImage ? `<div style="margin-bottom: 16px;"><img src="${escapeHtml(newsImage)}" alt="뉴스 이미지" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border);" /></div>` : '';
             
-            // 편집 불가능한 영역 (기본 상태)
-            const editableContent = `<div id="aiAnalysisEditableContent" contenteditable="false" style="line-height: 1.8; color: var(--text); min-height: 200px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">${newsTitleHtml}${imageHtml}${formattedText}</div>`;
+            // 편집 불가능한 영역 (기본 상태) - 뉴스 제목 제거 (중복 방지)
+            // formattedText가 비어있으면 빈 공간 최소화
+            const contentPadding = formattedText.trim() ? '16px' : '0';
+            const contentMinHeight = formattedText.trim() ? '200px' : 'auto';
+            const editableContent = `<div id="aiAnalysisEditableContent" contenteditable="false" style="line-height: 1.8; color: var(--text); min-height: ${contentMinHeight}; padding: ${contentPadding}; border: 1px solid var(--border); border-radius: 8px; background: white; outline: none;">${imageHtml}${formattedText}</div>`;
             
             // 사장픽 업로드 버튼 HTML
-            const uploadButtonHtml = `<div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid var(--border);">
+            const uploadButtonHtml = `<div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid var(--border);">
               <button type="button" class="btn btn-primary" onclick="uploadToSajangpick()" style="width: 100%; padding: 14px 24px; font-size: 16px; font-weight: 600; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 8px rgba(3, 199, 90, 0.2); transition: all 0.3s ease; border: none;">
                 <i class="fas fa-upload"></i> 사장픽 업로드
               </button>
