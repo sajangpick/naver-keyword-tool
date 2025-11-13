@@ -1127,6 +1127,29 @@
           if (error) throw error;
 
           allMembers = data || [];
+          
+          // FREE 등급을 씨앗으로 자동 변경
+          const freeMembers = allMembers.filter(m => m.membership_level === 'free' || m.membership_level === null);
+          if (freeMembers.length > 0) {
+            console.log(`🔄 FREE 등급 회원 ${freeMembers.length}명을 씨앗으로 변경 중...`);
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ membership_level: 'seed' })
+              .in('id', freeMembers.map(m => m.id));
+            
+            if (updateError) {
+              console.error('❌ FREE 등급 변경 실패:', updateError);
+            } else {
+              console.log(`✅ ${freeMembers.length}명의 FREE 등급을 씨앗으로 변경 완료`);
+              // 변경된 데이터 반영
+              allMembers = allMembers.map(m => 
+                (m.membership_level === 'free' || m.membership_level === null) 
+                  ? { ...m, membership_level: 'seed' } 
+                  : m
+              );
+            }
+          }
+          
           console.log(`✅ 총 ${allMembers.length}명의 회원 로드`);
 
           // 맞춤 설정이 있는 회원 확인
