@@ -2053,8 +2053,14 @@
         
         // 타임아웃 2분으로 설정
         console.log('🔄 API 호출 시작: /api/naver-section-news');
-        const result = await fetchJson('/api/naver-section-news', {
-          signal: collectNewsAbortController.signal
+        // 캐시 방지를 위해 타임스탬프 추가
+        const cacheBuster = `?t=${Date.now()}`;
+        const result = await fetchJson(`/api/naver-section-news${cacheBuster}`, {
+          signal: collectNewsAbortController.signal,
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
         }, 120000);
 
         console.log('✅ API 응답 받음:', {
@@ -2079,6 +2085,47 @@
           console.warn('⚠️ 서버에서 데이터를 받지 못했습니다. 빈 데이터로 처리합니다.');
           // 에러를 throw하지 않고 빈 객체로 처리
           // 기존 데이터는 유지되므로 문제없음
+          // 사용자에게 알림
+          if (button) {
+            button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 데이터 없음';
+            button.style.background = '#ef4444';
+            button.style.color = 'white';
+            setTimeout(() => {
+              button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+              button.style.background = '';
+              button.style.color = '';
+            }, 3000);
+          }
+          errorEl.textContent = '⚠️ 서버에서 데이터를 받지 못했습니다.\n\n서버가 정상적으로 실행 중인지 확인해주세요.';
+          errorEl.style.display = 'block';
+          errorEl.style.background = 'rgba(239, 68, 68, 0.1)';
+          errorEl.style.borderColor = '#ef4444';
+          return; // 더 이상 진행하지 않음
+        }
+        
+        // 데이터가 비어있는지 확인
+        const hasAnyData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
+          const items = newSections[key] || [];
+          return items.length > 0;
+        });
+        
+        if (!hasAnyData) {
+          console.warn('⚠️ API 응답은 성공했지만 모든 섹션의 데이터가 비어있습니다.');
+          if (button) {
+            button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 데이터 없음';
+            button.style.background = '#ef4444';
+            button.style.color = 'white';
+            setTimeout(() => {
+              button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+              button.style.background = '';
+              button.style.color = '';
+            }, 3000);
+          }
+          errorEl.textContent = '⚠️ API 응답은 성공했지만 데이터가 비어있습니다.\n\n서버의 크롤링 로직을 확인해주세요.';
+          errorEl.style.display = 'block';
+          errorEl.style.background = 'rgba(239, 68, 68, 0.1)';
+          errorEl.style.borderColor = '#ef4444';
+          return; // 더 이상 진행하지 않음
         }
 
         // fetchedAt을 항상 현재 시각으로 업데이트 (데이터 수집 시각)
@@ -2103,11 +2150,25 @@
         }
         
         // 각 섹션별로 병합
+        let totalNewItems = 0;
+        let totalExistingItems = 0;
+        
         Object.keys(NAVER_SECTION_CONFIG).forEach(sectionKey => {
           const newItems = newSections[sectionKey] || [];
           const existingItems = existingSections[sectionKey] || [];
           
           console.log(`📊 ${sectionKey} 섹션: 새 데이터 ${newItems.length}개, 기존 데이터 ${existingItems.length}개`);
+          
+          // 새 데이터의 링크 목록 출력 (디버깅)
+          if (newItems.length > 0) {
+            console.log(`🔗 새 데이터 링크 샘플 (최대 5개):`, newItems.slice(0, 5).map(item => item?.link || '링크 없음'));
+          }
+          
+          // 기존 데이터의 링크 목록 샘플 출력 (디버깅)
+          if (existingItems.length > 0) {
+            const existingLinks = existingItems.slice(0, 5).map(item => item?.link || '링크 없음');
+            console.log(`🔗 기존 데이터 링크 샘플 (최대 5개):`, existingLinks);
+          }
           
           // 중복 제거를 위한 Set (링크 기준)
           const linkSet = new Set();
@@ -2115,17 +2176,28 @@
           
           // 새로운 데이터를 먼저 추가 (최신이 위로)
           let newAddedCount = 0;
+          let duplicateCount = 0;
           newItems.forEach(item => {
             const link = item?.link || '';
-            if (link && !linkSet.has(link)) {
+            if (!link) {
+              console.warn(`⚠️ 링크가 없는 새 아이템 발견:`, item?.title || '제목 없음');
+              return;
+            }
+            if (!linkSet.has(link)) {
               linkSet.add(link);
               mergedItems.push({
                 ...item,
                 _collectedAt: now.getTime() // 수집 시각 추가
               });
               newAddedCount++;
+            } else {
+              duplicateCount++;
             }
           });
+          
+          if (duplicateCount > 0) {
+            console.log(`🔄 ${sectionKey} 섹션: 중복된 새 데이터 ${duplicateCount}개 제거됨`);
+          }
           
           // 기존 데이터 추가 (중복 제외) - 기존 데이터는 계속 유지
           let existingKeptCount = 0;
@@ -2138,7 +2210,15 @@
             }
           });
           
+          totalNewItems += newAddedCount;
+          totalExistingItems += existingKeptCount;
+          
           console.log(`✅ ${sectionKey} 섹션 병합 완료: 새로 추가 ${newAddedCount}개, 기존 유지 ${existingKeptCount}개, 총 ${mergedItems.length}개`);
+          
+          // 새 데이터가 없으면 경고
+          if (newItems.length > 0 && newAddedCount === 0) {
+            console.warn(`⚠️ ${sectionKey} 섹션: API에서 ${newItems.length}개 데이터를 받았지만 모두 중복입니다.`);
+          }
           
           // 날짜 기준으로 정렬 (최신이 위로)
           mergedItems.sort((a, b) => {
@@ -2209,22 +2289,46 @@
         }, 0);
         
         console.log(`✅ 뉴스 목록 업데이트 완료! 총 ${totalNewsCount}개의 뉴스가 저장되었습니다.`);
+        console.log(`📈 요약: 새로 추가 ${totalNewItems}개, 기존 유지 ${totalExistingItems}개`);
         
-        // 사용자에게 알림 (선택사항)
+        // 사용자에게 알림
         if (button) {
-          button.innerHTML = '<i class="fas fa-check-circle"></i> 수집 완료!';
-          button.style.background = '#03c75a';
-          button.style.color = 'white';
-          setTimeout(() => {
-            button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
-            button.style.background = '';
-            button.style.color = '';
-          }, 2000);
+          if (totalNewItems > 0) {
+            // 새 데이터가 있으면 성공 메시지
+            button.innerHTML = `<i class="fas fa-check-circle"></i> 수집 완료! (새 뉴스 ${totalNewItems}개)`;
+            button.style.background = '#03c75a';
+            button.style.color = 'white';
+            setTimeout(() => {
+              button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+              button.style.background = '';
+              button.style.color = '';
+            }, 3000);
+          } else {
+            // 새 데이터가 없으면 경고 메시지
+            button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 새 뉴스 없음';
+            button.style.background = '#f59e0b';
+            button.style.color = 'white';
+            setTimeout(() => {
+              button.innerHTML = originalButtonText || '<i class="fas fa-database"></i> 뉴스 데이터 수집';
+              button.style.background = '';
+              button.style.color = '';
+            }, 3000);
+            
+            // 에러 메시지 영역에 안내 표시
+            errorEl.textContent = `⚠️ 새로운 뉴스가 없습니다.\n\nAPI에서 받은 데이터가 모두 기존 데이터와 중복되었습니다.\n\n잠시 후 다시 시도하거나, 서버 로그를 확인해주세요.`;
+            errorEl.style.display = 'block';
+            errorEl.style.background = 'rgba(245, 158, 11, 0.1)';
+            errorEl.style.borderColor = '#f59e0b';
+          }
         }
         
-        // 정상적으로 로드되었으므로 에러 메시지 숨기기 (빨간 박스 제거)
-        errorEl.style.display = 'none';
-        errorEl.textContent = '';
+        // 새 데이터가 있을 때만 에러 메시지 숨기기
+        if (totalNewItems > 0) {
+          errorEl.style.display = 'none';
+          errorEl.textContent = '';
+          errorEl.style.background = '';
+          errorEl.style.borderColor = '';
+        }
         
         console.log('✅ 뉴스 데이터 저장 완료. localStorage에 영구 저장되었습니다.');
         // 상단에 유지하기 위해 스크롤 이동 제거
