@@ -120,14 +120,45 @@ module.exports = async (req, res) => {
       }
 
       // 어드민 권한 확인
-      const { data: profile } = await supabase
+      // profiles 테이블의 id는 Supabase Auth의 user.id와 동일
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
+        .select('role, user_type, membership_level')
+        .eq('id', user.id)
         .single();
 
-      if (!profile || profile.role !== 'admin') {
-        return res.status(403).json({ success: false, error: '권한이 없습니다.' });
+      if (profileError) {
+        console.error('프로필 조회 오류:', profileError);
+        return res.status(403).json({ 
+          success: false, 
+          error: '프로필을 찾을 수 없습니다. 관리자에게 문의하세요.' 
+        });
+      }
+
+      if (!profile) {
+        return res.status(403).json({ 
+          success: false, 
+          error: '프로필이 없습니다. 관리자에게 문의하세요.' 
+        });
+      }
+
+      // role이 'admin'이거나, user_type이 'admin'이거나, membership_level이 'admin'인 경우 허용
+      const isAdmin = profile.role === 'admin' || 
+                     profile.user_type === 'admin' || 
+                     profile.membership_level === 'admin';
+
+      if (!isAdmin) {
+        console.log('권한 없음:', {
+          userId: user.id,
+          email: user.email,
+          role: profile.role,
+          user_type: profile.user_type,
+          membership_level: profile.membership_level
+        });
+        return res.status(403).json({ 
+          success: false, 
+          error: '관리자 권한이 필요합니다. 현재 권한: ' + (profile.role || profile.user_type || '없음') 
+        });
       }
 
       const { title, content, content_html, category, image_url, source_url, source_citation, is_featured = false } = req.body;
@@ -175,14 +206,29 @@ module.exports = async (req, res) => {
       }
 
       // 어드민 권한 확인
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
+        .select('role, user_type, membership_level')
+        .eq('id', user.id)
         .single();
 
-      if (!profile || profile.role !== 'admin') {
-        return res.status(403).json({ success: false, error: '권한이 없습니다.' });
+      if (profileError || !profile) {
+        return res.status(403).json({ 
+          success: false, 
+          error: '프로필을 찾을 수 없습니다.' 
+        });
+      }
+
+      // role이 'admin'이거나, user_type이 'admin'이거나, membership_level이 'admin'인 경우 허용
+      const isAdmin = profile.role === 'admin' || 
+                     profile.user_type === 'admin' || 
+                     profile.membership_level === 'admin';
+
+      if (!isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          error: '관리자 권한이 필요합니다.' 
+        });
       }
 
       const { id, title, content, category, image_url, source_url, is_featured } = req.body;
@@ -228,14 +274,29 @@ module.exports = async (req, res) => {
       }
 
       // 어드민 권한 확인
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
+        .select('role, user_type, membership_level')
+        .eq('id', user.id)
         .single();
 
-      if (!profile || profile.role !== 'admin') {
-        return res.status(403).json({ success: false, error: '권한이 없습니다.' });
+      if (profileError || !profile) {
+        return res.status(403).json({ 
+          success: false, 
+          error: '프로필을 찾을 수 없습니다.' 
+        });
+      }
+
+      // role이 'admin'이거나, user_type이 'admin'이거나, membership_level이 'admin'인 경우 허용
+      const isAdmin = profile.role === 'admin' || 
+                     profile.user_type === 'admin' || 
+                     profile.membership_level === 'admin';
+
+      if (!isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          error: '관리자 권한이 필요합니다.' 
+        });
       }
 
       const { id } = req.query;
