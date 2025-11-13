@@ -153,19 +153,20 @@ async function crawlSection(sectionKey, url) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     // 동적 콘텐츠 로딩 대기 (더 긴 대기 시간)
+    // Puppeteer 최신 버전에서는 waitForTimeout 대신 Promise + setTimeout 사용
     console.log(`[naver-section-news] ${sectionKey} 페이지 대기 중...`);
-    await page.waitForTimeout(5000);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // 스크롤하여 추가 콘텐츠 로드
     await page.evaluate(() => {
       window.scrollTo(0, document.body.scrollHeight / 2);
     });
-    await page.waitForTimeout(2000);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     
     await page.evaluate(() => {
       window.scrollTo(0, document.body.scrollHeight);
     });
-    await page.waitForTimeout(2000);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 뉴스 목록 추출
     const newsItems = await page.evaluate(() => {
