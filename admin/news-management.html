@@ -1063,6 +1063,9 @@
           <button class="btn btn-secondary" id="collectNewsButton" onclick="collectNewsData()">
             <i class="fas fa-database"></i> 뉴스 데이터 수집
           </button>
+          <button class="btn" id="deleteNonAdminNewsButton" onclick="deleteNonAdminNews()" style="background: #f59e0b; color: white; border-color: #f59e0b;">
+            <i class="fas fa-filter"></i> 관리자 외 뉴스 삭제
+          </button>
           <button class="btn" id="deleteAllNewsButton" onclick="deleteAllNews()" style="background: #ef4444; color: white; border-color: #ef4444;">
             <i class="fas fa-trash-alt"></i> 모든 뉴스 삭제
           </button>
@@ -4030,6 +4033,60 @@
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#039;');
+      }
+
+      // 관리자가 작성하지 않은 뉴스만 삭제
+      async function deleteNonAdminNews() {
+        if (!confirm('⚠️ 관리자가 작성하지 않은 뉴스만 삭제하시겠습니까?\n\n(관리자가 news-management.html에서 작성한 뉴스는 유지됩니다)')) {
+          return;
+        }
+
+        const button = document.getElementById('deleteNonAdminNewsButton');
+        const originalText = button.innerHTML;
+
+        try {
+          button.disabled = true;
+          button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 삭제 중...';
+
+          // AdminUtils를 사용하여 인증된 요청 보내기
+          let result;
+          if (window.AdminUtils && typeof window.AdminUtils.adminFetch === 'function') {
+            result = await window.AdminUtils.adminFetch('/api/news-board?nonAdmin=true', {
+              method: 'DELETE'
+            });
+          } else {
+            // AdminUtils가 없으면 직접 처리
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+              throw new Error('로그인이 필요합니다.');
+            }
+
+            result = await fetchJson('/api/news-board?nonAdmin=true', {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+          }
+
+          if (!result.success) {
+            throw new Error(result.error || '삭제에 실패했습니다.');
+          }
+
+          alert(`✅ 성공!\n\n${result.message}\n삭제된 뉴스 수: ${result.deletedCount || 0}개`);
+          
+          // 페이지 새로고침 (선택사항)
+          if (confirm('페이지를 새로고침하시겠습니까?')) {
+            window.location.reload();
+          }
+
+        } catch (error) {
+          console.error('관리자 외 뉴스 삭제 실패:', error);
+          alert('❌ 삭제 실패: ' + (error.message || error));
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }
       }
 
       // 모든 뉴스 삭제

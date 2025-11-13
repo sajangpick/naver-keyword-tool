@@ -305,7 +305,46 @@ module.exports = async (req, res) => {
         });
       }
 
-      const { id, all } = req.query;
+      const { id, all, nonAdmin } = req.query;
+
+      // 관리자가 작성하지 않은 뉴스만 삭제 (nonAdmin=true인 경우)
+      if (nonAdmin === 'true') {
+        // 관리자가 작성하지 않은 뉴스 ID 가져오기
+        const { data: nonAdminNews, error: selectError } = await supabase
+          .from('news_board')
+          .select('id')
+          .neq('author', 'ADMIN');
+
+        if (selectError) {
+          return res.status(500).json({ success: false, error: selectError.message });
+        }
+
+        // 삭제할 뉴스가 없으면 바로 성공 반환
+        if (!nonAdminNews || nonAdminNews.length === 0) {
+          return res.status(200).json({ 
+            success: true, 
+            message: '삭제할 뉴스가 없습니다. (모든 뉴스가 관리자가 작성한 뉴스입니다.)',
+            deletedCount: 0
+          });
+        }
+
+        // 관리자가 작성하지 않은 뉴스만 삭제
+        const ids = nonAdminNews.map(news => news.id);
+        const { error: deleteError } = await supabase
+          .from('news_board')
+          .delete()
+          .in('id', ids);
+
+        if (deleteError) {
+          return res.status(500).json({ success: false, error: deleteError.message });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: '관리자가 작성하지 않은 뉴스가 삭제되었습니다.',
+          deletedCount: nonAdminNews.length
+        });
+      }
 
       // 전체 삭제 (all=true인 경우)
       if (all === 'true') {
