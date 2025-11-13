@@ -1744,14 +1744,35 @@
         const savedData = localStorage.getItem('naverNewsData');
         if (savedData) {
           const parsed = JSON.parse(savedData);
-          naverSectionData.sections = parsed.sections || {};
+          const sections = parsed.sections || {};
+          
+          // 헤드라인 섹션 제거 (더 이상 사용하지 않음)
+          if (sections.headline) {
+            delete sections.headline;
+          }
+          
+          // NAVER_SECTION_CONFIG에 정의된 섹션만 유지
+          const validSections = {};
+          Object.keys(NAVER_SECTION_CONFIG).forEach(key => {
+            if (sections[key]) {
+              validSections[key] = sections[key];
+            }
+          });
+          
+          naverSectionData.sections = validSections;
           if (parsed.fetchedAt) {
             const date = new Date(parsed.fetchedAt);
             naverSectionData.fetchedAt = Number.isNaN(date.getTime()) ? null : date;
           } else {
             naverSectionData.fetchedAt = null;
           }
-          return true;
+          
+          // 정리된 데이터를 다시 저장
+          if (Object.keys(validSections).length > 0) {
+            saveNaverNewsToStorage();
+          }
+          
+          return Object.keys(validSections).length > 0;
         }
       } catch (error) {
         console.warn('네이버 뉴스 데이터 불러오기 실패:', error);
@@ -1772,9 +1793,20 @@
       }
 
       const sections = naverSectionData.sections || {};
+      
+      // 헤드라인 섹션 제거 (더 이상 사용하지 않음)
+      if (sections.headline) {
+        delete sections.headline;
+      }
+      
       ensureNaverSectionDefaults();
+      
+      // NAVER_SECTION_CONFIG에 정의된 섹션만 사용
       const sectionHtml = Object.keys(NAVER_SECTION_CONFIG)
-        .map((key) => buildNewsSectionHtml(key, sections[key] || []))
+        .map((key) => {
+          const items = sections[key] || [];
+          return buildNewsSectionHtml(key, items);
+        })
         .join('');
 
       if (sectionHtml.trim()) {
@@ -1785,7 +1817,7 @@
           tabsEl.style.display = 'flex';
         }
         
-        // 기본적으로 첫 번째 섹션(헤드라인) 활성화
+        // 기본적으로 첫 번째 섹션(사회) 활성화
         switchNaverSection(currentNaverSection);
       } else {
         list.innerHTML = `
@@ -2707,10 +2739,13 @@
           }
         }
 
-        alert('사장픽에 성공적으로 업로드되었습니다!');
+        // 업로드 성공 메시지
+        alert('사장픽에 성공적으로 업로드되었습니다!\n뉴스 게시판으로 이동합니다.');
         
         // 업로드 후 뉴스 게시판으로 이동
-        window.location.href = '/news-board.html';
+        setTimeout(() => {
+          window.location.href = '/news-board.html';
+        }, 100);
 
       } catch (error) {
         console.error('사장픽 업로드 실패:', error);
@@ -3495,23 +3530,34 @@
           }
         });
 
-        // localStorage에서 네이버 뉴스 데이터 불러오기 (페이지 로드 시 자동 로드)
-        if (loadNaverNewsFromStorage()) {
-          const panel = document.getElementById('naverNewsPanel');
-          const sections = naverSectionData.sections || {};
-          const hasData = Object.keys(sections).some(key => {
-            const items = sections[key] || [];
-            return Array.isArray(items) && items.length > 0;
+        // localStorage에서 네이버 뉴스 데이터 불러오기 (페이지 로드 시 자동 표시)
+        loadNaverNewsFromStorage();
+        const panel = document.getElementById('naverNewsPanel');
+        const sections = naverSectionData.sections || {};
+        
+        // 데이터가 있으면 자동으로 표시
+        const hasData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
+          const items = sections[key] || [];
+          return Array.isArray(items) && items.length > 0;
+        });
+        
+        if (panel && hasData) {
+          // 패널 표시
+          panel.style.display = 'block';
+          // 뉴스 렌더링
+          renderNaverNews();
+          console.log('✅ localStorage에서 뉴스 데이터 자동 로드 완료:', {
+            social: sections.social?.length || 0,
+            economy: sections.economy?.length || 0,
+            total: Object.keys(sections).reduce((sum, key) => {
+              const items = sections[key] || [];
+              return sum + (Array.isArray(items) ? items.length : 0);
+            }, 0),
           });
-          
-          if (panel && hasData) {
-            panel.style.display = 'block';
-            renderNaverNews();
-            console.log('✅ localStorage에서 뉴스 데이터 로드 완료:', {
-              social: sections.social?.length || 0,
-              economy: sections.economy?.length || 0,
-            });
-          }
+        } else if (panel) {
+          // 데이터가 없어도 패널은 표시 (빈 상태 메시지 표시)
+          panel.style.display = 'block';
+          renderNaverNews();
         }
 
         // 폼 제출
