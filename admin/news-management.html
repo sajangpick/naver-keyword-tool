@@ -2048,11 +2048,25 @@
         
         // 더 자세한 에러 메시지 생성
         let errorMessage = '뉴스를 불러오는데 실패했습니다.';
+        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
         
+        // 네트워크 에러인 경우 (먼저 체크)
+        if (error?.name === 'TypeError' || error?.message?.includes('fetch') || error?.message?.includes('Failed') || error?.message?.includes('CORS')) {
+          if (isLocal) {
+            errorMessage = '⚠️ 서버에 연결할 수 없습니다.\n\n로컬 환경에서는 서버를 실행해야 합니다:\n\n1. 터미널을 열고\n2. 다음 명령어 실행:\n   node server.js\n   또는\n   pnpm run dev\n\n서버가 실행되면 http://localhost:3003 에서 API를 제공합니다.';
+          } else {
+            // 배포 환경에서는 더 친절한 메시지
+            errorMessage = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.\n\n문제가 지속되면 관리자에게 문의하세요.';
+          }
+        }
         // HTTP 상태 코드 에러
-        if (error?.status) {
+        else if (error?.status) {
           if (error.status === 404) {
-            errorMessage = 'API 엔드포인트를 찾을 수 없습니다. (404)';
+            if (isLocal) {
+              errorMessage = '⚠️ API 엔드포인트를 찾을 수 없습니다. (404)\n\n로컬 환경에서는 서버를 실행해야 합니다:\n\n1. 터미널을 열고\n2. 다음 명령어 실행:\n   node server.js\n   또는\n   pnpm run dev\n\n서버가 실행되면 http://localhost:3003/api/naver-section-news 에서 API를 제공합니다.';
+            } else {
+              errorMessage = 'API 엔드포인트를 찾을 수 없습니다. (404)\n\n서버가 배포되어 있는지 확인해주세요.';
+            }
           } else if (error.status === 500) {
             errorMessage = '서버 내부 오류가 발생했습니다. (500) 잠시 후 다시 시도해주세요.';
           } else if (error.status >= 502 && error.status <= 504) {
@@ -2062,17 +2076,6 @@
           }
         } else if (error?.message) {
           errorMessage = error.message;
-        }
-        
-        // 네트워크 에러인 경우
-        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        if (error?.name === 'TypeError' || error?.message?.includes('fetch') || error?.message?.includes('Failed')) {
-          if (isLocal) {
-            errorMessage = '서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.\n\n로컬 환경에서는 다음 명령어로 서버를 실행하세요:\nnode server.js (또는 pnpm run dev)';
-          } else {
-            // 배포 환경에서는 더 친절한 메시지
-            errorMessage = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.\n\n문제가 지속되면 관리자에게 문의하세요.';
-          }
         }
         
         errorEl.textContent = errorMessage;
