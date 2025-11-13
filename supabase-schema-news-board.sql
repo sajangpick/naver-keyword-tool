@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS news_board (
   category VARCHAR(50) NOT NULL,
   image_url TEXT,
   source_url TEXT,
+  source_citation TEXT,
   author VARCHAR(100) DEFAULT 'ADMIN',
   views INTEGER DEFAULT 0,
   is_featured BOOLEAN DEFAULT FALSE,
