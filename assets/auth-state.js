@@ -139,14 +139,19 @@
     }
     
     console.error("[auth] ❌", errorMsg);
-    alert(errorMsg);
-    throw new Error(errorMsg);
+    // alert 제거 - 사용자 경험을 위해 조용히 실패 처리
+    // 프로덕션 환경에서는 fallback을 사용하거나 조용히 실패
+    return null; // 에러 발생 시 null 반환
   }
 
   let SUPABASE_URL = null;
   let SUPABASE_ANON_KEY = null;
   try {
     const config = await resolveSupabaseConfig();
+    if (!config) {
+      console.error("[auth] Supabase config를 가져오지 못했습니다.");
+      return;
+    }
     SUPABASE_URL = config.url;
     SUPABASE_ANON_KEY = config.anonKey;
     if (config.source) {
