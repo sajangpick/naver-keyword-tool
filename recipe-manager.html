@@ -2277,12 +2277,20 @@
                     <p style="margin: 0; color: #558b2f;">원하는 요리를 선택하면 상세 레시피를 만들어드립니다.</p>
                 </div>
                 
+<<<<<<< HEAD
                 <div style="display: grid; gap: 16px;" id="dishCardsContainer">
+=======
+                <div style="display: grid; gap: 16px;">
+>>>>>>> 2f580ea660083fa7135c9f330738dc85c3c7f77a
             `;
             
             dishes.forEach((dish, index) => {
                 html += `
+<<<<<<< HEAD
                     <div class="dish-card" data-index="${index}"
+=======
+                    <div onclick="selectDish('${dish.name.replace(/'/g, "\\'")}', '${ingredients.replace(/'/g, "\\'")}')" 
+>>>>>>> 2f580ea660083fa7135c9f330738dc85c3c7f77a
                          style="padding: 20px; background: white; border: 2px solid #e0e0e0; border-radius: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 20px;"
                          onmouseover="this.style.borderColor='#4CAF50'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.2)'; this.style.transform='translateY(-2px)';"
                          onmouseout="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'; this.style.transform='translateY(0)';">
@@ -2303,6 +2311,7 @@
             html += `</div>`;
             
             suggestionsDiv.innerHTML = html;
+<<<<<<< HEAD
             
             // 이벤트 리스너 추가 (더 안전한 방법)
             setTimeout(() => {
@@ -2314,6 +2323,8 @@
                     });
                 });
             }, 100);
+=======
+>>>>>>> 2f580ea660083fa7135c9f330738dc85c3c7f77a
         }
         
         // 요리 선택 시 STEP 2로 이동
