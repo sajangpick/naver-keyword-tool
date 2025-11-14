@@ -1495,6 +1495,9 @@
             <button class="tab-btn active" data-tab="search">
               레시피 검색
             </button>
+            <button class="tab-btn" data-tab="ai-generate">
+              AI 레시피 생성
+            </button>
             <button class="tab-btn" data-tab="create">
               새 레시피 만들기
             </button>
@@ -1503,9 +1506,6 @@
             </button>
             <button class="tab-btn" data-tab="bookmarks">
               북마크
-            </button>
-            <button class="tab-btn" data-tab="ai-generate">
-              AI 레시피 생성
             </button>
           </div>
         </div>
@@ -1582,7 +1582,78 @@
             </div>
         </div>
         
-        <!-- 2. 새 레시피 만들기 탭 -->
+        <!-- 2. AI 레시피 생성 탭 -->
+        <div class="tab-content" id="tab-ai-generate">
+            <div class="ai-generate-section">
+                <h3>🤖 AI 레시피 생성기</h3>
+                <p>재료만 입력하면 AI가 만들 수 있는 요리를 제안하고, 상세 레시피를 만들어드립니다!</p>
+            </div>
+            
+            <!-- STEP 1: 재료 입력 및 요리 제안 -->
+            <div class="recipe-form-section" id="step1-section">
+                <div class="form-section">
+                    <h3>📝 1단계: 재료 입력</h3>
+                    <div class="form-group">
+                        <label>가지고 있는 재료를 입력하세요</label>
+                        <textarea id="aiIngredients" rows="3" placeholder="예: 감자, 양파
+또는
+돼지고기 300g, 김치, 두부, 대파"></textarea>
+                        <small style="color: #666; display: block; margin-top: 8px;">
+                            💡 팁: 간단하게 재료명만 입력해도 됩니다!
+                        </small>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="suggestDishes()" style="margin-top: 24px;">
+                    🔍 만들 수 있는 요리 제안받기
+                </button>
+                
+                <div class="loading-spinner" id="suggestLoader"></div>
+                
+                <!-- 5가지 요리 제안 결과 -->
+                <div id="dishSuggestions" style="margin-top: 30px;"></div>
+            </div>
+            
+            <!-- STEP 2: 선택한 요리의 상세 레시피 생성 -->
+            <div class="recipe-form-section" id="step2-section" style="display: none; margin-top: 40px; padding-top: 40px; border-top: 2px solid #e0e0e0;">
+                <div class="form-section">
+                    <h3>👨‍🍳 2단계: 상세 레시피 생성</h3>
+                    <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                            <strong style="font-size: 18px;">선택한 요리:</strong>
+                            <span id="selectedDishName" style="color: #4CAF50; font-size: 18px; font-weight: bold;"></span>
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>원하는 스타일 (선택)</label>
+                        <input type="text" id="aiStyle" placeholder="예: 매운맛, 아이들이 좋아하는, 술안주용">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>조리 시간</label>
+                        <select id="aiCookTime">
+                            <option value="30">30분 이내</option>
+                            <option value="60">1시간 이내</option>
+                            <option value="120">2시간 이내</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button class="btn btn-secondary" onclick="backToStep1()" style="flex: 1;">
+                        ← 다른 요리 선택하기
+                    </button>
+                    <button class="btn btn-primary" onclick="generateDetailedRecipe()" style="flex: 2;">
+                        📖 상세 레시피 생성하기
+                    </button>
+                </div>
+                
+                <div class="loading-spinner" id="aiLoader"></div>
+                <div id="aiResult" style="margin-top: 30px;"></div>
+            </div>
+        </div>
+        
+        <!-- 3. 새 레시피 만들기 탭 -->
         <div class="tab-content" id="tab-create">
             <div class="recipe-form-section">
                 <form id="recipeForm">
@@ -1673,7 +1744,7 @@
             </div>
         </div>
         
-        <!-- 3. 내 레시피 탭 -->
+        <!-- 4. 내 레시피 탭 -->
         <div class="tab-content" id="tab-my-recipes">
             <div class="search-section">
                 <h2>내 레시피</h2>
@@ -1682,49 +1753,12 @@
             </div>
         </div>
         
-        <!-- 4. 북마크 탭 -->
+        <!-- 5. 북마크 탭 -->
         <div class="tab-content" id="tab-bookmarks">
             <div class="search-section">
                 <h2>북마크한 레시피</h2>
                 <div class="loading-spinner" id="bookmarksLoader"></div>
                 <div id="bookmarksFolders"></div>
-            </div>
-        </div>
-        
-        <!-- 5. AI 레시피 생성 탭 -->
-        <div class="tab-content" id="tab-ai-generate">
-            <div class="ai-generate-section">
-                <h3>AI 레시피 생성기</h3>
-                <p>재료를 입력하면 AI가 레시피를 만들어드립니다!</p>
-            </div>
-            
-            <div class="recipe-form-section">
-                <div class="form-section">
-                    <h3>재료 입력</h3>
-                    <div class="form-group">
-                        <label>가지고 있는 재료를 입력하세요</label>
-                        <textarea id="aiIngredients" rows="3" placeholder="예: 돼지고기 300g, 김치, 두부, 대파"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>원하는 스타일 (선택)</label>
-                        <input type="text" id="aiStyle" placeholder="예: 매운맛, 아이들이 좋아하는, 술안주용">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>조리 시간</label>
-                        <select id="aiCookTime">
-                            <option value="30">30분 이내</option>
-                            <option value="60">1시간 이내</option>
-                            <option value="120">2시간 이내</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <button class="btn btn-primary" onclick="generateAIRecipe()" style="margin-top: 24px;">
-                    AI 레시피 생성하기
-                </button>
-                
-                <div class="loading-spinner" id="aiLoader"></div>
-                <div id="aiResult" style="margin-top: 30px;"></div>
             </div>
         </div>
     </div>
@@ -1756,6 +1790,11 @@
         // ===== 전역 변수 =====
         let currentRecipeId = null;
         let currentUserId = null;
+        
+        // API 베이스 URL 설정 (환경에 따라 자동 감지)
+        const API_BASE_URL = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
+            ? 'http://127.0.0.1:3003'  // 로컬 개발 환경 (CORS 문제 해결을 위해 127.0.0.1 사용)
+            : '';  // 배포 환경 (Vercel)
         
         // ===== 초기화 =====
         document.addEventListener('DOMContentLoaded', function() {
@@ -1814,7 +1853,7 @@
         // ===== 카테고리 로드 =====
         async function loadCategories() {
             try {
-                const response = await fetch('/api/recipes/categories/list');
+                const response = await fetch(`${API_BASE_URL}/api/recipes/categories/list`);
                 const result = await response.json();
                 
                 if (result.success && result.data) {
@@ -1853,7 +1892,7 @@
                     source: document.getElementById('searchSource').value
                 });
                 
-                const response = await fetch(`/api/recipes/search?${params}`, {
+                const response = await fetch(`${API_BASE_URL}/api/recipes/search?${params}`, {
                     headers: {
                         'user-id': currentUserId || ''
                     }
@@ -2054,7 +2093,7 @@
             };
             
             try {
-                const response = await fetch('/api/recipes/create', {
+                const response = await fetch(`${API_BASE_URL}/api/recipes/create`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2094,7 +2133,7 @@
             grid.innerHTML = '';
             
             try {
-                const response = await fetch('/api/recipes/my/list', {
+                const response = await fetch(`${API_BASE_URL}/api/recipes/my/list`, {
                     headers: {
                         'user-id': currentUserId
                     }
@@ -2128,7 +2167,7 @@
             container.innerHTML = '';
             
             try {
-                const response = await fetch('/api/recipes/my/bookmarks', {
+                const response = await fetch(`${API_BASE_URL}/api/recipes/my/bookmarks`, {
                     headers: {
                         'user-id': currentUserId
                     }
@@ -2177,9 +2216,13 @@
         }
         
         // ===== AI 레시피 생성 =====
-        async function generateAIRecipe() {
-            const loader = document.getElementById('aiLoader');
-            const resultDiv = document.getElementById('aiResult');
+        // 전역 변수: 선택한 요리 정보 저장
+        let selectedDish = null;
+        
+        // STEP 1: 재료 입력 후 요리 제안받기
+        async function suggestDishes() {
+            const loader = document.getElementById('suggestLoader');
+            const suggestionsDiv = document.getElementById('dishSuggestions');
             
             const ingredients = document.getElementById('aiIngredients').value;
             if (!ingredients.trim()) {
@@ -2188,19 +2231,144 @@
             }
             
             loader.classList.add('active');
+            suggestionsDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/chatgpt`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        step: 'suggest-dishes',
+                        data: {
+                            ingredients: ingredients,
+                            userId: window.currentUserId || null  // 로그인 안 했으면 null
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.data.dishes) {
+                    displayDishSuggestions(result.data.dishes, ingredients);
+                } else {
+                    throw new Error(result.error || '요리 제안에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('요리 제안 오류:', error);
+                suggestionsDiv.innerHTML = `
+                    <div style="padding: 20px; background: #ffebee; border-radius: 8px; color: #c62828;">
+                        <strong>오류:</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                loader.classList.remove('active');
+            }
+        }
+        
+        // 5가지 요리 제안 표시
+        function displayDishSuggestions(dishes, ingredients) {
+            const suggestionsDiv = document.getElementById('dishSuggestions');
+            
+            let html = `
+                <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #2e7d32;">🎉 ${dishes.length}가지 요리를 제안합니다!</h4>
+                    <p style="margin: 0; color: #558b2f;">원하는 요리를 선택하면 상세 레시피를 만들어드립니다.</p>
+                </div>
+                
+                <div style="display: grid; gap: 16px;">
+            `;
+            
+            dishes.forEach((dish, index) => {
+                html += `
+                    <div onclick="selectDish('${dish.name.replace(/'/g, "\\'")}', '${ingredients.replace(/'/g, "\\'")}')" 
+                         style="padding: 20px; background: white; border: 2px solid #e0e0e0; border-radius: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 20px;"
+                         onmouseover="this.style.borderColor='#4CAF50'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.2)'; this.style.transform='translateY(-2px)';"
+                         onmouseout="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'; this.style.transform='translateY(0)';">
+                        <div style="flex-shrink: 0; width: 50px; height: 50px; background: linear-gradient(135deg, #4CAF50, #45a049); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
+                            ${index + 1}
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 20px; color: #333;">${dish.name}</h4>
+                            <p style="margin: 0; color: #666; font-size: 14px;">${dish.description}</p>
+                        </div>
+                        <div style="flex-shrink: 0; color: #4CAF50; font-size: 24px;">
+                            →
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            
+            suggestionsDiv.innerHTML = html;
+        }
+        
+        // 요리 선택 시 STEP 2로 이동
+        function selectDish(dishName, ingredients) {
+            selectedDish = {
+                name: dishName,
+                ingredients: ingredients
+            };
+            
+            // STEP 2 섹션 표시
+            document.getElementById('step2-section').style.display = 'block';
+            document.getElementById('selectedDishName').textContent = dishName;
+            
+            // 결과 초기화
+            document.getElementById('aiResult').innerHTML = '';
+            
+            // STEP 2로 부드럽게 스크롤
+            setTimeout(() => {
+                document.getElementById('step2-section').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        }
+        
+        // STEP 1로 돌아가기
+        function backToStep1() {
+            document.getElementById('step2-section').style.display = 'none';
+            document.getElementById('aiResult').innerHTML = '';
+            selectedDish = null;
+            
+            // STEP 1로 스크롤
+            document.getElementById('step1-section').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+        
+        // STEP 2: 선택한 요리의 상세 레시피 생성
+        async function generateDetailedRecipe() {
+            if (!selectedDish) {
+                alert('요리를 먼저 선택해주세요!');
+                return;
+            }
+            
+            const loader = document.getElementById('aiLoader');
+            const resultDiv = document.getElementById('aiResult');
+            
+            loader.classList.add('active');
             resultDiv.innerHTML = '';
             
             try {
-                const response = await fetch('/api/chatgpt', {
+                const response = await fetch(`${API_BASE_URL}/api/chatgpt`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         step: 'generate-recipe',
-                        ingredients: ingredients,
-                        style: document.getElementById('aiStyle').value,
-                        maxTime: document.getElementById('aiCookTime').value
+                        data: {
+                            ingredients: selectedDish.ingredients,
+                            dishName: selectedDish.name,
+                            style: document.getElementById('aiStyle').value,
+                            maxTime: document.getElementById('aiCookTime').value,
+                            userId: window.currentUserId || null  // 로그인 안 했으면 null
+                        }
                     })
                 });
                 
@@ -2248,7 +2416,7 @@
             modal.classList.add('active');
             
             try {
-                const response = await fetch(`/api/recipes/${recipeId}`, {
+                const response = await fetch(`${API_BASE_URL}/api/recipes/${recipeId}`, {
                     headers: {
                         'user-id': currentUserId || ''
                     }
@@ -2277,10 +2445,35 @@
             
             let ingredientsList = '';
             if (recipe.ingredients) {
+                // 재료를 타입별로 그룹화
+                const groupedIngredients = {};
                 recipe.ingredients.forEach(ing => {
+                    const type = ing.type || '기타';
+                    if (!groupedIngredients[type]) {
+                        groupedIngredients[type] = [];
+                    }
+                    groupedIngredients[type].push(ing);
+                });
+                
+                // 타입별로 표시
+                Object.entries(groupedIngredients).forEach(([type, items]) => {
                     ingredientsList += `
-                        <li>${ing.name} ${ing.amount}${ing.unit} 
-                        ${ing.cost ? `(${ing.cost.toLocaleString()}원)` : ''}</li>
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: var(--accent-color); font-size: 14px;">📌 ${type}</strong>
+                            <ul style="margin: 8px 0; padding-left: 20px;">
+                    `;
+                    items.forEach(ing => {
+                        ingredientsList += `
+                            <li style="margin: 5px 0;">
+                                <strong>${ing.name}</strong> 
+                                ${ing.amount ? `<span style="color: #6B7280;">${ing.amount}</span>` : ''}
+                                ${ing.cost ? `<span style="color: #059669;">(${ing.cost.toLocaleString()}원)</span>` : ''}
+                            </li>
+                        `;
+                    });
+                    ingredientsList += `
+                            </ul>
+                        </div>
                     `;
                 });
             }
@@ -2289,10 +2482,27 @@
             if (recipe.steps) {
                 recipe.steps.forEach(step => {
                     stepsList += `
-                        <div style="margin-bottom: 15px;">
-                            <strong>Step ${step.order}</strong> 
-                            ${step.time ? `(${step.time}분)` : ''}
-                            <p>${step.description}</p>
+                        <div style="margin-bottom: 25px; padding: 15px; background: #f9fafb; border-radius: 8px; border-left: 4px solid var(--accent-color);">
+                            <strong style="color: var(--accent-color); font-size: 16px;">Step ${step.order}</strong> 
+                            ${step.time ? `<span style="color: #6B7280; font-size: 14px;">(${step.time}분)</span>` : ''}
+                            
+                            ${step.image_url ? `
+                                <div style="margin: 10px 0;">
+                                    <img src="${step.image_url}" 
+                                         alt="조리 과정 ${step.order}" 
+                                         style="width: 100%; max-width: 400px; border-radius: 8px; display: block;"
+                                         onerror="this.style.display='none'">
+                                </div>
+                            ` : ''}
+                            
+                            <p style="margin: 10px 0; line-height: 1.6;">${step.description}</p>
+                            
+                            ${step.tip ? `
+                                <div style="margin-top: 10px; padding: 10px; background: #FEF3C7; border-radius: 6px;">
+                                    <strong style="color: #92400E;">💡 팁:</strong>
+                                    <span style="color: #78350F;">${step.tip}</span>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -2333,7 +2543,7 @@
             }
             
             try {
-                const response = await fetch(`/api/recipes/bookmark/${currentRecipeId}`, {
+                const response = await fetch(`${API_BASE_URL}/api/recipes/bookmark/${currentRecipeId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
