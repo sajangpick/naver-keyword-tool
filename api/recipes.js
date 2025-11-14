@@ -981,6 +981,21 @@ router.get('/my/bookmarks', async (req, res) => {
 // ========================================
 router.get('/categories/list', async (req, res) => {
   try {
+    // Supabase 연결 확인
+    if (!supabase) {
+      console.warn('⚠️ Supabase 연결 없음 - 기본 카테고리 반환');
+      return res.json({
+        success: true,
+        data: [
+          { id: 1, name: '한식', display_order: 1, is_active: true },
+          { id: 2, name: '중식', display_order: 2, is_active: true },
+          { id: 3, name: '일식', display_order: 3, is_active: true },
+          { id: 4, name: '양식', display_order: 4, is_active: true },
+          { id: 5, name: '디저트', display_order: 5, is_active: true }
+        ]
+      });
+    }
+    
     const { data: categories, error } = await supabase
       .from('recipe_categories')
       .select('*')
