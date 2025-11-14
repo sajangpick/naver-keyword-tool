@@ -2,12 +2,28 @@
   if (window.authState?.supabase) {
     return; // already initialized
   }
+  
+  // Supabase SDK 로드 대기 (최대 5초)
+  let waitCount = 0;
+  const maxWait = 50; // 5초 (50 * 100ms)
+  while (!window.supabase && waitCount < maxWait) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    waitCount++;
+  }
+  
   if (!window.supabase) {
-    console.warn("[auth] Supabase SDK not loaded; auth-state init skipped.");
+    console.error("[auth] Supabase SDK가 로드되지 않았습니다. Supabase 스크립트가 먼저 로드되어야 합니다.");
+    return;
+  }
+  
+  // createClient 함수가 있는지 확인
+  if (typeof window.supabase.createClient !== 'function') {
+    console.error("[auth] Supabase SDK의 createClient 함수를 찾을 수 없습니다.");
     return;
   }
 
   async function resolveSupabaseConfig() {
+    // 이미 설정된 값이 있으면 사용
     let url = window.SUPABASE_URL;
     let anonKey = window.SUPABASE_ANON_KEY;
 
@@ -15,9 +31,24 @@
       return { url, anonKey };
     }
 
-    const endpoints = ["/api/config"];
+    // 로컬 개발 환경 감지
+    const isLocalDev = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.hostname === '';
 
-    // Render 백엔드 직접 호출 (Vercel 프록시 실패 시 대비)
+    const endpoints = [];
+    
+    // 로컬 개발 환경에서는 로컬 Express 서버 우선 시도 (포트 3003)
+    if (isLocalDev) {
+      // Live Server(5501)를 사용하는 경우 Express 서버(3003) 시도
+      endpoints.push("http://127.0.0.1:3003/api/config");
+      endpoints.push("http://localhost:3003/api/config");
+    } else {
+      // 프로덕션 환경에서는 같은 origin의 /api/config 시도
+      endpoints.push("/api/config");
+    }
+
+    // Render 백엔드 fallback (모든 환경에서 마지막 시도)
     const renderOrigin = window.SUPABASE_CONFIG_FALLBACK_ORIGIN ||
       "https://naver-keyword-tool.onrender.com";
     if (renderOrigin && renderOrigin !== window.location.origin) {
@@ -25,8 +56,23 @@
     }
 
     for (const endpoint of endpoints) {
+      let timeoutId = null;
       try {
-        const response = await fetch(endpoint, { credentials: "omit" });
+        console.log("[auth] Supabase config 요청 시도:", endpoint);
+        
+        // 타임아웃 설정 (5초)
+        const controller = new AbortController();
+        timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(endpoint, { 
+          credentials: "omit",
+          mode: 'cors',
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        timeoutId = null;
+        
         if (!response.ok) {
           console.warn("[auth] Supabase config 요청 실패:", endpoint, response.status);
           continue;
@@ -37,22 +83,64 @@
           config = await response.clone().json();
         } catch (parseError) {
           const text = await response.text().catch(() => "");
-          throw new Error(`JSON 파싱 실패: ${text?.slice(0, 120) || ""}`);
+          console.warn("[auth] JSON 파싱 실패:", text?.slice(0, 120));
+          continue;
         }
 
         if (config?.supabaseUrl && config?.supabaseAnonKey) {
+          console.log("[auth] ✅ Supabase config 로드 성공:", endpoint);
           return {
             url: config.supabaseUrl,
             anonKey: config.supabaseAnonKey,
             source: endpoint,
           };
+        } else {
+          console.warn("[auth] Supabase config에 필수 값이 없습니다:", config);
         }
       } catch (error) {
-        console.error("[auth] Supabase config 가져오기 오류:", endpoint, error);
+        // 타임아웃 정리
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        
+        // 네트워크 오류는 조용히 넘어가고 다음 엔드포인트 시도
+        if (error.name === 'AbortError') {
+          console.warn("[auth] 요청 타임아웃:", endpoint);
+        } else if (error.message && (error.message.includes('CORS') || error.message.includes('Failed to fetch'))) {
+          console.warn("[auth] 네트워크 오류 (다음 엔드포인트 시도):", endpoint);
+        } else {
+          console.error("[auth] Supabase config 가져오기 오류:", endpoint, error.message);
+        }
       }
     }
 
-    throw new Error("Supabase 환경변수를 가져오지 못했습니다");
+    // 모든 엔드포인트 실패 시 명확한 에러 메시지
+    let errorMsg = "";
+    
+    if (isLocalDev) {
+      const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+      const isLiveServer = currentPort === '5501' || currentPort === '5500' || currentPort === '';
+      
+      if (isLiveServer) {
+        errorMsg = "⚠️ Live Server를 사용 중입니다.\n\n" +
+          "Express 서버를 실행해야 합니다:\n" +
+          "1. 터미널을 열고 프로젝트 폴더로 이동\n" +
+          "2. 'node server.js' 실행\n" +
+          "3. 브라우저에서 http://localhost:3003/login.html 접속\n\n" +
+          "또는 login.html 파일의 주석을 해제하고 환경변수를 직접 설정하세요.";
+      } else {
+        errorMsg = "Supabase 환경변수를 가져오지 못했습니다.\n\n" +
+          "Express 서버가 실행 중인지 확인하세요:\n" +
+          "- 터미널에서 'node server.js' 실행\n" +
+          "- http://localhost:3003/login.html 접속";
+      }
+    } else {
+      errorMsg = "Supabase 환경변수를 가져오지 못했습니다. 서버가 실행 중인지 확인하거나 환경변수가 설정되어 있는지 확인해주세요.";
+    }
+    
+    console.error("[auth] ❌", errorMsg);
+    alert(errorMsg);
+    throw new Error(errorMsg);
   }
 
   let SUPABASE_URL = null;
@@ -77,10 +165,17 @@
   window.SUPABASE_URL = SUPABASE_URL;
   window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 
+  // Supabase SDK의 createClient 함수 사용
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY || ""
   );
+  
+  // window.supabase가 SDK 객체가 아닌 경우를 대비한 처리
+  if (!supabaseClient || typeof supabaseClient.auth !== 'object') {
+    console.error("[auth] Supabase 클라이언트 생성 실패");
+    return;
+  }
 
   const STORAGE_KEYS = {
     status: "isLoggedIn",

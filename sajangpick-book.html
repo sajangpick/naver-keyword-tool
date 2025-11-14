@@ -881,11 +881,33 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
-    <script src="/assets/supabase-config.js?v=20251108"></script>
-    <script src="/assets/auth-state.js?v=20251108"></script>
+    <script src="/assets/auth-state.js?v=20251114"></script>
+    <script>
+      // ⚠️ 캐시 방지를 위한 버전 번호 (2025-11-14 수정: 2026 → 2025 수정)
+      console.log("========================================");
+      console.log("📚 전자책 다운로드 페이지 로드됨");
+      console.log("📅 스크립트 버전: 2025-11-14");
+      console.log("✅ 2026 버전 사용");
+      console.log("========================================");
+    </script>
     <script>
       (function () {
-        const EBOOK_PATH = "/docs/Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf.pdf";
+        // 전자책 PDF 파일 경로 (영문 파일명) - 2026 버전 사용
+        // 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf
+        let ebookPath = "/docs/Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+        
+        // 중복 확장자 방지
+        if (ebookPath.includes('.pdf.pdf')) {
+          console.error("[전자책] ❌ 중복 확장자 감지! .pdf.pdf를 .pdf로 변경합니다.");
+          ebookPath = ebookPath.replace('.pdf.pdf', '.pdf');
+        }
+        
+        // 최종 검증된 경로를 상수로 설정
+        const EBOOK_PATH = ebookPath;
+        
+        // 파일명 검증 (디버깅용)
+        console.log("[전자책] ✅ 파일 경로 설정:", EBOOK_PATH);
+        console.log("[전자책] ✅ 예상 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf");
         const downloadBtn = document.getElementById("downloadBtn");
         const loginCta = document.getElementById("loginCta");
         const statusText = document.getElementById("downloadStatus");
@@ -1007,20 +1029,63 @@
           return true;
         }
 
-        function handleDownload() {
+        async function handleDownload() {
           if (!requireLogin()) return;
+          
           try {
-            window.open(EBOOK_PATH, "_blank", "noopener");
+            // ⚠️ 강제로 올바른 파일명 사용 (2026 버전)
+            const CORRECT_FILENAME = "Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+            let finalPath = "/docs/" + CORRECT_FILENAME;
+            
+            // 중복 확장자 제거
+            finalPath = finalPath.replace(/\.pdf\.pdf/g, '.pdf');
+            
+            // 절대 경로로 변환 (배포 환경 대응)
+            const absolutePath = finalPath.startsWith('/') 
+              ? finalPath 
+              : '/' + finalPath;
+            
+            console.log("========================================");
+            console.log("[전자책] ✅ 다운로드 시작");
+            console.log("[전자책] ✅ 최종 다운로드 경로:", absolutePath);
+            console.log("[전자책] ✅ 파일명:", CORRECT_FILENAME);
+            console.log("========================================");
+            
+            // 파일 존재 여부 확인
+            const response = await fetch(absolutePath, { 
+              method: 'HEAD',
+              cache: 'no-cache'
+            });
+            
+            console.log("[전자책] 파일 확인 응답:", response.status, response.statusText);
+            
+            if (!response.ok) {
+              console.error("[전자책] 파일을 찾을 수 없습니다:", absolutePath, response.status);
+              if (statusText) {
+                statusText.textContent = `파일을 찾을 수 없습니다. (${response.status}) 관리자에게 문의해주세요.`;
+                statusText.style.color = "#b91c1c";
+              }
+              alert(`전자책 파일을 찾을 수 없습니다. (오류 코드: ${response.status})\n\n파일 경로: ${absolutePath}\n\n관리자에게 문의해주세요.`);
+              return;
+            }
+            
+            // PDF 다운로드 (캐시 방지를 위해 타임스탬프 추가)
+            const downloadUrl = absolutePath + (absolutePath.includes('?') ? '&' : '?') + '_t=' + Date.now();
+            console.log("[전자책] PDF 열기:", downloadUrl);
+            console.log("[전자책] 원본 경로:", absolutePath);
+            window.open(downloadUrl, "_blank", "noopener");
             if (statusText) {
               statusText.textContent = "PDF가 새 창에서 열립니다. 이메일로도 곧 발송될 예정입니다.";
               statusText.style.color = "#d9480f";
             }
           } catch (error) {
-            console.error("다운로드 실패:", error);
+            console.error("[전자책] 다운로드 실패:", error);
+            console.error("[전자책] 오류 상세:", error.message, error.stack);
             if (statusText) {
               statusText.textContent = "다운로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
               statusText.style.color = "#b91c1c";
             }
+            alert(`다운로드 중 오류가 발생했습니다.\n\n오류: ${error.message}\n\n잠시 후 다시 시도해주세요.`);
           }
         }
 
