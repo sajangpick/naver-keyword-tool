@@ -4069,6 +4069,195 @@ app.delete("/api/shorts/plan-history/:id", async (req, res) => {
   }
 });
 
+// ==================== 쇼츠 영상 생성 API ====================
+
+app.post("/api/shorts/generate", async (req, res) => {
+  try {
+    const userId = req.headers["user-id"] || req.body.userId;
+    ensureUserId(userId);
+
+    // FormData 파싱 (multer 미들웨어 필요)
+    const multer = require("multer");
+    const upload = multer({ storage: multer.memoryStorage() });
+    
+    // 단일 파일 업로드 미들웨어
+    const uploadSingle = upload.single("image");
+
+    uploadSingle(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          error: "이미지 업로드 실패: " + err.message,
+        });
+      }
+
+      try {
+        const {
+          style,
+          menuName,
+          menuFeatures = "",
+          menuPrice = "",
+          music = "auto",
+          duration = "10",
+        } = req.body;
+
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            error: "이미지 파일이 필요합니다.",
+          });
+        }
+
+        if (!menuName) {
+          return res.status(400).json({
+            success: false,
+            error: "메뉴명이 필요합니다.",
+          });
+        }
+
+        if (!style) {
+          return res.status(400).json({
+            success: false,
+            error: "영상 스타일이 필요합니다.",
+          });
+        }
+
+        // 이미지를 Supabase Storage에 업로드
+        const fileExt = req.file.originalname.split(".").pop();
+        const fileName = `${userId}/${Date.now()}.${fileExt}`;
+        const filePath = `shorts-images/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("uploads")
+          .upload(filePath, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          devError("이미지 업로드 실패:", uploadError);
+          // 업로드 실패해도 계속 진행 (임시)
+        }
+
+        // Public URL 생성
+        const { data: urlData } = supabase.storage
+          .from("uploads")
+          .getPublicUrl(filePath);
+        const imageUrl = urlData?.publicUrl || "";
+
+        // 영상 데이터베이스에 저장 (처리 중 상태)
+        const { data: videoData, error: dbError } = await supabase
+          .from("shorts_videos")
+          .insert({
+            user_id: userId,
+            title: menuName,
+            description: menuFeatures,
+            style: style,
+            duration_sec: parseInt(duration) || 10,
+            music_type: music,
+            menu_name: menuName,
+            menu_features: menuFeatures,
+            menu_price: menuPrice,
+            image_url: imageUrl,
+            status: "processing",
+          })
+          .select("*")
+          .single();
+
+        if (dbError) {
+          devError("영상 데이터 저장 실패:", dbError);
+          return res.status(500).json({
+            success: false,
+            error: "영상 데이터 저장 실패: " + dbError.message,
+          });
+        }
+
+        // TODO: 실제 영상 생성 로직 (현재는 시뮬레이션)
+        // 실제로는 AI 영상 생성 서비스를 호출해야 함
+        // 예: RunwayML, D-ID, Synthesia 등
+
+        // 영상 생성 완료로 업데이트 (임시)
+        setTimeout(async () => {
+          await supabase
+            .from("shorts_videos")
+            .update({
+              status: "completed",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", videoData.id);
+        }, 5000);
+
+        res.json({
+          success: true,
+          data: {
+            id: videoData.id,
+            status: "processing",
+            message: "영상 생성이 시작되었습니다. 잠시 후 마이페이지에서 확인하세요.",
+          },
+        });
+      } catch (error) {
+        devError("영상 생성 처리 실패:", error);
+        res.status(500).json({
+          success: false,
+          error: error.message || "영상 생성 중 오류가 발생했습니다.",
+        });
+      }
+    });
+  } catch (error) {
+    devError("영상 생성 API 오류:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "영상 생성 API 오류",
+    });
+  }
+});
+
+// ==================== 쇼츠 영상 목록 조회 API ====================
+
+app.get("/api/shorts/videos", async (req, res) => {
+  try {
+    const userId = req.headers["user-id"] || req.query.userId;
+    ensureUserId(userId);
+
+    const { page = 1, limit = 20, status } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = supabase
+      .from("shorts_videos")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + parseInt(limit) - 1);
+
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: videos, error, count } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      data: videos || [],
+      pagination: {
+        total: count || 0,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil((count || 0) / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    devError("영상 목록 조회 실패:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "영상 목록을 불러오지 못했습니다.",
+    });
+  }
+});
+
 // ==================== 서버 시작 ====================
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {

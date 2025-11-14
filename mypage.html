@@ -1215,6 +1215,22 @@
           </div>
         </section>
 
+        <!-- 3-1. 내 쇼츠 영상 -->
+        <section class="section" id="shortsSection">
+          <h3 class="section-title">
+            <i class="fas fa-video"></i>
+            내 쇼츠 영상
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            AI로 생성한 쇼츠 영상을 확인하세요
+          </p>
+          <div id="shortsVideos" class="activity-list">
+            <div class="loading">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </section>
+
         <!-- 4. 회원정보 수정 -->
         <section class="section">
           <h3 class="section-title">
@@ -1345,7 +1361,8 @@
           loadUserProfile(user.id),
           loadRecentReviews(user.id),
           loadRecentBlogs(user.id),
-          loadTokenInfo(user.id)  // 토큰 정보 추가
+          loadTokenInfo(user.id),  // 토큰 정보 추가
+          loadShortsVideos(user.id)  // 쇼츠 영상 목록 추가
         ]);
 
         // 추가 데이터 로드 (블로그 관련)
@@ -2233,6 +2250,117 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
       } catch (error) {
         console.error('❌ 블로그 스타일 저장 실패:', error);
         alert('블로그 스타일 저장 실패: ' + error.message);
+      }
+    }
+
+    // 쇼츠 영상 목록 로드
+    async function loadShortsVideos(userId) {
+      const container = document.getElementById('shortsVideos');
+      if (!container) return;
+      
+      try {
+        const response = await fetch(`/api/shorts/videos?userId=${encodeURIComponent(userId)}`, {
+          headers: {
+            'user-id': userId
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('영상 목록 로드 실패');
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data || result.data.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-video"></i>
+              <div>생성한 영상이 없습니다</div>
+              <button class="btn btn-primary" onclick="location.href='/shorts-editor.html'" style="margin-top: 16px;">
+                <i class="fas fa-plus"></i> 영상 만들기
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = result.data.map(video => {
+          const statusText = {
+            'processing': '생성 중...',
+            'completed': '완료',
+            'failed': '실패'
+          }[video.status] || video.status;
+
+          const statusColor = {
+            'processing': '#ff9800',
+            'completed': '#4caf50',
+            'failed': '#f44336'
+          }[video.status] || '#666';
+
+          const styleNames = {
+            'luxury': '럭셔리',
+            'fast': '빠른 리듬',
+            'chef': '셰프의 손',
+            'plating': '플레이팅',
+            'simple': '심플 클래식'
+          };
+
+          return `
+            <div class="activity-item">
+              <div class="activity-title">
+                ${video.menu_name || video.title || '제목 없음'}
+                <span style="margin-left: 8px; font-size: 12px; color: ${statusColor}; font-weight: 600;">
+                  ${statusText}
+                </span>
+              </div>
+              <div class="activity-content">
+                ${video.menu_features ? video.menu_features.substring(0, 80) + '...' : '설명 없음'}
+                ${video.menu_price ? ` · ${video.menu_price}` : ''}
+                ${video.style ? ` · ${styleNames[video.style] || video.style}` : ''}
+                ${video.duration_sec ? ` · ${video.duration_sec}초` : ''}
+              </div>
+              ${video.image_url ? `
+                <div style="margin-top: 12px;">
+                  <img src="${video.image_url}" alt="영상 썸네일" 
+                    style="max-width: 200px; max-height: 150px; border-radius: 8px; object-fit: cover;">
+                </div>
+              ` : ''}
+              <div class="activity-meta">
+                <span><i class="fas fa-clock"></i> ${new Date(video.created_at).toLocaleString('ko-KR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+                ${video.status === 'completed' && video.video_url ? `
+                  <a href="${video.video_url}" target="_blank" style="color: #03c75a; text-decoration: none;">
+                    <i class="fas fa-play"></i> 영상 보기
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // #shorts 해시가 있으면 해당 섹션으로 스크롤
+        if (window.location.hash === '#shorts') {
+          setTimeout(() => {
+            const section = document.getElementById('shortsSection');
+            if (section) {
+              section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 500);
+        }
+
+      } catch (error) {
+        console.error('❌ 쇼츠 영상 로드 실패:', error);
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>영상 목록을 불러오는 중 오류가 발생했습니다</div>
+          </div>
+        `;
       }
     }
 
