@@ -881,10 +881,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
-    <script src="/assets/auth-state.js?v=20251108" defer></script>
+    <script src="/assets/supabase-config.js?v=20251108"></script>
+    <script src="/assets/auth-state.js?v=20251108"></script>
     <script>
       (function () {
-        const EBOOK_PATH = "/docs/%EC%B4%88%EB%B3%B4%EC%82%AC%EC%9E%A5%EB%8B%98%EB%93%A4%EC%9D%84%20%EC%9C%84%ED%95%9C%20%EB%84%A4%EC%9D%B4%EB%B2%84%ED%94%8C%EB%A0%88%EC%9D%B4%EC%8A%A4%20%EC%9E%85%EB%AC%B8%EA%B0%80%EC%9D%B4%EB%93%9C_2025_%EC%82%AC%EC%9E%A5%ED%94%BD_vol1.pdf";
+        const EBOOK_PATH = "/docs/Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf.pdf";
         const downloadBtn = document.getElementById("downloadBtn");
         const loginCta = document.getElementById("loginCta");
         const statusText = document.getElementById("downloadStatus");
@@ -892,44 +893,107 @@
         const ctaLoginBtn = document.getElementById("ctaLoginBtn");
         const footerYear = document.getElementById("footerYear");
         let currentUser = null;
+        let sessionCheckAttempts = 0;
+        const MAX_SESSION_CHECK_ATTEMPTS = 50; // 최대 5초 대기 (50 * 100ms)
 
         footerYear.textContent = new Date().getFullYear();
 
         function setLoggedInUI(user) {
           currentUser = user;
+          
+          // 다운로드 버튼 영역 업데이트
           if (loginCta) loginCta.style.display = "none";
           if (ctaLoginBtn) ctaLoginBtn.style.display = "none";
           if (statusText) {
             statusText.textContent = "로그인이 확인되었습니다. 버튼을 눌러 전자책을 다운로드하세요.";
             statusText.style.color = "#d9480f";
           }
+
+          // 헤더 업데이트
+          const authUser = document.getElementById("authUser");
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+          const userEmail = document.getElementById("userEmail");
+          const userAvatar = document.getElementById("userAvatar");
+          const logoutBtn = document.getElementById("logoutBtn");
+
+          if (authUser) authUser.style.display = "flex";
+          if (loginBtn) loginBtn.style.display = "none";
+          if (signupBtn) signupBtn.style.display = "none";
+          
+          if (userEmail && user?.email) {
+            userEmail.textContent = user.email;
+          }
+          
+          if (userAvatar && user?.email) {
+            const initial = user.email.charAt(0).toUpperCase();
+            userAvatar.textContent = initial;
+          }
+
+          // 로그아웃 버튼 이벤트 리스너
+          if (logoutBtn) {
+            logoutBtn.onclick = async () => {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
+              }
+              window.location.reload();
+            };
+          }
         }
 
         function setLoggedOutUI() {
           currentUser = null;
+          
+          // 다운로드 버튼 영역 업데이트
           if (loginCta) loginCta.style.display = "inline-flex";
           if (ctaLoginBtn) ctaLoginBtn.style.display = "inline-flex";
           if (statusText) {
             statusText.textContent = "로그인하지 않은 경우 다운로드 전에 로그인 안내가 표시됩니다.";
             statusText.style.color = "var(--text-secondary)";
           }
+
+          // 헤더 업데이트
+          const authUser = document.getElementById("authUser");
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+
+          if (authUser) authUser.style.display = "none";
+          if (loginBtn) loginBtn.style.display = "inline-flex";
+          if (signupBtn) signupBtn.style.display = "inline-flex";
         }
 
         async function resolveSession() {
+          // authState가 아직 초기화되지 않았으면 재시도
           if (!window.authState?.supabase) {
-            setTimeout(resolveSession, 120);
-            return;
+            sessionCheckAttempts++;
+            if (sessionCheckAttempts < MAX_SESSION_CHECK_ATTEMPTS) {
+              setTimeout(resolveSession, 100);
+              return;
+            } else {
+              console.warn("[전자책] authState 초기화 대기 시간 초과");
+              setLoggedOutUI();
+              return;
+            }
           }
+
           try {
-            const { data } = await window.authState.supabase.auth.getSession();
+            const { data, error } = await window.authState.supabase.auth.getSession();
+            if (error) {
+              console.error("[전자책] 세션 확인 오류:", error);
+              setLoggedOutUI();
+              return;
+            }
+
             const session = data?.session;
             if (session?.user) {
+              console.log("[전자책] 로그인 확인됨:", session.user.email);
               setLoggedInUI(session.user);
             } else {
+              console.log("[전자책] 로그인되지 않음");
               setLoggedOutUI();
             }
           } catch (error) {
-            console.error("세션 확인 실패:", error);
+            console.error("[전자책] 세션 확인 실패:", error);
             setLoggedOutUI();
           }
         }
@@ -963,8 +1027,21 @@
         downloadBtn?.addEventListener("click", handleDownload);
         ctaDownloadBtn?.addEventListener("click", handleDownload);
 
-        window.addEventListener("auth:state-changed", resolveSession);
-        resolveSession();
+        // auth:state-changed 이벤트 리스너 등록
+        window.addEventListener("auth:state-changed", () => {
+          console.log("[전자책] auth:state-changed 이벤트 수신");
+          sessionCheckAttempts = 0; // 재시도 카운터 리셋
+          resolveSession();
+        });
+
+        // 초기 세션 확인 (DOMContentLoaded 후 실행)
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(resolveSession, 200);
+          });
+        } else {
+          setTimeout(resolveSession, 200);
+        }
       })();
     </script>
   </body>
