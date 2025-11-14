@@ -64,6 +64,7 @@
         justify-content: space-between;
         gap: 20px;
         position: relative;
+        box-sizing: border-box;
       }
 
       .logo-container {
@@ -71,27 +72,28 @@
         align-items: center;
         gap: 10px;
         font-weight: 800;
-        font-size: 20px;
+        font-size: 12px;
         color: var(--text-primary);
         cursor: pointer;
         flex: 0 0 auto;
       }
 
       .logo-icon {
-        width: 40px;
-        height: 40px;
+        width: 28px;
+        height: 28px;
         border-radius: 12px;
         background: var(--accent-color);
         color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 14px;
       }
 
       .logo-text {
         letter-spacing: -0.03em;
         text-transform: lowercase;
+        font-size: 12px;
       }
 
       .header-slogan {
@@ -116,6 +118,9 @@
         .header-inner {
           padding: 12px 16px;
           flex-wrap: wrap;
+          box-sizing: border-box;
+          width: 100%;
+          max-width: 100%;
         }
         
         .header-slogan {
@@ -136,12 +141,25 @@
         .header-auth {
           order: 2;
         }
+
+        .logo-icon {
+          width: 26px;
+          height: 26px;
+          font-size: 13px;
+        }
+
+        .logo-text {
+          font-size: 12px;
+        }
       }
 
       @media (max-width: 480px) {
         .header-inner {
           padding: 10px 12px;
           gap: 12px;
+          box-sizing: border-box;
+          width: 100%;
+          max-width: 100%;
         }
         
         .header-slogan {
@@ -161,6 +179,9 @@
           flex-wrap: nowrap;
           justify-content: space-between;
           align-items: center;
+          box-sizing: border-box;
+          width: 100%;
+          max-width: 100%;
         }
 
         .logo-container {
@@ -193,12 +214,15 @@
           flex-shrink: 0;
           margin-left: auto;
           margin-right: 0;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
         .auth-buttons {
           gap: 2px;
           flex-wrap: nowrap;
           justify-content: flex-end;
+          box-sizing: border-box;
         }
 
         .auth-btn {
@@ -207,6 +231,8 @@
           font-size: 9px;
           min-width: auto;
           flex-shrink: 0;
+          box-sizing: border-box;
+          white-space: nowrap;
         }
 
         .auth-btn i {
@@ -568,7 +594,7 @@
         gap: 14px;
         padding: 10px 16px;
         border-radius: 16px;
-        background: rgba(3, 199, 90, 0.12);
+        background: rgba(255, 123, 84, 0.12);
         color: var(--text-primary);
       }
 
@@ -1362,6 +1388,14 @@
       <a class="menu-item" href="/recipe-manager.html">
         <span class="ico"><i class="fa-solid fa-utensils"></i></span>
         <span>레시피</span>
+      </a>
+      <a class="menu-item" href="/shorts-editor.html">
+        <span class="ico"><i class="fa-solid fa-film"></i></span>
+        <span>영상</span>
+      </a>
+      <a class="menu-item" href="/sajangpick-book.html">
+        <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+        <span>전자책</span>
       </a>
       <a class="menu-item" href="/news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>

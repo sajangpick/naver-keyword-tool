@@ -109,7 +109,7 @@ const corsOptions = {
   },
   credentials: !ALLOW_ALL,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "user-id"],
 };
 
 // 미들웨어 설정
@@ -225,7 +225,20 @@ app.use("/csp-report", rateLimiter);
 // ==================== API 라우트 (정적 파일보다 먼저) ====================
 
 // 클라이언트용 환경변수 제공 (공개 가능한 키만)
+app.options("/api/config", (req, res) => {
+  // CORS preflight 요청 처리
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.status(200).end();
+});
+
 app.get("/api/config", (req, res) => {
+  // CORS 헤더 추가
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  
   res.json({
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
@@ -240,6 +253,7 @@ app.use("/js", express.static(path.join(__dirname, "js")));
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use("/admin", express.static(path.join(__dirname, "admin")));
+app.use("/docs", express.static(path.join(__dirname, "docs")));
 
 // 주요 HTML 라우트 화이트리스트 서빙
 function sendHtml(res, file) {
@@ -655,6 +669,7 @@ app.get("/api/admin/dashboard", adminDashboardHandler);
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
+app.post("/api/chatgpt", chatgptBlogHandler);  // 레시피 생성용 엔드포인트 추가
 
 // ==================== 뉴스 게시판 API ====================
 const newsBoardHandler = require("./api/news-board");
@@ -662,9 +677,10 @@ app.get("/api/news-board", newsBoardHandler);
 app.post("/api/news-board", newsBoardHandler);
 app.put("/api/news-board", newsBoardHandler);
 app.delete("/api/news-board", newsBoardHandler);
-const newsCollectHandler = require("./api/news-collect");
+// news-collect.js 파일이 없으므로 주석 처리
+// const newsCollectHandler = require("./api/news-collect");
 const naverSectionNewsHandler = require("./api/naver-section-news");
-app.post("/api/news-collect", newsCollectHandler);
+// app.post("/api/news-collect", newsCollectHandler);
 app.get("/api/naver-section-news", naverSectionNewsHandler);
 
 // AI 뉴스 추천 API

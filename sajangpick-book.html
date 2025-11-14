@@ -166,38 +166,58 @@
         font-size: 16px;
       }
 
+      .auth-user__avatar {
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+
       .auth-user__meta {
         display: flex;
         flex-direction: column;
-        line-height: 1.3;
+        line-height: 1.2;
       }
 
       .auth-user__label {
         font-size: 11px;
         font-weight: 600;
         color: var(--text-secondary);
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
+        text-decoration: none;
       }
 
       .auth-user__email {
         font-size: 14px;
         font-weight: 600;
         color: var(--text-primary);
+        cursor: pointer;
+        transition: color 0.2s ease;
+        text-decoration: none;
+      }
+
+      .auth-user__email:hover {
+        color: var(--accent-color);
       }
 
       .auth-user__logout {
         height: 36px;
         padding: 0 16px;
-        border-radius: 10px;
+        border-radius: 12px;
         border: 1px solid rgba(0, 0, 0, 0.08);
         background: #fff;
-        color: var(--accent-color);
+        color: var(--text-primary);
         font-weight: 600;
         cursor: pointer;
+        transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
+      }
+
+      .auth-user__logout:hover {
+        background: rgba(255, 126, 70, 0.12);
+        transform: translateY(-2px);
       }
 
       .side-nav {
@@ -288,15 +308,17 @@
       }
 
       .page-title h1 {
-        font-size: 20px;
+        font-size: 12pt;
         font-weight: 800;
         color: var(--text-primary);
         margin-bottom: 4px;
+        line-height: 1.2;
       }
 
       .page-title p {
-        font-size: 13px;
+        font-size: 8pt;
         color: var(--text-secondary);
+        line-height: 1.3;
       }
 
       .beta-badge {
@@ -340,14 +362,15 @@
       }
 
       .ebook-hero h2 {
-        font-size: 28px;
+        font-size: 18px;
         font-weight: 800;
         color: var(--text-primary);
         margin-bottom: 16px;
+        line-height: 1.4;
       }
 
       .ebook-hero p {
-        font-size: 15px;
+        font-size: 13px;
         color: var(--text-secondary);
         margin-bottom: 20px;
         line-height: 1.6;
@@ -472,7 +495,7 @@
       }
 
       .feature-card h3 {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 10px;
@@ -482,7 +505,7 @@
       }
 
       .feature-card p {
-        font-size: 14px;
+        font-size: 13px;
         color: var(--text-secondary);
         line-height: 1.6;
       }
@@ -542,13 +565,13 @@
       }
 
       .trust-item h3 {
-        font-size: 17px;
+        font-size: 16px;
         color: var(--text-primary);
         margin-bottom: 10px;
       }
 
       .trust-item p {
-        font-size: 14px;
+        font-size: 13px;
         color: var(--text-secondary);
         line-height: 1.6;
       }
@@ -584,14 +607,14 @@
       }
 
       .cta-panel h2 {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 800;
         margin-bottom: 14px;
         position: relative;
       }
 
       .cta-panel p {
-        font-size: 14px;
+        font-size: 13px;
         margin-bottom: 24px;
         opacity: 0.95;
         position: relative;
@@ -623,18 +646,36 @@
           top: auto;
           flex-direction: row;
           width: auto;
+          max-width: calc(100vw - 40px);
           padding: 12px 16px;
+          overflow-x: hidden;
+          overflow-y: hidden;
+          gap: 8px;
           border-radius: 24px;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+          justify-content: space-between;
         }
 
         .side-nav .menu-item {
-          flex: 1 1 auto;
+          flex-direction: column;
+          min-width: 0;
           padding: 8px 6px;
           font-size: 8px;
+          flex: 1 1 auto;
         }
 
-        .side-nav .ico {
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: var(--accent-color);
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: var(--accent-color);
+          background: rgba(255, 126, 70, 0.1);
+        }
+
+        .side-nav .menu-item .ico {
           width: 32px;
           height: 32px;
           font-size: 14px;
@@ -654,6 +695,27 @@
         }
       }
 
+      @media (max-width: 768px) {
+        .page-title h1 {
+          font-size: 12pt;
+          margin-bottom: 2px;
+          line-height: 1.2;
+        }
+
+        .page-title p {
+          font-size: 8pt;
+          line-height: 1.3;
+        }
+
+        .ebook-hero h2 {
+          font-size: 16px;
+        }
+
+        .ebook-hero p {
+          font-size: 12px;
+        }
+      }
+
       @media (max-width: 640px) {
         .content-card {
           padding: 22px 18px;
@@ -666,6 +728,54 @@
         .cta-buttons > * {
           width: 100%;
           justify-content: center;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .side-nav {
+          bottom: 12px;
+          max-width: calc(100vw - 16px);
+          padding: 8px 4px;
+          gap: 2px;
+          border-radius: 18px;
+          overflow-x: hidden;
+          justify-content: space-between;
+        }
+
+        .side-nav .menu-item {
+          min-width: 0;
+          padding: 4px 1px;
+          font-size: 6px;
+          flex: 1 1 calc((100% - 12px) / 7);
+          max-width: calc((100% - 12px) / 7);
+          gap: 2px;
+        }
+
+        .side-nav .menu-item .ico {
+          width: 22px;
+          height: 22px;
+          font-size: 10px;
+        }
+
+        .side-nav .menu-item span:not(.ico) {
+          font-size: 6px;
+          word-break: keep-all;
+          line-height: 1.2;
+          text-align: center;
+        }
+
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: var(--accent-color);
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: var(--accent-color);
+          background: rgba(255, 126, 70, 0.1);
+        }
+
+        .main-content {
+          padding-bottom: 70px;
         }
       }
     </style>
@@ -724,13 +834,17 @@
         <span class="ico"><i class="fa-solid fa-utensils"></i></span>
         <span>레시피</span>
       </a>
+      <a class="menu-item" href="/shorts-editor.html">
+        <span class="ico"><i class="fa-solid fa-film"></i></span>
+        <span>영상</span>
+      </a>
+      <a class="menu-item active" href="/sajangpick-book.html">
+        <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+        <span>전자책</span>
+      </a>
       <a class="menu-item" href="/news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
         <span>정보</span>
-      </a>
-      <a class="menu-item active" href="/sajangpick-book.html">
-        <span class="ico"><i class="fa-solid fa-book-open-reader"></i></span>
-        <span>전자책</span>
       </a>
       <a class="menu-item" href="/policy-support.html">
         <span class="ico"><i class="fa-solid fa-coins"></i></span>
@@ -881,10 +995,33 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
-    <script src="/assets/auth-state.js?v=20251108" defer></script>
+    <script src="/assets/auth-state.js?v=20251114"></script>
+    <script>
+      // ⚠️ 캐시 방지를 위한 버전 번호 (2025-11-14 수정: 2026 → 2025 수정)
+      console.log("========================================");
+      console.log("📚 전자책 다운로드 페이지 로드됨");
+      console.log("📅 스크립트 버전: 2025-11-14");
+      console.log("✅ 2026 버전 사용");
+      console.log("========================================");
+    </script>
     <script>
       (function () {
-        const EBOOK_PATH = "/docs/%EC%B4%88%EB%B3%B4%EC%82%AC%EC%9E%A5%EB%8B%98%EB%93%A4%EC%9D%84%20%EC%9C%84%ED%95%9C%20%EB%84%A4%EC%9D%B4%EB%B2%84%ED%94%8C%EB%A0%88%EC%9D%B4%EC%8A%A4%20%EC%9E%85%EB%AC%B8%EA%B0%80%EC%9D%B4%EB%93%9C_2025_%EC%82%AC%EC%9E%A5%ED%94%BD_vol1.pdf";
+        // 전자책 PDF 파일 경로 (영문 파일명) - 2026 버전 사용
+        // 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf
+        let ebookPath = "/docs/Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+        
+        // 중복 확장자 방지
+        if (ebookPath.includes('.pdf.pdf')) {
+          console.error("[전자책] ❌ 중복 확장자 감지! .pdf.pdf를 .pdf로 변경합니다.");
+          ebookPath = ebookPath.replace('.pdf.pdf', '.pdf');
+        }
+        
+        // 최종 검증된 경로를 상수로 설정
+        const EBOOK_PATH = ebookPath;
+        
+        // 파일명 검증 (디버깅용)
+        console.log("[전자책] ✅ 파일 경로 설정:", EBOOK_PATH);
+        console.log("[전자책] ✅ 예상 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf");
         const downloadBtn = document.getElementById("downloadBtn");
         const loginCta = document.getElementById("loginCta");
         const statusText = document.getElementById("downloadStatus");
@@ -892,44 +1029,107 @@
         const ctaLoginBtn = document.getElementById("ctaLoginBtn");
         const footerYear = document.getElementById("footerYear");
         let currentUser = null;
+        let sessionCheckAttempts = 0;
+        const MAX_SESSION_CHECK_ATTEMPTS = 50; // 최대 5초 대기 (50 * 100ms)
 
         footerYear.textContent = new Date().getFullYear();
 
         function setLoggedInUI(user) {
           currentUser = user;
+          
+          // 다운로드 버튼 영역 업데이트
           if (loginCta) loginCta.style.display = "none";
           if (ctaLoginBtn) ctaLoginBtn.style.display = "none";
           if (statusText) {
             statusText.textContent = "로그인이 확인되었습니다. 버튼을 눌러 전자책을 다운로드하세요.";
             statusText.style.color = "#d9480f";
           }
+
+          // 헤더 업데이트
+          const authUser = document.getElementById("authUser");
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+          const userEmail = document.getElementById("userEmail");
+          const userAvatar = document.getElementById("userAvatar");
+          const logoutBtn = document.getElementById("logoutBtn");
+
+          if (authUser) authUser.style.display = "flex";
+          if (loginBtn) loginBtn.style.display = "none";
+          if (signupBtn) signupBtn.style.display = "none";
+          
+          if (userEmail && user?.email) {
+            userEmail.textContent = user.email;
+          }
+          
+          if (userAvatar && user?.email) {
+            const initial = user.email.charAt(0).toUpperCase();
+            userAvatar.textContent = initial;
+          }
+
+          // 로그아웃 버튼 이벤트 리스너
+          if (logoutBtn) {
+            logoutBtn.onclick = async () => {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
+              }
+              window.location.reload();
+            };
+          }
         }
 
         function setLoggedOutUI() {
           currentUser = null;
+          
+          // 다운로드 버튼 영역 업데이트
           if (loginCta) loginCta.style.display = "inline-flex";
           if (ctaLoginBtn) ctaLoginBtn.style.display = "inline-flex";
           if (statusText) {
             statusText.textContent = "로그인하지 않은 경우 다운로드 전에 로그인 안내가 표시됩니다.";
             statusText.style.color = "var(--text-secondary)";
           }
+
+          // 헤더 업데이트
+          const authUser = document.getElementById("authUser");
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+
+          if (authUser) authUser.style.display = "none";
+          if (loginBtn) loginBtn.style.display = "inline-flex";
+          if (signupBtn) signupBtn.style.display = "inline-flex";
         }
 
         async function resolveSession() {
+          // authState가 아직 초기화되지 않았으면 재시도
           if (!window.authState?.supabase) {
-            setTimeout(resolveSession, 120);
-            return;
+            sessionCheckAttempts++;
+            if (sessionCheckAttempts < MAX_SESSION_CHECK_ATTEMPTS) {
+              setTimeout(resolveSession, 100);
+              return;
+            } else {
+              console.warn("[전자책] authState 초기화 대기 시간 초과");
+              setLoggedOutUI();
+              return;
+            }
           }
+
           try {
-            const { data } = await window.authState.supabase.auth.getSession();
+            const { data, error } = await window.authState.supabase.auth.getSession();
+            if (error) {
+              console.error("[전자책] 세션 확인 오류:", error);
+              setLoggedOutUI();
+              return;
+            }
+
             const session = data?.session;
             if (session?.user) {
+              console.log("[전자책] 로그인 확인됨:", session.user.email);
               setLoggedInUI(session.user);
             } else {
+              console.log("[전자책] 로그인되지 않음");
               setLoggedOutUI();
             }
           } catch (error) {
-            console.error("세션 확인 실패:", error);
+            console.error("[전자책] 세션 확인 실패:", error);
             setLoggedOutUI();
           }
         }
@@ -943,28 +1143,114 @@
           return true;
         }
 
-        function handleDownload() {
+        // 모바일 기기 감지 함수
+        function isMobileDevice() {
+          return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                 (window.innerWidth <= 768);
+        }
+
+        async function handleDownload() {
           if (!requireLogin()) return;
+          
           try {
-            window.open(EBOOK_PATH, "_blank", "noopener");
-            if (statusText) {
-              statusText.textContent = "PDF가 새 창에서 열립니다. 이메일로도 곧 발송될 예정입니다.";
-              statusText.style.color = "#d9480f";
+            // ⚠️ 강제로 올바른 파일명 사용 (2026 버전)
+            const CORRECT_FILENAME = "Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+            let finalPath = "/docs/" + CORRECT_FILENAME;
+            
+            // 중복 확장자 제거
+            finalPath = finalPath.replace(/\.pdf\.pdf/g, '.pdf');
+            
+            // 절대 경로로 변환 (배포 환경 대응)
+            const absolutePath = finalPath.startsWith('/') 
+              ? finalPath 
+              : '/' + finalPath;
+            
+            console.log("========================================");
+            console.log("[전자책] ✅ 다운로드 시작");
+            console.log("[전자책] ✅ 최종 다운로드 경로:", absolutePath);
+            console.log("[전자책] ✅ 파일명:", CORRECT_FILENAME);
+            console.log("[전자책] ✅ 모바일 기기:", isMobileDevice());
+            console.log("========================================");
+            
+            // 파일 존재 여부 확인
+            const response = await fetch(absolutePath, { 
+              method: 'HEAD',
+              cache: 'no-cache'
+            });
+            
+            console.log("[전자책] 파일 확인 응답:", response.status, response.statusText);
+            
+            if (!response.ok) {
+              console.error("[전자책] 파일을 찾을 수 없습니다:", absolutePath, response.status);
+              if (statusText) {
+                statusText.textContent = `파일을 찾을 수 없습니다. (${response.status}) 관리자에게 문의해주세요.`;
+                statusText.style.color = "#b91c1c";
+              }
+              alert(`전자책 파일을 찾을 수 없습니다. (오류 코드: ${response.status})\n\n파일 경로: ${absolutePath}\n\n관리자에게 문의해주세요.`);
+              return;
+            }
+            
+            // PDF 다운로드 (캐시 방지를 위해 타임스탬프 추가)
+            const downloadUrl = absolutePath + (absolutePath.includes('?') ? '&' : '?') + '_t=' + Date.now();
+            console.log("[전자책] PDF 다운로드 URL:", downloadUrl);
+            console.log("[전자책] 원본 경로:", absolutePath);
+            
+            // 모바일과 데스크톱에서 다른 방식으로 처리
+            if (isMobileDevice()) {
+              // 모바일: 숨겨진 <a> 태그를 생성하여 다운로드 (팝업 차단 방지)
+              console.log("[전자책] 모바일 기기 감지 - 직접 다운로드 방식 사용");
+              const link = document.createElement('a');
+              link.href = downloadUrl;
+              link.download = CORRECT_FILENAME; // 다운로드 파일명 지정
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.style.display = 'none';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              if (statusText) {
+                statusText.textContent = "PDF 다운로드가 시작됩니다. 이메일로도 곧 발송될 예정입니다.";
+                statusText.style.color = "#d9480f";
+              }
+            } else {
+              // 데스크톱: 새 창에서 열기
+              console.log("[전자책] 데스크톱 기기 감지 - 새 창에서 열기");
+              window.open(downloadUrl, "_blank", "noopener");
+              if (statusText) {
+                statusText.textContent = "PDF가 새 창에서 열립니다. 이메일로도 곧 발송될 예정입니다.";
+                statusText.style.color = "#d9480f";
+              }
             }
           } catch (error) {
-            console.error("다운로드 실패:", error);
+            console.error("[전자책] 다운로드 실패:", error);
+            console.error("[전자책] 오류 상세:", error.message, error.stack);
             if (statusText) {
               statusText.textContent = "다운로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
               statusText.style.color = "#b91c1c";
             }
+            alert(`다운로드 중 오류가 발생했습니다.\n\n오류: ${error.message}\n\n잠시 후 다시 시도해주세요.`);
           }
         }
 
         downloadBtn?.addEventListener("click", handleDownload);
         ctaDownloadBtn?.addEventListener("click", handleDownload);
 
-        window.addEventListener("auth:state-changed", resolveSession);
-        resolveSession();
+        // auth:state-changed 이벤트 리스너 등록
+        window.addEventListener("auth:state-changed", () => {
+          console.log("[전자책] auth:state-changed 이벤트 수신");
+          sessionCheckAttempts = 0; // 재시도 카운터 리셋
+          resolveSession();
+        });
+
+        // 초기 세션 확인 (DOMContentLoaded 후 실행)
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(resolveSession, 200);
+          });
+        } else {
+          setTimeout(resolveSession, 200);
+        }
       })();
     </script>
   </body>

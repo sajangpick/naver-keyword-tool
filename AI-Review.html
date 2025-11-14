@@ -47,6 +47,16 @@
         display: none !important;
       }
 
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--bg-color);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
       @media (max-width: 992px) {
         .header {
           display: none;
@@ -626,6 +636,79 @@
         color: var(--accent-color);
       }
 
+      .auth-user {
+        display: none;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+        border-radius: 16px;
+        background: rgba(255, 123, 84, 0.12);
+        color: var(--text-primary);
+      }
+
+      .auth-user__avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+
+      .auth-user__meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+
+      .auth-user__label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-decoration: none;
+      }
+
+      .auth-user__email {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: color 0.2s ease;
+        text-decoration: none;
+      }
+
+      .auth-user__email:hover {
+        color: var(--accent-color);
+      }
+
+      .auth-user__logout {
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        color: var(--text-primary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .auth-user__logout:hover {
+        background: rgba(255, 126, 70, 0.12);
+        transform: translateY(-2px);
+      }
+
       .container {
         max-width: 1400px;
         margin: 0 auto;
@@ -1010,6 +1093,14 @@
       <span class="ico"><i class="fa-solid fa-utensils"></i></span>
       <span>레시피</span>
     </a>
+    <a class="menu-item" href="/shorts-editor.html">
+      <span class="ico"><i class="fa-solid fa-film"></i></span>
+      <span>영상</span>
+    </a>
+    <a class="menu-item" href="/sajangpick-book.html">
+      <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+      <span>전자책</span>
+    </a>
     <a class="menu-item" href="/news-board.html">
       <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
       <span>정보</span>
@@ -1180,9 +1271,6 @@
       </div>
     </div>
 
-    <!-- 공통 인증 스크립트 -->
-  <script src="/assets/auth-state.js?v=202410" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
 
   <script>
       // 백엔드 서버 설정: 상대 경로(`/api`) 사용
@@ -1701,11 +1789,218 @@
         // ensureAuthenticated(); // 카카오톡 로그인 체크 비활성화
       });
 
+      // 인증 UI 업데이트 함수
+      function getCurrentUser() {
+        try {
+          const raw = localStorage.getItem('userData');
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          console.warn('[auth] 사용자 정보를 읽을 수 없습니다:', error);
+          return null;
+        }
+      }
+
+      async function getActiveSession() {
+        if (!window.authState?.supabase) {
+          return null;
+        }
+        try {
+          const { data } = await window.authState.supabase.auth.getSession();
+          return data?.session ?? null;
+        } catch (error) {
+          console.error("세션 조회 실패:", error);
+          return null;
+        }
+      }
+
+      function renderLoggedOut() {
+        const loginBtn = document.getElementById("loginBtn");
+        const signupBtn = document.getElementById("signupBtn");
+        const userEmailSpan = document.getElementById("userEmail");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+
+        if (authUser) authUser.style.display = "none";
+        if (loginBtn) loginBtn.style.display = "inline-flex";
+        if (signupBtn) signupBtn.style.display = "inline-flex";
+        if (userEmailSpan) {
+          userEmailSpan.textContent = "";
+          userEmailSpan.title = "";
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = "none";
+          logoutBtn.onclick = null;
+        }
+      }
+
+      function renderLoggedIn(user) {
+        const loginBtn = document.getElementById("loginBtn");
+        const signupBtn = document.getElementById("signupBtn");
+        const userEmailSpan = document.getElementById("userEmail");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+        const userAvatar = document.getElementById("userAvatar");
+
+        if (loginBtn) loginBtn.style.display = "none";
+        if (signupBtn) signupBtn.style.display = "none";
+        if (authUser) authUser.style.display = "flex";
+
+        if (userEmailSpan) {
+          const email = user.email || user.displayName || "마이페이지";
+          userEmailSpan.textContent = email;
+          userEmailSpan.title = `${email} (마이페이지로 이동)`;
+        }
+
+        if (userAvatar) {
+          const base =
+            user.user_metadata?.full_name ||
+            user.displayName ||
+            user.email ||
+            user.app_metadata?.provider ||
+            "U";
+          const initial = (base.trim()[0] || "U").toUpperCase();
+          userAvatar.textContent = initial;
+          userAvatar.setAttribute("aria-label", `${base} 프로필`);
+        }
+
+        if (logoutBtn) {
+          logoutBtn.style.display = "inline-flex";
+          logoutBtn.onclick = async function () {
+            if (!confirm("로그아웃 하시겠습니까?")) return;
+            try {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
+              }
+            } finally {
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("userData");
+              location.href = "login.html";
+            }
+          };
+        }
+      }
+
+      let authRenderToken = 0;
+
+      async function updateAuthUI() {
+        const currentToken = ++authRenderToken;
+        
+        // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
+        const storedUserData = getCurrentUser();
+        if (storedUserData && storedUserData.email) {
+          // localStorage에 사용자 정보가 있으면 즉시 로그인 상태로 표시
+          if (currentToken === authRenderToken) {
+            renderLoggedIn({
+              email: storedUserData.email,
+              displayName: storedUserData.displayName,
+              user_metadata: { full_name: storedUserData.displayName },
+              app_metadata: { provider: storedUserData.provider || 'kakao' }
+            });
+          }
+        } else {
+          // localStorage에 사용자 정보가 없으면 로그아웃 상태로 표시
+          if (currentToken === authRenderToken) {
+            renderLoggedOut();
+          }
+        }
+
+        // Supabase 세션 확인 (auth-state.js가 로드된 경우)
+        if (window.authState?.supabase) {
+          try {
+            const session = await getActiveSession();
+            if (currentToken !== authRenderToken) return;
+
+            if (session?.user) {
+              renderLoggedIn(session.user);
+            } else if (!storedUserData) {
+              // 세션이 없고 localStorage에도 없으면 로그아웃 상태
+              renderLoggedOut();
+            }
+          } catch (error) {
+            console.error("인증 상태 확인 실패:", error);
+            // 에러 발생 시 localStorage 기반으로 표시
+            if (currentToken === authRenderToken && !storedUserData) {
+              renderLoggedOut();
+            }
+          }
+        }
+      }
+
+
     </script>
   </div>
 
   <!-- 공통 인증 스크립트 -->
-  <script src="/assets/auth-state.js?v=202410" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+  <script src="/assets/auth-state.js?v=202410"></script>
+  <script>
+    // 인증 상태 UI 업데이트 (즉시 실행 및 auth-state.js 로드 후 재실행)
+    async function initAuthUI() {
+      // 즉시 localStorage 기반으로 UI 업데이트 (빠른 초기 렌더링)
+      if (typeof updateAuthUI === 'function') {
+        await updateAuthUI();
+      }
+
+      // auth-state.js가 로드될 때까지 대기
+      let waitCount = 0;
+      const maxWait = 200; // 20초 대기
+      while (!window.authState && waitCount < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        waitCount++;
+      }
+
+      if (window.authState) {
+        try {
+          // Supabase 세션 동기화 후 UI 업데이트
+          if (window.authState?.syncSession) {
+            await window.authState.syncSession();
+          }
+          await updateAuthUI();
+          
+          // 인증 상태 변경 이벤트 리스너 등록
+          window.addEventListener("auth:state-changed", updateAuthUI);
+        } catch (error) {
+          console.error('[auth] 인증 UI 업데이트 실패:', error);
+          // 에러 발생 시에도 localStorage 기반으로 UI 표시
+          if (typeof updateAuthUI === 'function') {
+            await updateAuthUI();
+          }
+        }
+      } else {
+        console.warn('[auth] auth-state.js를 로드할 수 없습니다. localStorage 기반으로 표시합니다.');
+        // auth-state.js가 로드되지 않아도 localStorage 기반으로 UI 표시
+        if (typeof updateAuthUI === 'function') {
+          await updateAuthUI();
+        }
+      }
+    }
+
+    function forceUpdateAuthUI() {
+      if (typeof updateAuthUI === 'function') {
+        updateAuthUI();
+      }
+    }
+
+    // DOMContentLoaded 시 즉시 실행
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAuthUI);
+    } else {
+      initAuthUI();
+    }
+    
+    // 페이지 로드 완료 후 재확인
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        initAuthUI();
+      }, 100);
+    });
+    
+    // 인증 상태 변경 이벤트 리스너
+    window.addEventListener('auth:state-changed', function() {
+      if (typeof updateAuthUI === 'function') {
+        updateAuthUI();
+      }
+    });
+  </script>
 </body>
 </html>
