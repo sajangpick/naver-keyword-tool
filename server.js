@@ -109,7 +109,7 @@ const corsOptions = {
   },
   credentials: !ALLOW_ALL,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "user-id"],
 };
 
 // 미들웨어 설정
@@ -669,6 +669,7 @@ app.get("/api/admin/dashboard", adminDashboardHandler);
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
+app.post("/api/chatgpt", chatgptBlogHandler);  // 레시피 생성용 엔드포인트 추가
 
 // ==================== 뉴스 게시판 API ====================
 const newsBoardHandler = require("./api/news-board");
