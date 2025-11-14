@@ -4085,6 +4085,148 @@ app.delete("/api/shorts/plan-history/:id", async (req, res) => {
   }
 });
 
+// ==================== Runway API 설정 ====================
+
+const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY || "key_8f7dd7e27cc2ed2a9bbb19893c6636fab1d008334adf301de3074d2f739f4e894440353d83e15c4bc272a78237bc201ceca2d9032ae168ae5bd97f98c1b5d2b7";
+
+// Runway SDK 초기화 (공식 SDK 사용)
+let RunwayML = null;
+let runwayClient = null;
+
+try {
+  RunwayML = require("@runwayml/sdk");
+  runwayClient = new RunwayML({
+    apiKey: RUNWAY_API_KEY,
+  });
+  devLog("✅ Runway SDK 초기화 성공");
+} catch (error) {
+  devError("❌ Runway SDK 초기화 실패:", error.message);
+  devLog("⚠️ Runway SDK가 설치되지 않았습니다. 'pnpm add @runwayml/sdk' 실행 필요");
+}
+
+// Runway API: 이미지에서 동영상 생성 (Gen-4 또는 Gen-3 모델 사용)
+async function generateVideoWithRunway(imageUrl, prompt, duration = 5) {
+  try {
+    devLog("Runway API 호출 시작:", { imageUrl, prompt, duration });
+
+    if (!runwayClient) {
+      throw new Error("Runway SDK가 초기화되지 않았습니다. @runwayml/sdk 패키지를 설치해주세요.");
+    }
+
+    // Gen-4 Image to Video 또는 Gen-3 모델 사용
+    // 공식 문서: https://docs.dev.runwayml.com/
+    const task = await runwayClient.imageToVideo
+      .create({
+        model: "gen4_aleph", // 또는 "gen3_alpha_turbo" 등 사용 가능한 모델
+        imageUrl: imageUrl,
+        promptText: prompt || "cinematic food video, slow motion, professional lighting",
+        duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
+        ratio: "9:16", // 쇼츠 형식 (세로)
+      })
+      .waitForTaskOutput(); // 작업 완료까지 자동 대기
+
+    if (!task || !task.output || task.output.length === 0) {
+      throw new Error("Runway API 응답에 영상 URL이 없습니다.");
+    }
+
+    const videoUrl = Array.isArray(task.output) ? task.output[0] : task.output;
+    devLog("Runway 영상 생성 완료:", videoUrl);
+    
+    return { videoUrl, jobId: task.id || null };
+  } catch (error) {
+    devError("Runway API 오류:", error);
+    
+    // SDK 오류인 경우 직접 HTTP API로 폴백 시도
+    if (error.message.includes("SDK") || error.message.includes("require")) {
+      devLog("SDK 사용 불가, HTTP API로 폴백 시도");
+      return await generateVideoWithRunwayHTTP(imageUrl, prompt, duration);
+    }
+    
+    throw new Error(`Runway 영상 생성 실패: ${error.message}`);
+  }
+}
+
+// HTTP API 폴백 함수 (SDK 사용 불가 시)
+async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
+  try {
+    devLog("Runway HTTP API 호출 시작 (폴백 모드)");
+
+    const RUNWAY_API_BASE = "https://api.runwayml.com/v1";
+
+    // Step 1: 이미지에서 동영상 생성 요청
+    const response = await axios.post(
+      `${RUNWAY_API_BASE}/image-to-video`,
+      {
+        image_url: imageUrl,
+        prompt: prompt || "cinematic food video, slow motion, professional lighting",
+        duration: Math.min(Math.max(duration, 3), 10),
+        aspect_ratio: "9:16",
+        watermark: false,
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${RUNWAY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      }
+    );
+
+    if (!response.data || !response.data.id) {
+      throw new Error("Runway API 응답에 job_id가 없습니다.");
+    }
+
+    const jobId = response.data.id;
+    devLog("Runway 작업 ID:", jobId);
+
+    // Step 2: Polling으로 상태 확인
+    let status = "pending";
+    let videoUrl = null;
+    let attempts = 0;
+    const maxAttempts = 60; // 최대 5분 대기 (5초 간격)
+
+    while (status !== "succeeded" && status !== "failed" && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // 5초 대기
+
+      const statusResponse = await axios.get(
+        `${RUNWAY_API_BASE}/image-to-video/${jobId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${RUNWAY_API_KEY}`,
+          },
+          timeout: 10000,
+        }
+      );
+
+      status = statusResponse.data.status || "pending";
+      devLog(`Runway 작업 상태 (시도 ${attempts + 1}/${maxAttempts}):`, status);
+
+      if (status === "succeeded" && statusResponse.data.output) {
+        videoUrl = Array.isArray(statusResponse.data.output)
+          ? statusResponse.data.output[0]
+          : statusResponse.data.output;
+        break;
+      }
+
+      if (status === "failed") {
+        throw new Error(statusResponse.data.error || "Runway 영상 생성 실패");
+      }
+
+      attempts++;
+    }
+
+    if (!videoUrl) {
+      throw new Error("영상 생성 시간이 초과되었습니다.");
+    }
+
+    devLog("Runway 영상 생성 완료 (HTTP):", videoUrl);
+    return { videoUrl, jobId };
+  } catch (error) {
+    devError("Runway HTTP API 오류:", error);
+    throw new Error(`Runway 영상 생성 실패: ${error.message}`);
+  }
+}
+
 // ==================== 쇼츠 영상 생성 API ====================
 
 app.post("/api/shorts/generate", async (req, res) => {
@@ -4161,6 +4303,17 @@ app.post("/api/shorts/generate", async (req, res) => {
           .getPublicUrl(filePath);
         const imageUrl = urlData?.publicUrl || "";
 
+        // 스타일별 프롬프트 생성
+        const stylePrompts = {
+          luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
+          fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
+          chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
+          plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
+          simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
+        };
+
+        const prompt = `${stylePrompts[style] || stylePrompts.simple}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video.`;
+
         // 영상 데이터베이스에 저장 (처리 중 상태)
         const { data: videoData, error: dbError } = await supabase
           .from("shorts_videos")
@@ -4188,20 +4341,33 @@ app.post("/api/shorts/generate", async (req, res) => {
           });
         }
 
-        // TODO: 실제 영상 생성 로직 (현재는 시뮬레이션)
-        // 실제로는 AI 영상 생성 서비스를 호출해야 함
-        // 예: RunwayML, D-ID, Synthesia 등
-
-        // 영상 생성 완료로 업데이트 (임시)
-        setTimeout(async () => {
-          await supabase
-            .from("shorts_videos")
-            .update({
-              status: "completed",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", videoData.id);
-        }, 5000);
+        // Runway API로 영상 생성 (비동기)
+        generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5)
+          .then(async ({ videoUrl, jobId }) => {
+            // 영상 생성 완료로 업데이트
+            await supabase
+              .from("shorts_videos")
+              .update({
+                status: "completed",
+                video_url: videoUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", videoData.id);
+            
+            devLog("영상 생성 완료 및 DB 업데이트:", videoData.id);
+          })
+          .catch(async (error) => {
+            devError("Runway 영상 생성 실패:", error);
+            // 실패 상태로 업데이트
+            await supabase
+              .from("shorts_videos")
+              .update({
+                status: "failed",
+                error_message: error.message,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", videoData.id);
+          });
 
         res.json({
           success: true,

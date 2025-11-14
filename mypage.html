@@ -2259,14 +2259,36 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
       if (!container) return;
       
       try {
+        // Supabase 세션에서 userId 가져오기
+        if (!userId && supabase) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            userId = session.user.id;
+          }
+        }
+
+        if (!userId) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>로그인이 필요합니다</div>
+            </div>
+          `;
+          return;
+        }
+
         const response = await fetch(`/api/shorts/videos?userId=${encodeURIComponent(userId)}`, {
+          method: 'GET',
           headers: {
+            'Content-Type': 'application/json',
             'user-id': userId
           }
         });
 
         if (!response.ok) {
-          throw new Error('영상 목록 로드 실패');
+          const errorText = await response.text();
+          console.error('API 응답 오류:', response.status, errorText);
+          throw new Error(`영상 목록 로드 실패 (${response.status})`);
         }
 
         const result = await response.json();
