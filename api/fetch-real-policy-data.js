@@ -197,15 +197,19 @@ function getBuiltInPolicies() {
  */
 async function fetchRealPolicies() {
   const policies = [];
+  const startTime = Date.now();
   
   try {
     // 1. 기업마당 API 호출 (공공데이터포털)
     // 환경변수가 있으면 사용, 없으면 기본값 사용 (개발용)
     const apiKey = process.env.PUBLIC_DATA_KEY || 'e45b26951c63da01a0d82653dd6101417c57f3812905e604bb4f60f80157bac8';
     
+    console.log('\n🔑 ========== API 키 확인 ==========');
     console.log('🔑 API 키 사용:', apiKey ? `${apiKey.substring(0, 10)}...` : '없음');
     console.log('🔑 API 키 전체 길이:', apiKey ? apiKey.length : 0);
     console.log('🔑 API 키 유효성 확인:', apiKey && apiKey.length > 20 ? '✅ 유효' : '❌ 무효');
+    console.log('🔑 환경변수 PUBLIC_DATA_KEY:', process.env.PUBLIC_DATA_KEY ? '설정됨' : '미설정 (기본값 사용)');
+    console.log('=====================================\n');
     
     if (apiKey) {
       try {
@@ -305,17 +309,23 @@ async function fetchRealPolicies() {
               }
               
               try {
+                const requestStartTime = Date.now();
                 console.log(`📡 API 요청 (${endpoint.source}, 페이지 ${currentPage}): ${pageUrl.substring(0, 150)}...`);
+                
                 const response = await axios.get(pageUrl, {
                   timeout: 30000, // 타임아웃 30초로 증가
                   headers: {
                     'Accept': endpoint.type === 'xml' ? 'application/xml' : 'application/json',
                     'Content-Type': 'application/json',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                  },
+                  validateStatus: function (status) {
+                    return status >= 200 && status < 500; // 4xx도 받아서 에러 메시지 확인
                   }
                 });
                 
-                console.log(`✅ API 응답 수신 (${endpoint.source}, 페이지 ${currentPage}): 상태 ${response.status}, 타입: ${typeof response.data}`);
+                const requestDuration = ((Date.now() - requestStartTime) / 1000).toFixed(2);
+                console.log(`✅ API 응답 수신 (${endpoint.source}, 페이지 ${currentPage}): 상태 ${response.status}, 타입: ${typeof response.data}, 소요시간: ${requestDuration}초`);
                 console.log(`📊 응답 데이터 크기: ${JSON.stringify(response.data).length} bytes`);
                 
                 // 에러 상태 코드 확인
@@ -631,7 +641,11 @@ async function fetchRealPolicies() {
           }
         }
         
+        const endTime = Date.now();
+        const duration = ((endTime - startTime) / 1000).toFixed(2);
+        
         console.log(`\n📋 ========== API 호출 요약 ==========`);
+        console.log(`⏱️ 소요 시간: ${duration}초`);
         console.log(`📊 총 API 엔드포인트: ${totalApiCalls}개`);
         console.log(`✅ 성공: ${successfulApiCalls}개`);
         console.log(`❌ 실패: ${failedApiCalls}개`);
@@ -644,6 +658,24 @@ async function fetchRealPolicies() {
           sourceStats[source] = (sourceStats[source] || 0) + 1;
         });
         console.log(`📊 소스별 정책 수:`, JSON.stringify(sourceStats, null, 2));
+        
+        // 실패한 경우 상세 정보
+        if (failedApiCalls === totalApiCalls && totalApiCalls > 0) {
+          console.error(`\n❌ ========== 심각한 문제 ==========`);
+          console.error(`❌ 모든 API 호출이 실패했습니다!`);
+          console.error(`💡 가능한 원인:`);
+          console.error(`   1. API 키가 유효하지 않음`);
+          console.error(`   2. 네트워크 연결 문제`);
+          console.error(`   3. API 엔드포인트가 변경됨`);
+          console.error(`   4. 서버에서 외부 API 호출 차단`);
+          console.error(`====================================\n`);
+        } else if (policies.length === 0 && successfulApiCalls > 0) {
+          console.error(`\n❌ ========== 필터링 문제 ==========`);
+          console.error(`❌ API 호출은 성공했지만 정책이 0개입니다!`);
+          console.error(`💡 필터링이 너무 엄격하여 모든 데이터가 제외되었습니다.`);
+          console.error(`💡 필터링 조건을 완화해야 합니다.`);
+          console.error(`====================================\n`);
+        }
         console.log(`========================================\n`);
         
         // 모든 엔드포인트 시도 후 결과 요약
@@ -985,8 +1017,19 @@ module.exports = async (req, res) => {
   }
 
   try {
+    console.log('\n========================================');
+    console.log('📥 실제 정책 데이터 수집 요청 수신');
+    console.log('📅 요청 시간:', new Date().toISOString());
+    console.log('🌍 환경:', process.env.NODE_ENV || 'development');
+    console.log('========================================\n');
+    
     // 1. 실제 정책 데이터 수집
     const policies = await fetchRealPolicies();
+    
+    console.log('\n========================================');
+    console.log('📤 실제 정책 데이터 수집 완료');
+    console.log('📊 최종 수집된 정책 수:', policies.length);
+    console.log('========================================\n');
     
     // 2. Supabase에 저장하지 않고 데이터만 반환 (클라이언트에서 저장)
     // 클라이언트에서 중복 체크 및 저장을 처리하도록 변경
