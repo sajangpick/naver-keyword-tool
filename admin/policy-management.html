@@ -1368,15 +1368,26 @@
                 })
               });
 
-              // 401 에러인 경우에도 계속 진행 (로그인 없이 저장 시도)
-              if (saveResponse.status === 401) {
-                console.warn(`⚠️ ${policy.title}: 인증 없이 저장 시도 (서버에서 허용 여부 확인)`);
-                // 401이어도 응답 본문 확인
+              // 응답 상태 확인
+              let saveResult;
+              try {
+                saveResult = await saveResponse.json();
+              } catch (e) {
+                // JSON 파싱 실패 시
+                skippedCount++;
+                errors.push(`${policy.title}: 응답 파싱 실패`);
+                continue;
               }
-
-              const saveResult = await saveResponse.json();
               
-              if (saveResult.success) {
+              // 401 에러인 경우에도 응답 내용 확인
+              if (saveResponse.status === 401) {
+                skippedCount++;
+                errors.push(`${policy.title}: ${saveResult.error || '인증이 필요합니다'}`);
+                continue;
+              }
+              
+              // 200번대 성공 응답
+              if (saveResponse.ok && saveResult.success) {
                 savedCount++;
               } else {
                 skippedCount++;
