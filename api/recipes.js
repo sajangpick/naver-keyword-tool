@@ -257,8 +257,49 @@ router.get('/search', async (req, res) => {
           
           console.log(`✅ 공공 API 레시피 변환 완료: ${publicRecipes.length}개 (전체 537개 중)`);
           
-          // 필터링 적용
-          let filteredPublicRecipes = publicRecipes;
+          // 1차 필터링: 기본 정보로 품질 체크 (정보 부족한 레시피 제외)
+          let qualityFilteredRecipes = publicRecipes.filter(recipe => {
+            // 1. 재료 카테고리가 너무 추상적인 경우 제외
+            const ingredientCategory = recipe.ingredient_category || '';
+            if (ingredientCategory.includes('류')) {
+              return false; // "과일류", "곡류" 등 추상적인 재료만 있는 경우
+            }
+            
+            // 2. 설명이 너무 짧거나 무의미한 경우 제외
+            const description = recipe.description || '';
+            if (description.length < 20) {
+              return false;
+            }
+            
+            // 3. 무의미한 문구만 있는 경우 제외
+            const meaninglessPatterns = [
+              '더 맛있게',
+              '좋아요',
+              '드세요',
+              '먹을 수 있',
+              '맛있습니다'
+            ];
+            
+            const isMeaningless = meaninglessPatterns.some(pattern => 
+              description.includes(pattern) && description.length < 50
+            );
+            
+            if (isMeaningless) {
+              return false;
+            }
+            
+            // 4. 카테고리가 "기타"이면서 가격대가 없는 경우 제외
+            if (recipe.category === '기타' && !recipe.price_category) {
+              return false;
+            }
+            
+            return true;
+          });
+          
+          console.log(`🔍 품질 필터링: ${publicRecipes.length}개 → ${qualityFilteredRecipes.length}개 (정보 부족 ${publicRecipes.length - qualityFilteredRecipes.length}개 제외)`);
+          
+          // 2차 필터링: 사용자 검색 조건 적용
+          let filteredPublicRecipes = qualityFilteredRecipes;
           
           if (keyword) {
             filteredPublicRecipes = filteredPublicRecipes.filter(r => 
@@ -281,7 +322,7 @@ router.get('/search', async (req, res) => {
           
           results = results.concat(filteredPublicRecipes);
           
-          console.log(`필터링 후 ${filteredPublicRecipes.length}개 레시피`);
+          console.log(`✅ 최종 필터링 후: ${filteredPublicRecipes.length}개 레시피`);
         }
       } catch (apiError) {
         console.error('공공 API 처리 오류:', apiError);
@@ -1031,6 +1072,60 @@ router.get('/categories/list', async (req, res) => {
 // ========================================
 // 헬퍼 함수들
 // ========================================
+
+// 레시피 데이터 품질 체크
+function isRecipeComplete(recipe) {
+  // 1. 재료 체크: 최소 2개 이상의 의미있는 재료
+  const hasEnoughIngredients = recipe.ingredients && 
+                               Array.isArray(recipe.ingredients) && 
+                               recipe.ingredients.length >= 2;
+  
+  // 재료가 너무 추상적이면 제외 (예: "과일류", "곡류")
+  if (hasEnoughIngredients) {
+    const meaningfulIngredients = recipe.ingredients.filter(ing => {
+      const name = ing.name || ing;
+      return name && name.length > 2 && !name.includes('류');
+    });
+    
+    if (meaningfulIngredients.length < 2) {
+      return false;
+    }
+  }
+  
+  // 2. 조리 과정 체크: 의미있는 내용이 있는지
+  const hasValidSteps = recipe.steps && 
+                        Array.isArray(recipe.steps) && 
+                        recipe.steps.length > 0;
+  
+  if (hasValidSteps) {
+    const firstStep = recipe.steps[0];
+    const description = firstStep.description || '';
+    
+    // 조리 과정이 너무 짧거나 무의미한 경우 제외
+    if (description.length < 20) {
+      return false;
+    }
+    
+    // 무의미한 문구 체크
+    const meaninglessPatterns = [
+      '더 맛있게',
+      '좋아요',
+      '드세요',
+      '먹을 수 있',
+      '맛있습니다'
+    ];
+    
+    const isMeaningless = meaninglessPatterns.some(pattern => 
+      description.includes(pattern) && description.length < 50
+    );
+    
+    if (isMeaningless) {
+      return false;
+    }
+  }
+  
+  return hasEnoughIngredients && hasValidSteps;
+}
 
 // 유형 매핑 (한식, 중식, 일식 등)
 function mapNationType(nationNm) {
