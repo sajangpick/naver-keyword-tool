@@ -477,34 +477,37 @@ async function fetchRealPolicies() {
                 // 중소벤처기업부 API에서 온 데이터는 날짜 필터링 완전히 제외
                 const isFromMssBiz = endpoint.source === 'mss-biz';
                 
-                // 날짜 필터링: 날짜가 있고 최근 2년이 아니면 제외 (단, 중소벤처기업부 API는 제외)
-                if (!isFromMssBiz && !isRecentYear && (normalizedStart || normalizedEnd || normalizedPublish)) {
-                  // 날짜가 있지만 최근 2년이 아닌 경우 제외
-                  return;
-                }
-                
-                // 키워드 필터링 완화 (더 많은 정책 포함)
-                const policyKeywords = [
-                  '소상공인', '중소기업', '자영업', '창업', '지원금', '보조금', 
-                  '융자', '바우처', '정책자금', '경영지원', '시설개선', 
-                  '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업',
-                  '지원', '보조', '혜택', '할인', '할인율', '금리', '대출',
-                  '사업공고', '지원사업', '사업자', '기업', '벤처', '스타트업',
-                  '상점', '매장', '음식', '카페', '소매', '서비스', '업소', '점포'
-                ];
-                
-                const isRelevant = policyKeywords.some(keyword => text.includes(keyword));
-                
-                // 필터링 완화: 제목이 있고 (키워드가 있거나 최근 공고이거나 중소벤처기업부 API에서 온 경우) 포함
-                // 중소벤처기업부 API는 키워드 필터링 완전히 제외
-                if (title && (isRelevant || isRecentYear || isFromMssBiz)) {
-                  // 중소벤처기업부 API에서 온 데이터는 키워드 필터링 완전히 제외
-                  if (isFromMssBiz && policies.length % 10 === 0) {
-                    // 10개마다만 로그 출력 (너무 많은 로그 방지)
+                // 날짜 필터링 완전히 제거 (더 많은 정책 수집을 위해)
+                // 중소벤처기업부 API는 무조건 포함
+                if (isFromMssBiz && title) {
+                  // 중소벤처기업부 API에서 온 데이터는 모든 필터링 제외
+                  if (policies.length % 10 === 0) {
                     console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
                   }
+                } else {
+                  // 다른 API는 최소한의 필터링만 적용
+                  // 날짜 필터링: 날짜가 있고 2020년 이전이면 제외 (최근 5년)
+                  const minYear = currentYear - 5;
+                  const isOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
+                                normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
+                                normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
+                  
+                  if (isOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                    // 2020년 이전 공고는 제외
+                    return;
+                  }
+                  
+                  // 키워드 필터링 완전히 제거 (제목만 있으면 포함)
+                  // 제목이 있으면 무조건 포함 (더 많은 정책 수집)
+                  if (!title) {
+                    return; // 제목이 없으면 제외
+                  }
+                }
+                
+                // 모든 정책 포함 (필터링 최소화)
+                if (title) {
                   // 중소벤처기업부 사업공고 API 필드 매핑
-                  policies.push({
+          policies.push({
                     title: title,
                     organization: item['수행기관'] || item.excInsttNm || item.organization || item.수행기관 || item['pblancInsttNm'] || '중소벤처기업부',
                     category: mapCategory(item['지원분야'] || item.supportField || item.지원분야 || item['pblancSe'] || item['bsnsSe'] || ''),
