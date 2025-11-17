@@ -477,40 +477,47 @@ async function fetchRealPolicies() {
             
             if (allData.length > 0) {
               console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트에서 총 ${allData.length}개 항목 수집 완료`);
+              console.log(`🔍 첫 번째 원본 데이터 샘플:`, JSON.stringify(allData[0], null, 2).substring(0, 500));
               
-              // 올해 날짜 범위 설정
-              const currentYear = new Date().getFullYear();
-              const yearStart = `${currentYear}-01-01`;
-              const yearEnd = `${currentYear}-12-31`;
+              let processedCount = 0;
+              let filteredCount = 0;
               
-              allData.forEach(item => {
-                // 소상공인 관련 키워드 필터링
-                // 중소벤처기업부 사업공고 API 필드 매핑
-                const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || item['pblancNm'] || item['pblancNmKr'] || '';
-                const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || item['bsnsSumryCn'] || item['pblancSumryCn'] || '';
-                const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || summary;
-                const text = (title + ' ' + summary + ' ' + description).toLowerCase();
+              allData.forEach((item, index) => {
+                processedCount++;
                 
-                // 최소한의 필터링만 적용 (더 많은 정책 수집)
-                // 뉴스 기사 제목은 제외 (실제 정책 지원금만)
-                const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망', '상황'];
-                const isNews = newsKeywords.some(keyword => text.includes(keyword));
+                // 중소벤처기업부 사업공고 API 필드 매핑 (더 많은 필드 시도)
+                const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || item['pblancNm'] || item['pblancNmKr'] || item['pblancNmKr'] || item['pblancNmEn'] || item['pblancNm'] || '';
+                const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || item['bsnsSumryCn'] || item['pblancSumryCn'] || item['pblancCn'] || '';
+                const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || item['pblancCn'] || summary;
                 
-                if (isNews) {
-                  return; // 뉴스 기사는 건너뜀
-                }
-                
-                // 제목이 없으면 제외
-                if (!title) {
+                // 제목이 없으면 제외 (최소 조건)
+                if (!title || title.trim() === '') {
+                  if (index < 3) {
+                    console.log(`⚠️ 항목 ${index + 1}: 제목 없음, 건너뜀`);
+                  }
+                  filteredCount++;
                   return;
                 }
                 
-                // 날짜 정보 추출 (필터링용)
+                // 뉴스 기사 필터링 (최소한만)
+                const text = (title + ' ' + (summary || '') + ' ' + (description || '')).toLowerCase();
+                const newsKeywords = ['뉴스', '기사', '보도', '발표'];
+                const isNews = newsKeywords.some(keyword => text.includes(keyword) && text.length < 200); // 짧은 뉴스만 제외
+                
+                if (isNews) {
+                  if (index < 3) {
+                    console.log(`⚠️ 항목 ${index + 1}: 뉴스 기사로 판단, 건너뜀`);
+                  }
+                  filteredCount++;
+                  return;
+                }
+                
+                // 날짜 정보 추출
                 const startDate = item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
                 const endDate = item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
                 const publishDate = item['공고일'] || item.pblancDe || item.publishDate || item.공고일 || item['pblancDe'] || item['pblancRegistDe'] || '';
                 
-                // 날짜 형식 정규화 (YYYY-MM-DD, YYYY.MM.DD, YYYYMMDD 등)
+                // 날짜 형식 정규화
                 const normalizeDate = (dateStr) => {
                   if (!dateStr) return null;
                   const cleaned = dateStr.toString().replace(/[.\s]/g, '-').replace(/--+/g, '-');
@@ -525,27 +532,29 @@ async function fetchRealPolicies() {
                 const normalizedEnd = normalizeDate(endDate);
                 const normalizedPublish = normalizeDate(publishDate);
                 
-                // 중소벤처기업부 API에서 온 데이터는 모든 필터링 제외
+                // 중소벤처기업부 API는 모든 필터링 제외
                 const isFromMssBiz = endpoint.source === 'mss-biz';
                 
-                // 날짜 필터링: 2015년 이전만 제외 (최근 10년 포함)
+                // 날짜 필터링: 2010년 이전만 제외 (최근 15년 포함)
                 if (!isFromMssBiz) {
-                  const minYear = 2015;
+                  const minYear = 2010;
                   const isVeryOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
                                     normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
                                     normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
                   
                   if (isVeryOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
-                    // 2015년 이전 공고만 제외
+                    if (index < 3) {
+                      console.log(`⚠️ 항목 ${index + 1}: 2010년 이전 공고, 건너뜀`);
+                    }
+                    filteredCount++;
                     return;
                   }
                 }
                 
                 // 모든 정책 포함 (필터링 최소화)
                 if (title) {
-                  // 중소벤처기업부 API는 로그 최소화
-                  if (isFromMssBiz && policies.length % 50 === 0) {
-                    console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
+                  if (policies.length < 10 || policies.length % 10 === 0) {
+                    console.log(`✅ 정책 추가: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
                   }
                   // 중소벤처기업부 사업공고 API 필드 매핑
           policies.push({
@@ -579,14 +588,15 @@ async function fetchRealPolicies() {
               const addedCount = policies.filter(p => p.source === (endpoint.source || 'bizinfo')).length;
               if (addedCount > 0) {
                 console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 ${addedCount}개 정책 추가`);
+                console.log(`📊 처리 통계: 전체 ${allData.length}개 중 ${addedCount}개 추가, ${filteredCount}개 필터링됨`);
               } else {
-                console.warn(`⚠️ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 정책을 찾지 못함`);
-                console.warn(`📊 수집된 전체 데이터: ${allData.length}개, 필터링 후 정책: ${addedCount}개`);
+                console.error(`❌ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 정책을 찾지 못함`);
+                console.error(`📊 수집된 전체 데이터: ${allData.length}개, 필터링 후 정책: ${addedCount}개`);
+                console.error(`📊 처리 통계: 전체 ${allData.length}개 중 ${processedCount}개 처리, ${filteredCount}개 필터링됨`);
                 if (allData.length > 0 && addedCount === 0) {
-                  console.warn(`💡 필터링이 너무 엄격하여 모든 데이터가 제외되었습니다.`);
-                  if (allData.length > 0) {
-                    console.warn(`💡 첫 번째 데이터 샘플:`, JSON.stringify(allData[0], null, 2).substring(0, 500));
-                  }
+                  console.error(`❌ 필터링이 너무 엄격하여 모든 데이터가 제외되었습니다!`);
+                  console.error(`💡 첫 번째 원본 데이터:`, JSON.stringify(allData[0], null, 2).substring(0, 1000));
+                  console.error(`💡 필터링 조건 완화 필요!`);
                 }
               }
             }
