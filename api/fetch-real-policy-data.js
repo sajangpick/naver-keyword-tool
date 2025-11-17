@@ -225,23 +225,21 @@ async function fetchRealPolicies() {
         // 엔드포인트: https://apis.data.go.kr/B552735/kisedKstartupService01
         // 서비스 메서드: getAnnouncementInformation01, getBusinessInformation01
         const apiEndpoints = [
-          // K-Startup 사업공고 정보 조회 (20개 제한)
+          // K-Startup 사업공고 정보 조회 (모든 페이지 순회)
           {
-            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=20&pageNo=1`,
+            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'k-startup',
             priority: 1,
-            note: 'K-Startup 사업공고 정보 조회 (20개)',
-            maxItems: 20
+            note: 'K-Startup 사업공고 정보 조회 (전체)'
           },
-          // 중소벤처기업부 사업공고 목록 조회 (20개 제한)
+          // 중소벤처기업부 사업공고 목록 조회 (모든 페이지 순회)
           {
-            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getbizList_v2?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=20&pageNo=1`,
+            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getbizList_v2?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'mss-biz',
             priority: 2,
-            note: '중소벤처기업부 사업공고 목록 (20개)',
-            maxItems: 20
+            note: '중소벤처기업부 사업공고 목록 (전체)'
           }
         ];
         
@@ -257,18 +255,17 @@ async function fetchRealPolicies() {
           totalApiCalls++;
           console.log(`\n🔄 [${totalApiCalls}/${apiEndpoints.length}] ${endpoint.source} 엔드포인트 처리 시작`);
           try {
-            // 각 API에서 지정된 개수만 가져오기 (K-Startup 20개, 중소벤처기업부 20개)
+            // 모든 페이지를 순회하며 현재 신청 가능한 공고만 가져오기
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
-            const maxItems = endpoint.maxItems || 20; // 각 API별 최대 개수
-            const maxPages = 1; // 1페이지만 가져오기 (20개씩)
-            const perPage = maxItems; // 페이지당 가져올 개수
+            const maxPages = 100; // 최대 100페이지까지 순회 (충분히 큰 값)
+            const perPage = 50; // 페이지당 50개씩 가져오기
             
-            console.log(`🔄 ${endpoint.source} 엔드포인트: ${maxItems}개 제한으로 데이터 수집 시작`);
+            console.log(`🔄 ${endpoint.source} 엔드포인트: 모든 페이지 순회 시작 (현재 신청 가능한 공고만 필터링)`);
             console.log(`🔗 요청 URL: ${endpoint.url}`);
             
-            while (hasMorePages && currentPage <= maxPages && allData.length < maxItems) {
+            while (hasMorePages && currentPage <= maxPages) {
               // URL에서 page와 perPage 파라미터 업데이트
               let url = endpoint.url.replace(/[?&]page=\d+/, '').replace(/[?&]perPage=\d+/, '').replace(/[?&]pageNo=\d+/, '').replace(/[?&]numOfRows=\d+/, '');
               const separator = url.includes('?') ? '&' : '?';
@@ -566,26 +563,41 @@ async function fetchRealPolicies() {
                 const normalizedEnd = normalizeDate(endDate);
                 const normalizedPublish = normalizeDate(publishDate);
                 
-                // 중소벤처기업부 API는 모든 필터링 제외
-                const isFromMssBiz = endpoint.source === 'mss-biz';
+                // 현재 신청 가능한 공고만 필터링 (신청 마감일이 오늘 이후이거나 없는 것만)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
                 
-                // 날짜 필터링: 2010년 이전만 제외 (최근 15년 포함)
-                if (!isFromMssBiz) {
-                  const minYear = 2010;
-                  const isVeryOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
-                                    normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
-                                    normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
+                // 신청 마감일이 있는 경우, 오늘 이후인 것만 포함
+                if (normalizedEnd) {
+                  const endDateObj = new Date(normalizedEnd);
+                  endDateObj.setHours(0, 0, 0, 0);
                   
-                  if (isVeryOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                  // 마감일이 오늘 이전이면 제외
+                  if (endDateObj < today) {
                     if (index < 3) {
-                      console.log(`⚠️ 항목 ${index + 1}: 2010년 이전 공고, 건너뜀`);
+                      console.log(`⚠️ 항목 ${index + 1}: 신청 마감됨 (${normalizedEnd}), 건너뜀`);
                     }
                     filteredCount++;
                     return;
                   }
                 }
+                // 마감일이 없으면 포함 (상시 모집 또는 마감일 미정)
                 
-                // 모든 정책 포함 (필터링 최소화)
+                // 날짜 필터링: 2010년 이전만 제외
+                const minYear = 2010;
+                const isVeryOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
+                                  normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
+                                  normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
+                
+                if (isVeryOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                  if (index < 3) {
+                    console.log(`⚠️ 항목 ${index + 1}: 2010년 이전 공고, 건너뜀`);
+                  }
+                  filteredCount++;
+                  return;
+                }
+                
+                // 현재 신청 가능한 정책만 포함
                 if (title) {
                   if (policies.length < 10 || policies.length % 10 === 0) {
                     console.log(`✅ 정책 추가: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
