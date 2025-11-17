@@ -1318,8 +1318,18 @@
 
           const policies = fetchResult.data || [];
           
+          console.log(`📊 API에서 가져온 정책 수: ${policies.length}개`);
+          if (policies.length > 0) {
+            console.log(`📋 첫 번째 정책 샘플:`, policies[0]);
+            const sourceStats = policies.reduce((acc, p) => {
+              acc[p.source || 'unknown'] = (acc[p.source || 'unknown'] || 0) + 1;
+              return acc;
+            }, {});
+            console.log(`📊 소스별 통계:`, sourceStats);
+          }
+          
           if (policies.length === 0) {
-            alert('⚠️ 수집된 정책 데이터가 없습니다.\n\nAPI 응답을 확인하거나 잠시 후 다시 시도해주세요.');
+            alert('⚠️ 수집된 정책 데이터가 없습니다.\n\n서버 로그를 확인하거나 잠시 후 다시 시도해주세요.\n\n가능한 원인:\n1. API 키가 유효하지 않음\n2. API 응답 형식이 변경됨\n3. 필터링이 너무 엄격함');
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
             return;
@@ -1346,18 +1356,35 @@
               }
 
               // 중복 체크를 위해 기존 정책 조회 (토큰 없이도 가능)
+              // 제목 정규화 (공백, 특수문자 제거하여 비교)
+              const normalizeTitle = (title) => {
+                if (!title) return '';
+                return title.replace(/\s+/g, '').replace(/[^\w가-힣]/g, '').toLowerCase();
+              };
+              
               let existing = null;
               try {
-                const checkResponse = await fetch(`${API_BASE}/api/policy-support?search=${encodeURIComponent(policy.title)}&limit=1`);
+                const checkResponse = await fetch(`${API_BASE}/api/policy-support?search=${encodeURIComponent(policy.title)}&limit=10`);
                 const checkResult = await checkResponse.json();
-                if (checkResult.success && checkResult.data) {
-                  existing = checkResult.data.find(p => p.title === policy.title);
+                if (checkResult.success && checkResult.data && Array.isArray(checkResult.data)) {
+                  const normalizedNewTitle = normalizeTitle(policy.title);
+                  // 정규화된 제목으로 비교 (90% 이상 유사하면 중복으로 간주)
+                  existing = checkResult.data.find(p => {
+                    const normalizedExistingTitle = normalizeTitle(p.title);
+                    // 완전 일치 또는 매우 유사한 경우만 중복으로 판단
+                    return normalizedExistingTitle === normalizedNewTitle || 
+                           (normalizedExistingTitle.length > 10 && normalizedNewTitle.length > 10 &&
+                            normalizedExistingTitle.includes(normalizedNewTitle.substring(0, Math.min(10, normalizedNewTitle.length))) ||
+                            normalizedNewTitle.includes(normalizedExistingTitle.substring(0, Math.min(10, normalizedExistingTitle.length))));
+                  });
                 }
               } catch (e) {
                 console.warn('중복 체크 실패:', e);
+                // 중복 체크 실패해도 계속 진행 (새 정책으로 저장)
               }
               
               if (existing) {
+                console.log(`⏭️ 중복 건너뜀: "${policy.title}" (기존: "${existing.title}")`);
                 skippedCount++;
                 continue;
               }

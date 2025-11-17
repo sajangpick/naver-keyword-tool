@@ -473,13 +473,19 @@ async function fetchRealPolicies() {
                   '소상공인', '중소기업', '자영업', '창업', '지원금', '보조금', 
                   '융자', '바우처', '정책자금', '경영지원', '시설개선', 
                   '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업',
-                  '지원', '보조', '혜택', '할인', '할인율', '금리', '대출'
+                  '지원', '보조', '혜택', '할인', '할인율', '금리', '대출',
+                  '사업공고', '지원사업', '사업자', '기업', '벤처', '스타트업'
                 ];
                 
                 const isRelevant = policyKeywords.some(keyword => text.includes(keyword));
                 
-                // 키워드가 없어도 제목이 있고 날짜가 올해면 포함 (필터링 완화)
-                if (title && (isRelevant || isThisYear)) {
+                // 필터링 완화: 제목이 있고 (키워드가 있거나 올해 공고이거나 중소벤처기업부 API에서 온 경우) 포함
+                const isFromMssBiz = endpoint.source === 'mss-biz';
+                if (title && (isRelevant || isThisYear || isFromMssBiz)) {
+                  // 중소벤처기업부 API에서 온 데이터는 키워드 필터링 완전히 제외
+                  if (isFromMssBiz) {
+                    console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}...`);
+                  }
                   // 중소벤처기업부 사업공고 API 필드 매핑
                   policies.push({
                     title: title,
