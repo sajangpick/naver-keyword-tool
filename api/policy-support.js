@@ -238,7 +238,7 @@ module.exports = async (req, res) => {
     const { 
       id, 
       category, 
-      status = 'active', 
+      status,  // 기본값 제거 - 'all'일 때 모든 상태 조회
       area, 
       business_type,
       page = 1, 
@@ -246,6 +246,10 @@ module.exports = async (req, res) => {
       search,
       user_id 
     } = req.query;
+    
+    // status가 없으면 기본값 'active' 사용 (사용자 페이지용)
+    // status가 'all'이면 모든 상태 조회 (관리자 페이지용)
+    const statusFilter = status || 'active';
 
     // 단일 정책 조회
     if (id) {
@@ -287,7 +291,10 @@ module.exports = async (req, res) => {
 
     // 필터 적용
     if (category) query = query.eq('category', category);
-    if (status) query = query.eq('status', status);
+    // status가 'all'이 아니고 값이 있을 때만 필터링
+    if (statusFilter && statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
     if (area) query = query.contains('target_area', [area]);
     if (business_type) query = query.contains('business_type', [business_type]);
     
@@ -347,24 +354,30 @@ module.exports = async (req, res) => {
   }
   }
 
-  // POST: 새 정책지원금 등록 (관리자용)
+  // POST: 새 정책지원금 등록 (인증 선택적 - 로그인 없이도 가능)
   if (req.method === 'POST' && !isBookmark && !isApply) {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: '인증이 필요합니다.' 
-      });
-    }
-
-    // 사용자 인증 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ 
-        success: false, 
-        error: '유효하지 않은 토큰입니다.' 
-      });
+    let userId = null;
+    
+    console.log('📝 정책 등록 요청 - 토큰:', token ? '있음' : '없음');
+    
+    // 토큰이 있으면 사용자 정보 확인 (선택적)
+    if (token) {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+        if (!authError && user) {
+          userId = user.id;
+          console.log('✅ 사용자 인증 성공:', user.id);
+        } else {
+          console.log('⚠️ 토큰 검증 실패, 인증 없이 진행');
+        }
+      } catch (e) {
+        // 토큰이 유효하지 않아도 계속 진행
+        console.log('⚠️ 토큰 검증 예외, 인증 없이 진행:', e.message);
+      }
+    } else {
+      console.log('ℹ️ 토큰 없음, 인증 없이 진행');
     }
 
     const {
@@ -400,37 +413,50 @@ module.exports = async (req, res) => {
     }
 
     // 정책지원금 생성
+    const insertData = {
+      title,
+      organization,
+      category,
+      summary,
+      description,
+      support_amount,
+      support_type,
+      eligibility_criteria,
+      required_documents,
+      business_type: business_type || [],
+      target_area: target_area || [],
+      application_start_date,
+      application_end_date,
+      application_method,
+      application_url,
+      contact_info,
+      phone_number,
+      website_url,
+      status: status || 'active',
+      is_featured: is_featured || false,
+      tags: tags || []
+    };
+    
+    // created_by는 토큰이 있을 때만 추가 (RLS 정책 고려)
+    if (userId) {
+      insertData.created_by = userId;
+    }
+    
+    console.log('💾 정책 저장 시도:', { title, userId: userId || 'null' });
+    
     const { data, error } = await supabase
       .from('policy_supports')
-      .insert({
-        title,
-        organization,
-        category,
-        summary,
-        description,
-        support_amount,
-        support_type,
-        eligibility_criteria,
-        required_documents,
-        business_type: business_type || [],
-        target_area: target_area || [],
-        application_start_date,
-        application_end_date,
-        application_method,
-        application_url,
-        contact_info,
-        phone_number,
-        website_url,
-        status: status || 'active',
-        is_featured: is_featured || false,
-        tags: tags || [],
-        created_by: user.id
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Supabase 저장 오류:', error);
+      throw error;
+    }
 
+    console.log('✅ 정책 저장 성공:', data.id);
+    
     res.json({
       success: true,
       data,

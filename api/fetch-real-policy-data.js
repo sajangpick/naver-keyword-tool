@@ -1,6 +1,9 @@
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const { JSDOM } = require('jsdom');
+// 크롤링 제거 - API 키만 사용
+// const puppeteer = require('puppeteer');
+// const chromium = require('@sparticuz/chromium');
 
 // Supabase 초기화
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,18 +26,21 @@ if (supabaseUrl && supabaseKey) {
 
 // 실제 데이터 소스 URL
 const DATA_SOURCES = {
+  // K-Startup - 창업지원 정책 공고 (진행중인 사업)
+  K_STARTUP: 'https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do',
+  
   // 중소벤처기업부 - 소상공인 지원사업 공고
   MSS: 'https://www.mss.go.kr/site/smba/ex/bbs/List.do?cbIdx=86',
   
   // 소상공인시장진흥공단
   SEMAS: 'https://www.semas.or.kr/web/board/webBoardList.do?bsCd=notice',
   
-  // 정책브리핑 RSS
-  KOREA_GOV: 'https://www.korea.kr/rss/policy.xml',
-  
   // 기업마당 API (공공데이터포털 인증키 필요)
   BIZINFO_API: 'https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94'
 };
+
+// 프로덕션 환경 확인
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER || process.env.VERCEL;
 
 /**
  * 내장된 실제 정책 데이터 (6개)
@@ -206,22 +212,50 @@ async function fetchRealPolicies() {
           // 중소기업 지원사업 정보 (JSON)
           {
             url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
-            type: 'json'
+            type: 'json',
+            source: 'bizinfo'
           },
           // 중소기업 지원사업 정보 (XML)
           {
             url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100&returnType=XML`,
-            type: 'xml'
+            type: 'xml',
+            source: 'bizinfo'
           },
           // 기업마당 지원사업 검색 API
           {
             url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100&target=소상공인`,
-            type: 'json'
+            type: 'json',
+            source: 'bizinfo'
           },
           // 공공데이터포털 - 중소기업 정책자금 정보
           {
             url: `https://api.odcloud.kr/api/ApplyhomeInfoSvc/v1/getAPTLttotPblancMdl?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
-            type: 'json'
+            type: 'json',
+            source: 'bizinfo'
+          },
+          // K-Startup API - 창업진흥원 사업공고 조회 (공공데이터포털)
+          // 공공데이터포털 API ID: 15125364
+          // 다양한 엔드포인트 패턴 시도
+          {
+            url: `https://api.odcloud.kr/api/15125364/v1/uddi:사업공고?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            type: 'json',
+            source: 'k-startup'
+          },
+          {
+            url: `https://api.odcloud.kr/api/15125364/v1/uddi:진행중?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            type: 'json',
+            source: 'k-startup'
+          },
+          {
+            url: `https://api.odcloud.kr/api/15125364/v1/uddi:bizpbanc?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            type: 'json',
+            source: 'k-startup'
+          },
+          // 소상공인시장진흥공단 API (공공데이터포털)
+          {
+            url: `https://api.odcloud.kr/api/3074462/v1/uddi:소상공인?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            type: 'json',
+            source: 'semas'
           }
         ];
         
@@ -279,13 +313,22 @@ async function fetchRealPolicies() {
                 const text = (title + ' ' + summary + ' ' + description).toLowerCase();
                 
                 // 소상공인 관련 정책만 필터링 (키워드 확장)
-                const keywords = [
+                // 뉴스 기사 제목은 제외 (실제 정책 지원금만)
+                const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망'];
+                const isNews = newsKeywords.some(keyword => text.includes(keyword));
+                
+                if (isNews) {
+                  console.log(`⚠️ 뉴스 기사 제외: ${title}`);
+                  return; // 뉴스 기사는 건너뜀
+                }
+                
+                const policyKeywords = [
                   '소상공인', '중소기업', '자영업', '창업', '지원금', '보조금', 
                   '융자', '바우처', '정책자금', '경영지원', '시설개선', 
-                  '마케팅', '교육지원', '인건비', '일자리'
+                  '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업'
                 ];
                 
-                const isRelevant = keywords.some(keyword => text.includes(keyword));
+                const isRelevant = policyKeywords.some(keyword => text.includes(keyword));
                 
                 if (isRelevant && title) {
                   policies.push({
@@ -310,14 +353,15 @@ async function fetchRealPolicies() {
                     status: getStatus(item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일),
                     is_featured: false,
                     tags: ['실제데이터', '공공데이터포털'],
-                    source: 'bizinfo'
+                    source: endpoint.source || 'bizinfo'
                   });
                 }
               });
               
               // 데이터를 가져왔으면 로그 출력 (모든 엔드포인트 시도)
-              if (policies.length > 0) {
-                console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트에서 ${policies.filter(p => p.source === 'bizinfo').length}개 정책 추가`);
+              const addedCount = policies.filter(p => p.source === (endpoint.source || 'bizinfo')).length;
+              if (addedCount > 0) {
+                console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 ${addedCount}개 정책 추가`);
               }
             }
           } catch (apiError) {
@@ -338,43 +382,9 @@ async function fetchRealPolicies() {
       }
     }
     
-    // 2. 정부 RSS 피드 파싱
-    try {
-      const rssResponse = await axios.get(DATA_SOURCES.KOREA_GOV, { timeout: 5000 });
-      const rssData = parseRSS(rssResponse.data);
-      
-      rssData.forEach(item => {
-        if (isRelevantPolicy(item)) {
-          policies.push({
-            title: item.title,
-            organization: '정부',
-            category: 'operation',
-            summary: item.description?.substring(0, 200) || item.title,
-            description: item.content || item.description || item.title,
-            support_amount: '문의',
-            support_type: 'other',
-            eligibility_criteria: '별도 문의',
-            required_documents: '별도 문의',
-            business_type: ['음식점', '카페', '소매업', '서비스업'],
-            target_area: ['전국'],
-            application_method: '온라인 신청',
-            application_url: item.link,
-            contact_info: '정부민원안내',
-            phone_number: '110',
-            status: 'active',
-            is_featured: false,
-            tags: ['정책브리핑', 'RSS'],
-            source: 'korea.kr'
-          });
-        }
-      });
-      
-      if (rssData.length > 0) {
-        console.log(`✅ RSS에서 ${policies.filter(p => p.source === 'korea.kr').length}개의 정책을 가져왔습니다.`);
-      }
-    } catch (rssError) {
-      console.error('RSS 피드 파싱 실패:', rssError.message);
-    }
+    // 2. K-Startup API는 위의 apiEndpoints에 포함되어 있음 (크롤링 제거)
+    // API 키를 통해 공공데이터포털에서 K-Startup 데이터를 가져옵니다.
+    console.log('ℹ️ K-Startup 데이터는 공공데이터포털 API를 통해 수집됩니다.');
     
     // 3. 실제 데이터가 없을 경우에만 내장 데이터 사용 (백업)
     if (policies.length === 0) {
@@ -561,6 +571,8 @@ function parseRSS(xmlData) {
   
   return items;
 }
+
+// K-Startup 크롤링 함수 제거 - API 키를 통해서만 데이터 수집
 
 /**
  * 관련 정책 필터링
