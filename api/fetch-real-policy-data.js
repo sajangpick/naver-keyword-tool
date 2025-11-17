@@ -999,80 +999,81 @@ function parseXMLResponse(xmlData) {
               item.pblancNm = text;
               item.pblancNmKr = text;
             }
-          if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm') || tagName === 'pblancinsttnm') {
-            item.organization = text;
-            item['수행기관'] = text;
-            item.excInsttNm = text;
-            item.pblancInsttNm = text;
+            if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm') || tagName === 'pblancinsttnm') {
+              item.organization = text;
+              item['수행기관'] = text;
+              item.excInsttNm = text;
+              item.pblancInsttNm = text;
+            }
+            if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn') || tagName === 'pblancsumrycn') {
+              item.summary = text;
+              item['사업개요'] = text;
+              item.bsnsSumryCn = text;
+              item.pblancSumryCn = text;
+            }
+            if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn') || tagName === 'pblancncn' || tagName === 'bsnsncn') {
+              item.description = text;
+              item['지원내용'] = text;
+              item.sportCn = text;
+              item.pblancCn = text;
+              item.bsnsCn = text;
+            }
+            if (tagName.includes('amount') || tagName.includes('규모') || tagName.includes('sportscle')) {
+              item.supportAmount = text;
+              item['지원규모'] = text;
+              item.sportScle = text;
+            }
+            if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde') || tagName === 'pblancbeginde') {
+              item.startDate = text;
+              item['신청시작일'] = text;
+              item.rceptBeginDe = text;
+              item.pblancBeginDe = text;
+            }
+            if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde') || tagName === 'pblancendde') {
+              item.endDate = text;
+              item['신청마감일'] = text;
+              item.rceptEndDe = text;
+              item.pblancEndDe = text;
+            }
+            if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl') || tagName === 'rcepturl') {
+              item.applicationUrl = text;
+              item['신청URL'] = text;
+              item.reqstUrl = text;
+              item.rceptUrl = text;
+            }
+            if (tagName.includes('contact') || tagName.includes('문의') || tagName.includes('rqutproccn')) {
+              item.contact = text;
+              item['문의처'] = text;
+              item.rqutProcCn = text;
+            }
+            if (tagName.includes('date') || tagName.includes('일') || tagName === 'pblancde' || tagName === 'pblancregistde') {
+              item.publishDate = text;
+              item['공고일'] = text;
+              item.pblancDe = text;
+              item.pblancRegistDe = text;
+            }
+            if (tagName.includes('phone') || tagName.includes('전화') || tagName === 'telno') {
+              item.phone = text;
+              item['전화번호'] = text;
+              item.telno = text;
+            }
+            if (tagName.includes('method') || tagName.includes('방법') || tagName === 'rceptmth') {
+              item.applicationMethod = text;
+              item['신청방법'] = text;
+              item.rceptMth = text;
+            }
+            
+            // 모든 필드를 원본 형태로도 저장
+            item[tagName] = text;
+            item[child.tagName] = text;
           }
-          if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn') || tagName === 'pblancsumrycn') {
-            item.summary = text;
-            item['사업개요'] = text;
-            item.bsnsSumryCn = text;
-            item.pblancSumryCn = text;
-          }
-          if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn') || tagName === 'pblancncn' || tagName === 'bsnsncn') {
-            item.description = text;
-            item['지원내용'] = text;
-            item.sportCn = text;
-            item.pblancCn = text;
-            item.bsnsCn = text;
-          }
-          if (tagName.includes('amount') || tagName.includes('규모') || tagName.includes('sportscle')) {
-            item.supportAmount = text;
-            item['지원규모'] = text;
-            item.sportScle = text;
-          }
-          if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde') || tagName === 'pblancbeginde') {
-            item.startDate = text;
-            item['신청시작일'] = text;
-            item.rceptBeginDe = text;
-            item.pblancBeginDe = text;
-          }
-          if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde') || tagName === 'pblancendde') {
-            item.endDate = text;
-            item['신청마감일'] = text;
-            item.rceptEndDe = text;
-            item.pblancEndDe = text;
-          }
-          if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl') || tagName === 'rcepturl') {
-            item.applicationUrl = text;
-            item['신청URL'] = text;
-            item.reqstUrl = text;
-            item.rceptUrl = text;
-          }
-          if (tagName.includes('contact') || tagName.includes('문의') || tagName.includes('rqutproccn')) {
-            item.contact = text;
-            item['문의처'] = text;
-            item.rqutProcCn = text;
-          }
-          if (tagName.includes('date') || tagName.includes('일') || tagName === 'pblancde' || tagName === 'pblancregistde') {
-            item.publishDate = text;
-            item['공고일'] = text;
-            item.pblancDe = text;
-            item.pblancRegistDe = text;
-          }
-          if (tagName.includes('phone') || tagName.includes('전화') || tagName === 'telno') {
-            item.phone = text;
-            item['전화번호'] = text;
-            item.telno = text;
-          }
-          if (tagName.includes('method') || tagName.includes('방법') || tagName === 'rceptmth') {
-            item.applicationMethod = text;
-            item['신청방법'] = text;
-            item.rceptMth = text;
-          }
-          
-          // 모든 필드를 원본 형태로도 저장
-          item[tagName] = text;
-          item[child.tagName] = text;
-        }
       });
       
       if (item.title || item['사업명'] || item.pblancNm || item.pblancNmKr) {
         items.push(item);
       }
     });
+    }
     
     console.log(`📊 XML 파싱 결과: ${items.length}개 항목 추출`);
     if (items.length === 0) {
