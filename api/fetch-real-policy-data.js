@@ -279,6 +279,7 @@ async function fetchRealPolicies() {
             const perPage = 1000; // 페이지당 최대 개수 (API 제한 확인 필요)
             
             console.log(`🔄 ${endpoint.source} 엔드포인트: 여러 페이지 순회 시작 (최대 ${maxPages}페이지)`);
+            console.log(`🔗 첫 번째 요청 URL: ${endpoint.url}`);
             
             while (hasMorePages && currentPage <= maxPages) {
               // URL에서 page와 perPage 파라미터 업데이트
@@ -295,6 +296,7 @@ async function fetchRealPolicies() {
               }
               
               try {
+                console.log(`📡 API 요청 (${endpoint.source}, 페이지 ${currentPage}): ${pageUrl.substring(0, 150)}...`);
                 const response = await axios.get(pageUrl, {
                   timeout: 15000,
                   headers: {
@@ -302,6 +304,8 @@ async function fetchRealPolicies() {
                     'Content-Type': 'application/json'
                   }
                 });
+                
+                console.log(`✅ API 응답 수신 (${endpoint.source}, 페이지 ${currentPage}): 상태 ${response.status}, 타입: ${typeof response.data}`);
                 
                 // 응답 데이터 파싱
                 let data = null;
@@ -357,9 +361,15 @@ async function fetchRealPolicies() {
                   }
                   // XML 응답인 경우
                   else if (typeof response.data === 'string' && response.data.includes('<')) {
+                    console.log(`📄 XML 응답 수신 (페이지 ${currentPage}), 길이: ${response.data.length} bytes`);
+                    console.log(`📄 XML 응답 샘플 (처음 500자): ${response.data.substring(0, 500)}`);
                     data = parseXMLResponse(response.data);
                     console.log(`✅ XML 응답 파싱 완료 (페이지 ${currentPage}): ${data?.length || 0}개 항목`);
+                    if (data && data.length > 0) {
+                      console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
+                    }
                     if (!data || data.length === 0) {
+                      console.log(`⚠️ XML 파싱 결과가 비어있음. 원본 XML 확인 필요.`);
                       hasMorePages = false;
                     }
                   }
@@ -502,6 +512,9 @@ async function fetchRealPolicies() {
               const addedCount = policies.filter(p => p.source === (endpoint.source || 'bizinfo')).length;
               if (addedCount > 0) {
                 console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 ${addedCount}개 정책 추가`);
+              } else {
+                console.log(`⚠️ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 정책을 찾지 못함`);
+                console.log(`📊 수집된 전체 데이터: ${allData.length}개, 필터링 후 정책: ${addedCount}개`);
               }
             }
           } catch (apiError) {
@@ -513,11 +526,22 @@ async function fetchRealPolicies() {
         
         console.log(`📋 총 ${policies.length}개의 정책 데이터 수집 완료`);
         
+        // 소스별 통계 출력
+        const sourceStats = {};
+        policies.forEach(p => {
+          sourceStats[p.source] = (sourceStats[p.source] || 0) + 1;
+        });
+        console.log(`📊 소스별 정책 수:`, sourceStats);
+        
         // 모든 엔드포인트 시도 후 결과 요약
         if (policies.length > 0) {
           console.log(`✅ 총 ${policies.length}개의 실제 정책 데이터를 가져왔습니다.`);
         } else {
           console.log('⚠️ 공공데이터포털 API에서 데이터를 가져오지 못했습니다.');
+        }
+        
+        if (policies.length <= 10) {
+          console.log(`⚠️ 정책 수가 적습니다 (${policies.length}개). 필터링이 너무 엄격할 수 있습니다.`);
         }
       } catch (error) {
         console.error('기업마당 API 호출 실패:', error.message);
@@ -602,8 +626,9 @@ function parseXMLResponse(xmlData) {
     const dom = new JSDOM(xmlData, { contentType: 'text/xml' });
     const document = dom.window.document;
     
+    // 중소벤처기업부 API는 items > item 구조 사용
     // 다양한 XML 구조 지원
-    const itemNodes = document.querySelectorAll('item, row, record');
+    const itemNodes = document.querySelectorAll('item, row, record, body > items > item, response > body > items > item');
     
     itemNodes.forEach(node => {
       const item = {};
@@ -692,24 +717,68 @@ function parseXMLResponse(xmlData) {
         }
       });
       
-      if (item.title || item['사업명'] || item.pblancNm) {
+      if (item.title || item['사업명'] || item.pblancNm || item.pblancNmKr) {
         items.push(item);
       }
     });
     
+    console.log(`📊 XML 파싱 결과: ${items.length}개 항목 추출`);
+    if (items.length === 0) {
+      console.log(`⚠️ XML에서 항목을 찾지 못함. XML 구조 확인 필요.`);
+      console.log(`📄 XML 샘플 (처음 1000자):`, xmlData.substring(0, 1000));
+      
+      // 중소벤처기업부 API 구조 확인
+      const bodyItems = document.querySelectorAll('body > items > item');
+      const responseItems = document.querySelectorAll('response > body > items > item');
+      console.log(`🔍 body > items > item: ${bodyItems.length}개`);
+      console.log(`🔍 response > body > items > item: ${responseItems.length}개`);
+    }
+    
   } catch (error) {
-    console.error('XML 파싱 오류:', error.message);
+    console.error('❌ XML 파싱 오류:', error.message);
+    console.error('❌ XML 파싱 스택:', error.stack);
     // 간단한 정규식 파싱 시도
-    const itemMatches = xmlData.match(/<item>[\s\S]*?<\/item>/g) || xmlData.match(/<row>[\s\S]*?<\/row>/g) || [];
-    itemMatches.forEach(itemXml => {
-      const title = (itemXml.match(/<title>(.*?)<\/title>/) || itemXml.match(/<사업명>(.*?)<\/사업명>/) || [])[1];
+    console.log(`🔄 정규식 파싱 시도...`);
+    const itemMatches = xmlData.match(/<item>[\s\S]*?<\/item>/g) || 
+                       xmlData.match(/<row>[\s\S]*?<\/row>/g) || 
+                       xmlData.match(/<record>[\s\S]*?<\/record>/g) || [];
+    console.log(`📋 정규식으로 찾은 항목 수: ${itemMatches.length}`);
+    itemMatches.forEach((itemXml, index) => {
+      if (index < 3) { // 처음 3개만 로그
+        console.log(`📄 항목 ${index + 1} 샘플:`, itemXml.substring(0, 200));
+      }
+      
+      // 중소벤처기업부 API 필드 추출
+      const title = (itemXml.match(/<pblancNmKr>(.*?)<\/pblancNmKr>/i) || 
+                    itemXml.match(/<pblancNm>(.*?)<\/pblancNm>/i) ||
+                    itemXml.match(/<title>(.*?)<\/title>/i) || 
+                    itemXml.match(/<사업명>(.*?)<\/사업명>/i) || [])[1];
+      const summary = (itemXml.match(/<pblancSumryCn>(.*?)<\/pblancSumryCn>/i) ||
+                      itemXml.match(/<bsnsSumryCn>(.*?)<\/bsnsSumryCn>/i) ||
+                      itemXml.match(/<summary>(.*?)<\/summary>/i) || [])[1];
+      const startDate = (itemXml.match(/<pblancBeginDe>(.*?)<\/pblancBeginDe>/i) ||
+                         itemXml.match(/<rceptBeginDe>(.*?)<\/rceptBeginDe>/i) || [])[1];
+      const endDate = (itemXml.match(/<pblancEndDe>(.*?)<\/pblancEndDe>/i) ||
+                      itemXml.match(/<rceptEndDe>(.*?)<\/rceptEndDe>/i) || [])[1];
+      
       if (title) {
+        const cleanTitle = title.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
         items.push({
-          title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
-          '사업명': title.replace(/<!\[CDATA\[|\]\]>/g, '').trim()
+          title: cleanTitle,
+          '사업명': cleanTitle,
+          pblancNm: cleanTitle,
+          pblancNmKr: cleanTitle,
+          summary: summary ? summary.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          '사업개요': summary ? summary.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          '신청시작일': startDate ? startDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          '신청마감일': endDate ? endDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          rceptBeginDe: startDate ? startDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          rceptEndDe: endDate ? endDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : ''
         });
       }
     });
+    
+    console.log(`✅ 정규식 파싱 완료: ${items.length}개 항목 추출`);
   }
   
   return items;
