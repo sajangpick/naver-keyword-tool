@@ -257,57 +257,23 @@ router.get('/search', async (req, res) => {
           
           console.log(`✅ 공공 API 레시피 변환 완료: ${publicRecipes.length}개 (전체 537개 중)`);
           
-          // 1차 필터링: 기본 정보로 품질 체크 (조리과정이 구체적인 레시피만)
+          // 1차 필터링: 최소한의 품질 체크만 적용 (대부분의 레시피 통과)
           let qualityFilteredRecipes = publicRecipes.filter(recipe => {
             const description = recipe.description || '';
-            const ingredientCategory = recipe.ingredient_category || '';
             
-            // 1. 재료 카테고리가 "~류"만 있는 경우 제외 (다른 정보가 있으면 통과)
-            if (ingredientCategory.includes('류') && description.length < 50) {
-              return false; // 추상적인 재료 + 짧은 설명 = 제외
-            }
-            
-            // 2. 설명이 너무 짧으면 제외
-            if (description.length < 20) {
+            // 1. 설명이 극도로 짧으면 제외 (10자 미만)
+            if (description.length < 10) {
               return false;
             }
             
-            // 3. 구체적인 조리 키워드 체크 (1개 이상 필수)
-            const cookingKeywords = [
-              '넣고', '볶고', '끓이고', '섞어', '담그', 
-              '썰어', '자르고', '다져', '으깨', '갈아',
-              '굽고', '튀기', '찌고', '졸이', '데치',
-              '분량', '큰술', '작은술', '컵', '그램',
-              '익히', '삶아', '준비', '씻어', '재료'
-            ];
-            
-            const hasCookingMethod = cookingKeywords.some(keyword => 
-              description.includes(keyword)
-            );
-            
-            if (!hasCookingMethod) {
-              return false; // 조리 방법이 없으면 제외
+            // 2. 완전히 무의미한 내용만 제외 (극히 일부)
+            // "드세요"만 반복되거나 "맛있어요"만 있는 경우
+            const onlyMeaningless = /^(드세요|맛있어요|좋아요|느껴보세요|만들어보세요){1,}[!\.]*$/.test(description.trim());
+            if (onlyMeaningless) {
+              return false;
             }
             
-            // 4. 무의미한 문구만 있는 경우 제외 (3개 이상)
-            const meaninglessPatterns = [
-              '더 맛있게',
-              '좋아요',
-              '드세요',
-              '느껴보세요',
-              '만들어보세요',
-              '해보세요',
-              '즐겨보세요'
-            ];
-            
-            const meaninglessCount = meaninglessPatterns.filter(pattern => 
-              description.includes(pattern)
-            ).length;
-            
-            if (meaninglessCount >= 3) {
-              return false; // 3개 이상이면 제외
-            }
-            
+            // 그 외 모든 레시피 통과
             return true;
           });
           
