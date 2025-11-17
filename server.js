@@ -720,6 +720,10 @@ app.post("/api/fetch-real-policies", fetchRealPolicyHandler);
 const recipesRouter = require("./api/recipes");
 app.use("/api/recipes", recipesRouter);
 
+// 레시피 이미지 API (Pexels)
+const recipeImageRouter = require("./api/recipe-image");
+app.use("/api/recipe-image", recipeImageRouter);
+
 // ==================== ADLOG 순위 추적 API ====================
 // 어드민 스크래핑 제어 API
 const scrapingControlRouter = require("./api/admin/scraping-control");

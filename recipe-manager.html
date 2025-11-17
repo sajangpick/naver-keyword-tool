@@ -1029,32 +1029,66 @@
       }
 
       .recipe-card {
-        background: white;
-        border-radius: 12px;
+        background: #ffffff;
+        border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         transition: all 0.3s ease;
         cursor: pointer;
       }
 
       .recipe-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
       }
 
       .recipe-card-image {
         width: 100%;
-        height: 200px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        min-height: 180px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 3rem;
-        color: white;
+        position: relative;
+        padding: 35px 20px 25px;
+        background: #ffffff;
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      /* 모든 카드 테두리 주황색 통일 */
+      .recipe-card.category-한식,
+      .recipe-card.category-중식,
+      .recipe-card.category-일식,
+      .recipe-card.category-양식,
+      .recipe-card.category-분식,
+      .recipe-card.category-디저트,
+      .recipe-card.category-기타,
+      .recipe-card {
+        border: 3px solid #ff8c42;
+        background: #ffffff;
+      }
+
+      /* 작은 emoji (포인트용) */
+      .recipe-card-emoji {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        opacity: 0.85;
+      }
+
+      /* 레시피명 텍스트 (큰 굵은 글씨) */
+      .recipe-card-name {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1f2937;
+        text-align: center;
+        line-height: 1.2;
+        letter-spacing: -0.5px;
+        margin: 0;
       }
 
       .recipe-card-body {
-        padding: 20px;
+        padding: 18px 20px 20px;
+        background: #ffffff;
       }
 
       .recipe-card-title {
@@ -1066,31 +1100,33 @@
 
       .recipe-card-meta {
         display: flex;
-        gap: 15px;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
+        gap: 12px;
+        margin-bottom: 12px;
+        font-size: 0.85rem;
         color: #6b7280;
       }
 
       .recipe-card-meta span {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
       }
 
       .recipe-card-badges {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
-        margin-top: 15px;
+        margin-top: 12px;
       }
 
       .badge {
-        padding: 4px 8px;
-        background: var(--bg-light);
+        display: inline-block;
+        padding: 3px 8px;
+        background: #f3f4f6;
         border-radius: 4px;
-        font-size: 0.85rem;
-        color: #4b5563;
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-weight: 500;
       }
 
       .badge.badge-category {
@@ -1541,7 +1577,7 @@
         <!-- 헤더 섹션 -->
         <div class="header-section">
           <div class="page-header">
-            <h1>레시피 관리 시스템 <span class="beta-badge">준비중</span></h1>
+            <h1>레시피 관리 시스템</h1>
             <p class="subtitle">
               식당 운영에 필요한 모든 레시피를 한 곳에서 관리하세요.
             </p>
@@ -2113,7 +2149,8 @@
         // ===== 레시피 카드 생성 =====
         function createRecipeCard(recipe) {
           const card = document.createElement("div");
-          card.className = "recipe-card";
+          const category = recipe.category || "기타";
+          card.className = `recipe-card category-${category}`;
           card.onclick = () => showRecipeDetail(recipe.id);
 
           const emoji = getCategoryEmoji(recipe.category);
@@ -2121,22 +2158,20 @@
 
           card.innerHTML = `
                 <div class="recipe-card-image">
-                    ${emoji}
+                    <div class="recipe-card-emoji">${emoji}</div>
+                    <div class="recipe-card-name">${recipe.name}</div>
                 </div>
                 <div class="recipe-card-body">
-                    <h3 class="recipe-card-title">${recipe.name}</h3>
-                    <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 10px;">
+                    <p style="color: #6B7280; font-size: 0.875rem; margin-bottom: 12px; line-height: 1.4;">
                         ${recipe.description || "설명이 없습니다."}
                     </p>
                     <div class="recipe-card-meta">
-                        <span>${recipe.total_time || 0}분</span>
-                        <span>${recipe.servings || 1}인분</span>
-                        <span>${recipe.rating || 0}</span>
+                        <span>⏱️ ${recipe.total_time || 0}분</span>
+                        <span>👥 ${recipe.servings || 1}인분</span>
+                        <span>⭐ ${recipe.rating || 0}</span>
                     </div>
                     <div class="recipe-card-badges">
-                        <span class="badge badge-category">${
-                          recipe.category
-                        }</span>
+                        <span class="badge badge-category">${category}</span>
                         <span class="badge badge-difficulty" style="background: ${difficultyColor};">
                             ${recipe.difficulty || "미정"}
                         </span>
@@ -2150,6 +2185,34 @@
             `;
 
           return card;
+        }
+
+        // ===== Pexels에서 레시피 이미지 가져오기 =====
+        async function fetchRecipeImage(recipeName) {
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/api/recipe-image/${encodeURIComponent(
+                recipeName
+              )}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            const result = await response.json();
+
+            if (result.success && result.data && result.data.url) {
+              return result.data.url;
+            }
+
+            return null;
+          } catch (error) {
+            console.error("이미지 조회 실패:", error);
+            return null;
+          }
         }
 
         // ===== 카테고리별 이모지 =====

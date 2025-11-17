@@ -991,11 +991,13 @@ router.get('/categories/list', async (req, res) => {
       return res.json({
         success: true,
         data: [
-          { id: 1, name: '한식', display_order: 1, is_active: true },
-          { id: 2, name: '중식', display_order: 2, is_active: true },
-          { id: 3, name: '일식', display_order: 3, is_active: true },
-          { id: 4, name: '양식', display_order: 4, is_active: true },
-          { id: 5, name: '디저트', display_order: 5, is_active: true }
+          { id: 1, category_name: '한식', icon_emoji: '🍚', display_order: 1, is_active: true },
+          { id: 2, category_name: '중식', icon_emoji: '🥟', display_order: 2, is_active: true },
+          { id: 3, category_name: '일식', icon_emoji: '🍱', display_order: 3, is_active: true },
+          { id: 4, category_name: '양식', icon_emoji: '🍝', display_order: 4, is_active: true },
+          { id: 5, category_name: '분식', icon_emoji: '🍜', display_order: 5, is_active: true },
+          { id: 6, category_name: '디저트', icon_emoji: '🍰', display_order: 6, is_active: true },
+          { id: 7, category_name: '기타', icon_emoji: '🍽️', display_order: 7, is_active: true }
         ]
       });
     }
