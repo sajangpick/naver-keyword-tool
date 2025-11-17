@@ -275,8 +275,8 @@ async function fetchRealPolicies() {
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
-            const maxPages = 200; // 최대 200페이지까지 (더 많은 데이터 수집)
-            const perPage = 1000; // 페이지당 최대 개수 (API 제한 확인 필요)
+            const maxPages = 10; // 최대 10페이지까지 (한 번에 50개씩)
+            const perPage = 50; // 페이지당 50개씩만 가져오기
             
             console.log(`🔄 ${endpoint.source} 엔드포인트: 여러 페이지 순회 시작 (최대 ${maxPages}페이지)`);
             console.log(`🔗 첫 번째 요청 URL: ${endpoint.url}`);
@@ -298,26 +298,58 @@ async function fetchRealPolicies() {
               try {
                 console.log(`📡 API 요청 (${endpoint.source}, 페이지 ${currentPage}): ${pageUrl.substring(0, 150)}...`);
                 const response = await axios.get(pageUrl, {
-                  timeout: 15000,
+                  timeout: 30000, // 타임아웃 30초로 증가
                   headers: {
                     'Accept': endpoint.type === 'xml' ? 'application/xml' : 'application/json',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                   }
                 });
                 
                 console.log(`✅ API 응답 수신 (${endpoint.source}, 페이지 ${currentPage}): 상태 ${response.status}, 타입: ${typeof response.data}`);
+                console.log(`📊 응답 데이터 크기: ${JSON.stringify(response.data).length} bytes`);
+                
+                // 에러 상태 코드 확인
+                if (response.status !== 200) {
+                  console.error(`❌ API 에러 응답: HTTP ${response.status}`);
+                  console.error(`❌ 응답 내용:`, JSON.stringify(response.data).substring(0, 500));
+                  hasMorePages = false;
+                  continue;
+                }
                 
                 // 응답 데이터 파싱
                 let data = null;
                 if (response.data) {
                   // JSON 응답인 경우
                   if (typeof response.data === 'object' && !Array.isArray(response.data)) {
+                    // 다양한 응답 구조 시도
                     data = response.data.data || 
                            response.data.response?.body?.items?.item || 
                            response.data.response?.body?.items ||
                            response.data.items?.item ||
                            response.data.items || 
+                           response.data.list ||
+                           response.data.result?.items ||
+                           response.data.result ||
                            response.data;
+                    
+                    // 디버깅: 응답 구조 확인 (첫 페이지만)
+                    if (currentPage === 1) {
+                      console.log(`🔍 JSON 응답 구조 확인 (${endpoint.source}):`, Object.keys(response.data));
+                      if (response.data.response) {
+                        console.log(`🔍 response 구조:`, Object.keys(response.data.response));
+                      }
+                      if (response.data.response?.body) {
+                        console.log(`🔍 body 구조:`, Object.keys(response.data.response.body));
+                      }
+                      if (data && Array.isArray(data) && data.length > 0) {
+                        console.log(`✅ 데이터 배열 확인: ${data.length}개 항목`);
+                      } else if (data && typeof data === 'object') {
+                        console.log(`⚠️ 데이터가 배열이 아님, 객체 타입:`, typeof data);
+                      } else {
+                        console.warn(`⚠️ 데이터를 찾을 수 없음`);
+                      }
+                    }
                     
                     // 페이지네이션 정보 확인
                     const totalCount = response.data.totalCount || 
@@ -359,20 +391,41 @@ async function fetchRealPolicies() {
                       hasMorePages = false;
                     }
                   }
-                  // XML 응답인 경우
-                  else if (typeof response.data === 'string' && response.data.includes('<')) {
-                    console.log(`📄 XML 응답 수신 (페이지 ${currentPage}), 길이: ${response.data.length} bytes`);
-                    console.log(`📄 XML 응답 샘플 (처음 500자): ${response.data.substring(0, 500)}`);
-                    data = parseXMLResponse(response.data);
-                    console.log(`✅ XML 응답 파싱 완료 (페이지 ${currentPage}): ${data?.length || 0}개 항목`);
-                    if (data && data.length > 0) {
-                      console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
-                    }
-                    if (!data || data.length === 0) {
-                      console.log(`⚠️ XML 파싱 결과가 비어있음. 원본 XML 확인 필요.`);
+                // XML 응답인 경우
+                else if (typeof response.data === 'string' && response.data.includes('<')) {
+                  console.log(`📄 XML 응답 수신 (페이지 ${currentPage}), 길이: ${response.data.length} bytes`);
+                  
+                  // 에러 응답 확인
+                  if (response.data.includes('<resultCode>') || response.data.includes('<resultMsg>')) {
+                    const resultCode = response.data.match(/<resultCode>(\d+)<\/resultCode>/i)?.[1];
+                    const resultMsg = response.data.match(/<resultMsg>(.*?)<\/resultMsg>/i)?.[1];
+                    if (resultCode && resultCode !== '00') {
+                      console.error(`❌ API 에러 응답: ${resultCode} - ${resultMsg || '알 수 없는 오류'}`);
                       hasMorePages = false;
+                      continue;
                     }
                   }
+                  
+                  // XML 샘플 로그 (첫 페이지만)
+                  if (currentPage === 1) {
+                    console.log(`📄 XML 응답 샘플 (처음 500자): ${response.data.substring(0, 500)}`);
+                  }
+                  
+                  data = parseXMLResponse(response.data);
+                  console.log(`✅ XML 응답 파싱 완료 (페이지 ${currentPage}): ${data?.length || 0}개 항목`);
+                  
+                  if (data && data.length > 0 && currentPage === 1) {
+                    console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
+                  }
+                  
+                  if (!data || data.length === 0) {
+                    console.log(`⚠️ XML 파싱 결과가 비어있음. 원본 XML 확인 필요.`);
+                    if (currentPage === 1) {
+                      console.log(`📄 전체 XML 응답 (디버깅용):`, response.data.substring(0, 2000));
+                    }
+                    hasMorePages = false;
+                  }
+                }
                 }
                 
                 // 데이터가 배열이 아닌 경우 처리
@@ -387,9 +440,12 @@ async function fetchRealPolicies() {
                 
                 if (Array.isArray(data) && data.length > 0) {
                   allData = allData.concat(data);
-                  // 로그는 10페이지마다 또는 마지막 페이지에서만 출력 (너무 많은 로그 방지)
-                  if (currentPage % 10 === 0 || data.length < perPage) {
-                    console.log(`📊 ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 (누적: ${allData.length}개)`);
+                  // 모든 페이지 로그 출력 (50개씩이므로 로그가 많지 않음)
+                  console.log(`✅ ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 수집 (누적: ${allData.length}개)`);
+                  
+                  // 첫 번째 항목 샘플 출력 (첫 페이지만)
+                  if (currentPage === 1 && data.length > 0) {
+                    console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
                   }
                   
                   // 데이터가 perPage보다 적으면 마지막 페이지
@@ -398,6 +454,10 @@ async function fetchRealPolicies() {
                     console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
                   }
                 } else {
+                  console.warn(`⚠️ 페이지 ${currentPage}: 데이터가 비어있거나 배열이 아님 (타입: ${typeof data}, 길이: ${Array.isArray(data) ? data.length : 'N/A'})`);
+                  if (currentPage === 1) {
+                    console.warn(`⚠️ 첫 페이지 응답 샘플:`, JSON.stringify(response.data).substring(0, 1000));
+                  }
                   hasMorePages = false;
                   if (allData.length > 0) {
                     console.log(`📄 데이터 없음, 수집 완료: ${allData.length}개 항목`);
@@ -431,6 +491,7 @@ async function fetchRealPolicies() {
                 const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || summary;
                 const text = (title + ' ' + summary + ' ' + description).toLowerCase();
                 
+                // 최소한의 필터링만 적용 (더 많은 정책 수집)
                 // 뉴스 기사 제목은 제외 (실제 정책 지원금만)
                 const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망', '상황'];
                 const isNews = newsKeywords.some(keyword => text.includes(keyword));
@@ -439,7 +500,12 @@ async function fetchRealPolicies() {
                   return; // 뉴스 기사는 건너뜀
                 }
                 
-                // 날짜 필터링 완화: 최근 2년간 공고 포함 (2024년, 2025년)
+                // 제목이 없으면 제외
+                if (!title) {
+                  return;
+                }
+                
+                // 날짜 정보 추출 (필터링용)
                 const startDate = item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
                 const endDate = item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
                 const publishDate = item['공고일'] || item.pblancDe || item.publishDate || item.공고일 || item['pblancDe'] || item['pblancRegistDe'] || '';
@@ -459,53 +525,28 @@ async function fetchRealPolicies() {
                 const normalizedEnd = normalizeDate(endDate);
                 const normalizedPublish = normalizeDate(publishDate);
                 
-                // 최근 2년간 공고 포함 (2024년, 2025년)
-                const lastYear = currentYear - 1;
-                const isRecentYear = normalizedStart?.startsWith(currentYear.toString()) ||
-                                    normalizedEnd?.startsWith(currentYear.toString()) ||
-                                    normalizedPublish?.startsWith(currentYear.toString()) ||
-                                    normalizedStart?.startsWith(lastYear.toString()) ||
-                                    normalizedEnd?.startsWith(lastYear.toString()) ||
-                                    normalizedPublish?.startsWith(lastYear.toString()) ||
-                                    startDate.includes(currentYear.toString()) ||
-                                    endDate.includes(currentYear.toString()) ||
-                                    publishDate.includes(currentYear.toString()) ||
-                                    startDate.includes(lastYear.toString()) ||
-                                    endDate.includes(lastYear.toString()) ||
-                                    publishDate.includes(lastYear.toString());
-                
-                // 중소벤처기업부 API에서 온 데이터는 날짜 필터링 완전히 제외
+                // 중소벤처기업부 API에서 온 데이터는 모든 필터링 제외
                 const isFromMssBiz = endpoint.source === 'mss-biz';
                 
-                // 날짜 필터링 완전히 제거 (더 많은 정책 수집을 위해)
-                // 중소벤처기업부 API는 무조건 포함
-                if (isFromMssBiz && title) {
-                  // 중소벤처기업부 API에서 온 데이터는 모든 필터링 제외
-                  if (policies.length % 10 === 0) {
-                    console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
-                  }
-                } else {
-                  // 다른 API는 최소한의 필터링만 적용
-                  // 날짜 필터링: 날짜가 있고 2020년 이전이면 제외 (최근 5년)
-                  const minYear = currentYear - 5;
-                  const isOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
-                                normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
-                                normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
+                // 날짜 필터링: 2015년 이전만 제외 (최근 10년 포함)
+                if (!isFromMssBiz) {
+                  const minYear = 2015;
+                  const isVeryOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
+                                    normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
+                                    normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
                   
-                  if (isOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
-                    // 2020년 이전 공고는 제외
+                  if (isVeryOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                    // 2015년 이전 공고만 제외
                     return;
-                  }
-                  
-                  // 키워드 필터링 완전히 제거 (제목만 있으면 포함)
-                  // 제목이 있으면 무조건 포함 (더 많은 정책 수집)
-                  if (!title) {
-                    return; // 제목이 없으면 제외
                   }
                 }
                 
                 // 모든 정책 포함 (필터링 최소화)
                 if (title) {
+                  // 중소벤처기업부 API는 로그 최소화
+                  if (isFromMssBiz && policies.length % 50 === 0) {
+                    console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
+                  }
                   // 중소벤처기업부 사업공고 API 필드 매핑
           policies.push({
                     title: title,
@@ -539,12 +580,25 @@ async function fetchRealPolicies() {
               if (addedCount > 0) {
                 console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 ${addedCount}개 정책 추가`);
               } else {
-                console.log(`⚠️ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 정책을 찾지 못함`);
-                console.log(`📊 수집된 전체 데이터: ${allData.length}개, 필터링 후 정책: ${addedCount}개`);
+                console.warn(`⚠️ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 정책을 찾지 못함`);
+                console.warn(`📊 수집된 전체 데이터: ${allData.length}개, 필터링 후 정책: ${addedCount}개`);
+                if (allData.length > 0 && addedCount === 0) {
+                  console.warn(`💡 필터링이 너무 엄격하여 모든 데이터가 제외되었습니다.`);
+                  if (allData.length > 0) {
+                    console.warn(`💡 첫 번째 데이터 샘플:`, JSON.stringify(allData[0], null, 2).substring(0, 500));
+                  }
+                }
               }
             }
           } catch (apiError) {
-            console.log(`⚠️ API 엔드포인트 실패 (${endpoint.type}):`, apiError.message);
+            console.error(`❌ API 엔드포인트 실패 (${endpoint.source}, ${endpoint.type}):`, apiError.message);
+            if (apiError.response) {
+              console.error(`❌ HTTP 상태: ${apiError.response.status}`);
+              console.error(`❌ 응답 데이터:`, JSON.stringify(apiError.response.data).substring(0, 500));
+            }
+            if (apiError.request) {
+              console.error(`❌ 요청은 전송되었지만 응답이 없음`);
+            }
             // 에러가 발생해도 다음 엔드포인트 계속 시도
             continue;
           }
@@ -555,22 +609,30 @@ async function fetchRealPolicies() {
         // 소스별 통계 출력
         const sourceStats = {};
         policies.forEach(p => {
-          sourceStats[p.source] = (sourceStats[p.source] || 0) + 1;
+          const source = p.source || 'unknown';
+          sourceStats[source] = (sourceStats[source] || 0) + 1;
         });
-        console.log(`📊 소스별 정책 수:`, sourceStats);
+        console.log(`📊 소스별 정책 수:`, JSON.stringify(sourceStats, null, 2));
         
         // 모든 엔드포인트 시도 후 결과 요약
         if (policies.length > 0) {
           console.log(`✅ 총 ${policies.length}개의 실제 정책 데이터를 가져왔습니다.`);
         } else {
-          console.log('⚠️ 공공데이터포털 API에서 데이터를 가져오지 못했습니다.');
+          console.error('❌ 공공데이터포털 API에서 데이터를 가져오지 못했습니다.');
+          console.error('💡 가능한 원인:');
+          console.error('   1. API 키가 유효하지 않음');
+          console.error('   2. API 엔드포인트가 변경됨');
+          console.error('   3. 네트워크 오류');
+          console.error('   4. 필터링이 너무 엄격함');
         }
         
-        if (policies.length < 50) {
-          console.log(`⚠️ 정책 수가 적습니다 (${policies.length}개). 필터링이 너무 엄격할 수 있습니다.`);
-          console.log(`💡 목표: 최소 100개 이상의 정책 수집`);
-        } else if (policies.length >= 100) {
-          console.log(`✅ 목표 달성: ${policies.length}개 정책 수집 완료`);
+        if (policies.length < 10) {
+          console.warn(`⚠️ 정책 수가 적습니다 (${policies.length}개). 필터링이 너무 엄격할 수 있습니다.`);
+          console.warn(`💡 조치: 필터링을 더 완화하거나 API 엔드포인트를 확인하세요.`);
+        } else if (policies.length >= 50) {
+          console.log(`✅ ${policies.length}개 정책 수집 완료 (목표: 50개)`);
+        } else {
+          console.log(`ℹ️ ${policies.length}개 정책 수집 (목표: 50개)`);
         }
       } catch (error) {
         console.error('기업마당 API 호출 실패:', error.message);
@@ -605,6 +667,15 @@ async function fetchRealPolicies() {
       }
       policies.length = 0;
       policies.push(...filteredPolicies);
+      
+      // 정책 수 확인
+      if (policies.length >= 50) {
+        console.log(`✅ ${policies.length}개 정책 수집 완료`);
+      } else if (policies.length > 0) {
+        console.log(`ℹ️ ${policies.length}개 정책 수집 (목표: 50개)`);
+      } else {
+        console.warn(`⚠️ 수집된 정책이 없습니다. API 호출 또는 필터링을 확인하세요.`);
+      }
     }
     
   } catch (error) {
