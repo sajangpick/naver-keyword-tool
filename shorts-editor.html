@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://cdn.jsdelivr.net wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>AI 쇼츠 영상 생성 - 사장픽</title>
@@ -2216,7 +2216,12 @@
         let planHistory = [];
         let currentPlanEntryId = null;
         const currentUser = getCurrentUser();
-        const API_BASE = '';
+        // API 베이스 URL 설정
+        // 프로덕션: 빈 문자열 (vercel.json의 rewrites 사용)
+        // 로컬 개발: 'http://localhost:3003' 또는 빈 문자열
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3003' 
+            : '';
 
         function getCurrentUser() {
             try {
@@ -2437,17 +2442,24 @@
                     body: formData
                 });
 
-                const result = await response.json();
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonError) {
+                    const text = await response.text();
+                    console.error('응답 파싱 실패:', text);
+                    throw new Error(`서버 응답 오류 (${response.status}): ${text.substring(0, 100)}`);
+                }
 
                 if (!response.ok || !result.success) {
-                    throw new Error(result.error || '영상 생성에 실패했습니다.');
+                    throw new Error(result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`);
                 }
 
                 hideProgressModal();
                 
                 // 생성된 영상 정보 저장
-                if (result.data && (result.data.video_id || result.data.id)) {
-                    currentVideoId = result.data.video_id || result.data.id;
+                if (result.data && result.data.id) {
+                    currentVideoId = result.data.id;
                     // Step 4로 이동하여 영상 확인
                     goToStep(4);
                     // 영상 상태 확인 시작
@@ -2459,7 +2471,13 @@
             } catch (error) {
                 console.error('영상 생성 실패:', error);
                 hideProgressModal();
-                alert('영상 생성에 실패했습니다: ' + error.message);
+                
+                // 404 오류인 경우 서버 연결 문제로 안내
+                if (error.message && error.message.includes('404') || error.message.includes('경로를 찾을 수 없습니다')) {
+                    alert('서버에 연결할 수 없습니다.\n\n로컬에서 테스트하는 경우:\n1. 서버가 실행 중인지 확인하세요 (node server.js)\n2. http://localhost:3003/shorts-editor.html 로 접속하세요\n\n프로덕션 환경인 경우:\nRender 서버에 최신 코드가 배포되었는지 확인하세요.');
+                } else {
+                    alert('영상 생성에 실패했습니다: ' + error.message);
+                }
             }
         }
 
@@ -2987,15 +3005,39 @@
 
         async function fetchPlanHistory() {
             const userId = getCurrentUserId();
-            if (!userId) return;
+            if (!userId) {
+                planHistory = [];
+                renderPlanHistory();
+                return;
+            }
             try {
                 const response = await fetch(
-                    `${API_BASE}/api/shorts/plan-history?userId=${encodeURIComponent(userId)}`
+                    `${API_BASE}/api/shorts/plan-history?userId=${encodeURIComponent(userId)}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'user-id': userId
+                        }
+                    }
                 );
+                
+                if (!response.ok) {
+                    // 404나 다른 오류는 조용히 처리 (초안이 없는 경우일 수 있음)
+                    if (response.status === 404) {
+                        planHistory = [];
+                        renderPlanHistory();
+                        return;
+                    }
+                    const errorText = await response.text();
+                    throw new Error(`서버 응답 오류 (${response.status}): ${errorText.substring(0, 100)}`);
+                }
+                
                 const data = await response.json();
-                if (!response.ok || data.success === false) {
+                if (!data.success) {
                     throw new Error(data.error || '저장된 초안을 불러오지 못했습니다.');
                 }
+                
                 const previousId = currentPlanEntryId;
                 planHistory = (data.items || []).map(mapHistoryEntry).filter(Boolean);
                 if (!planHistory.some((item) => item.id === previousId)) {
@@ -3003,7 +3045,10 @@
                 }
                 renderPlanHistory();
             } catch (error) {
-                console.error('초안 히스토리를 불러오지 못했습니다:', error);
+                // 오류 발생 시 조용히 처리 (초안이 없거나 서버 문제일 수 있음)
+                console.warn('초안 히스토리를 불러오지 못했습니다 (계속 진행):', error.message);
+                planHistory = [];
+                renderPlanHistory();
             }
         }
 

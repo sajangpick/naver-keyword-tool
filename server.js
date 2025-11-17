@@ -7,6 +7,7 @@ const path = require("path");
 const { spawn } = require("child_process");
 const helmet = require("helmet");
 const { createClient } = require("@supabase/supabase-js");
+const multer = require("multer");
 
 const app = express();
 app.set("trust proxy", true);
@@ -205,6 +206,14 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Multer 설정 (파일 업로드용)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB 제한
+  }
+});
 
 // CSP report collection endpoint
 app.post(
@@ -4233,35 +4242,28 @@ async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
 
 // ==================== 쇼츠 영상 생성 API ====================
 
-app.post("/api/shorts/generate", async (req, res) => {
+app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
   try {
     const userId = req.headers["user-id"] || req.body.userId;
     ensureUserId(userId);
 
-    // FormData 파싱 (multer 미들웨어 필요)
-    const multer = require("multer");
-    const upload = multer({ storage: multer.memoryStorage() });
-    
-    // 단일 파일 업로드 미들웨어
-    const uploadSingle = upload.single("image");
+    // multer 에러 처리
+    if (req.fileValidationError) {
+      return res.status(400).json({
+        success: false,
+        error: req.fileValidationError,
+      });
+    }
 
-    uploadSingle(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          error: "이미지 업로드 실패: " + err.message,
-        });
-      }
-
-      try {
-        const {
-          style,
-          menuName,
-          menuFeatures = "",
-          menuPrice = "",
-          music = "auto",
-          duration = "10",
-        } = req.body;
+    try {
+      const {
+        style,
+        menuName,
+        menuFeatures = "",
+        menuPrice = "",
+        music = "auto",
+        duration = "10",
+      } = req.body;
 
         if (!req.file) {
           return res.status(400).json({
@@ -4373,22 +4375,21 @@ app.post("/api/shorts/generate", async (req, res) => {
               .eq("id", videoData.id);
           });
 
-        res.json({
-          success: true,
-          data: {
-            id: videoData.id,
-            status: "processing",
-            message: "영상 생성이 시작되었습니다. 잠시 후 마이페이지에서 확인하세요.",
-          },
-        });
-      } catch (error) {
-        devError("영상 생성 처리 실패:", error);
-        res.status(500).json({
-          success: false,
-          error: error.message || "영상 생성 중 오류가 발생했습니다.",
-        });
-      }
-    });
+      res.json({
+        success: true,
+        data: {
+          id: videoData.id,
+          status: "processing",
+          message: "영상 생성이 시작되었습니다. 잠시 후 마이페이지에서 확인하세요.",
+        },
+      });
+    } catch (error) {
+      devError("영상 생성 처리 실패:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "영상 생성 중 오류가 발생했습니다.",
+      });
+    }
   } catch (error) {
     devError("영상 생성 API 오류:", error);
     res.status(500).json({
