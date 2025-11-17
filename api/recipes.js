@@ -207,7 +207,7 @@ router.get('/search', async (req, res) => {
           
           // 올바른 URL 형식: /openapi/{API_KEY}/json/{서비스명}/{시작}/{끝}
           // 서비스명만 사용 (전체 URL이 아님!)
-          const serviceName = 'COOKRCP01'; // 기본 레시피 서비스
+          const serviceName = 'Grid_20150827000000000226_1'; // 기본 레시피 서비스
           const apiUrl = `http://211.237.50.150:7080/openapi/${process.env.RECIPE_API_KEY}/json/${serviceName}/1/100`;
           
           console.log('API 호출 URL:', apiUrl);
@@ -359,7 +359,7 @@ router.get('/:id', async (req, res) => {
       let detailedIngredients = [];
       
       try {
-        const ingredientServiceName = 'COOKRCP_IRDNT'; // 재료정보 서비스
+        const ingredientServiceName = 'Grid_20150827000000000227_1'; // 재료정보 서비스
         const ingredientApiUrl = `http://211.237.50.150:7080/openapi/${process.env.RECIPE_API_KEY}/json/${ingredientServiceName}/1/1000`;
         
         console.log('📡 재료정보 API 호출:', ingredientApiUrl.substring(0, 100) + '...');
@@ -404,7 +404,7 @@ router.get('/:id', async (req, res) => {
       let processSteps = [];
       
       try {
-        const processServiceName = 'COOKRCP_PROCESS'; // 과정정보 서비스
+        const processServiceName = 'Grid_20150827000000000228_1'; // 과정정보 서비스
         const processApiUrl = `http://211.237.50.150:7080/openapi/${process.env.RECIPE_API_KEY}/json/${processServiceName}/1/1000`;
         
         console.log('📡 과정정보 API 호출:', processApiUrl.substring(0, 100) + '...');
