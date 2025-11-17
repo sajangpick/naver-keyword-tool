@@ -2994,15 +2994,39 @@
 
         async function fetchPlanHistory() {
             const userId = getCurrentUserId();
-            if (!userId) return;
+            if (!userId) {
+                planHistory = [];
+                renderPlanHistory();
+                return;
+            }
             try {
                 const response = await fetch(
-                    `${API_BASE}/api/shorts/plan-history?userId=${encodeURIComponent(userId)}`
+                    `${API_BASE}/api/shorts/plan-history?userId=${encodeURIComponent(userId)}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'user-id': userId
+                        }
+                    }
                 );
+                
+                if (!response.ok) {
+                    // 404나 다른 오류는 조용히 처리 (초안이 없는 경우일 수 있음)
+                    if (response.status === 404) {
+                        planHistory = [];
+                        renderPlanHistory();
+                        return;
+                    }
+                    const errorText = await response.text();
+                    throw new Error(`서버 응답 오류 (${response.status}): ${errorText.substring(0, 100)}`);
+                }
+                
                 const data = await response.json();
-                if (!response.ok || data.success === false) {
+                if (!data.success) {
                     throw new Error(data.error || '저장된 초안을 불러오지 못했습니다.');
                 }
+                
                 const previousId = currentPlanEntryId;
                 planHistory = (data.items || []).map(mapHistoryEntry).filter(Boolean);
                 if (!planHistory.some((item) => item.id === previousId)) {
@@ -3010,7 +3034,10 @@
                 }
                 renderPlanHistory();
             } catch (error) {
-                console.error('초안 히스토리를 불러오지 못했습니다:', error);
+                // 오류 발생 시 조용히 처리 (초안이 없거나 서버 문제일 수 있음)
+                console.warn('초안 히스토리를 불러오지 못했습니다 (계속 진행):', error.message);
+                planHistory = [];
+                renderPlanHistory();
             }
         }
 
