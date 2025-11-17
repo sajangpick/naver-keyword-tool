@@ -204,6 +204,8 @@ async function fetchRealPolicies() {
     const apiKey = process.env.PUBLIC_DATA_KEY || 'e45b26951c63da01a0d82653dd6101417c57f3812905e604bb4f60f80157bac8';
     
     console.log('🔑 API 키 사용:', apiKey ? `${apiKey.substring(0, 10)}...` : '없음');
+    console.log('🔑 API 키 전체 길이:', apiKey ? apiKey.length : 0);
+    console.log('🔑 API 키 유효성 확인:', apiKey && apiKey.length > 20 ? '✅ 유효' : '❌ 무효');
     
     if (apiKey) {
       try {
@@ -268,8 +270,15 @@ async function fetchRealPolicies() {
         
         // 우선순위에 따라 정렬 (priority가 낮을수록 먼저 실행)
         apiEndpoints.sort((a, b) => (a.priority || 999) - (b.priority || 999));
+        console.log('📋 정렬된 API 엔드포인트:', apiEndpoints.map(e => `${e.source} (${e.type})`).join(', '));
+        
+        let totalApiCalls = 0;
+        let successfulApiCalls = 0;
+        let failedApiCalls = 0;
         
         for (const endpoint of apiEndpoints) {
+          totalApiCalls++;
+          console.log(`\n🔄 [${totalApiCalls}/${apiEndpoints.length}] ${endpoint.source} 엔드포인트 처리 시작`);
           try {
             // 여러 페이지를 순회하며 모든 데이터 가져오기
             let allData = [];
@@ -476,8 +485,10 @@ async function fetchRealPolicies() {
             }
             
             if (allData.length > 0) {
+              successfulApiCalls++;
               console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트에서 총 ${allData.length}개 항목 수집 완료`);
               console.log(`🔍 첫 번째 원본 데이터 샘플:`, JSON.stringify(allData[0], null, 2).substring(0, 500));
+              console.log(`🔍 첫 번째 원본 데이터 키 목록:`, Object.keys(allData[0] || {}));
               
               let processedCount = 0;
               let filteredCount = 0;
@@ -601,19 +612,29 @@ async function fetchRealPolicies() {
               }
             }
           } catch (apiError) {
-            console.error(`❌ API 엔드포인트 실패 (${endpoint.source}, ${endpoint.type}):`, apiError.message);
+            failedApiCalls++;
+            console.error(`❌ [${totalApiCalls}/${apiEndpoints.length}] API 엔드포인트 실패 (${endpoint.source}, ${endpoint.type}):`, apiError.message);
             if (apiError.response) {
               console.error(`❌ HTTP 상태: ${apiError.response.status}`);
-              console.error(`❌ 응답 데이터:`, JSON.stringify(apiError.response.data).substring(0, 500));
+              console.error(`❌ 응답 헤더:`, JSON.stringify(apiError.response.headers));
+              console.error(`❌ 응답 데이터:`, JSON.stringify(apiError.response.data).substring(0, 1000));
             }
             if (apiError.request) {
               console.error(`❌ 요청은 전송되었지만 응답이 없음`);
+              console.error(`❌ 요청 URL:`, apiError.config?.url);
+            }
+            if (apiError.code) {
+              console.error(`❌ 에러 코드:`, apiError.code);
             }
             // 에러가 발생해도 다음 엔드포인트 계속 시도
             continue;
           }
         }
         
+        console.log(`\n📋 ========== API 호출 요약 ==========`);
+        console.log(`📊 총 API 엔드포인트: ${totalApiCalls}개`);
+        console.log(`✅ 성공: ${successfulApiCalls}개`);
+        console.log(`❌ 실패: ${failedApiCalls}개`);
         console.log(`📋 총 ${policies.length}개의 정책 데이터 수집 완료`);
         
         // 소스별 통계 출력
@@ -623,6 +644,7 @@ async function fetchRealPolicies() {
           sourceStats[source] = (sourceStats[source] || 0) + 1;
         });
         console.log(`📊 소스별 정책 수:`, JSON.stringify(sourceStats, null, 2));
+        console.log(`========================================\n`);
         
         // 모든 엔드포인트 시도 후 결과 요약
         if (policies.length > 0) {
