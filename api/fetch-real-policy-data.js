@@ -209,6 +209,13 @@ async function fetchRealPolicies() {
       try {
         // 공공데이터포털 - 다양한 API 엔드포인트 시도
         const apiEndpoints = [
+          // 중소벤처기업부 사업공고 API (공공데이터포털) - 우선순위 1
+          {
+            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=1000&pageNo=1`,
+            type: 'xml',
+            source: 'mss-biz',
+            priority: 1
+          },
           // 중소기업 지원사업 정보 (JSON) - 여러 페이지 순회
           {
             url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
@@ -259,20 +266,33 @@ async function fetchRealPolicies() {
           }
         ];
         
+        // 우선순위에 따라 정렬 (priority가 낮을수록 먼저 실행)
+        apiEndpoints.sort((a, b) => (a.priority || 999) - (b.priority || 999));
+        
         for (const endpoint of apiEndpoints) {
           try {
             // 여러 페이지를 순회하며 모든 데이터 가져오기
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
-            const maxPages = 50; // 최대 50페이지까지 (안전장치)
+            const maxPages = 100; // 최대 100페이지까지 (더 많은 데이터 수집)
             const perPage = 1000; // 페이지당 최대 개수 (API 제한 확인 필요)
+            
+            console.log(`🔄 ${endpoint.source} 엔드포인트: 여러 페이지 순회 시작 (최대 ${maxPages}페이지)`);
             
             while (hasMorePages && currentPage <= maxPages) {
               // URL에서 page와 perPage 파라미터 업데이트
-              const url = endpoint.url.replace(/[?&]page=\d+/, '').replace(/[?&]perPage=\d+/, '');
+              let url = endpoint.url.replace(/[?&]page=\d+/, '').replace(/[?&]perPage=\d+/, '').replace(/[?&]pageNo=\d+/, '').replace(/[?&]numOfRows=\d+/, '');
               const separator = url.includes('?') ? '&' : '?';
-              const pageUrl = `${url}${separator}page=${currentPage}&perPage=${perPage}`;
+              
+              // 공공데이터포털 API (data.go.kr)는 pageNo와 numOfRows 사용
+              let pageUrl;
+              if (url.includes('apis.data.go.kr')) {
+                pageUrl = `${url}${separator}pageNo=${currentPage}&numOfRows=${perPage}`;
+              } else {
+                // odcloud.kr API는 page와 perPage 사용
+                pageUrl = `${url}${separator}page=${currentPage}&perPage=${perPage}`;
+              }
               
               try {
                 const response = await axios.get(pageUrl, {
@@ -298,12 +318,34 @@ async function fetchRealPolicies() {
                     // 페이지네이션 정보 확인
                     const totalCount = response.data.totalCount || 
                                       response.data.response?.body?.totalCount ||
+                                      response.data.response?.body?.totalCount ||
                                       response.data.total ||
-                                      response.data.count;
+                                      response.data.count ||
+                                      (response.data.response?.body ? parseInt(response.data.response.body.totalCount) : null);
+                    
                     const currentCount = Array.isArray(data) ? data.length : (data ? 1 : 0);
                     
-                    if (totalCount && currentPage * perPage >= totalCount) {
-                      hasMorePages = false;
+                    // 공공데이터포털 XML 응답의 경우 totalCount 확인
+                    if (endpoint.type === 'xml' && typeof response.data === 'string') {
+                      const totalMatch = response.data.match(/<totalCount>(\d+)<\/totalCount>/i) || 
+                                        response.data.match(/<totalCount>(\d+)<\/totalCount>/i);
+                      if (totalMatch) {
+                        const xmlTotalCount = parseInt(totalMatch[1]);
+                        const xmlTotalPages = Math.ceil(xmlTotalCount / perPage);
+                        if (currentPage >= xmlTotalPages) {
+                          hasMorePages = false;
+                          console.log(`📄 XML 총 ${xmlTotalCount}개 중 ${allData.length}개 수집 완료 (${xmlTotalPages}페이지)`);
+                        }
+                      }
+                    }
+                    
+                    // 총 개수가 있고 현재 페이지가 마지막 페이지인지 확인
+                    if (totalCount) {
+                      const totalPages = Math.ceil(totalCount / perPage);
+                      if (currentPage >= totalPages) {
+                        hasMorePages = false;
+                        console.log(`📄 총 ${totalCount}개 중 ${allData.length}개 수집 완료 (${totalPages}페이지)`);
+                      }
                     }
                   }
                   // 배열인 경우
@@ -359,54 +401,98 @@ async function fetchRealPolicies() {
             if (allData.length > 0) {
               console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트에서 총 ${allData.length}개 항목 수집 완료`);
               
+              // 올해 날짜 범위 설정
+              const currentYear = new Date().getFullYear();
+              const yearStart = `${currentYear}-01-01`;
+              const yearEnd = `${currentYear}-12-31`;
+              
               allData.forEach(item => {
                 // 소상공인 관련 키워드 필터링
-                const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || '';
-                const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || '';
-                const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || '';
+                // 중소벤처기업부 사업공고 API 필드 매핑
+                const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || item['pblancNm'] || item['pblancNmKr'] || '';
+                const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || item['bsnsSumryCn'] || item['pblancSumryCn'] || '';
+                const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || summary;
                 const text = (title + ' ' + summary + ' ' + description).toLowerCase();
                 
                 // 소상공인 관련 정책만 필터링 (키워드 확장)
                 // 뉴스 기사 제목은 제외 (실제 정책 지원금만)
-                const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망'];
+                const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망', '상황'];
                 const isNews = newsKeywords.some(keyword => text.includes(keyword));
                 
                 if (isNews) {
-                  console.log(`⚠️ 뉴스 기사 제외: ${title}`);
                   return; // 뉴스 기사는 건너뜀
                 }
                 
+                // 올해 공고 필터링 (신청 시작일 또는 마감일이 올해인 경우)
+                // 중소벤처기업부 사업공고 API 필드 매핑
+                const startDate = item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
+                const endDate = item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
+                const publishDate = item['공고일'] || item.pblancDe || item.publishDate || item.공고일 || item['pblancDe'] || item['pblancRegistDe'] || '';
+                
+                // 날짜 형식 정규화 (YYYY-MM-DD, YYYY.MM.DD, YYYYMMDD 등)
+                const normalizeDate = (dateStr) => {
+                  if (!dateStr) return null;
+                  const cleaned = dateStr.toString().replace(/[.\s]/g, '-').replace(/--+/g, '-');
+                  const match = cleaned.match(/(\d{4})[-\s]?(\d{2})[-\s]?(\d{2})/);
+                  if (match) {
+                    return `${match[1]}-${match[2]}-${match[3]}`;
+                  }
+                  return null;
+                };
+                
+                const normalizedStart = normalizeDate(startDate);
+                const normalizedEnd = normalizeDate(endDate);
+                const normalizedPublish = normalizeDate(publishDate);
+                
+                // 올해 공고인지 확인 (시작일, 마감일, 공고일 중 하나라도 올해면 포함)
+                const isThisYear = normalizedStart?.startsWith(currentYear.toString()) ||
+                                  normalizedEnd?.startsWith(currentYear.toString()) ||
+                                  normalizedPublish?.startsWith(currentYear.toString()) ||
+                                  startDate.includes(currentYear.toString()) ||
+                                  endDate.includes(currentYear.toString()) ||
+                                  publishDate.includes(currentYear.toString());
+                
+                // 날짜가 없거나 2024년 이전 공고는 제외 (올해 또는 최근 공고만)
+                if (!isThisYear && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                  // 날짜가 있지만 올해가 아닌 경우 제외
+                  return;
+                }
+                
+                // 키워드 필터링 완화 (더 많은 정책 포함)
                 const policyKeywords = [
                   '소상공인', '중소기업', '자영업', '창업', '지원금', '보조금', 
                   '융자', '바우처', '정책자금', '경영지원', '시설개선', 
-                  '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업'
+                  '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업',
+                  '지원', '보조', '혜택', '할인', '할인율', '금리', '대출'
                 ];
                 
                 const isRelevant = policyKeywords.some(keyword => text.includes(keyword));
                 
-                if (isRelevant && title) {
+                // 키워드가 없어도 제목이 있고 날짜가 올해면 포함 (필터링 완화)
+                if (title && (isRelevant || isThisYear)) {
+                  // 중소벤처기업부 사업공고 API 필드 매핑
                   policies.push({
                     title: title,
-                    organization: item['수행기관'] || item.excInsttNm || item.organization || item.수행기관 || '정부',
-                    category: mapCategory(item['지원분야'] || item.supportField || item.지원분야 || ''),
+                    organization: item['수행기관'] || item.excInsttNm || item.organization || item.수행기관 || item['pblancInsttNm'] || '중소벤처기업부',
+                    category: mapCategory(item['지원분야'] || item.supportField || item.지원분야 || item['pblancSe'] || item['bsnsSe'] || ''),
                     summary: summary || title,
-                    description: item['지원내용'] || item.sportCn || item.description || item.지원내용 || summary,
+                    description: description || summary || title,
                     support_amount: item['지원규모'] || item.sportScle || item.supportAmount || item.지원규모 || '문의',
-                    support_type: mapSupportType(item['지원유형'] || item.supportType || item.지원유형 || ''),
-                    eligibility_criteria: item['지원자격'] || item.sportQualf || item.eligibility || item.지원자격 || '별도 문의',
+                    support_type: mapSupportType(item['지원유형'] || item.supportType || item.지원유형 || item['sportSe'] || item['pblancSe'] || ''),
+                    eligibility_criteria: item['지원자격'] || item.sportQualf || item.eligibility || item.지원자격 || item['sportQualf'] || item['pblancQualf'] || '별도 문의',
                     required_documents: item['필요서류'] || item.requiredDocs || item.필요서류 || '별도 문의',
                     business_type: item['대상업종'] ? (Array.isArray(item['대상업종']) ? item['대상업종'] : [item['대상업종']]) : ['음식점', '카페', '소매업', '서비스업'],
                     target_area: item['지원지역'] ? (Array.isArray(item['지원지역']) ? item['지원지역'] : [item['지원지역']]) : ['전국'],
-                    application_start_date: item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || null,
-                    application_end_date: item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || null,
-                    application_method: item['신청방법'] || item.applicationMethod || item.신청방법 || '온라인 신청',
-                    application_url: item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || null,
-                    contact_info: item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || '별도 문의',
-                    phone_number: item['전화번호'] || item.phone || item.전화번호 || null,
-                    website_url: item['홈페이지'] || item.website || item.홈페이지 || null,
-                    status: getStatus(item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일),
+                    application_start_date: startDate || null,
+                    application_end_date: endDate || null,
+                    application_method: item['신청방법'] || item.applicationMethod || item.신청방법 || item['rceptMth'] || '온라인 신청',
+                    application_url: item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || item['rceptUrl'] || null,
+                    contact_info: item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || item['rqutProcCn'] || '별도 문의',
+                    phone_number: item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null,
+                    website_url: item['홈페이지'] || item.website || item.홈페이지 || item['homepage'] || null,
+                    status: getStatus(endDate),
                     is_featured: false,
-                    tags: ['실제데이터', '공공데이터포털'],
+                    tags: ['실제데이터', '공공데이터포털', endpoint.source || 'bizinfo'],
                     source: endpoint.source || 'bizinfo'
                   });
                 }
@@ -529,50 +615,75 @@ function parseXMLResponse(xmlData) {
           const text = child.textContent?.trim() || '';
           
           // 한글 필드명과 영문 필드명 모두 지원
-          if (tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm')) {
+          // 중소벤처기업부 사업공고 API 필드 매핑 추가
+          if (tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm') || tagName === 'pblancnmkr') {
             item.title = text;
             item['사업명'] = text;
             item.pblancNm = text;
+            item.pblancNmKr = text;
           }
-          if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm')) {
+          if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm') || tagName === 'pblancinsttnm') {
             item.organization = text;
             item['수행기관'] = text;
             item.excInsttNm = text;
+            item.pblancInsttNm = text;
           }
-          if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn')) {
+          if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn') || tagName === 'pblancsumrycn') {
             item.summary = text;
             item['사업개요'] = text;
             item.bsnsSumryCn = text;
+            item.pblancSumryCn = text;
           }
-          if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn')) {
+          if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn') || tagName === 'pblancncn' || tagName === 'bsnsncn') {
             item.description = text;
             item['지원내용'] = text;
             item.sportCn = text;
+            item.pblancCn = text;
+            item.bsnsCn = text;
           }
           if (tagName.includes('amount') || tagName.includes('규모') || tagName.includes('sportscle')) {
             item.supportAmount = text;
             item['지원규모'] = text;
             item.sportScle = text;
           }
-          if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde')) {
+          if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde') || tagName === 'pblancbeginde') {
             item.startDate = text;
             item['신청시작일'] = text;
             item.rceptBeginDe = text;
+            item.pblancBeginDe = text;
           }
-          if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde')) {
+          if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde') || tagName === 'pblancendde') {
             item.endDate = text;
             item['신청마감일'] = text;
             item.rceptEndDe = text;
+            item.pblancEndDe = text;
           }
-          if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl')) {
+          if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl') || tagName === 'rcepturl') {
             item.applicationUrl = text;
             item['신청URL'] = text;
             item.reqstUrl = text;
+            item.rceptUrl = text;
           }
           if (tagName.includes('contact') || tagName.includes('문의') || tagName.includes('rqutproccn')) {
             item.contact = text;
             item['문의처'] = text;
             item.rqutProcCn = text;
+          }
+          if (tagName.includes('date') || tagName.includes('일') || tagName === 'pblancde' || tagName === 'pblancregistde') {
+            item.publishDate = text;
+            item['공고일'] = text;
+            item.pblancDe = text;
+            item.pblancRegistDe = text;
+          }
+          if (tagName.includes('phone') || tagName.includes('전화') || tagName === 'telno') {
+            item.phone = text;
+            item['전화번호'] = text;
+            item.telno = text;
+          }
+          if (tagName.includes('method') || tagName.includes('방법') || tagName === 'rceptmth') {
+            item.applicationMethod = text;
+            item['신청방법'] = text;
+            item.rceptMth = text;
           }
           
           // 모든 필드를 원본 형태로도 저장
