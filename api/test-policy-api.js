@@ -16,11 +16,26 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // API 키: e45b26951c63da01a0d82653dd6101417c57f3812905e604bb4f60f80157bac8
     const apiKey = process.env.PUBLIC_DATA_KEY || 'e45b26951c63da01a0d82653dd6101417c57f3812905e604bb4f60f80157bac8';
+    
+    // API 키 유효성 검사
+    if (!apiKey || apiKey.length < 20) {
+      console.error('❌ API 키가 유효하지 않습니다.');
+      console.error('❌ API 키 길이:', apiKey ? apiKey.length : 0);
+      return res.status(400).json({
+        success: false,
+        error: 'API 키가 설정되지 않았거나 유효하지 않습니다.',
+        apiKeyLength: apiKey ? apiKey.length : 0,
+        apiKeySet: !!process.env.PUBLIC_DATA_KEY
+      });
+    }
     
     console.log('\n🧪 ========== API 테스트 시작 ==========');
     console.log('🔑 API 키 길이:', apiKey.length);
     console.log('🔑 API 키 앞 10자:', apiKey.substring(0, 10));
+    console.log('🔑 API 키 뒤 10자:', apiKey.substring(apiKey.length - 10));
+    console.log('🔑 환경변수 PUBLIC_DATA_KEY:', process.env.PUBLIC_DATA_KEY ? '설정됨' : '미설정 (기본값 사용)');
     console.log('========================================\n');
     
     const testResults = [];
@@ -52,6 +67,8 @@ module.exports = async (req, res) => {
       try {
         console.log(`\n🧪 테스트: ${endpoint.name}`);
         console.log(`📡 URL: ${endpoint.url.substring(0, 100)}...`);
+        console.log(`🔑 API 키 포함 여부: ${endpoint.url.includes(apiKey.substring(0, 10)) ? '✅ 포함됨' : '❌ 누락됨'}`);
+        console.log(`🔑 API 키 인코딩 확인: ${endpoint.url.includes(encodeURIComponent(apiKey).substring(0, 10)) ? '✅ 인코딩됨' : '❌ 인코딩 안됨'}`);
         
         const startTime = Date.now();
         const response = await axios.get(endpoint.url, {
@@ -84,12 +101,32 @@ module.exports = async (req, res) => {
             result.itemCount = itemCount;
             result.sample = response.data.substring(0, 500);
             
-            // 에러 코드 확인
-            const resultCode = response.data.match(/<resultCode>(\d+)<\/resultCode>/i)?.[1];
-            if (resultCode && resultCode !== '00') {
+            // 에러 코드 확인 (다양한 형식 지원)
+            const resultCode = response.data.match(/<resultCode>(\d+)<\/resultCode>/i)?.[1] ||
+                              response.data.match(/<resultcode>(\d+)<\/resultcode>/i)?.[1] ||
+                              response.data.match(/<code>(\d+)<\/code>/i)?.[1];
+            
+            if (resultCode && resultCode !== '00' && resultCode !== '0') {
               result.success = false;
               result.errorCode = resultCode;
-              result.errorMsg = response.data.match(/<resultMsg>(.*?)<\/resultMsg>/i)?.[1];
+              result.errorMsg = response.data.match(/<resultMsg>(.*?)<\/resultMsg>/i)?.[1] ||
+                               response.data.match(/<resultmsg>(.*?)<\/resultmsg>/i)?.[1] ||
+                               response.data.match(/<message>(.*?)<\/message>/i)?.[1] ||
+                               response.data.match(/<msg>(.*?)<\/msg>/i)?.[1];
+            }
+            
+            // API 키 관련 에러 확인
+            if (response.data.includes('SERVICE_KEY') || 
+                response.data.includes('serviceKey') ||
+                response.data.includes('인증') ||
+                response.data.includes('키') ||
+                response.data.includes('KEY')) {
+              const errorMatch = response.data.match(/(SERVICE_KEY[^<]*|인증[^<]*|키[^<]*)/i);
+              if (errorMatch) {
+                result.success = false;
+                result.errorCode = 'API_KEY_ERROR';
+                result.errorMsg = errorMatch[1];
+              }
             }
           } else if (endpoint.type === 'json' && typeof response.data === 'object') {
             // JSON 구조 확인
@@ -137,17 +174,34 @@ module.exports = async (req, res) => {
     console.log(`❌ 실패: ${failCount}개`);
     console.log(`========================================\n`);
     
+    // 상세한 API 키 정보 포함
+    const summary = {
+      total: testResults.length,
+      success: successCount,
+      failed: failCount,
+      apiKeySet: !!process.env.PUBLIC_DATA_KEY,
+      apiKeyLength: process.env.PUBLIC_DATA_KEY?.length || apiKey.length,
+      apiKeyPrefix: apiKey.substring(0, 10),
+      apiKeySuffix: apiKey.substring(apiKey.length - 10),
+      environment: process.env.NODE_ENV || 'development',
+      isUsingEnvVar: !!process.env.PUBLIC_DATA_KEY,
+      isUsingDefault: !process.env.PUBLIC_DATA_KEY
+    };
+    
+    console.log('\n📊 ========== API 테스트 결과 요약 ==========');
+    console.log('✅ 성공:', summary.success, '개');
+    console.log('❌ 실패:', summary.failed, '개');
+    console.log('🔑 API 키 설정:', summary.apiKeySet ? '✅ 환경변수 사용' : '⚠️ 기본값 사용');
+    console.log('🔑 API 키 길이:', summary.apiKeyLength);
+    console.log('🔑 API 키 앞 10자:', summary.apiKeyPrefix);
+    console.log('🔑 API 키 뒤 10자:', summary.apiKeySuffix);
+    console.log('===========================================\n');
+    
     return res.json({
       success: true,
       message: `API 테스트 완료: ${successCount}개 성공, ${failCount}개 실패`,
       results: testResults,
-      summary: {
-        total: testResults.length,
-        success: successCount,
-        failed: failCount,
-        apiKeyLength: apiKey.length,
-        apiKeySet: !!process.env.PUBLIC_DATA_KEY
-      }
+      summary: summary
     });
     
   } catch (error) {

@@ -202,7 +202,15 @@ async function fetchRealPolicies() {
   try {
     // 1. 기업마당 API 호출 (공공데이터포털)
     // 환경변수가 있으면 사용, 없으면 기본값 사용 (개발용)
+    // API 키: e45b26951c63da01a0d82653dd6101417c57f3812905e604bb4f60f80157bac8
     const apiKey = process.env.PUBLIC_DATA_KEY || 'e45b26951c63da01a0d82653dd6101417c57f3812905e604bb4f60f80157bac8';
+    
+    // API 키 유효성 검사
+    if (!apiKey || apiKey.length < 20) {
+      console.error('❌ API 키가 유효하지 않습니다.');
+      console.error('❌ API 키 길이:', apiKey ? apiKey.length : 0);
+      throw new Error('API 키가 설정되지 않았거나 유효하지 않습니다.');
+    }
     
     console.log('\n🔑 ========== API 키 확인 ==========');
     console.log('🔑 API 키 사용:', apiKey ? `${apiKey.substring(0, 10)}...` : '없음');
