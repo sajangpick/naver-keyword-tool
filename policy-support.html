@@ -1639,8 +1639,8 @@
           <button class="policy-btn" onclick="markAsApplied()" id="appliedBtn" style="display: none;">
             <i class="fas fa-check-circle"></i> 신청 완료
           </button>
-          <button class="policy-btn primary" onclick="openApplicationUrl()" id="applyBtn">
-            <i class="fas fa-external-link-alt"></i> 신청하기
+          <button class="policy-btn primary" onclick="markAsApplied()" id="applyBtn">
+            <i class="fas fa-check-circle"></i> 신청하기
           </button>
         </div>
       </div>
@@ -1804,8 +1804,8 @@
                   ${isBookmarked ? '저장됨' : '저장'}
                 </button>
                 ${policy.application_url ? `
-                  <button class="policy-btn primary" onclick="window.open('${policy.application_url}', '_blank')">
-                    <i class="fas fa-external-link-alt"></i> 신청
+                  <button class="policy-btn primary" onclick="applyPolicy(${policy.id}, event)">
+                    <i class="fas fa-check-circle"></i> 신청
                   </button>
                 ` : ''}
               </div>
@@ -2082,10 +2082,67 @@
         openPolicyDetail(selectedPolicy.id); // 모달 새로고침
       }
 
-      // 신청 URL 열기
+      // 정책 신청 (카드에서 직접 신청)
+      async function applyPolicy(policyId, event) {
+        if (event) {
+          event.stopPropagation(); // 카드 클릭 이벤트 방지
+        }
+        
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          if (confirm('로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?')) {
+            window.location.href = '/login.html';
+          }
+          return;
+        }
+
+        // 정책 상세 정보 가져오기
+        try {
+          const response = await fetch(`${API_BASE}/api/policy-support?id=${policyId}`);
+          const result = await response.json();
+          
+          if (!result.success) throw new Error(result.error);
+          
+          const policy = result.data;
+          
+          // 신청 확인
+          const confirmMsg = `"${policy.title}" 정책을 신청하시겠습니까?`;
+          if (!confirm(confirmMsg)) {
+            return;
+          }
+
+          // 신청 처리
+          const applyResponse = await fetch(`${API_BASE}/api/policy-support/apply`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              policy_id: policyId,
+              notes: ''
+            })
+          });
+
+          const applyResult = await applyResponse.json();
+          if (!applyResult.success) throw new Error(applyResult.error);
+
+          alert('✅ 신청이 완료되었습니다!');
+          
+          // 목록 새로고침
+          loadPolicies(currentPage);
+          
+        } catch (error) {
+          console.error('Apply policy error:', error);
+          alert('신청 처리 중 오류가 발생했습니다: ' + error.message);
+        }
+      }
+
+      // 신청 URL 열기 (참고용 - 더 이상 사용하지 않음)
       function openApplicationUrl() {
-        if (selectedPolicy?.application_url) {
-          window.open(selectedPolicy.application_url, '_blank');
+        // 외부 사이트로 이동하지 않고 바로 신청 처리
+        if (selectedPolicy) {
+          markAsApplied();
         }
       }
 
