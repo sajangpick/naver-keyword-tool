@@ -1371,27 +1371,57 @@
               // 응답 상태 확인
               let saveResult;
               try {
-                saveResult = await saveResponse.json();
+                const responseText = await saveResponse.text();
+                if (!responseText) {
+                  skippedCount++;
+                  errors.push(`${policy.title}: 빈 응답`);
+                  continue;
+                }
+                saveResult = JSON.parse(responseText);
               } catch (e) {
                 // JSON 파싱 실패 시
                 skippedCount++;
-                errors.push(`${policy.title}: 응답 파싱 실패`);
+                errors.push(`${policy.title}: 응답 파싱 실패 (${saveResponse.status})`);
+                console.error(`응답 파싱 실패 - ${policy.title}:`, e, saveResponse.status);
                 continue;
               }
               
-              // 401 에러인 경우에도 응답 내용 확인
+              // 401 에러인 경우
               if (saveResponse.status === 401) {
                 skippedCount++;
-                errors.push(`${policy.title}: ${saveResult.error || '인증이 필요합니다'}`);
+                const errorMsg = saveResult?.error || '인증이 필요합니다';
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.warn(`401 에러 - ${policy.title}:`, saveResult);
+                continue;
+              }
+              
+              // 400번대 에러
+              if (saveResponse.status >= 400 && saveResponse.status < 500) {
+                skippedCount++;
+                const errorMsg = saveResult?.error || `HTTP ${saveResponse.status} 에러`;
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.warn(`${saveResponse.status} 에러 - ${policy.title}:`, saveResult);
+                continue;
+              }
+              
+              // 500번대 서버 에러
+              if (saveResponse.status >= 500) {
+                skippedCount++;
+                const errorMsg = saveResult?.error || '서버 오류';
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.error(`서버 오류 - ${policy.title}:`, saveResult);
                 continue;
               }
               
               // 200번대 성공 응답
               if (saveResponse.ok && saveResult.success) {
                 savedCount++;
+                console.log(`✅ 저장 성공: ${policy.title}`);
               } else {
                 skippedCount++;
-                errors.push(`${policy.title}: ${saveResult.error || '저장 실패'}`);
+                const errorMsg = saveResult?.error || '저장 실패 (알 수 없는 오류)';
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.warn(`저장 실패 - ${policy.title}:`, saveResult);
               }
               
             } catch (error) {
@@ -1406,18 +1436,23 @@
           message += `• 건너뜀 (중복/오류): ${skippedCount}개\n`;
           message += `• 총 수집: ${policies.length}개\n`;
           
-          if (errors.length > 0 && errors.length <= 5) {
-            message += `\n⚠️ 오류 발생:\n${errors.slice(0, 5).join('\n')}`;
-          } else if (errors.length > 5) {
-            message += `\n⚠️ ${errors.length}개 오류 발생 (콘솔 확인)`;
-            console.error('저장 오류 목록:', errors);
+          if (errors.length > 0) {
+            message += `\n⚠️ 오류 상세:\n${errors.slice(0, 10).join('\n')}`;
+            if (errors.length > 10) {
+              message += `\n... 외 ${errors.length - 10}개 오류 (콘솔 확인)`;
+            }
+            console.error('📋 저장 오류 전체 목록:', errors);
           }
 
           alert(message);
           
-          // 5. 목록 새로고침
-          loadPolicies();
-          loadStatistics();
+          // 5. 목록 및 통계 새로고침
+          await loadPolicies();
+          await loadStatistics();
+          
+          // 버튼 상태 복원
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
 
         } catch (error) {
           console.error('Fetch real policies error:', error);
