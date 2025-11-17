@@ -724,6 +724,11 @@ const fetchRealPolicyHandler = require("./api/fetch-real-policy-data");
 app.get("/api/fetch-real-policies", fetchRealPolicyHandler);
 app.post("/api/fetch-real-policies", fetchRealPolicyHandler);
 
+// API 테스트 엔드포인트 (디버깅용)
+const testPolicyApiHandler = require("./api/test-policy-api");
+app.get("/api/test-policy-api", testPolicyApiHandler);
+app.post("/api/test-policy-api", testPolicyApiHandler);
+
 // ==================== 레시피 관리 시스템 API ====================
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");
