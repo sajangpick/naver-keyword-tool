@@ -209,51 +209,51 @@ async function fetchRealPolicies() {
       try {
         // 공공데이터포털 - 다양한 API 엔드포인트 시도
         const apiEndpoints = [
-          // 중소기업 지원사업 정보 (JSON)
+          // 중소기업 지원사업 정보 (JSON) - 여러 페이지 순회
           {
-            url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
             type: 'json',
             source: 'bizinfo'
           },
-          // 중소기업 지원사업 정보 (XML)
+          // 중소기업 지원사업 정보 (XML) - 여러 페이지 순회
           {
-            url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100&returnType=XML`,
+            url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&returnType=XML`,
             type: 'xml',
             source: 'bizinfo'
           },
-          // 기업마당 지원사업 검색 API
+          // 기업마당 지원사업 검색 API - 여러 페이지 순회
           {
-            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100&target=소상공인`,
+            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&target=소상공인`,
             type: 'json',
             source: 'bizinfo'
           },
-          // 공공데이터포털 - 중소기업 정책자금 정보
+          // 공공데이터포털 - 중소기업 정책자금 정보 - 여러 페이지 순회
           {
-            url: `https://api.odcloud.kr/api/ApplyhomeInfoSvc/v1/getAPTLttotPblancMdl?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            url: `https://api.odcloud.kr/api/ApplyhomeInfoSvc/v1/getAPTLttotPblancMdl?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
             type: 'json',
             source: 'bizinfo'
           },
-          // K-Startup API - 창업진흥원 사업공고 조회 (공공데이터포털)
+          // K-Startup API - 창업진흥원 사업공고 조회 (공공데이터포털) - 여러 페이지 순회
           // 공공데이터포털 API ID: 15125364
           // 다양한 엔드포인트 패턴 시도
           {
-            url: `https://api.odcloud.kr/api/15125364/v1/uddi:사업공고?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            url: `https://api.odcloud.kr/api/15125364/v1/uddi:사업공고?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
             type: 'json',
             source: 'k-startup'
           },
           {
-            url: `https://api.odcloud.kr/api/15125364/v1/uddi:진행중?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            url: `https://api.odcloud.kr/api/15125364/v1/uddi:진행중?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
             type: 'json',
             source: 'k-startup'
           },
           {
-            url: `https://api.odcloud.kr/api/15125364/v1/uddi:bizpbanc?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            url: `https://api.odcloud.kr/api/15125364/v1/uddi:bizpbanc?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
             type: 'json',
             source: 'k-startup'
           },
-          // 소상공인시장진흥공단 API (공공데이터포털)
+          // 소상공인시장진흥공단 API (공공데이터포털) - 여러 페이지 순회
           {
-            url: `https://api.odcloud.kr/api/3074462/v1/uddi:소상공인?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=100`,
+            url: `https://api.odcloud.kr/api/3074462/v1/uddi:소상공인?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
             type: 'json',
             source: 'semas'
           }
@@ -261,51 +261,105 @@ async function fetchRealPolicies() {
         
         for (const endpoint of apiEndpoints) {
           try {
-            const response = await axios.get(endpoint.url, {
-              timeout: 15000,
-              headers: {
-                'Accept': endpoint.type === 'xml' ? 'application/xml' : 'application/json',
-                'Content-Type': 'application/json'
-              }
-            });
+            // 여러 페이지를 순회하며 모든 데이터 가져오기
+            let allData = [];
+            let currentPage = 1;
+            let hasMorePages = true;
+            const maxPages = 50; // 최대 50페이지까지 (안전장치)
+            const perPage = 1000; // 페이지당 최대 개수 (API 제한 확인 필요)
             
-            // 응답 데이터 파싱
-            let data = null;
-            if (response.data) {
-              // JSON 응답인 경우
-              if (typeof response.data === 'object' && !Array.isArray(response.data)) {
-                data = response.data.data || 
-                       response.data.response?.body?.items?.item || 
-                       response.data.response?.body?.items ||
-                       response.data.items?.item ||
-                       response.data.items || 
-                       response.data;
-              }
-              // 배열인 경우
-              else if (Array.isArray(response.data)) {
-                data = response.data;
-              }
-              // XML 응답인 경우
-              else if (typeof response.data === 'string' && response.data.includes('<')) {
-                data = parseXMLResponse(response.data);
-                console.log(`✅ XML 응답 파싱 완료: ${data?.length || 0}개 항목`);
-              }
-            }
-            
-            // 데이터가 배열이 아닌 경우 처리
-            if (!Array.isArray(data) && data) {
-              // 단일 객체인 경우 배열로 변환
-              if (typeof data === 'object') {
-                data = [data];
-              } else {
-                data = [];
-              }
-            }
-            
-            if (Array.isArray(data) && data.length > 0) {
-              console.log(`📊 ${endpoint.type.toUpperCase()} 응답에서 ${data.length}개 항목 발견`);
+            while (hasMorePages && currentPage <= maxPages) {
+              // URL에서 page와 perPage 파라미터 업데이트
+              const url = endpoint.url.replace(/[?&]page=\d+/, '').replace(/[?&]perPage=\d+/, '');
+              const separator = url.includes('?') ? '&' : '?';
+              const pageUrl = `${url}${separator}page=${currentPage}&perPage=${perPage}`;
               
-              data.forEach(item => {
+              try {
+                const response = await axios.get(pageUrl, {
+                  timeout: 15000,
+                  headers: {
+                    'Accept': endpoint.type === 'xml' ? 'application/xml' : 'application/json',
+                    'Content-Type': 'application/json'
+                  }
+                });
+                
+                // 응답 데이터 파싱
+                let data = null;
+                if (response.data) {
+                  // JSON 응답인 경우
+                  if (typeof response.data === 'object' && !Array.isArray(response.data)) {
+                    data = response.data.data || 
+                           response.data.response?.body?.items?.item || 
+                           response.data.response?.body?.items ||
+                           response.data.items?.item ||
+                           response.data.items || 
+                           response.data;
+                    
+                    // 페이지네이션 정보 확인
+                    const totalCount = response.data.totalCount || 
+                                      response.data.response?.body?.totalCount ||
+                                      response.data.total ||
+                                      response.data.count;
+                    const currentCount = Array.isArray(data) ? data.length : (data ? 1 : 0);
+                    
+                    if (totalCount && currentPage * perPage >= totalCount) {
+                      hasMorePages = false;
+                    }
+                  }
+                  // 배열인 경우
+                  else if (Array.isArray(response.data)) {
+                    data = response.data;
+                    if (data.length < perPage) {
+                      hasMorePages = false;
+                    }
+                  }
+                  // XML 응답인 경우
+                  else if (typeof response.data === 'string' && response.data.includes('<')) {
+                    data = parseXMLResponse(response.data);
+                    console.log(`✅ XML 응답 파싱 완료 (페이지 ${currentPage}): ${data?.length || 0}개 항목`);
+                    if (!data || data.length === 0) {
+                      hasMorePages = false;
+                    }
+                  }
+                }
+                
+                // 데이터가 배열이 아닌 경우 처리
+                if (!Array.isArray(data) && data) {
+                  // 단일 객체인 경우 배열로 변환
+                  if (typeof data === 'object') {
+                    data = [data];
+                  } else {
+                    data = [];
+                  }
+                }
+                
+                if (Array.isArray(data) && data.length > 0) {
+                  allData = allData.concat(data);
+                  console.log(`📊 ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 (누적: ${allData.length}개)`);
+                  
+                  // 데이터가 perPage보다 적으면 마지막 페이지
+                  if (data.length < perPage) {
+                    hasMorePages = false;
+                  }
+                } else {
+                  hasMorePages = false;
+                }
+                
+                currentPage++;
+                
+                // API 호출 간격 (과도한 요청 방지)
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+              } catch (pageError) {
+                console.log(`⚠️ 페이지 ${currentPage} 요청 실패:`, pageError.message);
+                hasMorePages = false;
+              }
+            }
+            
+            if (allData.length > 0) {
+              console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트에서 총 ${allData.length}개 항목 수집 완료`);
+              
+              allData.forEach(item => {
                 // 소상공인 관련 키워드 필터링
                 const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || '';
                 const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || '';
@@ -370,6 +424,8 @@ async function fetchRealPolicies() {
             continue;
           }
         }
+        
+        console.log(`📋 총 ${policies.length}개의 정책 데이터 수집 완료`);
         
         // 모든 엔드포인트 시도 후 결과 요약
         if (policies.length > 0) {
