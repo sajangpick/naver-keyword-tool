@@ -208,7 +208,7 @@ router.get('/search', async (req, res) => {
           // 올바른 URL 형식: /openapi/{API_KEY}/json/{서비스명}/{시작}/{끝}
           // 서비스명만 사용 (전체 URL이 아님!)
           const serviceName = 'Grid_20150827000000000226_1'; // 기본 레시피 서비스
-          const apiUrl = `http://211.237.50.150:7080/openapi/${process.env.RECIPE_API_KEY}/json/${serviceName}/1/100`;
+          const apiUrl = `http://211.237.50.150:7080/openapi/${process.env.RECIPE_API_KEY}/json/${serviceName}/1/537`;
           
           console.log('API 호출 URL:', apiUrl);
           
@@ -255,6 +255,8 @@ router.get('/search', async (req, res) => {
             ingredient_category: recipe.IRDNT_CODE
           }));
           
+          console.log(`✅ 공공 API 레시피 변환 완료: ${publicRecipes.length}개 (전체 537개 중)`);
+          
           // 필터링 적용
           let filteredPublicRecipes = publicRecipes;
           
@@ -286,6 +288,8 @@ router.get('/search', async (req, res) => {
         // API 실패 시에도 내부 결과는 반환
       }
     }
+    
+    console.log(`🎯 최종 검색 결과: 총 ${results.length}개 레시피 반환`);
     
     res.json({
       success: true,
