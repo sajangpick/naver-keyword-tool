@@ -275,7 +275,7 @@ async function fetchRealPolicies() {
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
-            const maxPages = 100; // 최대 100페이지까지 (더 많은 데이터 수집)
+            const maxPages = 200; // 최대 200페이지까지 (더 많은 데이터 수집)
             const perPage = 1000; // 페이지당 최대 개수 (API 제한 확인 필요)
             
             console.log(`🔄 ${endpoint.source} 엔드포인트: 여러 페이지 순회 시작 (최대 ${maxPages}페이지)`);
@@ -387,14 +387,21 @@ async function fetchRealPolicies() {
                 
                 if (Array.isArray(data) && data.length > 0) {
                   allData = allData.concat(data);
-                  console.log(`📊 ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 (누적: ${allData.length}개)`);
+                  // 로그는 10페이지마다 또는 마지막 페이지에서만 출력 (너무 많은 로그 방지)
+                  if (currentPage % 10 === 0 || data.length < perPage) {
+                    console.log(`📊 ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 (누적: ${allData.length}개)`);
+                  }
                   
                   // 데이터가 perPage보다 적으면 마지막 페이지
                   if (data.length < perPage) {
                     hasMorePages = false;
+                    console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
                   }
                 } else {
                   hasMorePages = false;
+                  if (allData.length > 0) {
+                    console.log(`📄 데이터 없음, 수집 완료: ${allData.length}개 항목`);
+                  }
                 }
                 
                 currentPage++;
@@ -424,7 +431,6 @@ async function fetchRealPolicies() {
                 const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || summary;
                 const text = (title + ' ' + summary + ' ' + description).toLowerCase();
                 
-                // 소상공인 관련 정책만 필터링 (키워드 확장)
                 // 뉴스 기사 제목은 제외 (실제 정책 지원금만)
                 const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망', '상황'];
                 const isNews = newsKeywords.some(keyword => text.includes(keyword));
@@ -433,8 +439,7 @@ async function fetchRealPolicies() {
                   return; // 뉴스 기사는 건너뜀
                 }
                 
-                // 올해 공고 필터링 (신청 시작일 또는 마감일이 올해인 경우)
-                // 중소벤처기업부 사업공고 API 필드 매핑
+                // 날짜 필터링 완화: 최근 2년간 공고 포함 (2024년, 2025년)
                 const startDate = item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
                 const endDate = item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
                 const publishDate = item['공고일'] || item.pblancDe || item.publishDate || item.공고일 || item['pblancDe'] || item['pblancRegistDe'] || '';
@@ -454,17 +459,27 @@ async function fetchRealPolicies() {
                 const normalizedEnd = normalizeDate(endDate);
                 const normalizedPublish = normalizeDate(publishDate);
                 
-                // 올해 공고인지 확인 (시작일, 마감일, 공고일 중 하나라도 올해면 포함)
-                const isThisYear = normalizedStart?.startsWith(currentYear.toString()) ||
-                                  normalizedEnd?.startsWith(currentYear.toString()) ||
-                                  normalizedPublish?.startsWith(currentYear.toString()) ||
-                                  startDate.includes(currentYear.toString()) ||
-                                  endDate.includes(currentYear.toString()) ||
-                                  publishDate.includes(currentYear.toString());
+                // 최근 2년간 공고 포함 (2024년, 2025년)
+                const lastYear = currentYear - 1;
+                const isRecentYear = normalizedStart?.startsWith(currentYear.toString()) ||
+                                    normalizedEnd?.startsWith(currentYear.toString()) ||
+                                    normalizedPublish?.startsWith(currentYear.toString()) ||
+                                    normalizedStart?.startsWith(lastYear.toString()) ||
+                                    normalizedEnd?.startsWith(lastYear.toString()) ||
+                                    normalizedPublish?.startsWith(lastYear.toString()) ||
+                                    startDate.includes(currentYear.toString()) ||
+                                    endDate.includes(currentYear.toString()) ||
+                                    publishDate.includes(currentYear.toString()) ||
+                                    startDate.includes(lastYear.toString()) ||
+                                    endDate.includes(lastYear.toString()) ||
+                                    publishDate.includes(lastYear.toString());
                 
-                // 날짜가 없거나 2024년 이전 공고는 제외 (올해 또는 최근 공고만)
-                if (!isThisYear && (normalizedStart || normalizedEnd || normalizedPublish)) {
-                  // 날짜가 있지만 올해가 아닌 경우 제외
+                // 중소벤처기업부 API에서 온 데이터는 날짜 필터링 완전히 제외
+                const isFromMssBiz = endpoint.source === 'mss-biz';
+                
+                // 날짜 필터링: 날짜가 있고 최근 2년이 아니면 제외 (단, 중소벤처기업부 API는 제외)
+                if (!isFromMssBiz && !isRecentYear && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                  // 날짜가 있지만 최근 2년이 아닌 경우 제외
                   return;
                 }
                 
@@ -474,17 +489,19 @@ async function fetchRealPolicies() {
                   '융자', '바우처', '정책자금', '경영지원', '시설개선', 
                   '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업',
                   '지원', '보조', '혜택', '할인', '할인율', '금리', '대출',
-                  '사업공고', '지원사업', '사업자', '기업', '벤처', '스타트업'
+                  '사업공고', '지원사업', '사업자', '기업', '벤처', '스타트업',
+                  '상점', '매장', '음식', '카페', '소매', '서비스', '업소', '점포'
                 ];
                 
                 const isRelevant = policyKeywords.some(keyword => text.includes(keyword));
                 
-                // 필터링 완화: 제목이 있고 (키워드가 있거나 올해 공고이거나 중소벤처기업부 API에서 온 경우) 포함
-                const isFromMssBiz = endpoint.source === 'mss-biz';
-                if (title && (isRelevant || isThisYear || isFromMssBiz)) {
+                // 필터링 완화: 제목이 있고 (키워드가 있거나 최근 공고이거나 중소벤처기업부 API에서 온 경우) 포함
+                // 중소벤처기업부 API는 키워드 필터링 완전히 제외
+                if (title && (isRelevant || isRecentYear || isFromMssBiz)) {
                   // 중소벤처기업부 API에서 온 데이터는 키워드 필터링 완전히 제외
-                  if (isFromMssBiz) {
-                    console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}...`);
+                  if (isFromMssBiz && policies.length % 10 === 0) {
+                    // 10개마다만 로그 출력 (너무 많은 로그 방지)
+                    console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
                   }
                   // 중소벤처기업부 사업공고 API 필드 매핑
                   policies.push({
@@ -546,8 +563,11 @@ async function fetchRealPolicies() {
           console.log('⚠️ 공공데이터포털 API에서 데이터를 가져오지 못했습니다.');
         }
         
-        if (policies.length <= 10) {
+        if (policies.length < 50) {
           console.log(`⚠️ 정책 수가 적습니다 (${policies.length}개). 필터링이 너무 엄격할 수 있습니다.`);
+          console.log(`💡 목표: 최소 100개 이상의 정책 수집`);
+        } else if (policies.length >= 100) {
+          console.log(`✅ 목표 달성: ${policies.length}개 정책 수집 완료`);
         }
       } catch (error) {
         console.error('기업마당 API 호출 실패:', error.message);
@@ -559,10 +579,29 @@ async function fetchRealPolicies() {
     console.log('ℹ️ K-Startup 데이터는 공공데이터포털 API를 통해 수집됩니다.');
     
     // 3. 실제 데이터가 없을 경우에만 내장 데이터 사용 (백업)
+    // 하지만 실제 API 데이터가 있으면 내장 데이터는 제외
     if (policies.length === 0) {
       console.log('⚠️ 실제 데이터를 가져오지 못했습니다. 내장 데이터를 사용합니다.');
       const builtInPolicies = getBuiltInPolicies();
       policies.push(...builtInPolicies);
+    } else {
+      // 실제 데이터가 있으면 내장 샘플 데이터는 제외 (중복 방지)
+      const builtInTitles = [
+        '2024년 소상공인 정책자금 융자',
+        '소상공인 스마트상점 기술보급',
+        '백년가게 육성사업',
+        '착한가격업소 인센티브 지원',
+        '노란우산 희망장려금',
+        '일자리 안정자금'
+      ];
+      const beforeCount = policies.length;
+      const filteredPolicies = policies.filter(p => !builtInTitles.includes(p.title));
+      const removedCount = beforeCount - filteredPolicies.length;
+      if (removedCount > 0) {
+        console.log(`🗑️ 내장 샘플 데이터 ${removedCount}개 제외 (실제 API 데이터만 사용)`);
+      }
+      policies.length = 0;
+      policies.push(...filteredPolicies);
     }
     
   } catch (error) {

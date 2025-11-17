@@ -1322,10 +1322,25 @@
           if (policies.length > 0) {
             console.log(`📋 첫 번째 정책 샘플:`, policies[0]);
             const sourceStats = policies.reduce((acc, p) => {
-              acc[p.source || 'unknown'] = (acc[p.source || 'unknown'] || 0) + 1;
+              const source = p.source || 'unknown';
+              acc[source] = (acc[source] || 0) + 1;
               return acc;
             }, {});
-            console.log(`📊 소스별 통계:`, sourceStats);
+            console.log(`📊 소스별 통계:`, JSON.stringify(sourceStats, null, 2));
+            
+            // 내장 샘플 데이터인지 확인
+            const builtInTitles = [
+              '2024년 소상공인 정책자금 융자',
+              '소상공인 스마트상점 기술보급',
+              '백년가게 육성사업',
+              '착한가격업소 인센티브 지원',
+              '노란우산 희망장려금',
+              '일자리 안정자금'
+            ];
+            const builtInCount = policies.filter(p => builtInTitles.includes(p.title)).length;
+            if (builtInCount > 0) {
+              console.warn(`⚠️ 내장 샘플 데이터 ${builtInCount}개 포함됨. 실제 API 데이터는 ${policies.length - builtInCount}개입니다.`);
+            }
           }
           
           if (policies.length === 0) {
@@ -1355,6 +1370,23 @@
                 continue;
               }
 
+              // 내장 샘플 데이터는 건너뛰기 (이미 DB에 있을 가능성 높음)
+              const builtInTitles = [
+                '2024년 소상공인 정책자금 융자',
+                '소상공인 스마트상점 기술보급',
+                '백년가게 육성사업',
+                '착한가격업소 인센티브 지원',
+                '노란우산 희망장려금',
+                '일자리 안정자금'
+              ];
+              const isBuiltIn = builtInTitles.includes(policy.title);
+              
+              if (isBuiltIn) {
+                console.log(`⏭️ 내장 샘플 데이터 건너뜀: "${policy.title}"`);
+                skippedCount++;
+                continue;
+              }
+              
               // 중복 체크를 위해 기존 정책 조회 (토큰 없이도 가능)
               // 제목 정규화 (공백, 특수문자 제거하여 비교)
               const normalizeTitle = (title) => {
@@ -1368,14 +1400,10 @@
                 const checkResult = await checkResponse.json();
                 if (checkResult.success && checkResult.data && Array.isArray(checkResult.data)) {
                   const normalizedNewTitle = normalizeTitle(policy.title);
-                  // 정규화된 제목으로 비교 (90% 이상 유사하면 중복으로 간주)
+                  // 정규화된 제목으로 비교 - 완전 일치만 중복으로 판단
                   existing = checkResult.data.find(p => {
                     const normalizedExistingTitle = normalizeTitle(p.title);
-                    // 완전 일치 또는 매우 유사한 경우만 중복으로 판단
-                    return normalizedExistingTitle === normalizedNewTitle || 
-                           (normalizedExistingTitle.length > 10 && normalizedNewTitle.length > 10 &&
-                            normalizedExistingTitle.includes(normalizedNewTitle.substring(0, Math.min(10, normalizedNewTitle.length))) ||
-                            normalizedNewTitle.includes(normalizedExistingTitle.substring(0, Math.min(10, normalizedExistingTitle.length))));
+                    return normalizedExistingTitle === normalizedNewTitle;
                   });
                 }
               } catch (e) {
