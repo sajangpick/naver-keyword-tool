@@ -1494,6 +1494,65 @@
             </div>
           </div>
         </div>
+
+        <div class="filter-tags" style="margin-top: 12px;">
+          <div class="filter-label">지역</div>
+          <div class="filter-options">
+            <div class="filter-tag active" data-area="all" onclick="filterByArea(this)">전체</div>
+            <div class="filter-tag" data-area="전국" onclick="filterByArea(this)">전국</div>
+            <div class="filter-tag" data-area="서울" onclick="filterByArea(this)">서울</div>
+            <div class="filter-tag" data-area="경기" onclick="filterByArea(this)">경기</div>
+            <div class="filter-tag" data-area="부산" onclick="filterByArea(this)">부산</div>
+            <div class="filter-tag" data-area="인천" onclick="filterByArea(this)">인천</div>
+            <div class="filter-tag" data-area="대전" onclick="filterByArea(this)">대전</div>
+            <div class="filter-tag" data-area="대구" onclick="filterByArea(this)">대구</div>
+            <div class="filter-tag" data-area="광주" onclick="filterByArea(this)">광주</div>
+            <div class="filter-tag" data-area="울산" onclick="filterByArea(this)">울산</div>
+          </div>
+        </div>
+
+        <div class="filter-tags" style="margin-top: 12px;">
+          <div class="filter-label">업종</div>
+          <div class="filter-options">
+            <div class="filter-tag active" data-business="all" onclick="filterByBusiness(this)">전체</div>
+            <div class="filter-tag" data-business="음식점" onclick="filterByBusiness(this)">음식점</div>
+            <div class="filter-tag" data-business="카페" onclick="filterByBusiness(this)">카페</div>
+            <div class="filter-tag" data-business="소매업" onclick="filterByBusiness(this)">소매업</div>
+            <div class="filter-tag" data-business="서비스업" onclick="filterByBusiness(this)">서비스업</div>
+            <div class="filter-tag" data-business="제조업" onclick="filterByBusiness(this)">제조업</div>
+          </div>
+        </div>
+
+        <!-- 카테고리별 통계 -->
+        <div class="category-stats" id="categoryStats" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); display: none;">
+          <div class="filter-label" style="margin-bottom: 12px;">카테고리별 현황</div>
+          <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+            <div class="stat-item" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center;">
+              <div class="stat-count" data-category="startup" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
+              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">창업지원</div>
+            </div>
+            <div class="stat-item" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center;">
+              <div class="stat-count" data-category="operation" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
+              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">운영지원</div>
+            </div>
+            <div class="stat-item" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center;">
+              <div class="stat-count" data-category="employment" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
+              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">인건비지원</div>
+            </div>
+            <div class="stat-item" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center;">
+              <div class="stat-count" data-category="facility" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
+              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">시설개선</div>
+            </div>
+            <div class="stat-item" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center;">
+              <div class="stat-count" data-category="marketing" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
+              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">마케팅</div>
+            </div>
+            <div class="stat-item" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center;">
+              <div class="stat-count" data-category="education" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
+              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">교육지원</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 정렬 옵션 -->
@@ -1565,9 +1624,20 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 12px; margin-top: 32px;">
+        <div class="detail-section" id="notesSection" style="display: none;">
+          <div class="detail-label">개인 메모</div>
+          <textarea id="policyNotes" class="detail-content" style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;" placeholder="이 정책에 대한 개인 메모를 입력하세요..."></textarea>
+          <button class="policy-btn" onclick="saveNotes()" style="margin-top: 8px;">
+            <i class="fas fa-save"></i> 메모 저장
+          </button>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap;">
           <button class="policy-btn" onclick="bookmarkPolicy()" id="bookmarkBtn">
             <i class="far fa-bookmark"></i> 북마크
+          </button>
+          <button class="policy-btn" onclick="markAsApplied()" id="appliedBtn" style="display: none;">
+            <i class="fas fa-check-circle"></i> 신청 완료
           </button>
           <button class="policy-btn primary" onclick="openApplicationUrl()" id="applyBtn">
             <i class="fas fa-external-link-alt"></i> 신청하기
@@ -1587,6 +1657,8 @@
       let currentPage = 1;
       let currentCategory = 'all';
       let currentStatus = 'all';
+      let currentArea = 'all';
+      let currentBusiness = 'all';
       let currentSort = 'latest';
       let currentSearch = '';
       let policies = [];
@@ -1596,6 +1668,7 @@
       document.addEventListener('DOMContentLoaded', () => {
         loadPolicies();
         checkFeaturedPolicies();
+        loadCategoryStats();
       });
 
       // 정책지원금 목록 로드
@@ -1612,6 +1685,8 @@
 
           if (currentCategory !== 'all') params.append('category', currentCategory);
           if (currentStatus !== 'all') params.append('status', currentStatus);
+          if (currentArea !== 'all') params.append('area', currentArea);
+          if (currentBusiness !== 'all') params.append('business_type', currentBusiness);
           if (currentSearch) params.append('search', currentSearch);
 
           // 사용자 ID 추가 (로그인한 경우)
@@ -1663,7 +1738,7 @@
         grid.innerHTML = policies.map(policy => {
           const deadline = calculateDeadline(policy.application_end_date);
           const isBookmarked = policy.user_interest?.is_bookmarked;
-          const isApplied = policy.user_interest?.is_applied;
+          const isApplied = policy.user_interest?.is_applied || policy.user_policy_interests?.[0]?.is_applied;
 
           let statusClass = 'status-active';
           let statusText = '접수중';
@@ -1679,6 +1754,7 @@
           return `
             <div class="policy-card" onclick="openPolicyDetail(${policy.id})">
               <div class="policy-status ${statusClass}">${statusText}</div>
+              ${isApplied ? `<div class="policy-status" style="top: 50px; background: #4caf50; color: white;">신청완료</div>` : ''}
               
               <div class="policy-header">
                 <span class="policy-org">${policy.organization}</span>
@@ -1765,6 +1841,22 @@
         document.querySelectorAll('[data-status]').forEach(el => el.classList.remove('active'));
         element.classList.add('active');
         currentStatus = element.dataset.status;
+        loadPolicies(1);
+      }
+
+      // 지역 필터
+      function filterByArea(element) {
+        document.querySelectorAll('[data-area]').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        currentArea = element.dataset.area;
+        loadPolicies(1);
+      }
+
+      // 업종 필터
+      function filterByBusiness(element) {
+        document.querySelectorAll('[data-business]').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        currentBusiness = element.dataset.business;
         loadPolicies(1);
       }
 
@@ -1865,14 +1957,51 @@
           document.getElementById('modalMethod').textContent = selectedPolicy.application_method || '홈페이지 참조';
           document.getElementById('modalContact').textContent = selectedPolicy.contact_info || selectedPolicy.phone_number || '문의처 정보 없음';
           
-          // 북마크 상태
-          const isBookmarked = selectedPolicy.user_policy_interests?.[0]?.is_bookmarked;
+          // 북마크 상태 (API 응답 구조에 맞게 수정)
+          const userInterest = selectedPolicy.user_policy_interests?.[0] || selectedPolicy.user_interest;
+          const isBookmarked = userInterest?.is_bookmarked;
           const bookmarkBtn = document.getElementById('bookmarkBtn');
           bookmarkBtn.innerHTML = `<i class="${isBookmarked ? 'fas' : 'far'} fa-bookmark"></i> ${isBookmarked ? '저장됨' : '북마크'}`;
           if (isBookmarked) {
             bookmarkBtn.classList.add('bookmarked');
           } else {
             bookmarkBtn.classList.remove('bookmarked');
+          }
+          
+          // 신청 완료 상태
+          const isApplied = userInterest?.is_applied;
+          const appliedBtn = document.getElementById('appliedBtn');
+          const token = localStorage.getItem('access_token');
+          if (token) {
+            appliedBtn.style.display = 'flex';
+            if (isApplied) {
+              appliedBtn.innerHTML = `<i class="fas fa-check-circle"></i> 신청 완료됨`;
+              appliedBtn.classList.add('bookmarked');
+              appliedBtn.style.background = '#4caf50';
+              appliedBtn.style.color = 'white';
+              appliedBtn.style.borderColor = '#4caf50';
+            } else {
+              appliedBtn.innerHTML = `<i class="far fa-check-circle"></i> 신청 완료 표시`;
+              appliedBtn.classList.remove('bookmarked');
+              appliedBtn.style.background = '';
+              appliedBtn.style.color = '';
+              appliedBtn.style.borderColor = '';
+            }
+          } else {
+            appliedBtn.style.display = 'none';
+          }
+          
+          // 개인 메모 표시
+          const notesSection = document.getElementById('notesSection');
+          const policyNotes = document.getElementById('policyNotes');
+          if (token && userInterest?.notes) {
+            notesSection.style.display = 'block';
+            policyNotes.value = userInterest.notes || '';
+          } else if (token) {
+            notesSection.style.display = 'block';
+            policyNotes.value = '';
+          } else {
+            notesSection.style.display = 'none';
           }
           
           // 신청 버튼
@@ -1963,6 +2092,111 @@
           }
         } catch (error) {
           console.error('Featured policies error:', error);
+        }
+      }
+
+      // 카테고리별 통계 로드
+      async function loadCategoryStats() {
+        try {
+          const response = await fetch(`${API_BASE}/api/policy-support/categories`);
+          const result = await response.json();
+          
+          if (result.success && result.data) {
+            const stats = result.data;
+            Object.keys(stats).forEach(category => {
+              const countEl = document.querySelector(`[data-category="${category}"]`);
+              if (countEl) {
+                countEl.textContent = stats[category] || 0;
+              }
+            });
+            
+            // 통계 섹션 표시
+            const statsSection = document.getElementById('categoryStats');
+            if (statsSection) {
+              statsSection.style.display = 'block';
+            }
+          }
+        } catch (error) {
+          console.error('Category stats error:', error);
+        }
+      }
+
+      // 신청 완료 표시
+      async function markAsApplied() {
+        if (!selectedPolicy) return;
+        
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          if (confirm('로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?')) {
+            window.location.href = '/login.html';
+          }
+          return;
+        }
+
+        const notes = document.getElementById('policyNotes')?.value || '';
+
+        try {
+          const response = await fetch(`${API_BASE}/api/policy-support/apply`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              policy_id: selectedPolicy.id,
+              notes: notes
+            })
+          });
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+
+          alert('신청 완료로 표시되었습니다.');
+          
+          // 모달 새로고침
+          openPolicyDetail(selectedPolicy.id);
+          // 목록 새로고침
+          loadPolicies(currentPage);
+          
+        } catch (error) {
+          console.error('Mark as applied error:', error);
+          alert('신청 상태 기록 중 오류가 발생했습니다.');
+        }
+      }
+
+      // 메모 저장
+      async function saveNotes() {
+        if (!selectedPolicy) return;
+        
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          alert('로그인이 필요한 기능입니다.');
+          return;
+        }
+
+        const notes = document.getElementById('policyNotes')?.value || '';
+
+        try {
+          const response = await fetch(`${API_BASE}/api/policy-support/apply`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              policy_id: selectedPolicy.id,
+              notes: notes
+            })
+          });
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+
+          alert('메모가 저장되었습니다.');
+          
+        } catch (error) {
+          console.error('Save notes error:', error);
+          alert('메모 저장 중 오류가 발생했습니다.');
         }
       }
 
