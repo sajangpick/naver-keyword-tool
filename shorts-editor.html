@@ -2437,17 +2437,24 @@
                     body: formData
                 });
 
-                const result = await response.json();
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonError) {
+                    const text = await response.text();
+                    console.error('응답 파싱 실패:', text);
+                    throw new Error(`서버 응답 오류 (${response.status}): ${text.substring(0, 100)}`);
+                }
 
                 if (!response.ok || !result.success) {
-                    throw new Error(result.error || '영상 생성에 실패했습니다.');
+                    throw new Error(result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`);
                 }
 
                 hideProgressModal();
                 
                 // 생성된 영상 정보 저장
-                if (result.data && (result.data.video_id || result.data.id)) {
-                    currentVideoId = result.data.video_id || result.data.id;
+                if (result.data && result.data.id) {
+                    currentVideoId = result.data.id;
                     // Step 4로 이동하여 영상 확인
                     goToStep(4);
                     // 영상 상태 확인 시작
