@@ -209,6 +209,13 @@ async function fetchRealPolicies() {
       try {
         // 공공데이터포털 - 다양한 API 엔드포인트 시도
         const apiEndpoints = [
+          // 중소벤처기업부 사업공고 API (공공데이터포털) - 우선순위 1
+          {
+            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=1000&pageNo=1`,
+            type: 'xml',
+            source: 'mss-biz',
+            priority: 1
+          },
           // 중소기업 지원사업 정보 (JSON) - 여러 페이지 순회
           {
             url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
@@ -259,22 +266,37 @@ async function fetchRealPolicies() {
           }
         ];
         
+        // 우선순위에 따라 정렬 (priority가 낮을수록 먼저 실행)
+        apiEndpoints.sort((a, b) => (a.priority || 999) - (b.priority || 999));
+        
         for (const endpoint of apiEndpoints) {
           try {
             // 여러 페이지를 순회하며 모든 데이터 가져오기
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
-            const maxPages = 50; // 최대 50페이지까지 (안전장치)
+            const maxPages = 200; // 최대 200페이지까지 (더 많은 데이터 수집)
             const perPage = 1000; // 페이지당 최대 개수 (API 제한 확인 필요)
+            
+            console.log(`🔄 ${endpoint.source} 엔드포인트: 여러 페이지 순회 시작 (최대 ${maxPages}페이지)`);
+            console.log(`🔗 첫 번째 요청 URL: ${endpoint.url}`);
             
             while (hasMorePages && currentPage <= maxPages) {
               // URL에서 page와 perPage 파라미터 업데이트
-              const url = endpoint.url.replace(/[?&]page=\d+/, '').replace(/[?&]perPage=\d+/, '');
+              let url = endpoint.url.replace(/[?&]page=\d+/, '').replace(/[?&]perPage=\d+/, '').replace(/[?&]pageNo=\d+/, '').replace(/[?&]numOfRows=\d+/, '');
               const separator = url.includes('?') ? '&' : '?';
-              const pageUrl = `${url}${separator}page=${currentPage}&perPage=${perPage}`;
+              
+              // 공공데이터포털 API (data.go.kr)는 pageNo와 numOfRows 사용
+              let pageUrl;
+              if (url.includes('apis.data.go.kr')) {
+                pageUrl = `${url}${separator}pageNo=${currentPage}&numOfRows=${perPage}`;
+              } else {
+                // odcloud.kr API는 page와 perPage 사용
+                pageUrl = `${url}${separator}page=${currentPage}&perPage=${perPage}`;
+              }
               
               try {
+                console.log(`📡 API 요청 (${endpoint.source}, 페이지 ${currentPage}): ${pageUrl.substring(0, 150)}...`);
                 const response = await axios.get(pageUrl, {
                   timeout: 15000,
                   headers: {
@@ -282,6 +304,8 @@ async function fetchRealPolicies() {
                     'Content-Type': 'application/json'
                   }
                 });
+                
+                console.log(`✅ API 응답 수신 (${endpoint.source}, 페이지 ${currentPage}): 상태 ${response.status}, 타입: ${typeof response.data}`);
                 
                 // 응답 데이터 파싱
                 let data = null;
@@ -298,12 +322,34 @@ async function fetchRealPolicies() {
                     // 페이지네이션 정보 확인
                     const totalCount = response.data.totalCount || 
                                       response.data.response?.body?.totalCount ||
+                                      response.data.response?.body?.totalCount ||
                                       response.data.total ||
-                                      response.data.count;
+                                      response.data.count ||
+                                      (response.data.response?.body ? parseInt(response.data.response.body.totalCount) : null);
+                    
                     const currentCount = Array.isArray(data) ? data.length : (data ? 1 : 0);
                     
-                    if (totalCount && currentPage * perPage >= totalCount) {
-                      hasMorePages = false;
+                    // 공공데이터포털 XML 응답의 경우 totalCount 확인
+                    if (endpoint.type === 'xml' && typeof response.data === 'string') {
+                      const totalMatch = response.data.match(/<totalCount>(\d+)<\/totalCount>/i) || 
+                                        response.data.match(/<totalCount>(\d+)<\/totalCount>/i);
+                      if (totalMatch) {
+                        const xmlTotalCount = parseInt(totalMatch[1]);
+                        const xmlTotalPages = Math.ceil(xmlTotalCount / perPage);
+                        if (currentPage >= xmlTotalPages) {
+                          hasMorePages = false;
+                          console.log(`📄 XML 총 ${xmlTotalCount}개 중 ${allData.length}개 수집 완료 (${xmlTotalPages}페이지)`);
+                        }
+                      }
+                    }
+                    
+                    // 총 개수가 있고 현재 페이지가 마지막 페이지인지 확인
+                    if (totalCount) {
+                      const totalPages = Math.ceil(totalCount / perPage);
+                      if (currentPage >= totalPages) {
+                        hasMorePages = false;
+                        console.log(`📄 총 ${totalCount}개 중 ${allData.length}개 수집 완료 (${totalPages}페이지)`);
+                      }
                     }
                   }
                   // 배열인 경우
@@ -315,9 +361,15 @@ async function fetchRealPolicies() {
                   }
                   // XML 응답인 경우
                   else if (typeof response.data === 'string' && response.data.includes('<')) {
+                    console.log(`📄 XML 응답 수신 (페이지 ${currentPage}), 길이: ${response.data.length} bytes`);
+                    console.log(`📄 XML 응답 샘플 (처음 500자): ${response.data.substring(0, 500)}`);
                     data = parseXMLResponse(response.data);
                     console.log(`✅ XML 응답 파싱 완료 (페이지 ${currentPage}): ${data?.length || 0}개 항목`);
+                    if (data && data.length > 0) {
+                      console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
+                    }
                     if (!data || data.length === 0) {
+                      console.log(`⚠️ XML 파싱 결과가 비어있음. 원본 XML 확인 필요.`);
                       hasMorePages = false;
                     }
                   }
@@ -335,14 +387,21 @@ async function fetchRealPolicies() {
                 
                 if (Array.isArray(data) && data.length > 0) {
                   allData = allData.concat(data);
-                  console.log(`📊 ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 (누적: ${allData.length}개)`);
+                  // 로그는 10페이지마다 또는 마지막 페이지에서만 출력 (너무 많은 로그 방지)
+                  if (currentPage % 10 === 0 || data.length < perPage) {
+                    console.log(`📊 ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 (누적: ${allData.length}개)`);
+                  }
                   
                   // 데이터가 perPage보다 적으면 마지막 페이지
                   if (data.length < perPage) {
                     hasMorePages = false;
+                    console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
                   }
                 } else {
                   hasMorePages = false;
+                  if (allData.length > 0) {
+                    console.log(`📄 데이터 없음, 수집 완료: ${allData.length}개 항목`);
+                  }
                 }
                 
                 currentPage++;
@@ -359,54 +418,114 @@ async function fetchRealPolicies() {
             if (allData.length > 0) {
               console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트에서 총 ${allData.length}개 항목 수집 완료`);
               
+              // 올해 날짜 범위 설정
+              const currentYear = new Date().getFullYear();
+              const yearStart = `${currentYear}-01-01`;
+              const yearEnd = `${currentYear}-12-31`;
+              
               allData.forEach(item => {
                 // 소상공인 관련 키워드 필터링
-                const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || '';
-                const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || '';
-                const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || '';
+                // 중소벤처기업부 사업공고 API 필드 매핑
+                const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || item['pblancNm'] || item['pblancNmKr'] || '';
+                const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || item['bsnsSumryCn'] || item['pblancSumryCn'] || '';
+                const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || summary;
                 const text = (title + ' ' + summary + ' ' + description).toLowerCase();
                 
-                // 소상공인 관련 정책만 필터링 (키워드 확장)
                 // 뉴스 기사 제목은 제외 (실제 정책 지원금만)
-                const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망'];
+                const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망', '상황'];
                 const isNews = newsKeywords.some(keyword => text.includes(keyword));
                 
                 if (isNews) {
-                  console.log(`⚠️ 뉴스 기사 제외: ${title}`);
                   return; // 뉴스 기사는 건너뜀
                 }
                 
+                // 날짜 필터링 완화: 최근 2년간 공고 포함 (2024년, 2025년)
+                const startDate = item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
+                const endDate = item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
+                const publishDate = item['공고일'] || item.pblancDe || item.publishDate || item.공고일 || item['pblancDe'] || item['pblancRegistDe'] || '';
+                
+                // 날짜 형식 정규화 (YYYY-MM-DD, YYYY.MM.DD, YYYYMMDD 등)
+                const normalizeDate = (dateStr) => {
+                  if (!dateStr) return null;
+                  const cleaned = dateStr.toString().replace(/[.\s]/g, '-').replace(/--+/g, '-');
+                  const match = cleaned.match(/(\d{4})[-\s]?(\d{2})[-\s]?(\d{2})/);
+                  if (match) {
+                    return `${match[1]}-${match[2]}-${match[3]}`;
+                  }
+                  return null;
+                };
+                
+                const normalizedStart = normalizeDate(startDate);
+                const normalizedEnd = normalizeDate(endDate);
+                const normalizedPublish = normalizeDate(publishDate);
+                
+                // 최근 2년간 공고 포함 (2024년, 2025년)
+                const lastYear = currentYear - 1;
+                const isRecentYear = normalizedStart?.startsWith(currentYear.toString()) ||
+                                    normalizedEnd?.startsWith(currentYear.toString()) ||
+                                    normalizedPublish?.startsWith(currentYear.toString()) ||
+                                    normalizedStart?.startsWith(lastYear.toString()) ||
+                                    normalizedEnd?.startsWith(lastYear.toString()) ||
+                                    normalizedPublish?.startsWith(lastYear.toString()) ||
+                                    startDate.includes(currentYear.toString()) ||
+                                    endDate.includes(currentYear.toString()) ||
+                                    publishDate.includes(currentYear.toString()) ||
+                                    startDate.includes(lastYear.toString()) ||
+                                    endDate.includes(lastYear.toString()) ||
+                                    publishDate.includes(lastYear.toString());
+                
+                // 중소벤처기업부 API에서 온 데이터는 날짜 필터링 완전히 제외
+                const isFromMssBiz = endpoint.source === 'mss-biz';
+                
+                // 날짜 필터링: 날짜가 있고 최근 2년이 아니면 제외 (단, 중소벤처기업부 API는 제외)
+                if (!isFromMssBiz && !isRecentYear && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                  // 날짜가 있지만 최근 2년이 아닌 경우 제외
+                  return;
+                }
+                
+                // 키워드 필터링 완화 (더 많은 정책 포함)
                 const policyKeywords = [
                   '소상공인', '중소기업', '자영업', '창업', '지원금', '보조금', 
                   '융자', '바우처', '정책자금', '경영지원', '시설개선', 
-                  '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업'
+                  '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업',
+                  '지원', '보조', '혜택', '할인', '할인율', '금리', '대출',
+                  '사업공고', '지원사업', '사업자', '기업', '벤처', '스타트업',
+                  '상점', '매장', '음식', '카페', '소매', '서비스', '업소', '점포'
                 ];
                 
                 const isRelevant = policyKeywords.some(keyword => text.includes(keyword));
                 
-                if (isRelevant && title) {
+                // 필터링 완화: 제목이 있고 (키워드가 있거나 최근 공고이거나 중소벤처기업부 API에서 온 경우) 포함
+                // 중소벤처기업부 API는 키워드 필터링 완전히 제외
+                if (title && (isRelevant || isRecentYear || isFromMssBiz)) {
+                  // 중소벤처기업부 API에서 온 데이터는 키워드 필터링 완전히 제외
+                  if (isFromMssBiz && policies.length % 10 === 0) {
+                    // 10개마다만 로그 출력 (너무 많은 로그 방지)
+                    console.log(`✅ 중소벤처기업부 정책 포함: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
+                  }
+                  // 중소벤처기업부 사업공고 API 필드 매핑
                   policies.push({
                     title: title,
-                    organization: item['수행기관'] || item.excInsttNm || item.organization || item.수행기관 || '정부',
-                    category: mapCategory(item['지원분야'] || item.supportField || item.지원분야 || ''),
+                    organization: item['수행기관'] || item.excInsttNm || item.organization || item.수행기관 || item['pblancInsttNm'] || '중소벤처기업부',
+                    category: mapCategory(item['지원분야'] || item.supportField || item.지원분야 || item['pblancSe'] || item['bsnsSe'] || ''),
                     summary: summary || title,
-                    description: item['지원내용'] || item.sportCn || item.description || item.지원내용 || summary,
+                    description: description || summary || title,
                     support_amount: item['지원규모'] || item.sportScle || item.supportAmount || item.지원규모 || '문의',
-                    support_type: mapSupportType(item['지원유형'] || item.supportType || item.지원유형 || ''),
-                    eligibility_criteria: item['지원자격'] || item.sportQualf || item.eligibility || item.지원자격 || '별도 문의',
+                    support_type: mapSupportType(item['지원유형'] || item.supportType || item.지원유형 || item['sportSe'] || item['pblancSe'] || ''),
+                    eligibility_criteria: item['지원자격'] || item.sportQualf || item.eligibility || item.지원자격 || item['sportQualf'] || item['pblancQualf'] || '별도 문의',
                     required_documents: item['필요서류'] || item.requiredDocs || item.필요서류 || '별도 문의',
                     business_type: item['대상업종'] ? (Array.isArray(item['대상업종']) ? item['대상업종'] : [item['대상업종']]) : ['음식점', '카페', '소매업', '서비스업'],
                     target_area: item['지원지역'] ? (Array.isArray(item['지원지역']) ? item['지원지역'] : [item['지원지역']]) : ['전국'],
-                    application_start_date: item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || null,
-                    application_end_date: item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || null,
-                    application_method: item['신청방법'] || item.applicationMethod || item.신청방법 || '온라인 신청',
-                    application_url: item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || null,
-                    contact_info: item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || '별도 문의',
-                    phone_number: item['전화번호'] || item.phone || item.전화번호 || null,
-                    website_url: item['홈페이지'] || item.website || item.홈페이지 || null,
-                    status: getStatus(item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일),
+                    application_start_date: startDate || null,
+                    application_end_date: endDate || null,
+                    application_method: item['신청방법'] || item.applicationMethod || item.신청방법 || item['rceptMth'] || '온라인 신청',
+                    application_url: item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || item['rceptUrl'] || null,
+                    contact_info: item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || item['rqutProcCn'] || '별도 문의',
+                    phone_number: item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null,
+                    website_url: item['홈페이지'] || item.website || item.홈페이지 || item['homepage'] || null,
+                    status: getStatus(endDate),
                     is_featured: false,
-                    tags: ['실제데이터', '공공데이터포털'],
+                    tags: ['실제데이터', '공공데이터포털', endpoint.source || 'bizinfo'],
                     source: endpoint.source || 'bizinfo'
                   });
                 }
@@ -416,6 +535,9 @@ async function fetchRealPolicies() {
               const addedCount = policies.filter(p => p.source === (endpoint.source || 'bizinfo')).length;
               if (addedCount > 0) {
                 console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 ${addedCount}개 정책 추가`);
+              } else {
+                console.log(`⚠️ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 정책을 찾지 못함`);
+                console.log(`📊 수집된 전체 데이터: ${allData.length}개, 필터링 후 정책: ${addedCount}개`);
               }
             }
           } catch (apiError) {
@@ -427,11 +549,25 @@ async function fetchRealPolicies() {
         
         console.log(`📋 총 ${policies.length}개의 정책 데이터 수집 완료`);
         
+        // 소스별 통계 출력
+        const sourceStats = {};
+        policies.forEach(p => {
+          sourceStats[p.source] = (sourceStats[p.source] || 0) + 1;
+        });
+        console.log(`📊 소스별 정책 수:`, sourceStats);
+        
         // 모든 엔드포인트 시도 후 결과 요약
         if (policies.length > 0) {
           console.log(`✅ 총 ${policies.length}개의 실제 정책 데이터를 가져왔습니다.`);
         } else {
           console.log('⚠️ 공공데이터포털 API에서 데이터를 가져오지 못했습니다.');
+        }
+        
+        if (policies.length < 50) {
+          console.log(`⚠️ 정책 수가 적습니다 (${policies.length}개). 필터링이 너무 엄격할 수 있습니다.`);
+          console.log(`💡 목표: 최소 100개 이상의 정책 수집`);
+        } else if (policies.length >= 100) {
+          console.log(`✅ 목표 달성: ${policies.length}개 정책 수집 완료`);
         }
       } catch (error) {
         console.error('기업마당 API 호출 실패:', error.message);
@@ -443,10 +579,29 @@ async function fetchRealPolicies() {
     console.log('ℹ️ K-Startup 데이터는 공공데이터포털 API를 통해 수집됩니다.');
     
     // 3. 실제 데이터가 없을 경우에만 내장 데이터 사용 (백업)
+    // 하지만 실제 API 데이터가 있으면 내장 데이터는 제외
     if (policies.length === 0) {
       console.log('⚠️ 실제 데이터를 가져오지 못했습니다. 내장 데이터를 사용합니다.');
       const builtInPolicies = getBuiltInPolicies();
       policies.push(...builtInPolicies);
+    } else {
+      // 실제 데이터가 있으면 내장 샘플 데이터는 제외 (중복 방지)
+      const builtInTitles = [
+        '2024년 소상공인 정책자금 융자',
+        '소상공인 스마트상점 기술보급',
+        '백년가게 육성사업',
+        '착한가격업소 인센티브 지원',
+        '노란우산 희망장려금',
+        '일자리 안정자금'
+      ];
+      const beforeCount = policies.length;
+      const filteredPolicies = policies.filter(p => !builtInTitles.includes(p.title));
+      const removedCount = beforeCount - filteredPolicies.length;
+      if (removedCount > 0) {
+        console.log(`🗑️ 내장 샘플 데이터 ${removedCount}개 제외 (실제 API 데이터만 사용)`);
+      }
+      policies.length = 0;
+      policies.push(...filteredPolicies);
     }
     
   } catch (error) {
@@ -516,8 +671,9 @@ function parseXMLResponse(xmlData) {
     const dom = new JSDOM(xmlData, { contentType: 'text/xml' });
     const document = dom.window.document;
     
+    // 중소벤처기업부 API는 items > item 구조 사용
     // 다양한 XML 구조 지원
-    const itemNodes = document.querySelectorAll('item, row, record');
+    const itemNodes = document.querySelectorAll('item, row, record, body > items > item, response > body > items > item');
     
     itemNodes.forEach(node => {
       const item = {};
@@ -529,50 +685,75 @@ function parseXMLResponse(xmlData) {
           const text = child.textContent?.trim() || '';
           
           // 한글 필드명과 영문 필드명 모두 지원
-          if (tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm')) {
+          // 중소벤처기업부 사업공고 API 필드 매핑 추가
+          if (tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm') || tagName === 'pblancnmkr') {
             item.title = text;
             item['사업명'] = text;
             item.pblancNm = text;
+            item.pblancNmKr = text;
           }
-          if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm')) {
+          if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm') || tagName === 'pblancinsttnm') {
             item.organization = text;
             item['수행기관'] = text;
             item.excInsttNm = text;
+            item.pblancInsttNm = text;
           }
-          if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn')) {
+          if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn') || tagName === 'pblancsumrycn') {
             item.summary = text;
             item['사업개요'] = text;
             item.bsnsSumryCn = text;
+            item.pblancSumryCn = text;
           }
-          if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn')) {
+          if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn') || tagName === 'pblancncn' || tagName === 'bsnsncn') {
             item.description = text;
             item['지원내용'] = text;
             item.sportCn = text;
+            item.pblancCn = text;
+            item.bsnsCn = text;
           }
           if (tagName.includes('amount') || tagName.includes('규모') || tagName.includes('sportscle')) {
             item.supportAmount = text;
             item['지원규모'] = text;
             item.sportScle = text;
           }
-          if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde')) {
+          if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde') || tagName === 'pblancbeginde') {
             item.startDate = text;
             item['신청시작일'] = text;
             item.rceptBeginDe = text;
+            item.pblancBeginDe = text;
           }
-          if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde')) {
+          if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde') || tagName === 'pblancendde') {
             item.endDate = text;
             item['신청마감일'] = text;
             item.rceptEndDe = text;
+            item.pblancEndDe = text;
           }
-          if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl')) {
+          if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl') || tagName === 'rcepturl') {
             item.applicationUrl = text;
             item['신청URL'] = text;
             item.reqstUrl = text;
+            item.rceptUrl = text;
           }
           if (tagName.includes('contact') || tagName.includes('문의') || tagName.includes('rqutproccn')) {
             item.contact = text;
             item['문의처'] = text;
             item.rqutProcCn = text;
+          }
+          if (tagName.includes('date') || tagName.includes('일') || tagName === 'pblancde' || tagName === 'pblancregistde') {
+            item.publishDate = text;
+            item['공고일'] = text;
+            item.pblancDe = text;
+            item.pblancRegistDe = text;
+          }
+          if (tagName.includes('phone') || tagName.includes('전화') || tagName === 'telno') {
+            item.phone = text;
+            item['전화번호'] = text;
+            item.telno = text;
+          }
+          if (tagName.includes('method') || tagName.includes('방법') || tagName === 'rceptmth') {
+            item.applicationMethod = text;
+            item['신청방법'] = text;
+            item.rceptMth = text;
           }
           
           // 모든 필드를 원본 형태로도 저장
@@ -581,24 +762,68 @@ function parseXMLResponse(xmlData) {
         }
       });
       
-      if (item.title || item['사업명'] || item.pblancNm) {
+      if (item.title || item['사업명'] || item.pblancNm || item.pblancNmKr) {
         items.push(item);
       }
     });
     
+    console.log(`📊 XML 파싱 결과: ${items.length}개 항목 추출`);
+    if (items.length === 0) {
+      console.log(`⚠️ XML에서 항목을 찾지 못함. XML 구조 확인 필요.`);
+      console.log(`📄 XML 샘플 (처음 1000자):`, xmlData.substring(0, 1000));
+      
+      // 중소벤처기업부 API 구조 확인
+      const bodyItems = document.querySelectorAll('body > items > item');
+      const responseItems = document.querySelectorAll('response > body > items > item');
+      console.log(`🔍 body > items > item: ${bodyItems.length}개`);
+      console.log(`🔍 response > body > items > item: ${responseItems.length}개`);
+    }
+    
   } catch (error) {
-    console.error('XML 파싱 오류:', error.message);
+    console.error('❌ XML 파싱 오류:', error.message);
+    console.error('❌ XML 파싱 스택:', error.stack);
     // 간단한 정규식 파싱 시도
-    const itemMatches = xmlData.match(/<item>[\s\S]*?<\/item>/g) || xmlData.match(/<row>[\s\S]*?<\/row>/g) || [];
-    itemMatches.forEach(itemXml => {
-      const title = (itemXml.match(/<title>(.*?)<\/title>/) || itemXml.match(/<사업명>(.*?)<\/사업명>/) || [])[1];
+    console.log(`🔄 정규식 파싱 시도...`);
+    const itemMatches = xmlData.match(/<item>[\s\S]*?<\/item>/g) || 
+                       xmlData.match(/<row>[\s\S]*?<\/row>/g) || 
+                       xmlData.match(/<record>[\s\S]*?<\/record>/g) || [];
+    console.log(`📋 정규식으로 찾은 항목 수: ${itemMatches.length}`);
+    itemMatches.forEach((itemXml, index) => {
+      if (index < 3) { // 처음 3개만 로그
+        console.log(`📄 항목 ${index + 1} 샘플:`, itemXml.substring(0, 200));
+      }
+      
+      // 중소벤처기업부 API 필드 추출
+      const title = (itemXml.match(/<pblancNmKr>(.*?)<\/pblancNmKr>/i) || 
+                    itemXml.match(/<pblancNm>(.*?)<\/pblancNm>/i) ||
+                    itemXml.match(/<title>(.*?)<\/title>/i) || 
+                    itemXml.match(/<사업명>(.*?)<\/사업명>/i) || [])[1];
+      const summary = (itemXml.match(/<pblancSumryCn>(.*?)<\/pblancSumryCn>/i) ||
+                      itemXml.match(/<bsnsSumryCn>(.*?)<\/bsnsSumryCn>/i) ||
+                      itemXml.match(/<summary>(.*?)<\/summary>/i) || [])[1];
+      const startDate = (itemXml.match(/<pblancBeginDe>(.*?)<\/pblancBeginDe>/i) ||
+                         itemXml.match(/<rceptBeginDe>(.*?)<\/rceptBeginDe>/i) || [])[1];
+      const endDate = (itemXml.match(/<pblancEndDe>(.*?)<\/pblancEndDe>/i) ||
+                      itemXml.match(/<rceptEndDe>(.*?)<\/rceptEndDe>/i) || [])[1];
+      
       if (title) {
+        const cleanTitle = title.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
         items.push({
-          title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
-          '사업명': title.replace(/<!\[CDATA\[|\]\]>/g, '').trim()
+          title: cleanTitle,
+          '사업명': cleanTitle,
+          pblancNm: cleanTitle,
+          pblancNmKr: cleanTitle,
+          summary: summary ? summary.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          '사업개요': summary ? summary.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          '신청시작일': startDate ? startDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          '신청마감일': endDate ? endDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          rceptBeginDe: startDate ? startDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : '',
+          rceptEndDe: endDate ? endDate.replace(/<!\[CDATA\[|\]\]>/g, '').trim() : ''
         });
       }
     });
+    
+    console.log(`✅ 정규식 파싱 완료: ${items.length}개 항목 추출`);
   }
   
   return items;
