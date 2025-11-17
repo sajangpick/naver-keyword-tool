@@ -26,7 +26,7 @@ Disallow: /payment.html
 Disallow: /test-*.html
 
 # 사이트맵 위치
-Sitemap: https://sajangpick.vercel.app/sitemap.xml
+Sitemap: https://www.sajangpick.co.kr/sitemap.xml
 
 # 크롤링 속도 조절 (1초 대기)
 Crawl-delay: 1
