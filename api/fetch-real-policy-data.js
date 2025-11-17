@@ -213,14 +213,40 @@ async function fetchRealPolicies() {
     
     if (apiKey) {
       try {
-        // 공공데이터포털 - 다양한 API 엔드포인트 시도
+        // 공공데이터포털 - K-Startup(한국창업진흥원) 사업공고 API
+        // 엔드포인트: https://apis.data.go.kr/B552735/kisedKstartupService01
         const apiEndpoints = [
-          // 중소벤처기업부 사업공고 API (공공데이터포털) - 우선순위 1
+          // K-Startup 사업공고 목록 조회 (우선순위 1)
           {
-            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=1000&pageNo=1`,
+            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
+            type: 'xml',
+            source: 'k-startup',
+            priority: 1,
+            note: 'K-Startup 사업공고 목록'
+          },
+          // K-Startup 사업공고 상세 조회
+          {
+            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancDetail?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
+            type: 'xml',
+            source: 'k-startup',
+            priority: 2,
+            note: 'K-Startup 사업공고 상세'
+          },
+          // K-Startup 사업공고 검색
+          {
+            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancSearch?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
+            type: 'xml',
+            source: 'k-startup',
+            priority: 3,
+            note: 'K-Startup 사업공고 검색'
+          },
+          // 중소벤처기업부 사업공고 목록 조회 (백업)
+          {
+            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'mss-biz',
-            priority: 1
+            priority: 4,
+            note: '중소벤처기업부 사업공고 목록'
           },
           // 중소기업 지원사업 정보 (JSON) - 여러 페이지 순회
           {

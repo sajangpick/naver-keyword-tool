@@ -26,23 +26,60 @@ module.exports = async (req, res) => {
     const testResults = [];
     
     // 테스트할 API 엔드포인트들
+    // K-Startup(한국창업진흥원) 사업공고 API: https://apis.data.go.kr/B552735/kisedKstartupService01
     const testEndpoints = [
+      // K-Startup 사업공고 API - 다양한 서비스 메서드 시도
       {
-        name: '중소벤처기업부 사업공고 API (data.go.kr)',
-        url: `https://apis.data.go.kr/1421000/mssBizService_v2/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        name: 'K-Startup 사업공고 목록 (getBizPblancList)',
+        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        type: 'xml',
+        note: 'K-Startup 사업공고 목록 조회'
+      },
+      {
+        name: 'K-Startup 사업공고 상세 (getBizPblancDetail)',
+        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancDetail?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        type: 'xml',
+        note: 'K-Startup 사업공고 상세 조회'
+      },
+      {
+        name: 'K-Startup 사업공고 검색 (getBizPblancSearch)',
+        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancSearch?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        type: 'xml',
+        note: 'K-Startup 사업공고 검색'
+      },
+      // 기업마당/입찰공고 관련 API들
+      {
+        name: '기업마당 입찰공고 (API ID: 1230000)',
+        url: `https://apis.data.go.kr/1230000/BidPublicInfoService02/getBidPblancListInfoServcPPSSuplyInfo?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
         type: 'xml'
       },
       {
-        name: '중소기업 지원사업 정보 (odcloud.kr - JSON)',
-        url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=10`,
-        type: 'json'
+        name: '기업마당 입찰공고 (간단한 서비스명)',
+        url: `https://apis.data.go.kr/1230000/BidPublicInfoService02/getBidPblancListInfo?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        type: 'xml'
       },
+      // 소상공인 관련 API들
       {
-        name: 'K-Startup 사업공고 (odcloud.kr)',
-        url: `https://api.odcloud.kr/api/15125364/v1/uddi:사업공고?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=10`,
-        type: 'json'
+        name: '소상공인 정책정보 (API ID: 15000000)',
+        url: `https://apis.data.go.kr/15000000/smallBusinessPolicyService/getSmallBusinessPolicyList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        type: 'xml'
+      },
+      // 일반적인 공공데이터포털 API 패턴
+      {
+        name: '공공데이터포털 일반 검색 (API ID: 15000000)',
+        url: `https://apis.data.go.kr/15000000/service/getServiceList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        type: 'xml'
+      },
+      // 정책자금 관련
+      {
+        name: '정책자금 정보 (API ID: 15000000)',
+        url: `https://apis.data.go.kr/15000000/policyFundService/getPolicyFundList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        type: 'xml'
       }
     ];
+    
+    console.log('🔍 다양한 공공데이터포털 API 패턴을 테스트합니다.');
+    console.log('💡 성공한 API를 찾으면 해당 API를 사용하도록 설정하겠습니다.');
     
     for (const endpoint of testEndpoints) {
       try {
