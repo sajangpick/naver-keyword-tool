@@ -279,13 +279,22 @@ async function fetchRealPolicies() {
                 const text = (title + ' ' + summary + ' ' + description).toLowerCase();
                 
                 // 소상공인 관련 정책만 필터링 (키워드 확장)
-                const keywords = [
+                // 뉴스 기사 제목은 제외 (실제 정책 지원금만)
+                const newsKeywords = ['뉴스', '기사', '보도', '발표', '체감', '경기', '효과', '전망'];
+                const isNews = newsKeywords.some(keyword => text.includes(keyword));
+                
+                if (isNews) {
+                  console.log(`⚠️ 뉴스 기사 제외: ${title}`);
+                  return; // 뉴스 기사는 건너뜀
+                }
+                
+                const policyKeywords = [
                   '소상공인', '중소기업', '자영업', '창업', '지원금', '보조금', 
                   '융자', '바우처', '정책자금', '경영지원', '시설개선', 
-                  '마케팅', '교육지원', '인건비', '일자리'
+                  '마케팅', '교육지원', '인건비', '일자리', '신청', '공고', '사업'
                 ];
                 
-                const isRelevant = keywords.some(keyword => text.includes(keyword));
+                const isRelevant = policyKeywords.some(keyword => text.includes(keyword));
                 
                 if (isRelevant && title) {
                   policies.push({
@@ -338,43 +347,10 @@ async function fetchRealPolicies() {
       }
     }
     
-    // 2. 정부 RSS 피드 파싱
-    try {
-      const rssResponse = await axios.get(DATA_SOURCES.KOREA_GOV, { timeout: 5000 });
-      const rssData = parseRSS(rssResponse.data);
-      
-      rssData.forEach(item => {
-        if (isRelevantPolicy(item)) {
-          policies.push({
-            title: item.title,
-            organization: '정부',
-            category: 'operation',
-            summary: item.description?.substring(0, 200) || item.title,
-            description: item.content || item.description || item.title,
-            support_amount: '문의',
-            support_type: 'other',
-            eligibility_criteria: '별도 문의',
-            required_documents: '별도 문의',
-            business_type: ['음식점', '카페', '소매업', '서비스업'],
-            target_area: ['전국'],
-            application_method: '온라인 신청',
-            application_url: item.link,
-            contact_info: '정부민원안내',
-            phone_number: '110',
-            status: 'active',
-            is_featured: false,
-            tags: ['정책브리핑', 'RSS'],
-            source: 'korea.kr'
-          });
-        }
-      });
-      
-      if (rssData.length > 0) {
-        console.log(`✅ RSS에서 ${policies.filter(p => p.source === 'korea.kr').length}개의 정책을 가져왔습니다.`);
-      }
-    } catch (rssError) {
-      console.error('RSS 피드 파싱 실패:', rssError.message);
-    }
+    // 2. RSS 피드는 뉴스 기사이므로 제외 (실제 정책 지원금만 수집)
+    // RSS 피드에서 가져오는 것은 뉴스 기사이므로 실제 정책 지원금 정보가 아닙니다.
+    // 실제 정책 지원금은 공공데이터포털 API에서만 가져옵니다.
+    console.log('ℹ️ RSS 피드는 뉴스 기사이므로 제외합니다. 실제 정책 지원금만 수집합니다.');
     
     // 3. 실제 데이터가 없을 경우에만 내장 데이터 사용 (백업)
     if (policies.length === 0) {
