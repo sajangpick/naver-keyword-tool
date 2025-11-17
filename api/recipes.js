@@ -267,30 +267,66 @@ router.get('/search', async (req, res) => {
             
             // 2. 설명이 너무 짧거나 무의미한 경우 제외
             const description = recipe.description || '';
-            if (description.length < 20) {
-              return false;
+            if (description.length < 30) {
+              return false; // 20자 → 30자로 강화
             }
             
-            // 3. 무의미한 문구만 있는 경우 제외
+            // 3. 무의미한 문구 체크 (대폭 강화)
             const meaninglessPatterns = [
               '더 맛있게',
               '좋아요',
               '드세요',
               '먹을 수 있',
-              '맛있습니다'
+              '맛있습니다',
+              '느껴보세요',
+              '만들어보세요',
+              '해보세요',
+              '즐겨보세요',
+              '식구들이',
+              '오붓한',
+              '정감',
+              '듬뿍 없이',
+              '없으면'
             ];
             
-            const isMeaningless = meaninglessPatterns.some(pattern => 
-              description.includes(pattern) && description.length < 50
-            );
+            // 무의미한 패턴이 2개 이상 포함되면 제외
+            const meaninglessCount = meaninglessPatterns.filter(pattern => 
+              description.includes(pattern)
+            ).length;
             
-            if (isMeaningless) {
+            if (meaninglessCount >= 2) {
               return false;
             }
             
-            // 4. 카테고리가 "기타"이면서 가격대가 없는 경우 제외
+            // 4. 조리 방법 키워드가 없으면 제외 (구체성 체크)
+            const cookingKeywords = [
+              '넣고', '볶고', '끓이고', '섞어', '담그', 
+              '썰어', '자르고', '다져', '으깨', '갈아',
+              '굽고', '튀기', '찌고', '졸이', '데치',
+              '분량', '큰술', '작은술', '컵', '그램'
+            ];
+            
+            const hasCookingMethod = cookingKeywords.some(keyword => 
+              description.includes(keyword)
+            );
+            
+            if (!hasCookingMethod) {
+              return false; // 구체적인 조리 방법이 없으면 제외
+            }
+            
+            // 5. 카테고리가 "기타"이면서 가격대가 없는 경우 제외
             if (recipe.category === '기타' && !recipe.price_category) {
               return false;
+            }
+            
+            // 6. 가격대가 비정상적으로 높은 경우 제외 (데이터 품질 문제)
+            const priceStr = recipe.price_category || '';
+            const priceMatch = priceStr.match(/\d+/);
+            if (priceMatch) {
+              const price = parseInt(priceMatch[0]);
+              if (price >= 50000) {
+                return false; // 5만원 이상은 비정상 데이터로 간주
+              }
             }
             
             return true;
