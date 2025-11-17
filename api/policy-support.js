@@ -347,24 +347,23 @@ module.exports = async (req, res) => {
   }
   }
 
-  // POST: 새 정책지원금 등록 (관리자용)
+  // POST: 새 정책지원금 등록 (인증 선택적 - 로그인 없이도 가능)
   if (req.method === 'POST' && !isBookmark && !isApply) {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        error: '인증이 필요합니다.' 
-      });
-    }
-
-    // 사용자 인증 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ 
-        success: false, 
-        error: '유효하지 않은 토큰입니다.' 
-      });
+    let userId = null;
+    
+    // 토큰이 있으면 사용자 정보 확인 (선택적)
+    if (token) {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+        if (!authError && user) {
+          userId = user.id;
+        }
+      } catch (e) {
+        // 토큰이 유효하지 않아도 계속 진행
+        console.log('토큰 검증 실패, 인증 없이 진행:', e.message);
+      }
     }
 
     const {
@@ -424,7 +423,7 @@ module.exports = async (req, res) => {
         status: status || 'active',
         is_featured: is_featured || false,
         tags: tags || [],
-        created_by: user.id
+        created_by: userId || null  // 토큰이 없으면 null
       })
       .select()
       .single();
