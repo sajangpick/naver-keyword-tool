@@ -238,7 +238,7 @@ module.exports = async (req, res) => {
     const { 
       id, 
       category, 
-      status = 'active', 
+      status,  // 기본값 제거 - 'all'일 때 모든 상태 조회
       area, 
       business_type,
       page = 1, 
@@ -246,6 +246,10 @@ module.exports = async (req, res) => {
       search,
       user_id 
     } = req.query;
+    
+    // status가 없으면 기본값 'active' 사용 (사용자 페이지용)
+    // status가 'all'이면 모든 상태 조회 (관리자 페이지용)
+    const statusFilter = status || 'active';
 
     // 단일 정책 조회
     if (id) {
@@ -287,7 +291,10 @@ module.exports = async (req, res) => {
 
     // 필터 적용
     if (category) query = query.eq('category', category);
-    if (status) query = query.eq('status', status);
+    // status가 'all'이 아니고 값이 있을 때만 필터링
+    if (statusFilter && statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
     if (area) query = query.contains('target_area', [area]);
     if (business_type) query = query.contains('business_type', [business_type]);
     

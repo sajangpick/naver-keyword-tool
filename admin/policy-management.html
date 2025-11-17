@@ -763,34 +763,52 @@
         currentPage = page;
         const policyList = document.getElementById('policyList');
         
+        if (!policyList) {
+          console.error('policyList 요소를 찾을 수 없습니다.');
+          return;
+        }
+        
         try {
+          // 로딩 표시
+          policyList.innerHTML = '<div class="loading">로딩 중...</div>';
+          
           const params = new URLSearchParams({
             page,
             limit: 10,
-            status: 'all' // 관리자는 모든 상태 조회
+            status: 'all'  // 관리자는 모든 상태 조회
           });
 
           if (currentCategory !== 'all') {
             params.append('category', currentCategory);
           }
 
+          console.log('📋 정책 목록 조회:', `${API_BASE}/api/policy-support?${params}`);
+          
           const response = await fetch(`${API_BASE}/api/policy-support?${params}`);
           const result = await response.json();
 
-          if (!result.success || !result.data) {
+          console.log('📋 API 응답:', result);
+
+          if (!result.success) {
             throw new Error(result.error || '정책을 불러올 수 없습니다.');
           }
 
-          if (result.data.length === 0) {
+          if (!result.data || result.data.length === 0) {
             policyList.innerHTML = `
               <div class="empty-state">
                 <div class="empty-state-icon">💰</div>
                 <div>등록된 정책이 없습니다</div>
               </div>
             `;
-            document.getElementById('pagination').innerHTML = '';
+            const paginationEl = document.getElementById('pagination');
+            if (paginationEl) {
+              paginationEl.innerHTML = '';
+            }
+            console.log('⚠️ 정책 데이터가 없습니다.');
             return;
           }
+
+          console.log(`✅ ${result.data.length}개의 정책을 불러왔습니다.`);
 
           // 정책 카드 생성
           policyList.innerHTML = result.data.map(policy => {
