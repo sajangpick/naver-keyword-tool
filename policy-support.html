@@ -1837,7 +1837,7 @@
                   <i class="${isBookmarked ? 'fas' : 'far'} fa-bookmark"></i>
                   ${isBookmarked ? '저장됨' : '저장'}
                 </button>
-                ${policy.application_url ? `
+                ${(policy.application_url || policy.website_url) ? `
                   <button class="policy-btn primary" onclick="applyPolicy(${policy.id}, event)">
                     <i class="fas fa-check-circle"></i> 신청
                   </button>
@@ -2149,10 +2149,18 @@
           
           const policy = result.data;
           
-          // 신청 URL 확인
-          if (policy.application_url) {
+          // 신청 URL 확인 (application_url 우선, 없으면 website_url 사용)
+          const applicationUrl = policy.application_url || policy.website_url;
+          
+          if (applicationUrl) {
+            // URL이 http:// 또는 https://로 시작하는지 확인
+            let finalUrl = applicationUrl;
+            if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+              finalUrl = 'https://' + finalUrl;
+            }
+            
             // 실제 신청 사이트로 새 창에서 열기
-            window.open(policy.application_url, '_blank');
+            window.open(finalUrl, '_blank');
             
             // 로그인한 경우 신청 상태 기록 (선택적)
             const token = await getAccessToken();
@@ -2178,7 +2186,11 @@
             }
           } else {
             // 신청 URL이 없으면 안내
-            alert(`"${policy.title}" 정책의 신청 URL이 등록되지 않았습니다.\n\n문의처: ${policy.contact_info || policy.phone_number || '별도 문의'}`);
+            const contactInfo = policy.contact_info || policy.phone_number || '별도 문의';
+            const message = `"${policy.title}" 정책의 신청 페이지 URL이 등록되지 않았습니다.\n\n` +
+                          `문의처: ${contactInfo}\n\n` +
+                          `관리자 페이지에서 신청 URL을 등록해주세요.`;
+            alert(message);
           }
           
         } catch (error) {
@@ -2246,10 +2258,18 @@
       async function markAsApplied() {
         if (!selectedPolicy) return;
         
-        // 신청 URL 확인
-        if (selectedPolicy.application_url) {
+        // 신청 URL 확인 (application_url 우선, 없으면 website_url 사용)
+        const applicationUrl = selectedPolicy.application_url || selectedPolicy.website_url;
+        
+        if (applicationUrl) {
+          // URL이 http:// 또는 https://로 시작하는지 확인
+          let finalUrl = applicationUrl;
+          if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+            finalUrl = 'https://' + finalUrl;
+          }
+          
           // 실제 신청 사이트로 새 창에서 열기
-          window.open(selectedPolicy.application_url, '_blank');
+          window.open(finalUrl, '_blank');
           
           // 로그인한 경우 신청 상태 기록 (선택적)
           const token = await getAccessToken();
@@ -2283,7 +2303,11 @@
           }
         } else {
           // 신청 URL이 없으면 안내
-          alert(`"${selectedPolicy.title}" 정책의 신청 URL이 등록되지 않았습니다.\n\n문의처: ${selectedPolicy.contact_info || selectedPolicy.phone_number || '별도 문의'}`);
+          const contactInfo = selectedPolicy.contact_info || selectedPolicy.phone_number || '별도 문의';
+          const message = `"${selectedPolicy.title}" 정책의 신청 페이지 URL이 등록되지 않았습니다.\n\n` +
+                        `문의처: ${contactInfo}\n\n` +
+                        `관리자 페이지에서 신청 URL을 등록해주세요.`;
+          alert(message);
         }
       }
 

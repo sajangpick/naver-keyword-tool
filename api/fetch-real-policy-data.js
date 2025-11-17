@@ -298,18 +298,21 @@ async function fetchRealPolicies() {
               try {
                 console.log(`📡 API 요청 (${endpoint.source}, 페이지 ${currentPage}): ${pageUrl.substring(0, 150)}...`);
                 const response = await axios.get(pageUrl, {
-                  timeout: 15000,
+                  timeout: 30000, // 타임아웃 30초로 증가
                   headers: {
                     'Accept': endpoint.type === 'xml' ? 'application/xml' : 'application/json',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                   }
                 });
                 
                 console.log(`✅ API 응답 수신 (${endpoint.source}, 페이지 ${currentPage}): 상태 ${response.status}, 타입: ${typeof response.data}`);
+                console.log(`📊 응답 데이터 크기: ${JSON.stringify(response.data).length} bytes`);
                 
                 // 에러 상태 코드 확인
                 if (response.status !== 200) {
                   console.error(`❌ API 에러 응답: HTTP ${response.status}`);
+                  console.error(`❌ 응답 내용:`, JSON.stringify(response.data).substring(0, 500));
                   hasMorePages = false;
                   continue;
                 }
@@ -319,12 +322,34 @@ async function fetchRealPolicies() {
                 if (response.data) {
                   // JSON 응답인 경우
                   if (typeof response.data === 'object' && !Array.isArray(response.data)) {
+                    // 다양한 응답 구조 시도
                     data = response.data.data || 
                            response.data.response?.body?.items?.item || 
                            response.data.response?.body?.items ||
                            response.data.items?.item ||
                            response.data.items || 
+                           response.data.list ||
+                           response.data.result?.items ||
+                           response.data.result ||
                            response.data;
+                    
+                    // 디버깅: 응답 구조 확인 (첫 페이지만)
+                    if (currentPage === 1) {
+                      console.log(`🔍 JSON 응답 구조 확인 (${endpoint.source}):`, Object.keys(response.data));
+                      if (response.data.response) {
+                        console.log(`🔍 response 구조:`, Object.keys(response.data.response));
+                      }
+                      if (response.data.response?.body) {
+                        console.log(`🔍 body 구조:`, Object.keys(response.data.response.body));
+                      }
+                      if (data && Array.isArray(data) && data.length > 0) {
+                        console.log(`✅ 데이터 배열 확인: ${data.length}개 항목`);
+                      } else if (data && typeof data === 'object') {
+                        console.log(`⚠️ 데이터가 배열이 아님, 객체 타입:`, typeof data);
+                      } else {
+                        console.warn(`⚠️ 데이터를 찾을 수 없음`);
+                      }
+                    }
                     
                     // 페이지네이션 정보 확인
                     const totalCount = response.data.totalCount || 
@@ -416,7 +441,12 @@ async function fetchRealPolicies() {
                 if (Array.isArray(data) && data.length > 0) {
                   allData = allData.concat(data);
                   // 모든 페이지 로그 출력 (50개씩이므로 로그가 많지 않음)
-                  console.log(`📊 ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 (누적: ${allData.length}개)`);
+                  console.log(`✅ ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 수집 (누적: ${allData.length}개)`);
+                  
+                  // 첫 번째 항목 샘플 출력 (첫 페이지만)
+                  if (currentPage === 1 && data.length > 0) {
+                    console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
+                  }
                   
                   // 데이터가 perPage보다 적으면 마지막 페이지
                   if (data.length < perPage) {
@@ -424,6 +454,10 @@ async function fetchRealPolicies() {
                     console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
                   }
                 } else {
+                  console.warn(`⚠️ 페이지 ${currentPage}: 데이터가 비어있거나 배열이 아님 (타입: ${typeof data}, 길이: ${Array.isArray(data) ? data.length : 'N/A'})`);
+                  if (currentPage === 1) {
+                    console.warn(`⚠️ 첫 페이지 응답 샘플:`, JSON.stringify(response.data).substring(0, 1000));
+                  }
                   hasMorePages = false;
                   if (allData.length > 0) {
                     console.log(`📄 데이터 없음, 수집 완료: ${allData.length}개 항목`);
@@ -557,7 +591,14 @@ async function fetchRealPolicies() {
               }
             }
           } catch (apiError) {
-            console.log(`⚠️ API 엔드포인트 실패 (${endpoint.type}):`, apiError.message);
+            console.error(`❌ API 엔드포인트 실패 (${endpoint.source}, ${endpoint.type}):`, apiError.message);
+            if (apiError.response) {
+              console.error(`❌ HTTP 상태: ${apiError.response.status}`);
+              console.error(`❌ 응답 데이터:`, JSON.stringify(apiError.response.data).substring(0, 500));
+            }
+            if (apiError.request) {
+              console.error(`❌ 요청은 전송되었지만 응답이 없음`);
+            }
             // 에러가 발생해도 다음 엔드포인트 계속 시도
             continue;
           }
