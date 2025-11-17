@@ -34,48 +34,19 @@ module.exports = async (req, res) => {
         name: 'K-Startup 사업공고 정보 (getAnnouncementInformation01)',
         url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
         type: 'xml',
-        note: 'K-Startup 사업공고 정보 조회'
+        note: 'K-Startup 사업공고 정보 조회 (총 26,757개 항목)'
       },
       // K-Startup 사업 정보 조회 - 사업 상세 정보
       {
         name: 'K-Startup 사업 정보 (getBusinessInformation01)',
         url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBusinessInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
         type: 'xml',
-        note: 'K-Startup 사업 정보 조회'
+        note: 'K-Startup 사업 정보 조회 (총 1,231개 항목)'
       },
-      // 기업마당/입찰공고 관련 API들
-      {
-        name: '기업마당 입찰공고 (API ID: 1230000)',
-        url: `https://apis.data.go.kr/1230000/BidPublicInfoService02/getBidPblancListInfoServcPPSSuplyInfo?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
-        type: 'xml'
-      },
-      {
-        name: '기업마당 입찰공고 (간단한 서비스명)',
-        url: `https://apis.data.go.kr/1230000/BidPublicInfoService02/getBidPblancListInfo?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
-        type: 'xml'
-      },
-      // 소상공인 관련 API들
-      {
-        name: '소상공인 정책정보 (API ID: 15000000)',
-        url: `https://apis.data.go.kr/15000000/smallBusinessPolicyService/getSmallBusinessPolicyList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
-        type: 'xml'
-      },
-      // 일반적인 공공데이터포털 API 패턴
-      {
-        name: '공공데이터포털 일반 검색 (API ID: 15000000)',
-        url: `https://apis.data.go.kr/15000000/service/getServiceList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
-        type: 'xml'
-      },
-      // 정책자금 관련
-      {
-        name: '정책자금 정보 (API ID: 15000000)',
-        url: `https://apis.data.go.kr/15000000/policyFundService/getPolicyFundList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
-        type: 'xml'
-      }
     ];
     
-    console.log('🔍 다양한 공공데이터포털 API 패턴을 테스트합니다.');
-    console.log('💡 성공한 API를 찾으면 해당 API를 사용하도록 설정하겠습니다.');
+    console.log('🔍 K-Startup API 2개를 테스트합니다.');
+    console.log('💡 실제 작동하는 API만 테스트합니다.');
     
     for (const endpoint of testEndpoints) {
       try {
