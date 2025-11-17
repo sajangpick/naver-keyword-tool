@@ -27,25 +27,21 @@ module.exports = async (req, res) => {
     
     // 테스트할 API 엔드포인트들
     // K-Startup(한국창업진흥원) 사업공고 API: https://apis.data.go.kr/B552735/kisedKstartupService01
+    // 실제 서비스 메서드: getAnnouncementInformation01, getBusinessInformation01
     const testEndpoints = [
-      // K-Startup 사업공고 API - 다양한 서비스 메서드 시도
+      // K-Startup 사업공고 정보 조회 - 실제 작동하는 메서드
       {
-        name: 'K-Startup 사업공고 목록 (getBizPblancList)',
-        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        name: 'K-Startup 사업공고 정보 (getAnnouncementInformation01)',
+        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
         type: 'xml',
-        note: 'K-Startup 사업공고 목록 조회'
+        note: 'K-Startup 사업공고 정보 조회'
       },
+      // K-Startup 사업 정보 조회 - 사업 상세 정보
       {
-        name: 'K-Startup 사업공고 상세 (getBizPblancDetail)',
-        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancDetail?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
+        name: 'K-Startup 사업 정보 (getBusinessInformation01)',
+        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBusinessInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
         type: 'xml',
-        note: 'K-Startup 사업공고 상세 조회'
-      },
-      {
-        name: 'K-Startup 사업공고 검색 (getBizPblancSearch)',
-        url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancSearch?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=10&pageNo=1`,
-        type: 'xml',
-        note: 'K-Startup 사업공고 검색'
+        note: 'K-Startup 사업 정보 조회'
       },
       // 기업마당/입찰공고 관련 API들
       {

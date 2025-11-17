@@ -215,30 +215,23 @@ async function fetchRealPolicies() {
       try {
         // 공공데이터포털 - K-Startup(한국창업진흥원) 사업공고 API
         // 엔드포인트: https://apis.data.go.kr/B552735/kisedKstartupService01
+        // 서비스 메서드: getAnnouncementInformation01, getBusinessInformation01
         const apiEndpoints = [
-          // K-Startup 사업공고 목록 조회 (우선순위 1)
+          // K-Startup 사업공고 정보 조회 (우선순위 1) - 실제 작동하는 메서드
           {
-            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
+            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'k-startup',
             priority: 1,
-            note: 'K-Startup 사업공고 목록'
+            note: 'K-Startup 사업공고 정보 조회'
           },
-          // K-Startup 사업공고 상세 조회
+          // K-Startup 사업 정보 조회 (우선순위 2) - 사업 상세 정보
           {
-            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancDetail?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
+            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBusinessInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'k-startup',
             priority: 2,
-            note: 'K-Startup 사업공고 상세'
-          },
-          // K-Startup 사업공고 검색
-          {
-            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBizPblancSearch?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
-            type: 'xml',
-            source: 'k-startup',
-            priority: 3,
-            note: 'K-Startup 사업공고 검색'
+            note: 'K-Startup 사업 정보 조회'
           },
           // 중소벤처기업부 사업공고 목록 조회 (백업)
           {
@@ -563,10 +556,13 @@ async function fetchRealPolicies() {
               allData.forEach((item, index) => {
                 processedCount++;
                 
-                // 중소벤처기업부 사업공고 API 필드 매핑 (더 많은 필드 시도)
-                const title = item['사업명'] || item.pblancNm || item.title || item.사업명 || item['제목'] || item['pblancNm'] || item['pblancNmKr'] || item['pblancNmKr'] || item['pblancNmEn'] || item['pblancNm'] || '';
-                const summary = item['사업개요'] || item.bsnsSumryCn || item.summary || item.사업개요 || item['요약'] || item['bsnsSumryCn'] || item['pblancSumryCn'] || item['pblancCn'] || '';
-                const description = item['지원내용'] || item.sportCn || item.description || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || item['pblancCn'] || summary;
+                // K-Startup API 필드 매핑 (우선) + 중소벤처기업부 사업공고 API 필드 매핑
+                const title = item.title || item['biz_pbanc_nm'] || item['intg_pbanc_biz_nm'] || item['pbanc_pbanc_nm'] || 
+                             item['사업명'] || item.pblancNm || item.사업명 || item['제목'] || item['pblancNm'] || item['pblancNmKr'] || item['pblancNmEn'] || '';
+                const summary = item.summary || item['pbanc_ctnt']?.substring(0, 200) || 
+                               item['사업개요'] || item.bsnsSumryCn || item.사업개요 || item['요약'] || item['bsnsSumryCn'] || item['pblancSumryCn'] || item['pblancCn'] || '';
+                const description = item.description || item['pbanc_ctnt'] || 
+                                   item['지원내용'] || item.sportCn || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || summary;
                 
                 // 제목이 없으면 제외 (최소 조건)
                 if (!title || title.trim() === '') {
@@ -590,9 +586,11 @@ async function fetchRealPolicies() {
                   return;
                 }
                 
-                // 날짜 정보 추출
-                const startDate = item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
-                const endDate = item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
+                // 날짜 정보 추출 (K-Startup API 우선)
+                const startDate = item.application_start_date || item['pbanc_rcpt_bgng_dt'] || 
+                                 item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
+                const endDate = item.application_end_date || item['pbanc_rcpt_end_dt'] || 
+                               item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
                 const publishDate = item['공고일'] || item.pblancDe || item.publishDate || item.공고일 || item['pblancDe'] || item['pblancRegistDe'] || '';
                 
                 // 날짜 형식 정규화
@@ -634,29 +632,37 @@ async function fetchRealPolicies() {
                   if (policies.length < 10 || policies.length % 10 === 0) {
                     console.log(`✅ 정책 추가: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
                   }
-                  // 중소벤처기업부 사업공고 API 필드 매핑
+                  // K-Startup API + 중소벤처기업부 사업공고 API 필드 매핑
           policies.push({
                     title: title,
-                    organization: item['수행기관'] || item.excInsttNm || item.organization || item.수행기관 || item['pblancInsttNm'] || '중소벤처기업부',
-                    category: mapCategory(item['지원분야'] || item.supportField || item.지원분야 || item['pblancSe'] || item['bsnsSe'] || ''),
+                    organization: item.organization || item['pbanc_ntrp_nm'] || item['sprv_inst'] || 
+                                 item['수행기관'] || item.excInsttNm || item.수행기관 || item['pblancInsttNm'] || '한국창업진흥원',
+                    category: item.category || mapCategory(item['supt_biz_clsfc'] || item['지원분야'] || item.supportField || item.지원분야 || item['pblancSe'] || item['bsnsSe'] || ''),
                     summary: summary || title,
                     description: description || summary || title,
-                    support_amount: item['지원규모'] || item.sportScle || item.supportAmount || item.지원규모 || '문의',
+                    support_amount: item.support_amount || item['biz_supt_bdgt_info'] || item['지원규모'] || item.sportScle || item.supportAmount || item.지원규모 || '문의',
                     support_type: mapSupportType(item['지원유형'] || item.supportType || item.지원유형 || item['sportSe'] || item['pblancSe'] || ''),
-                    eligibility_criteria: item['지원자격'] || item.sportQualf || item.eligibility || item.지원자격 || item['sportQualf'] || item['pblancQualf'] || '별도 문의',
+                    eligibility_criteria: item.eligibility_criteria || item['biz_supt_trgt_info'] || item['aply_trgt_ctnt'] || item['aply_trgt'] || 
+                                         item['지원자격'] || item.sportQualf || item.eligibility || item.지원자격 || item['sportQualf'] || item['pblancQualf'] || '별도 문의',
                     required_documents: item['필요서류'] || item.requiredDocs || item.필요서류 || '별도 문의',
-                    business_type: item['대상업종'] ? (Array.isArray(item['대상업종']) ? item['대상업종'] : [item['대상업종']]) : ['음식점', '카페', '소매업', '서비스업'],
-                    target_area: item['지원지역'] ? (Array.isArray(item['지원지역']) ? item['지원지역'] : [item['지원지역']]) : ['전국'],
-                    application_start_date: startDate || null,
-                    application_end_date: endDate || null,
-                    application_method: item['신청방법'] || item.applicationMethod || item.신청방법 || item['rceptMth'] || '온라인 신청',
-                    application_url: item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || item['rceptUrl'] || null,
-                    contact_info: item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || item['rqutProcCn'] || '별도 문의',
-                    phone_number: item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null,
-                    website_url: item['홈페이지'] || item.website || item.홈페이지 || item['homepage'] || null,
-                    status: getStatus(endDate),
+                    business_type: item.business_type || (item['biz_enyy'] ? (Array.isArray(item['biz_enyy']) ? item['biz_enyy'] : [item['biz_enyy']]) : null) ||
+                                 (item['대상업종'] ? (Array.isArray(item['대상업종']) ? item['대상업종'] : [item['대상업종']]) : ['음식점', '카페', '소매업', '서비스업']),
+                    target_area: item.target_area || (item['supt_regin'] ? (Array.isArray(item['supt_regin']) ? item['supt_regin'] : [item['supt_regin']]) : null) ||
+                               (item['지원지역'] ? (Array.isArray(item['지원지역']) ? item['지원지역'] : [item['지원지역']]) : ['전국']),
+                    application_start_date: normalizedStart || null,
+                    application_end_date: normalizedEnd || null,
+                    application_method: item['aply_mthd_onli_rcpt_istc'] ? '온라인 신청' : 
+                                       (item['신청방법'] || item.applicationMethod || item.신청방법 || item['rceptMth'] || '온라인 신청'),
+                    application_url: item.application_url || item['biz_aply_url'] || item['aply_mthd_onli_rcpt_istc'] || 
+                                   item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || item['rceptUrl'] || null,
+                    contact_info: item['pbanc_ntrp_nm'] || item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || item['rqutProcCn'] || '별도 문의',
+                    phone_number: item.phone_number || item['prch_cnpl_no'] || 
+                                item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null,
+                    website_url: item.website_url || item['detl_pg_url'] || item['biz_gdnc_url'] || 
+                               item['홈페이지'] || item.website || item.홈페이지 || item['homepage'] || null,
+                    status: getStatus(normalizedEnd),
                     is_featured: false,
-                    tags: ['실제데이터', '공공데이터포털', endpoint.source || 'bizinfo'],
+                    tags: ['실제데이터', '공공데이터포털', endpoint.source || 'k-startup'],
                     source: endpoint.source || 'bizinfo'
                   });
                 }
@@ -858,6 +864,7 @@ function getStatus(endDate) {
 
 /**
  * XML 응답 파싱 (공공데이터포털 API용)
+ * K-Startup API는 <col name="..."> 형식 사용
  */
 function parseXMLResponse(xmlData) {
   const items = [];
@@ -866,27 +873,124 @@ function parseXMLResponse(xmlData) {
     const dom = new JSDOM(xmlData, { contentType: 'text/xml' });
     const document = dom.window.document;
     
-    // 중소벤처기업부 API는 items > item 구조 사용
-    // 다양한 XML 구조 지원
-    const itemNodes = document.querySelectorAll('item, row, record, body > items > item, response > body > items > item');
+    // K-Startup API 형식: <results><data><item><col name="...">...</col></item></data></results>
+    // 먼저 <col name="..."> 형식 확인
+    const colItems = document.querySelectorAll('item');
     
-    itemNodes.forEach(node => {
-      const item = {};
-      
-      // 모든 자식 노드를 순회하며 데이터 추출
-      node.childNodes.forEach(child => {
-        if (child.nodeType === 1) { // Element node
-          const tagName = child.tagName.toLowerCase();
-          const text = child.textContent?.trim() || '';
+    if (colItems.length > 0) {
+      // K-Startup API 형식 처리
+      colItems.forEach(itemNode => {
+        const item = {};
+        const colNodes = itemNode.querySelectorAll('col');
+        
+        colNodes.forEach(col => {
+          const name = col.getAttribute('name');
+          const text = (col.textContent || '').trim();
           
-          // 한글 필드명과 영문 필드명 모두 지원
-          // 중소벤처기업부 사업공고 API 필드 매핑 추가
-          if (tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm') || tagName === 'pblancnmkr') {
-            item.title = text;
-            item['사업명'] = text;
-            item.pblancNm = text;
-            item.pblancNmKr = text;
+          if (!name || !text) return;
+          
+          // K-Startup API 필드 매핑
+          // getAnnouncementInformation01 필드
+          if (name === 'biz_pbanc_nm' || name === 'intg_pbanc_biz_nm' || name === 'pbanc_pbanc_nm') {
+            item.title = text.replace(/&apos;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
           }
+          if (name === 'pbanc_ctnt' || name === 'pbanc_nm') {
+            item.description = text;
+            if (!item.summary) {
+              item.summary = text.substring(0, 200);
+            }
+          }
+          if (name === 'pbanc_ntrp_nm' || name === 'sprv_inst') {
+            item.organization = text;
+          }
+          // getBusinessInformation01 필드
+          if (name === 'supt_biz_titl_nm') {
+            item.title = text;
+          }
+          if (name === 'supt_biz_intrd_info') {
+            item.summary = text.substring(0, 200);
+            if (!item.description) {
+              item.description = text;
+            }
+          }
+          if (name === 'biz_supt_ctnt') {
+            item.description = text;
+            if (!item.summary) {
+              item.summary = text.substring(0, 200);
+            }
+          }
+          if (name === 'biz_supt_bdgt_info') {
+            item.support_amount = text;
+          }
+          if (name === 'biz_supt_trgt_info') {
+            item.eligibility_criteria = text;
+          }
+          if (name === 'supt_biz_chrct') {
+            if (!item.summary) {
+              item.summary = text.substring(0, 200);
+            }
+          }
+          if (name === 'pbanc_rcpt_bgng_dt') {
+            // YYYYMMDD 형식을 YYYY-MM-DD로 변환
+            if (text.length === 8) {
+              item.application_start_date = `${text.substring(0, 4)}-${text.substring(4, 6)}-${text.substring(6, 8)}`;
+            }
+          }
+          if (name === 'pbanc_rcpt_end_dt') {
+            // YYYYMMDD 형식을 YYYY-MM-DD로 변환
+            if (text.length === 8) {
+              item.application_end_date = `${text.substring(0, 4)}-${text.substring(4, 6)}-${text.substring(6, 8)}`;
+            }
+          }
+          if (name === 'detl_pg_url' || name === 'biz_gdnc_url') {
+            item.website_url = text;
+          }
+          if (name === 'biz_aply_url' || name === 'aply_mthd_onli_rcpt_istc') {
+            item.application_url = text;
+          }
+          if (name === 'prch_cnpl_no') {
+            item.phone_number = text;
+          }
+          if (name === 'supt_biz_clsfc') {
+            item.category = mapCategory(text);
+          }
+          if (name === 'supt_regin') {
+            item.target_area = text.split(',').map(a => a.trim()).filter(a => a);
+          }
+          if (name === 'biz_enyy') {
+            item.business_type = text.split(',').map(b => b.trim()).filter(b => b);
+          }
+          
+          // 원본 데이터도 보존
+          item[name] = text;
+        });
+        
+        // 필수 필드 확인
+        if (item.title) {
+          items.push(item);
+        }
+      });
+    } else {
+      // 기존 형식 처리 (item, row, record 등)
+      const itemNodes = document.querySelectorAll('item, row, record, body > items > item, response > body > items > item');
+      
+      itemNodes.forEach(node => {
+        const item = {};
+        
+        // 모든 자식 노드를 순회하며 데이터 추출
+        node.childNodes.forEach(child => {
+          if (child.nodeType === 1) { // Element node
+            const tagName = child.tagName.toLowerCase();
+            const text = child.textContent?.trim() || '';
+            
+            // 한글 필드명과 영문 필드명 모두 지원
+            // 중소벤처기업부 사업공고 API 필드 매핑 추가
+            if (tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm') || tagName === 'pblancnmkr') {
+              item.title = text;
+              item['사업명'] = text;
+              item.pblancNm = text;
+              item.pblancNmKr = text;
+            }
           if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm') || tagName === 'pblancinsttnm') {
             item.organization = text;
             item['수행기관'] = text;
