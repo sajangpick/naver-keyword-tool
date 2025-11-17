@@ -1189,9 +1189,42 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 데이터 수집 중...';
 
         try {
-          const token = localStorage.getItem('access_token');
+          // 1. 인증 토큰 가져오기 (Supabase 세션 우선)
+          let token = null;
           
-          // 1. 실제 API에서 데이터 가져오기
+          try {
+            // Supabase 세션에서 토큰 가져오기
+            if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+              const supabase = await window.AdminBootstrap.getSupabaseClient();
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session?.access_token) {
+                token = session.access_token;
+                console.log('✅ Supabase 세션에서 토큰 가져옴');
+              }
+            }
+          } catch (e) {
+            console.warn('Supabase 세션에서 토큰 가져오기 실패:', e);
+          }
+          
+          // Supabase에서 가져오지 못한 경우 localStorage에서 시도
+          if (!token) {
+            token = localStorage.getItem('access_token');
+            if (token) {
+              console.log('⚠️ localStorage에서 토큰 사용 (만료되었을 수 있음)');
+            }
+          }
+          
+          // 토큰이 없으면 로그인 안내
+          if (!token) {
+            if (confirm('로그인이 필요합니다.\n\n로그인 페이지로 이동하시겠습니까?')) {
+              window.location.href = '/login.html';
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
+            return;
+          }
+          
+          // 2. 실제 API에서 데이터 가져오기
           btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> API에서 데이터 수집 중...';
           
           const fetchResponse = await fetch(`${API_BASE}/api/fetch-real-policies`, {
@@ -1238,22 +1271,30 @@
                 continue;
               }
 
-              // 중복 체크를 위해 기존 정책 조회
-              const checkResponse = await fetch(`${API_BASE}/api/policy-support?search=${encodeURIComponent(policy.title)}&limit=1`, {
-                headers: {
-                  'Authorization': `Bearer ${token}`
+              // 중복 체크를 위해 기존 정책 조회 (토큰 없이도 가능)
+              let existing = null;
+              try {
+                const checkResponse = await fetch(`${API_BASE}/api/policy-support?search=${encodeURIComponent(policy.title)}&limit=1`);
+                const checkResult = await checkResponse.json();
+                if (checkResult.success && checkResult.data) {
+                  existing = checkResult.data.find(p => p.title === policy.title);
                 }
-              });
-              
-              const checkResult = await checkResponse.json();
-              const existing = checkResult.data?.find(p => p.title === policy.title);
+              } catch (e) {
+                console.warn('중복 체크 실패:', e);
+              }
               
               if (existing) {
                 skippedCount++;
                 continue;
               }
 
-              // 정책 저장
+              // 정책 저장 (토큰 필요)
+              if (!token) {
+                skippedCount++;
+                errors.push(`${policy.title}: 인증 토큰이 필요합니다`);
+                continue;
+              }
+
               const saveResponse = await fetch(`${API_BASE}/api/policy-support`, {
                 method: 'POST',
                 headers: {
@@ -1270,6 +1311,54 @@
                   tags: policy.tags || []
                 })
               });
+
+              // 401 에러인 경우 토큰 갱신 시도
+              if (saveResponse.status === 401) {
+                // Supabase 세션에서 새 토큰 가져오기
+                try {
+                  if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+                    const supabase = await window.AdminBootstrap.getSupabaseClient();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.access_token) {
+                      token = session.access_token;
+                      console.log('🔄 토큰 갱신됨, 재시도...');
+                      
+                      // 토큰 갱신 후 재시도
+                      const retryResponse = await fetch(`${API_BASE}/api/policy-support`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                          ...policy,
+                          business_type: policy.business_type || ['음식점', '카페', '소매업', '서비스업'],
+                          target_area: policy.target_area || ['전국'],
+                          status: policy.status || 'active',
+                          is_featured: policy.is_featured || false,
+                          tags: policy.tags || []
+                        })
+                      });
+                      
+                      const retryResult = await retryResponse.json();
+                      if (retryResult.success) {
+                        savedCount++;
+                        continue;
+                      } else {
+                        skippedCount++;
+                        errors.push(`${policy.title}: ${retryResult.error || '저장 실패 (재시도 후)'}`);
+                        continue;
+                      }
+                    }
+                  }
+                } catch (refreshError) {
+                  console.error('토큰 갱신 실패:', refreshError);
+                }
+                
+                skippedCount++;
+                errors.push(`${policy.title}: 유효하지 않은 토큰입니다. 로그인을 다시 해주세요.`);
+                continue;
+              }
 
               const saveResult = await saveResponse.json();
               
@@ -1315,4 +1404,6 @@
       }
     </script>
   </body>
+</html>
+
 </html>
