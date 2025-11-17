@@ -331,7 +331,16 @@ async function fetchRealPolicies() {
                 // 에러 상태 코드 확인
                 if (response.status !== 200) {
                   console.error(`❌ API 에러 응답: HTTP ${response.status}`);
-                  console.error(`❌ 응답 내용:`, JSON.stringify(response.data).substring(0, 500));
+                  console.error(`❌ 응답 내용:`, JSON.stringify(response.data).substring(0, 1000));
+                  
+                  // 4xx 에러인 경우 상세 정보 출력
+                  if (response.status >= 400 && response.status < 500) {
+                    console.error(`❌ 클라이언트 에러 (${response.status}): API 키 또는 요청 형식 문제 가능성`);
+                    if (response.data && typeof response.data === 'object') {
+                      console.error(`❌ 에러 상세:`, JSON.stringify(response.data, null, 2));
+                    }
+                  }
+                  
                   hasMorePages = false;
                   continue;
                 }
@@ -414,15 +423,37 @@ async function fetchRealPolicies() {
                 else if (typeof response.data === 'string' && response.data.includes('<')) {
                   console.log(`📄 XML 응답 수신 (페이지 ${currentPage}), 길이: ${response.data.length} bytes`);
                   
-                  // 에러 응답 확인
+                  // 에러 응답 확인 (공공데이터포털 표준 형식)
                   if (response.data.includes('<resultCode>') || response.data.includes('<resultMsg>')) {
                     const resultCode = response.data.match(/<resultCode>(\d+)<\/resultCode>/i)?.[1];
                     const resultMsg = response.data.match(/<resultMsg>(.*?)<\/resultMsg>/i)?.[1];
                     if (resultCode && resultCode !== '00') {
                       console.error(`❌ API 에러 응답: ${resultCode} - ${resultMsg || '알 수 없는 오류'}`);
+                      console.error(`❌ 전체 XML 응답:`, response.data.substring(0, 2000));
+                      
+                      // 일반적인 에러 코드 해석
+                      if (resultCode === '01' || resultCode === '02') {
+                        console.error(`💡 해석: 서비스 키가 유효하지 않거나 인증 실패`);
+                        console.error(`💡 조치: API 키를 확인하고 공공데이터포털에서 재발급 받으세요`);
+                      } else if (resultCode === '03' || resultCode === '04') {
+                        console.error(`💡 해석: 요청 파라미터 오류`);
+                        console.error(`💡 조치: API 엔드포인트 URL과 파라미터를 확인하세요`);
+                      } else if (resultCode === '05') {
+                        console.error(`💡 해석: 일일 호출 한도 초과`);
+                        console.error(`💡 조치: 내일 다시 시도하거나 API 사용량을 확인하세요`);
+                      }
+                      
                       hasMorePages = false;
                       continue;
                     }
+                  }
+                  
+                  // 공공데이터포털 에러 메시지 확인 (다른 형식)
+                  if (response.data.includes('SERVICE ERROR') || response.data.includes('ERROR')) {
+                    console.error(`❌ XML에 에러 메시지 포함됨`);
+                    console.error(`❌ XML 샘플:`, response.data.substring(0, 2000));
+                    hasMorePages = false;
+                    continue;
                   }
                   
                   // XML 샘플 로그 (첫 페이지만)
@@ -1038,7 +1069,12 @@ module.exports = async (req, res) => {
         success: true,
         message: `${policies.length}개의 실제 정책 데이터를 수집했습니다.`,
         count: policies.length,
-        data: policies
+        data: policies,
+        debug: {
+          apiKeyLength: process.env.PUBLIC_DATA_KEY?.length || 0,
+          apiKeySet: !!process.env.PUBLIC_DATA_KEY,
+          timestamp: new Date().toISOString()
+        }
       });
     }
     
@@ -1046,7 +1082,12 @@ module.exports = async (req, res) => {
     return res.json({
       success: true,
       count: policies.length,
-      data: policies
+      data: policies,
+      debug: {
+        apiKeyLength: process.env.PUBLIC_DATA_KEY?.length || 0,
+        apiKeySet: !!process.env.PUBLIC_DATA_KEY,
+        timestamp: new Date().toISOString()
+      }
     });
     
   } catch (error) {
