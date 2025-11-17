@@ -1175,7 +1175,7 @@
 
       // 실제 데이터 가져오기
       async function fetchRealPolicies() {
-        if (!confirm('실제 정부 정책 데이터를 가져오시겠습니까?\n\n현재 진행 중인 실제 정책들이 추가됩니다.')) {
+        if (!confirm('실제 정부 정책 데이터를 가져오시겠습니까?\n\n공공데이터포털과 정책브리핑에서 실시간 데이터를 수집합니다.')) {
           return;
         }
 
@@ -1184,146 +1184,125 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 데이터 수집 중...';
 
         try {
-          // 1. 미리 준비된 실제 데이터 추가
-          const realPolicies = [
-            {
-              title: '2024년 소상공인 정책자금 융자',
-              organization: '중소벤처기업부',
-              category: 'operation',
-              summary: '소상공인 경영안정 및 성장기반 조성을 위한 정책자금 지원',
-              description: '코로나19 및 고물가로 어려움을 겪는 소상공인에게 저금리 정책자금을 지원합니다. 운영자금, 시설자금 등 다양한 용도로 활용 가능합니다.',
-              support_amount: '최대 7천만원',
-              support_type: 'loan',
-              eligibility_criteria: '• 사업자등록 후 6개월 이상 영업 중인 소상공인\n• 상시근로자 10인 미만\n• 연매출 10억원 이하',
-              business_type: ['음식점', '카페', '소매업', '서비스업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-02',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.semas.or.kr',
-              contact_info: '소상공인시장진흥공단',
-              phone_number: '☎1357',
-              status: 'active',
-              is_featured: true
-            },
-            {
-              title: '소상공인 스마트상점 기술보급',
-              organization: '중소벤처기업부',
-              category: 'facility',
-              summary: '스마트 기술 도입으로 매출 증대 및 비용 절감 지원',
-              description: '키오스크, 테이블오더, POS시스템, 온라인몰 구축 등 스마트 기술 도입을 지원합니다.',
-              support_amount: '최대 1천만원 (자부담 10%)',
-              support_type: 'grant',
-              eligibility_criteria: '• 연매출 2억원 이하 소상공인\n• 스마트상점 육성 대상업종',
-              business_type: ['음식점', '카페', '소매업'],
-              target_area: ['전국'],
-              application_start_date: '2024-02-01',
-              application_end_date: '2024-11-30',
-              application_url: 'https://www.sbiz.or.kr/smartshop',
-              contact_info: '스마트상점 지원센터',
-              phone_number: '☎1357',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '백년가게 육성사업',
-              organization: '중소벤처기업부',
-              category: 'marketing',
-              summary: '업력 30년 이상 우수 소상공인 브랜드화 지원',
-              description: '오랜 역사와 전통을 가진 소상공인을 백년가게로 선정하여 브랜드 개발, 마케팅, 시설개선 등을 지원합니다.',
-              support_amount: '최대 3천만원',
-              support_type: 'grant',
-              eligibility_criteria: '• 업력 30년 이상\n• 3대째 이상 가업승계 또는 30년 이상 운영',
-              business_type: ['음식점', '제조업', '서비스업'],
-              target_area: ['전국'],
-              application_start_date: '2024-03-01',
-              application_end_date: '2024-11-30',
-              application_url: 'https://www.sbiz.or.kr/100year',
-              contact_info: '소상공인시장진흥공단',
-              phone_number: '☎1357',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '착한가격업소 인센티브 지원',
-              organization: '행정안전부',
-              category: 'operation',
-              summary: '물가안정 기여 착한가격업소 다양한 혜택 제공',
-              description: '착한가격업소로 지정된 업소에 상하수도료 감면, 쓰레기봉투 지원, 무료 광고 등 혜택을 제공합니다.',
-              support_amount: '연간 200만원 상당',
-              support_type: 'grant',
-              eligibility_criteria: '• 착한가격업소 지정 업체\n• 가격 동결 유지',
-              business_type: ['음식점', '이미용업', '세탁업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-01',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.goodprice.go.kr',
-              contact_info: '각 지자체 경제과',
-              phone_number: '☎120',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '노란우산 희망장려금',
-              organization: '중소기업중앙회',
-              category: 'other',
-              summary: '소상공인 노란우산공제 신규 가입 장려금 지원',
-              description: '소상공인의 폐업·노령 등에 대비한 사회안전망 구축을 위해 노란우산공제 신규 가입자에게 장려금을 지원합니다.',
-              support_amount: '월 1만원 × 12개월',
-              support_type: 'grant',
-              eligibility_criteria: '• 노란우산 신규 가입 소상공인\n• 연매출 3억원 이하',
-              business_type: ['음식점', '카페', '소매업', '서비스업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-01',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.8899.or.kr',
-              contact_info: '노란우산공제',
-              phone_number: '☎1666-9988',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '일자리 안정자금',
-              organization: '고용노동부',
-              category: 'employment',
-              summary: '최저임금 인상에 따른 소상공인 인건비 부담 완화',
-              description: '30인 미만 사업체의 월 평균보수 230만원 미만 노동자에 대한 인건비를 지원합니다.',
-              support_amount: '1인당 월 최대 30만원',
-              support_type: 'grant',
-              eligibility_criteria: '• 30인 미만 사업체\n• 최저임금 120% 미만 노동자 고용\n• 고용보험 가입',
-              business_type: ['음식점', '카페', '소매업', '서비스업', '제조업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-01',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.jobfunds.or.kr',
-              contact_info: '근로복지공단',
-              phone_number: '☎1588-0075',
-              status: 'active',
-              is_featured: true
-            }
-          ];
-
-          // 2. 서버에 저장
           const token = localStorage.getItem('access_token');
           
-          for (const policy of realPolicies) {
-            await fetch(`${API_BASE}/api/policy-support`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify(policy)
-            });
+          // 1. 실제 API에서 데이터 가져오기
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> API에서 데이터 수집 중...';
+          
+          const fetchResponse = await fetch(`${API_BASE}/api/fetch-real-policies`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ save: true })
+          });
+
+          const fetchResult = await fetchResponse.json();
+
+          if (!fetchResult.success) {
+            throw new Error(fetchResult.error || '데이터 수집에 실패했습니다.');
           }
 
-          alert(`✅ ${realPolicies.length}개의 실제 정책이 추가되었습니다!\n\n추가된 정책:\n• 소상공인 정책자금\n• 스마트상점 지원\n• 백년가게 육성\n• 착한가격업소\n• 노란우산 공제\n• 일자리 안정자금`);
+          const policies = fetchResult.data || [];
           
+          if (policies.length === 0) {
+            alert('⚠️ 수집된 정책 데이터가 없습니다.\n\nAPI 응답을 확인하거나 잠시 후 다시 시도해주세요.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
+            return;
+          }
+
+          // 2. 진행 상황 표시
+          let savedCount = 0;
+          let skippedCount = 0;
+          const errors = [];
+
+          btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 데이터 저장 중... (0/${policies.length})`;
+
+          // 3. 각 정책을 데이터베이스에 저장 (중복 체크)
+          for (let i = 0; i < policies.length; i++) {
+            const policy = policies[i];
+            
+            try {
+              btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 데이터 저장 중... (${i + 1}/${policies.length})`;
+              
+              // 필수 필드 확인
+              if (!policy.title || !policy.organization || !policy.category) {
+                skippedCount++;
+                continue;
+              }
+
+              // 중복 체크를 위해 기존 정책 조회
+              const checkResponse = await fetch(`${API_BASE}/api/policy-support?search=${encodeURIComponent(policy.title)}&limit=1`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              const checkResult = await checkResponse.json();
+              const existing = checkResult.data?.find(p => p.title === policy.title);
+              
+              if (existing) {
+                skippedCount++;
+                continue;
+              }
+
+              // 정책 저장
+              const saveResponse = await fetch(`${API_BASE}/api/policy-support`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  ...policy,
+                  // 기본값 설정
+                  business_type: policy.business_type || ['음식점', '카페', '소매업', '서비스업'],
+                  target_area: policy.target_area || ['전국'],
+                  status: policy.status || 'active',
+                  is_featured: policy.is_featured || false,
+                  tags: policy.tags || []
+                })
+              });
+
+              const saveResult = await saveResponse.json();
+              
+              if (saveResult.success) {
+                savedCount++;
+              } else {
+                skippedCount++;
+                errors.push(`${policy.title}: ${saveResult.error || '저장 실패'}`);
+              }
+              
+            } catch (error) {
+              skippedCount++;
+              errors.push(`${policy.title}: ${error.message}`);
+            }
+          }
+
+          // 4. 결과 표시
+          let message = `✅ 데이터 수집 완료!\n\n`;
+          message += `• 새로 추가: ${savedCount}개\n`;
+          message += `• 건너뜀 (중복/오류): ${skippedCount}개\n`;
+          message += `• 총 수집: ${policies.length}개\n`;
+          
+          if (errors.length > 0 && errors.length <= 5) {
+            message += `\n⚠️ 오류 발생:\n${errors.slice(0, 5).join('\n')}`;
+          } else if (errors.length > 5) {
+            message += `\n⚠️ ${errors.length}개 오류 발생 (콘솔 확인)`;
+            console.error('저장 오류 목록:', errors);
+          }
+
+          alert(message);
+          
+          // 5. 목록 새로고침
           loadPolicies();
           loadStatistics();
 
         } catch (error) {
           console.error('Fetch real policies error:', error);
-          alert('데이터 가져오기 실패: ' + error.message);
+          alert('❌ 데이터 가져오기 실패: ' + error.message + '\n\n콘솔에서 자세한 오류를 확인하세요.');
         } finally {
           btn.disabled = false;
           btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
