@@ -330,6 +330,34 @@ module.exports = async (req, res) => {
     const { data, error, count } = await query;
     if (error) throw error;
 
+    // 백그라운드에서 마감일이 지난 정책 상태 자동 업데이트 (비동기, 에러 무시)
+    if (data && data.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const expiredPolicies = data.filter(p => 
+        p.application_end_date && 
+        p.application_end_date < todayStr && 
+        p.status !== 'ended'
+      );
+      
+      if (expiredPolicies.length > 0) {
+        // 비동기로 업데이트 (응답을 기다리지 않음)
+        const expiredIds = expiredPolicies.map(p => p.id);
+        supabase
+          .from('policy_supports')
+          .update({ status: 'ended', updated_at: new Date().toISOString() })
+          .in('id', expiredIds)
+          .then(() => {
+            console.log(`✅ ${expiredIds.length}개 정책 상태가 자동으로 'ended'로 업데이트되었습니다.`);
+          })
+          .catch(err => {
+            console.error('⚠️ 정책 상태 자동 업데이트 실패 (무시됨):', err.message);
+          });
+      }
+    }
+
     // 사용자별 관심 정보 추가
     if (user_id && data && data.length > 0) {
       const policyIds = data.map(p => p.id);

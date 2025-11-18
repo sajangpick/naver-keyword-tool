@@ -774,6 +774,14 @@ app.post("/api/subscription/user-dashboard", userDashboardHandler);
 const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
 app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
 
+// 정책 상태 자동 업데이트 크론 작업
+const policyStatusUpdateHandler = require("./api/cron/policy-status-update");
+app.get("/api/cron/policy-status-update", async (req, res) => {
+  const updateExpiredPolicies = require("./api/cron/policy-status-update");
+  const result = await updateExpiredPolicies();
+  res.json(result);
+});
+
 // ==================== 블로그 스타일 설정 API ====================
 const blogStyleHandler = require("./api/blog-style");
 app.get("/api/blog-style", blogStyleHandler);
@@ -4468,14 +4476,16 @@ if (process.env.VERCEL) {
   try {
     const cron = require('node-cron');
     const { renewExpiredSubscriptions, notifyTokenExceeded, recordDailyStats } = require('./api/cron/subscription-renewal');
+    const updateExpiredPolicies = require('./api/cron/policy-status-update');
 
-    // 매일 자정에 구독 갱신
+    // 매일 자정에 구독 갱신 및 정책 상태 업데이트
     cron.schedule('0 0 * * *', async () => {
-      devLog('🔄 [CRON] 자정 구독 갱신 작업 시작...');
+      devLog('🔄 [CRON] 자정 구독 갱신 및 정책 상태 업데이트 작업 시작...');
       try {
         await renewExpiredSubscriptions();
         await recordDailyStats();
-        devLog('✅ [CRON] 구독 갱신 작업 완료');
+        const policyResult = await updateExpiredPolicies();
+        devLog('✅ [CRON] 구독 갱신 및 정책 상태 업데이트 작업 완료', policyResult);
       } catch (error) {
         devError('❌ [CRON] 구독 갱신 실패:', error);
       }
