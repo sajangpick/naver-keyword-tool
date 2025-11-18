@@ -22,6 +22,5 @@
       "schedule": "*/10 * * * *"
     }
   ],
-  "cleanUrls": true,
   "trailingSlash": false
 }
