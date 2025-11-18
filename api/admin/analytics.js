@@ -7,10 +7,17 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL.trim() !== '' && SUPABASE_KEY.trim() !== '') {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch (error) {
+    console.error('Supabase 클라이언트 초기화 실패:', error.message);
+  }
+}
 
 module.exports = async (req, res) => {
   // CORS 설정
@@ -28,6 +35,11 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Supabase가 초기화되지 않은 경우
+    if (!supabase) {
+      return res.status(503).json({ error: 'Supabase가 설정되지 않았습니다.' });
+    }
+
     // 관리자 권한 확인
     const authHeader = req.headers.authorization;
     if (!authHeader) {

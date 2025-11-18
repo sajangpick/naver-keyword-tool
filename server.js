@@ -7,6 +7,7 @@ const path = require("path");
 const { spawn } = require("child_process");
 const helmet = require("helmet");
 const { createClient } = require("@supabase/supabase-js");
+const multer = require("multer");
 
 const app = express();
 app.set("trust proxy", true);
@@ -49,22 +50,28 @@ const NAVER_SEARCH = {
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+const OPENAI_SHORTS_MODEL =
+  process.env.OPENAI_SHORTS_MODEL ||
+  process.env.OPENAI_CHAT_MODEL ||
+  "gpt-4o-mini";
 
 // Supabase 설정
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 let supabase = null;
 
 // Supabase 클라이언트 초기화
-if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+if (SUPABASE_URL && SUPABASE_SERVICE_KEY && SUPABASE_URL.trim() !== '' && SUPABASE_SERVICE_KEY.trim() !== '') {
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     devLog("✅ Supabase 클라이언트 초기화 성공");
   } catch (error) {
     devError("❌ Supabase 클라이언트 초기화 실패:", error.message);
+    devLog("⚠️ Supabase 없이 서버를 계속 실행합니다.");
   }
 } else {
   devLog("⚠️ Supabase 환경변수가 설정되지 않았습니다. DB 저장 기능이 비활성화됩니다.");
+  devLog("⚠️ 서버는 계속 실행되지만 일부 기능이 제한될 수 있습니다.");
 }
 // Kakao OAuth 설정
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
@@ -105,7 +112,7 @@ const corsOptions = {
   },
   credentials: !ALLOW_ALL,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "user-id"],
 };
 
 // 미들웨어 설정
@@ -202,6 +209,14 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// Multer 설정 (파일 업로드용)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB 제한
+  }
+});
+
 // CSP report collection endpoint
 app.post(
   "/csp-report",
@@ -221,7 +236,20 @@ app.use("/csp-report", rateLimiter);
 // ==================== API 라우트 (정적 파일보다 먼저) ====================
 
 // 클라이언트용 환경변수 제공 (공개 가능한 키만)
+app.options("/api/config", (req, res) => {
+  // CORS preflight 요청 처리
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.status(200).end();
+});
+
 app.get("/api/config", (req, res) => {
+  // CORS 헤더 추가
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  
   res.json({
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
@@ -236,6 +264,7 @@ app.use("/js", express.static(path.join(__dirname, "js")));
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use("/admin", express.static(path.join(__dirname, "admin")));
+app.use("/docs", express.static(path.join(__dirname, "docs")));
 
 // 주요 HTML 라우트 화이트리스트 서빙
 function sendHtml(res, file) {
@@ -252,6 +281,8 @@ app.get("/ChatGPT.html", (req, res) => sendHtml(res, "ChatGPT.html"));
 app.get("/AI-Review.html", (req, res) => sendHtml(res, "AI-Review.html"));
 app.get("/Blog-Editor.html", (req, res) => sendHtml(res, "Blog-Editor.html"));
 app.get("/mypage.html", (req, res) => sendHtml(res, "mypage.html"));
+app.get("/sanao-book.html", (req, res) => sendHtml(res, "sanao-book.html"));
+app.get("/sajangpick-book.html", (req, res) => sendHtml(res, "sajangpick-book.html"));
 // 플순위는 어드민 전용으로만 접근 허용 (일반 경로는 홈으로 리다이렉트)
 app.get("/rank-report.html", (req, res) => res.redirect("/"));
 app.get("/admin/rank-report.html", (req, res) => sendHtml(res, "admin/rank-report.html"));
@@ -295,7 +326,14 @@ function rateLimiter(req, res, next) {
   next();
 }
 
-app.use("/api/", rateLimiter);
+// Rate limiter 적용 (정책 조회 API는 제외)
+app.use("/api/", (req, res, next) => {
+  // 정책 조회 API는 rate limiter 제외 (관리자 페이지에서 자주 조회)
+  if (req.path.startsWith('/policy-support') && req.method === 'GET') {
+    return next();
+  }
+  rateLimiter(req, res, next);
+});
 app.use("/auth/", rateLimiter);
 // Periodic cleanup for rate limiter map (memory hygiene)
 setInterval(() => {
@@ -672,6 +710,7 @@ app.get("/api/admin/dashboard", adminDashboardHandler);
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
+app.post("/api/chatgpt", chatgptBlogHandler);  // 레시피 생성용 엔드포인트 추가
 
 // ==================== 뉴스 게시판 API ====================
 const newsBoardHandler = require("./api/news-board");
@@ -679,10 +718,23 @@ app.get("/api/news-board", newsBoardHandler);
 app.post("/api/news-board", newsBoardHandler);
 app.put("/api/news-board", newsBoardHandler);
 app.delete("/api/news-board", newsBoardHandler);
+// news-collect.js 파일이 없으므로 주석 처리
+// const newsCollectHandler = require("./api/news-collect");
+const naverSectionNewsHandler = require("./api/naver-section-news");
+// app.post("/api/news-collect", newsCollectHandler);
+app.get("/api/naver-section-news", naverSectionNewsHandler);
 
 // AI 뉴스 추천 API
 const aiNewsRecommendHandler = require("./api/ai-news-recommend");
 app.post("/api/ai-news-recommend", aiNewsRecommendHandler);
+
+// AI 뉴스 해석 API
+const newsAiSummaryHandler = require("./api/news-ai-summary");
+app.post("/api/news-ai-summary", newsAiSummaryHandler);
+
+// 뉴스 원문 추출 API
+const newsFetchHandler = require("./api/news-fetch");
+app.get("/api/news-fetch", newsFetchHandler);
 
 // 뉴스 검색 API (소상공인/식당 특화)
 const newsSearchHandler = require("./api/news-search");
@@ -704,10 +756,19 @@ const fetchRealPolicyHandler = require("./api/fetch-real-policy-data");
 app.get("/api/fetch-real-policies", fetchRealPolicyHandler);
 app.post("/api/fetch-real-policies", fetchRealPolicyHandler);
 
+// API 테스트 엔드포인트 (디버깅용)
+const testPolicyApiHandler = require("./api/test-policy-api");
+app.get("/api/test-policy-api", testPolicyApiHandler);
+app.post("/api/test-policy-api", testPolicyApiHandler);
+
 // ==================== 레시피 관리 시스템 API ====================
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");
 app.use("/api/recipes", recipesRouter);
+
+// 레시피 이미지 API (Pexels)
+const recipeImageRouter = require("./api/recipe-image");
+app.use("/api/recipe-image", recipeImageRouter);
 
 // ==================== ADLOG 순위 추적 API ====================
 // 어드민 스크래핑 제어 API
@@ -744,6 +805,14 @@ app.post("/api/subscription/user-dashboard", userDashboardHandler);
 // 크론 작업 API (수동 실행용)
 const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
 app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
+
+// 정책 상태 자동 업데이트 크론 작업
+const policyStatusUpdateHandler = require("./api/cron/policy-status-update");
+app.get("/api/cron/policy-status-update", async (req, res) => {
+  const updateExpiredPolicies = require("./api/cron/policy-status-update");
+  const result = await updateExpiredPolicies();
+  res.json(result);
+});
 
 // ==================== 블로그 스타일 설정 API ====================
 const blogStyleHandler = require("./api/blog-style");
@@ -1100,17 +1169,21 @@ app.get("/api/related-keywords", async (req, res) => {
   }
 
   try {
-    devLog("연관 키워드 검색 요청 수신");
+    devLog("연관 키워드 검색 요청 수신:", seed);
 
+    // /relkwdstat 엔드포인트가 작동하지 않을 수 있으므로
+    // /keywordstool 엔드포인트를 사용하여 연관 키워드 조회
     const timestamp = Date.now().toString();
     const method = "GET";
-    const uri = "/relkwdstat";
+    const uri = "/keywordstool";
     const signature = generateSignature(
       timestamp,
       method,
       uri,
       NAVER_API.secretKey
     );
+
+    devLog(`네이버 API 호출: ${NAVER_API.baseUrl}${uri}`);
 
     const response = await axios.get(`${NAVER_API.baseUrl}${uri}`, {
       params: {
@@ -1127,21 +1200,42 @@ app.get("/api/related-keywords", async (req, res) => {
       timeout: 30000,
     });
 
-    devLog(`연관 키워드 검색 성공`);
+    devLog(`연관 키워드 검색 성공: ${response.data.keywordList?.length || 0}개 결과`);
+    
+    // 시드 키워드와 정확히 일치하는 항목 제외
+    const keywordList = (response.data.keywordList || []).filter(item => {
+      const keyword = item.relKeyword || item.keyword || "";
+      return keyword.toLowerCase().trim() !== seed.toLowerCase().trim();
+    });
+
     res.json({
-      ...response.data,
+      keywordList: keywordList,
       searchInfo: {
         seed: seed,
         timestamp: new Date().toISOString(),
         server: "Integrated Server",
+        totalCount: keywordList.length,
       },
     });
   } catch (error) {
     devError("연관 키워드 API 호출 오류:", error.message);
+    devError("에러 상세:", error.response?.data || error.response?.status);
 
     if (error.response) {
-      res.status(error.response.status).json({
-        error: `네이버 API 오류 (${error.response.status})`,
+      // 네이버 API 오류를 그대로 전달하지 않고, 더 명확한 메시지 제공
+      const status = error.response.status;
+      let errorMessage = `네이버 API 오류 (${status})`;
+      
+      if (status === 404) {
+        errorMessage = "네이버 API 엔드포인트를 찾을 수 없습니다. API 설정을 확인해주세요.";
+      } else if (status === 401) {
+        errorMessage = "네이버 API 인증에 실패했습니다. API 키를 확인해주세요.";
+      } else if (status === 403) {
+        errorMessage = "네이버 API 사용 권한이 없습니다.";
+      }
+
+      res.status(500).json({
+        error: errorMessage,
         details: error.response.data,
         timestamp: new Date().toISOString(),
       });
@@ -1432,9 +1526,202 @@ async function callClaude(prompt) {
   }
 }
 
+async function callOpenAIForShortsPlan({ keywords, style, durationSec }) {
+  if (!OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY가 설정되어 있지 않습니다.");
+  }
+
+  const cleanedKeywords = (keywords || "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean)
+    .slice(0, 10);
+
+  const promptContext = `
+[요청 조건]
+- 영상 주제 키워드: ${cleanedKeywords.join(", ") || "미작성"}
+- 영상 스타일: ${style || "기본"}
+- 영상 길이: ${durationSec || 15}초
+- 목적: 식당/카페 홍보용 SNS 숏폼 영상
+
+[작성 가이드]
+1. plan_summary: 영상 핵심 메시지를 1문장으로 요약
+2. plan_outline: 컷별 구성(3~4컷) 배열. 각 요소는 {"cut":번호,"duration":"3초","description":"장면 설명","text":"자막/멘트"} 형태.
+3. script: 컷 순서에 맞춰 자연스럽게 이어지는 나레이션/자막 문장 (전체 ${durationSec ||
+    15}초 기준)
+4. tips: 촬영/편집 시 추가 팁 (선택)
+
+[출력 형식]
+JSON 객체로만 응답하며 key는 plan_summary, plan_outline, script, tips를 포함합니다.
+`;
+
+  try {
+    devLog("OpenAI 숏폼 기획 요청 중...");
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: OPENAI_SHORTS_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "당신은 소상공인 식당을 위한 SNS 숏폼 전문 영상 기획자입니다. 반드시 JSON으로만 응답하세요.",
+          },
+          { role: "user", content: promptContext },
+        ],
+        temperature: 0.6,
+        max_tokens: 900,
+        response_format: { type: "json_object" },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 45000,
+      }
+    );
+
+    const content = response.data.choices?.[0]?.message?.content;
+    if (!content) throw new Error("OpenAI 응답이 비어 있습니다.");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (error) {
+      throw new Error("OpenAI 응답을 JSON으로 파싱할 수 없습니다.");
+    }
+
+    const planSummary = parsed.plan_summary?.trim() || "";
+    const planOutline = Array.isArray(parsed.plan_outline)
+      ? parsed.plan_outline
+      : [];
+    const tips =
+      typeof parsed.tips === "string"
+        ? parsed.tips.trim()
+        : Array.isArray(parsed.tips)
+        ? parsed.tips.join(" ")
+        : "";
+    const planText =
+      `${planSummary}\n\n` +
+      planOutline
+        .map((item, idx) => {
+          const cut = item.cut || idx + 1;
+          const duration = item.duration ? ` (${item.duration})` : "";
+          const description = item.description || "";
+          const text = item.text ? `\n   - 자막/멘트: ${item.text}` : "";
+          return `${cut}컷${duration}: ${description}${text}`;
+        })
+        .join("\n") +
+      (tips ? `\n\n추가 팁: ${tips}` : "");
+
+    const script =
+      typeof parsed.script === "string"
+        ? parsed.script.trim()
+        : Array.isArray(parsed.script)
+        ? parsed.script.join("\n")
+        : "";
+
+    return { plan: planText.trim(), script };
+  } catch (error) {
+    devError(
+      "OpenAI 숏폼 기획 생성 오류:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      "AI 기획 생성에 실패했습니다: " +
+        (error.response?.data?.error?.message || error.message || "")
+    );
+  }
+}
+
+function ensureUserId(userId) {
+  if (!userId || typeof userId !== "string") {
+    const error = new Error("로그인이 필요합니다.");
+    error.statusCode = 401;
+    throw error;
+  }
+}
+
+async function savePlanHistoryEntry({
+  userId,
+  keywords,
+  style,
+  duration,
+  plan,
+  script,
+  source = "ai",
+}) {
+  if (!supabase) {
+    devError("Supabase가 초기화되지 않았습니다. 초안 저장을 건너뜁니다.");
+    return null;
+  }
+
+  const payload = {
+    user_id: userId,
+    keywords,
+    style: style || null,
+    duration_sec: duration || null,
+    plan_text: plan,
+    script_text: script,
+    source,
+  };
+
+  const { data, error } = await supabase
+    .from("shorts_plan_history")
+    .insert(payload)
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    devError("Supabase plan history 저장 실패:", error);
+    return null;
+  }
+  return data;
+}
+
+async function fetchPlanHistoryEntries(userId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("shorts_plan_history")
+    .select(
+      "id, keywords, style, duration_sec, plan_text, script_text, source, created_at"
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    devError("Supabase plan history 조회 실패:", error);
+    return [];
+  }
+  return data || [];
+}
+
+async function deletePlanHistoryEntry(userId, entryId) {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from("shorts_plan_history")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", entryId);
+
+  if (error) {
+    devError("Supabase plan history 삭제 실패:", error);
+    return false;
+  }
+  return true;
+}
+
 // ==================== ChatGPT 채팅 API ====================
 
-// ChatGPT 채팅 API
+// ChatGPT 채팅 API - api/chat.js 사용 (Function Calling 포함)
+const chatHandler = require("./api/chat");
+app.post("/api/chat", chatHandler);
+
+// 기존 코드 (Function Calling 없이) - 주석 처리
+/*
 app.post("/api/chat", async (req, res) => {
   try {
     const rawMsg = req.body?.message || "";
@@ -1464,6 +1751,18 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
+    // 현재 날짜 및 계절 정보
+    const now = new Date();
+    const month = now.getMonth() + 1; // 1-12
+    const day = now.getDate();
+    const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+    const weekday = weekdays[now.getDay()];
+    let season = '';
+    if (month >= 3 && month <= 5) season = '봄';
+    else if (month >= 6 && month <= 8) season = '여름';
+    else if (month >= 9 && month <= 11) season = '가을';
+    else season = '겨울';
+
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -1472,7 +1771,13 @@ app.post("/api/chat", async (req, res) => {
           {
             role: "system",
             content:
-              "당신은 도움이 되는 AI 어시스턴트입니다. 한국어로 친근하고 정확하게 답변해주세요. 사용자의 질문에 성실하게 대답하고, 필요한 경우 추가 설명이나 예시를 제공해주세요.",
+              "당신은 ChatGPT입니다. 사용자의 모든 질문에 대해 유용하고 자연스러운 답변을 제공해주세요.\n\n" +
+              "현재 날짜 정보: " + `${now.getFullYear()}년 ${month}월 ${day}일 ${weekday}, ${season}` + "\n\n" +
+              "답변 지침:\n" +
+              "1. 날씨 질문: 실시간 날씨 데이터는 제공할 수 없지만, 현재 계절(" + season + ")과 해당 지역의 일반적인 날씨 패턴을 바탕으로 예상 날씨를 안내해주세요. 예를 들어 \"현재 " + season + "인 부산은 일반적으로 [계절별 특징]하며, 오늘 같은 날씨라면 [예상 날씨]일 가능성이 높습니다. 외출 시에는 [구체적인 조언]하시면 좋습니다\"와 같이 구체적이고 유용하게 답변해주세요.\n" +
+              "2. 일반 지식: 학습된 지식을 바탕으로 정확하고 도움이 되는 정보를 제공해주세요.\n" +
+              "3. 모든 질문에 대해: 친근하고 자연스러우며, '제공할 수 없습니다' 같은 부정적인 표현보다는 가능한 한 유용한 정보나 대안을 제시해주세요. ChatGPT 웹사이트에서 사용자들이 받는 것처럼 자연스럽고 도움이 되는 답변을 제공해주세요.\n" +
+              "4. 한국어로 친근하고 정확하게 답변하며, 사용자가 도움이 되도록 최선을 다해주세요.",
           },
           {
             role: "user",
@@ -1514,6 +1819,7 @@ app.post("/api/chat", async (req, res) => {
     });
   }
 });
+*/
 
 // ==================== 블로그 생성 API ====================
 
@@ -2824,6 +3130,73 @@ app.post("/api/store-info", async (req, res) => {
   }
 });
 
+// 통합 가게 정보 조회 (profiles + store_promotions)
+app.get("/api/store-info-all", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: "userId가 필요합니다" });
+    }
+
+    // profiles 정보 조회 (기본 정보)
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('store_place_url, store_name, store_address, store_business_hours, store_phone_number, store_main_menu, store_landmarks, store_keywords')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      devError('통합 정보 조회 - Profile 오류:', profileError);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+
+    // store_promotions 정보 조회 (심도 있는 정보)
+    const { data: promotionData } = await supabase
+      .from('store_promotions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    // 작성 개수 계산
+    let filledCount = 0;
+    if (promotionData) {
+      if (promotionData.signature_menu?.trim()) filledCount++;
+      if (promotionData.special_ingredients?.trim()) filledCount++;
+      if (promotionData.atmosphere_facilities?.trim()) filledCount++;
+      if (promotionData.owner_story?.trim()) filledCount++;
+      if (promotionData.recommended_situations?.trim()) filledCount++;
+      if (promotionData.sns_photo_points?.trim()) filledCount++;
+      if (promotionData.special_events?.trim()) filledCount++;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        basic: profileData,
+        promotion: promotionData || null
+      },
+      hasPromotion: !!promotionData,
+      filledCount: filledCount,
+      totalCount: 7
+    });
+
+  } catch (error) {
+    devError("통합 정보 조회 오류:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "서버 오류", 
+      details: error.message 
+    });
+  }
+});
+
 // 플레이스 크롤링 캐시 조회 (내 URL)
 app.get("/api/place-cache", async (req, res) => {
   try {
@@ -3661,6 +4034,529 @@ app.use((error, req, res, next) => {
   });
 });
 
+// 쇼츠 영상 기획/대본 API
+
+app.post("/api/shorts/plan-and-script", async (req, res) => {
+  try {
+    const {
+      keywords = "",
+      userId,
+      style = null,
+      duration = null,
+      manualSave = false,
+      plan: manualPlan,
+      script: manualScript,
+    } = req.body || {};
+
+    ensureUserId(userId);
+
+    let planText = "";
+    let scriptText = "";
+    let entry = null;
+
+    if (manualSave) {
+      planText = (manualPlan || "").trim();
+      scriptText = (manualScript || "").trim();
+      if (!planText && !scriptText) {
+        return res.status(400).json({
+          success: false,
+          error: "저장할 기획/대본 내용이 없습니다.",
+        });
+      }
+      entry = await savePlanHistoryEntry({
+        userId,
+        keywords,
+        style,
+        duration,
+        plan: planText,
+        script: scriptText,
+        source: "manual",
+      });
+      return res.json({
+        success: true,
+        from: "manual",
+        plan: planText,
+        script: scriptText,
+        entry,
+      });
+    }
+
+    if (!keywords || typeof keywords !== "string") {
+      return res.status(400).json({
+        success: false,
+        error: "키워드를 입력해주세요.",
+      });
+    }
+
+    const aiResult = await callOpenAIForShortsPlan({
+      keywords,
+      style,
+      durationSec: duration,
+    });
+
+    planText = aiResult.plan;
+    scriptText = aiResult.script;
+
+    entry = await savePlanHistoryEntry({
+      userId,
+      keywords,
+      style,
+      duration,
+      plan: planText,
+      script: scriptText,
+      source: "ai",
+    });
+
+    res.json({
+      success: true,
+      plan: planText,
+      script: scriptText,
+      entry,
+    });
+  } catch (error) {
+    devError("shorts plan-and-script 처리 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "AI 기획 생성 중 오류가 발생했습니다.",
+    });
+  }
+});
+
+app.get("/api/shorts/plan-history", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    ensureUserId(userId);
+    const items = await fetchPlanHistoryEntries(userId);
+    res.json({
+      success: true,
+      items,
+    });
+  } catch (error) {
+    devError("plan history 조회 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "저장된 초안을 불러오지 못했습니다.",
+    });
+  }
+});
+
+app.post("/api/shorts/plan-history", async (req, res) => {
+  try {
+    const {
+      userId,
+      keywords = "",
+      style = null,
+      duration = null,
+      plan = "",
+      script = "",
+      source = "manual",
+    } = req.body || {};
+
+    ensureUserId(userId);
+
+    if (!plan && !script) {
+      return res.status(400).json({
+        success: false,
+        error: "저장할 기획/대본 내용이 없습니다.",
+      });
+    }
+
+    const entry = await savePlanHistoryEntry({
+      userId,
+      keywords,
+      style,
+      duration,
+      plan,
+      script,
+      source,
+    });
+
+    res.json({
+      success: true,
+      entry,
+    });
+  } catch (error) {
+    devError("plan history 저장 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "초안을 저장하지 못했습니다.",
+    });
+  }
+});
+
+app.delete("/api/shorts/plan-history/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.query;
+    ensureUserId(userId);
+    if (!id) {
+      return res
+        .status(400)
+        .json({ success: false, error: "삭제할 항목 ID가 필요합니다." });
+    }
+    const ok = await deletePlanHistoryEntry(userId, id);
+    if (!ok) {
+      return res
+        .status(500)
+        .json({ success: false, error: "저장된 초안을 삭제하지 못했습니다." });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    devError("plan history 삭제 실패:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || "삭제 중 오류가 발생했습니다.",
+    });
+  }
+});
+
+// ==================== Runway API 설정 ====================
+
+const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY || "key_8f7dd7e27cc2ed2a9bbb19893c6636fab1d008334adf301de3074d2f739f4e894440353d83e15c4bc272a78237bc201ceca2d9032ae168ae5bd97f98c1b5d2b7";
+
+// Runway SDK 초기화 (공식 SDK 사용)
+let RunwayML = null;
+let runwayClient = null;
+
+try {
+  RunwayML = require("@runwayml/sdk");
+  runwayClient = new RunwayML({
+    apiKey: RUNWAY_API_KEY,
+  });
+  devLog("✅ Runway SDK 초기화 성공");
+} catch (error) {
+  devError("❌ Runway SDK 초기화 실패:", error.message);
+  devLog("⚠️ Runway SDK가 설치되지 않았습니다. 'pnpm add @runwayml/sdk' 실행 필요");
+}
+
+// Runway API: 이미지에서 동영상 생성 (Gen-4 또는 Gen-3 모델 사용)
+async function generateVideoWithRunway(imageUrl, prompt, duration = 5) {
+  try {
+    devLog("Runway API 호출 시작:", { imageUrl, prompt, duration });
+
+    if (!runwayClient) {
+      throw new Error("Runway SDK가 초기화되지 않았습니다. @runwayml/sdk 패키지를 설치해주세요.");
+    }
+
+    // Gen-4 Image to Video 또는 Gen-3 모델 사용
+    // 공식 문서: https://docs.dev.runwayml.com/
+    const task = await runwayClient.imageToVideo
+      .create({
+        model: "gen4_aleph", // 또는 "gen3_alpha_turbo" 등 사용 가능한 모델
+        imageUrl: imageUrl,
+        promptText: prompt || "cinematic food video, slow motion, professional lighting",
+        duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
+        ratio: "9:16", // 쇼츠 형식 (세로)
+      })
+      .waitForTaskOutput(); // 작업 완료까지 자동 대기
+
+    if (!task || !task.output || task.output.length === 0) {
+      throw new Error("Runway API 응답에 영상 URL이 없습니다.");
+    }
+
+    const videoUrl = Array.isArray(task.output) ? task.output[0] : task.output;
+    devLog("Runway 영상 생성 완료:", videoUrl);
+    
+    return { videoUrl, jobId: task.id || null };
+  } catch (error) {
+    devError("Runway API 오류:", error);
+    
+    // SDK 오류인 경우 직접 HTTP API로 폴백 시도
+    if (error.message.includes("SDK") || error.message.includes("require")) {
+      devLog("SDK 사용 불가, HTTP API로 폴백 시도");
+      return await generateVideoWithRunwayHTTP(imageUrl, prompt, duration);
+    }
+    
+    throw new Error(`Runway 영상 생성 실패: ${error.message}`);
+  }
+}
+
+// HTTP API 폴백 함수 (SDK 사용 불가 시)
+async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
+  try {
+    devLog("Runway HTTP API 호출 시작 (폴백 모드)");
+
+    const RUNWAY_API_BASE = "https://api.runwayml.com/v1";
+
+    // Step 1: 이미지에서 동영상 생성 요청
+    const response = await axios.post(
+      `${RUNWAY_API_BASE}/image-to-video`,
+      {
+        image_url: imageUrl,
+        prompt: prompt || "cinematic food video, slow motion, professional lighting",
+        duration: Math.min(Math.max(duration, 3), 10),
+        aspect_ratio: "9:16",
+        watermark: false,
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${RUNWAY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      }
+    );
+
+    if (!response.data || !response.data.id) {
+      throw new Error("Runway API 응답에 job_id가 없습니다.");
+    }
+
+    const jobId = response.data.id;
+    devLog("Runway 작업 ID:", jobId);
+
+    // Step 2: Polling으로 상태 확인
+    let status = "pending";
+    let videoUrl = null;
+    let attempts = 0;
+    const maxAttempts = 60; // 최대 5분 대기 (5초 간격)
+
+    while (status !== "succeeded" && status !== "failed" && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // 5초 대기
+
+      const statusResponse = await axios.get(
+        `${RUNWAY_API_BASE}/image-to-video/${jobId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${RUNWAY_API_KEY}`,
+          },
+          timeout: 10000,
+        }
+      );
+
+      status = statusResponse.data.status || "pending";
+      devLog(`Runway 작업 상태 (시도 ${attempts + 1}/${maxAttempts}):`, status);
+
+      if (status === "succeeded" && statusResponse.data.output) {
+        videoUrl = Array.isArray(statusResponse.data.output)
+          ? statusResponse.data.output[0]
+          : statusResponse.data.output;
+        break;
+      }
+
+      if (status === "failed") {
+        throw new Error(statusResponse.data.error || "Runway 영상 생성 실패");
+      }
+
+      attempts++;
+    }
+
+    if (!videoUrl) {
+      throw new Error("영상 생성 시간이 초과되었습니다.");
+    }
+
+    devLog("Runway 영상 생성 완료 (HTTP):", videoUrl);
+    return { videoUrl, jobId };
+  } catch (error) {
+    devError("Runway HTTP API 오류:", error);
+    throw new Error(`Runway 영상 생성 실패: ${error.message}`);
+  }
+}
+
+// ==================== 쇼츠 영상 생성 API ====================
+
+app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
+  try {
+    const userId = req.headers["user-id"] || req.body.userId;
+    ensureUserId(userId);
+
+    // multer 에러 처리
+    if (req.fileValidationError) {
+      return res.status(400).json({
+        success: false,
+        error: req.fileValidationError,
+      });
+    }
+
+    try {
+      const {
+        style,
+        menuName,
+        menuFeatures = "",
+        menuPrice = "",
+        music = "auto",
+        duration = "10",
+      } = req.body;
+
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            error: "이미지 파일이 필요합니다.",
+          });
+        }
+
+        if (!menuName) {
+          return res.status(400).json({
+            success: false,
+            error: "메뉴명이 필요합니다.",
+          });
+        }
+
+        if (!style) {
+          return res.status(400).json({
+            success: false,
+            error: "영상 스타일이 필요합니다.",
+          });
+        }
+
+        // 이미지를 Supabase Storage에 업로드
+        const fileExt = req.file.originalname.split(".").pop();
+        const fileName = `${userId}/${Date.now()}.${fileExt}`;
+        const filePath = `shorts-images/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("uploads")
+          .upload(filePath, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          devError("이미지 업로드 실패:", uploadError);
+          // 업로드 실패해도 계속 진행 (임시)
+        }
+
+        // Public URL 생성
+        const { data: urlData } = supabase.storage
+          .from("uploads")
+          .getPublicUrl(filePath);
+        const imageUrl = urlData?.publicUrl || "";
+
+        // 스타일별 프롬프트 생성
+        const stylePrompts = {
+          luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
+          fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
+          chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
+          plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
+          simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
+        };
+
+        const prompt = `${stylePrompts[style] || stylePrompts.simple}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video.`;
+
+        // 영상 데이터베이스에 저장 (처리 중 상태)
+        const { data: videoData, error: dbError } = await supabase
+          .from("shorts_videos")
+          .insert({
+            user_id: userId,
+            title: menuName,
+            description: menuFeatures,
+            style: style,
+            duration_sec: parseInt(duration) || 10,
+            music_type: music,
+            menu_name: menuName,
+            menu_features: menuFeatures,
+            menu_price: menuPrice,
+            image_url: imageUrl,
+            status: "processing",
+          })
+          .select("*")
+          .single();
+
+        if (dbError) {
+          devError("영상 데이터 저장 실패:", dbError);
+          return res.status(500).json({
+            success: false,
+            error: "영상 데이터 저장 실패: " + dbError.message,
+          });
+        }
+
+        // Runway API로 영상 생성 (비동기)
+        generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5)
+          .then(async ({ videoUrl, jobId }) => {
+            // 영상 생성 완료로 업데이트
+            await supabase
+              .from("shorts_videos")
+              .update({
+                status: "completed",
+                video_url: videoUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", videoData.id);
+            
+            devLog("영상 생성 완료 및 DB 업데이트:", videoData.id);
+          })
+          .catch(async (error) => {
+            devError("Runway 영상 생성 실패:", error);
+            // 실패 상태로 업데이트
+            await supabase
+              .from("shorts_videos")
+              .update({
+                status: "failed",
+                error_message: error.message,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", videoData.id);
+          });
+
+      res.json({
+        success: true,
+        data: {
+          id: videoData.id,
+          status: "processing",
+          message: "영상 생성이 시작되었습니다. 잠시 후 마이페이지에서 확인하세요.",
+        },
+      });
+    } catch (error) {
+      devError("영상 생성 처리 실패:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "영상 생성 중 오류가 발생했습니다.",
+      });
+    }
+  } catch (error) {
+    devError("영상 생성 API 오류:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "영상 생성 API 오류",
+    });
+  }
+});
+
+// ==================== 쇼츠 영상 목록 조회 API ====================
+
+app.get("/api/shorts/videos", async (req, res) => {
+  try {
+    const userId = req.headers["user-id"] || req.query.userId;
+    ensureUserId(userId);
+
+    const { page = 1, limit = 20, status } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = supabase
+      .from("shorts_videos")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + parseInt(limit) - 1);
+
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: videos, error, count } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      data: videos || [],
+      pagination: {
+        total: count || 0,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil((count || 0) / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    devError("영상 목록 조회 실패:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "영상 목록을 불러오지 못했습니다.",
+    });
+  }
+});
+
 // ==================== 서버 시작 ====================
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
@@ -3679,14 +4575,16 @@ if (process.env.VERCEL) {
   try {
     const cron = require('node-cron');
     const { renewExpiredSubscriptions, notifyTokenExceeded, recordDailyStats } = require('./api/cron/subscription-renewal');
+    const updateExpiredPolicies = require('./api/cron/policy-status-update');
 
-    // 매일 자정에 구독 갱신
+    // 매일 자정에 구독 갱신 및 정책 상태 업데이트
     cron.schedule('0 0 * * *', async () => {
-      devLog('🔄 [CRON] 자정 구독 갱신 작업 시작...');
+      devLog('🔄 [CRON] 자정 구독 갱신 및 정책 상태 업데이트 작업 시작...');
       try {
         await renewExpiredSubscriptions();
         await recordDailyStats();
-        devLog('✅ [CRON] 구독 갱신 작업 완료');
+        const policyResult = await updateExpiredPolicies();
+        devLog('✅ [CRON] 구독 갱신 및 정책 상태 업데이트 작업 완료', policyResult);
       } catch (error) {
         devError('❌ [CRON] 구독 갱신 실패:', error);
       }

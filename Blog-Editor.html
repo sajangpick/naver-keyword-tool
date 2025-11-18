@@ -3,22 +3,23 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>AI 블로그 생성기 - 사장픽</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" />
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-    <script src="/assets/common-header.js?v=20251022" defer></script>
     <style>
       :root {
         --accent-color: #ff7b54;
         --bg-color: #fff7f0;
         --text-primary: #201a17;
         --text-secondary: #7a6a60;
-        --primary-green: #03C75A;
+        --primary-green: var(--accent-color);
         --primary-white: #FFFFFF;
+        --naver-green: var(--accent-color);
+        --naver-green-50: rgba(255, 123, 84, 0.1);
       }
 
       * {
@@ -43,9 +44,9 @@
       }
       @media (max-width: 768px) {
         body {
-          padding-top: 60px;
-          padding-left: 12px;
-          padding-right: 12px;
+          padding-top: 0px;
+          padding-left: 0px;
+          padding-right: 0px;
         }
       }
 
@@ -75,27 +76,28 @@
         align-items: center;
         gap: 10px;
         font-weight: 800;
-        font-size: 20px;
+        font-size: 12px;
         color: var(--text-primary);
         cursor: pointer;
         flex: 0 0 auto;
       }
 
       .logo-icon {
-        width: 40px;
-        height: 40px;
+        width: 28px;
+        height: 28px;
         border-radius: 12px;
         background: var(--accent-color);
         color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 14px;
       }
       
       .logo-text {
         letter-spacing: -0.03em;
         text-transform: lowercase;
+        font-size: 12px;
       }
 
       .header-slogan {
@@ -139,6 +141,16 @@
         
         .header-auth {
           order: 2;
+        }
+
+        .logo-icon {
+          width: 26px;
+          height: 26px;
+          font-size: 13px;
+        }
+
+        .logo-text {
+          font-size: 12px;
         }
       }
 
@@ -281,13 +293,6 @@
         letter-spacing: -0.03em;
         text-transform: lowercase;
         font-size: 12px;
-      }
-      .header-slogan {
-        text-align: center;
-        font-size: 24px;
-        font-weight: 700;
-        color: #000;
-        white-space: nowrap;
       }
       @media (max-width: 768px) {
         .logo-icon {
@@ -456,6 +461,18 @@
         min-height: 100vh;
       }
 
+      @media (max-width: 768px) {
+        .container {
+          padding: 12px 8px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .container {
+          padding: 12px 8px;
+        }
+      }
+
       @media (max-width: 992px) {
         .side-nav {
           position: fixed;
@@ -490,9 +507,19 @@
           font-size: 14px;
         }
 
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: #ff7e46;
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: #ff7e46;
+          background: rgba(255, 126, 70, 0.1);
+        }
+
         .main-content {
           padding-left: 0;
-          padding-bottom: 90px;
+          padding-bottom: 100px;
         }
       }
 
@@ -533,8 +560,18 @@
           background: #ffffff;
         }
 
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: #ff7e46;
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: #ff7e46;
+          background: rgba(255, 126, 70, 0.1);
+        }
+
         .main-content {
-          padding-bottom: 70px;
+          padding-bottom: 5px;
         }
       }
 
@@ -566,9 +603,9 @@
         transition: all 0.3s ease;
       }
       .home-btn:hover {
-        background: #02a84a;
+        background: var(--accent-color);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(3, 199, 90, 0.3);
+        box-shadow: 0 4px 12px rgba(255, 123, 84, 0.3);
       }
 
       .auth-buttons {
@@ -579,19 +616,19 @@
       .auth-user {
         display: none;
         align-items: center;
-        gap: 12px;
-        padding: 12px 24px;
-        border-radius: 8px;
-        background: var(--accent-color);
-        color: var(--primary-white);
+        gap: 14px;
+        padding: 10px 16px;
+        border-radius: 16px;
+        background: rgba(255, 123, 84, 0.12);
+        color: var(--text-primary);
       }
       .auth-user__avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--primary-white);
-        color: var(--accent-color);
-        font-weight: 800;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -601,37 +638,45 @@
       .auth-user__meta {
         display: flex;
         flex-direction: column;
-        line-height: 1.3;
+        line-height: 1.2;
       }
       .auth-user__label {
         font-size: 11px;
         font-weight: 600;
-        color: var(--primary-white);
-        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+        letter-spacing: 0.08em;
         text-transform: uppercase;
+        text-decoration: none;
       }
       .auth-user__email {
         font-size: 14px;
         font-weight: 600;
-        color: var(--primary-white);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: color 0.2s ease;
+        text-decoration: none;
+      }
+      .auth-user__email:hover {
+        color: var(--accent-color);
       }
       .auth-user__logout {
         height: 36px;
         padding: 0 16px;
-        border-radius: 6px;
-        border: 1px solid rgba(255,255,255,0.3);
-        background: transparent;
-        color: var(--primary-white);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        color: var(--text-primary);
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
       }
       .auth-user__logout:hover {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 126, 70, 0.12);
+        transform: translateY(-2px);
       }
       .auth-btn {
         display: inline-flex;
@@ -719,18 +764,19 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 32px;
+            padding: 5px;
+            background: transparent;
         }
 
         @media (max-width: 768px) {
           .container {
-            padding: 16px;
+            padding: 12px 8px;
           }
         }
 
         @media (max-width: 360px) {
           .container {
-            padding: 12px;
+            padding: 12px 8px;
           }
         }
 
@@ -738,65 +784,85 @@
         .header-section {
             background: #ffe8d9;
             border-radius: 20px 20px 0 0;
-            padding: 40px 40px 20px 40px;
+            padding: 8px 20px 8px 20px;
             margin-bottom: 0;
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .page-header {
-            margin-bottom: 24px;
+            margin-bottom: 0;
             text-align: center;
+            width: 100%;
         }
 
         .page-header h1 {
-            font-size: 32px;
+            font-size: 12pt;
             font-weight: 800;
             color: var(--text-primary);
-            margin-bottom: 8px;
+            margin-bottom: 2px;
+            line-height: 1.2;
         }
 
         .page-header p {
-            font-size: 16px;
+            font-size: 8pt;
             color: var(--text-secondary);
-            line-height: 1.6;
+            line-height: 1.3;
+            margin: 0;
         }
 
-        /* 탭 네비게이션을 헤더 섹션 안에 통합 */
-        .header-section .tab-navigation {
-            margin: 0;
-            border-radius: 12px;
-        }
 
         @media (max-width: 768px) {
           .header-section {
-            padding: 24px 20px 16px 20px;
+            padding: 8px 12px 8px 12px;
             border-radius: 16px 16px 0 0;
+            min-height: 56px;
           }
 
           .page-header {
-            margin-bottom: 20px;
+            margin-bottom: 0;
           }
 
           .page-header h1 {
-            font-size: 24px;
+            font-size: 12pt;
+            margin-bottom: 2px;
+            line-height: 1.2;
           }
 
           .page-header p {
-            font-size: 14px;
+            font-size: 8pt;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
           }
         }
 
         @media (max-width: 360px) {
           .header-section {
-            padding: 20px 12px 12px 12px;
+            padding: 8px 8px 8px 8px;
             border-radius: 12px 12px 0 0;
+            min-height: 56px;
+          }
+
+          .page-header {
+            margin-bottom: 0;
           }
 
           .page-header h1 {
-            font-size: 20px;
+            font-size: 12pt;
+            margin-bottom: 2px;
+            line-height: 1.2;
           }
 
           .page-header p {
-            font-size: 12px;
+            font-size: 8pt;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
           }
         }
 
@@ -806,12 +872,24 @@
             border-radius: 0 0 20px 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
-            margin-bottom: 32px;
+            margin-bottom: 40px;
             margin-top: 0;
         }
 
         .review-content {
-            padding: 40px;
+            padding: 36px;
+        }
+
+        @media (max-width: 768px) {
+          .review-content {
+            padding: 24px 16px;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .review-content {
+            padding: 20px 12px;
+          }
         }
 
         .form-group {
@@ -833,6 +911,7 @@
 
         .input-field,
         .form-group input[type="text"],
+        .form-group input[type="tel"],
         .form-group textarea {
             width: 100%;
             padding: 12px 16px;
@@ -846,6 +925,7 @@
 
         .input-field:focus,
         .form-group input[type="text"]:focus,
+        .form-group input[type="tel"]:focus,
         .form-group textarea:focus {
             outline: none;
             border-color: var(--accent-color);
@@ -937,8 +1017,17 @@
         }
 
       .result-section {
-            padding: 40px;
             display: none;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 40px;
+            margin-top: 0;
+        }
+        
+        .result-content {
+            padding: 36px;
         }
 
         .result-section.show {
@@ -948,7 +1037,7 @@
         .step-indicator {
         display: flex;
         justify-content: space-between;
-            margin-bottom: 30px;
+            margin-bottom: 12px;
             gap: 10px;
         }
 
@@ -960,28 +1049,28 @@
             border-radius: 10px;
         font-weight: 600;
             font-size: 0.9rem;
-            color: #6c757d;
+            color: #495057;
         transition: all 0.3s ease;
       }
 
         .step.active {
-            background: var(--naver-green);
+            background: var(--accent-color);
         color: white;
       }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 20px 40px;
         }
 
         .spinner {
             width: 50px;
             height: 50px;
             border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--naver-green);
+            border-top: 5px solid var(--accent-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 12px;
         }
 
         @keyframes spin {
@@ -998,60 +1087,98 @@
       }
 
         .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 20px;
+            background: rgba(255, 123, 84, 0.15);
+            color: #c75a2a;
+            padding: 12px 16px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 123, 84, 0.3);
+            font-size: 0.85rem;
+        }
+        
+        .success strong {
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .topic-card {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
       }
 
         .topic-card:hover {
-            border-color: var(--naver-green);
-            background: var(--naver-green-50);
+            border-color: var(--accent-color);
+            background: rgba(255, 123, 84, 0.1);
             transform: translateY(-2px);
         }
 
         .topic-card h3 {
             color: #333;
-            margin-bottom: 10px;
-            font-size: 1.2rem;
+            margin-bottom: 6px;
+            font-size: 1rem;
         }
 
         .topic-card p {
             color: #666;
-            margin-bottom: 10px;
-            line-height: 1.5;
+            margin-bottom: 6px;
+            line-height: 1.4;
+            font-size: 0.85rem;
         }
 
         .topic-card .keywords {
-            font-size: 0.9rem;
-            color: var(--naver-green);
+            font-size: 0.8rem;
+            color: var(--accent-color);
             font-weight: 600;
         }
 
         .blog-content {
             background: #f8f9fa;
             border-radius: 15px;
-            padding: 30px;
-            line-height: 1.8;
+            padding: 20px;
+            line-height: 1.6;
             white-space: pre-wrap;
-            font-size: 1rem;
+            font-size: 0.85rem;
+            width: 100%;
+            max-width: 100%;
         }
 
-        .blog-content h3 {
+        #blogTopics {
+            margin-top: 8px;
+        }
+        
+        #blogTopics h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
             color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
+        }
+        
+        #blogTopics p {
+            font-size: 0.85rem;
+            margin: 6px 0 12px 0;
+            color: #666;
+        }
+        
+        #blogContent h3 {
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        
+        .angle-info-box {
+            font-size: 0.875rem;
+        }
+        
+        .angle-info-box strong {
+            font-size: 0.875rem;
+        }
+        
+        .angle-info-box small {
+            font-size: 0.8rem;
         }
 
         /* AI 키워드 버튼 스타일 */
@@ -1151,9 +1278,6 @@
         }
 
             @media (max-width: 768px) {
-            .form-section .review-content {
-                padding: 20px 15px;
-            }
             input[type="text"], input[type="number"], textarea, select {
                 font-size: 0.77rem !important;
                 padding: 10px !important;
@@ -1161,6 +1285,21 @@
             button {
                 font-size: 11px;
                 padding: 9px 14px;
+            }
+            /* 저장/불러오기 버튼은 가로로 정렬 유지 - 먼저 예외 처리 */
+            .store-buttons-container {
+                flex-direction: row !important;
+                display: flex !important;
+            }
+            .store-buttons-container .btn,
+            .store-buttons-container .btn.btn-primary,
+            .store-buttons-container button.btn,
+            .store-buttons-container #loadStoreInfoBtn,
+            .store-buttons-container #saveStoreInfoBtn {
+                width: auto !important;
+                flex: 1 !important;
+                max-width: none !important;
+                min-width: 0 !important;
             }
             .btn {
                 width: 100%;
@@ -1170,6 +1309,17 @@
                 min-height: 40px;
                 border-radius: 10px;
                 gap: 4px;
+            }
+            /* 저장/불러오기 버튼은 가로로 정렬 유지 - 다시 한번 강제 */
+            .store-buttons-container .btn,
+            .store-buttons-container .btn.btn-primary,
+            .store-buttons-container button.btn,
+            .store-buttons-container #loadStoreInfoBtn,
+            .store-buttons-container #saveStoreInfoBtn {
+                width: auto !important;
+                flex: 1 !important;
+                max-width: none !important;
+                min-width: 0 !important;
             }
             .btn i {
                 font-size: 13px;
@@ -1183,12 +1333,99 @@
 
             .step-indicator {
                 flex-direction: column;
-                gap: 10px;
+                gap: 6px;
+                margin-bottom: 8px;
             }
 
             .step {
                 font-size: 0.85rem;
-                padding: 12px 8px;
+                padding: 10px 8px;
+                color: #495057;
+                background: #f8f9fa;
+            }
+            
+            .step.active {
+                color: white;
+                background: var(--accent-color);
+            }
+            
+            .loading {
+                padding: 12px 20px;
+            }
+            
+            .spinner {
+                margin: 0 auto 8px;
+            }
+            
+            .result-section {
+                padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+            }
+            
+            .result-content {
+                padding: 24px 16px;
+            }
+            
+            .success {
+                padding: 10px 12px;
+                margin-bottom: 6px;
+                font-size: 0.8rem;
+            }
+            
+            .success strong {
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            
+            .topic-card {
+                padding: 10px 12px;
+                margin-bottom: 6px;
+            }
+            
+            .topic-card h3 {
+                font-size: 0.9rem;
+                margin-bottom: 4px;
+            }
+            
+            .topic-card p {
+                font-size: 0.8rem;
+                margin-bottom: 4px;
+            }
+            
+            .topic-card .keywords {
+                font-size: 0.75rem;
+            }
+            
+            #blogTopics h3 {
+                font-size: 1rem;
+                margin-bottom: 4px;
+            }
+            
+            #blogTopics p {
+                font-size: 0.8rem;
+                margin: 4px 0 8px 0;
+            }
+            
+            #blogContent h3 {
+                font-size: 0.875rem;
+                margin-bottom: 12px;
+            }
+            
+            .angle-info-box {
+                font-size: 0.8rem;
+            }
+            
+            .angle-info-box strong {
+                font-size: 0.8rem;
+            }
+            
+            .angle-info-box small {
+                font-size: 0.75rem;
+            }
+            
+            .blog-content {
+                padding: 16px 12px;
+                font-size: 0.8rem;
+                line-height: 1.6;
             }
             .ai-keyword-btn {
                 padding: 9px 14px;
@@ -1208,8 +1445,23 @@
             .form-group label {
                 font-size: 0.9rem;
             }
-            .form-section {
-                padding: 20px 15px;
+        }
+
+        @media (max-width: 360px) {
+            /* 저장/불러오기 버튼은 가로로 정렬 유지 */
+            .store-buttons-container {
+                flex-direction: row !important;
+                display: flex !important;
+            }
+            .store-buttons-container .btn,
+            .store-buttons-container .btn.btn-primary,
+            .store-buttons-container button.btn,
+            .store-buttons-container #loadStoreInfoBtn,
+            .store-buttons-container #saveStoreInfoBtn {
+                width: auto !important;
+                flex: 1 1 auto !important;
+                max-width: none !important;
+                min-width: 0 !important;
             }
         }
     </style>
@@ -1272,6 +1524,14 @@
       <span class="ico"><i class="fa-solid fa-utensils"></i></span>
       <span>레시피</span>
     </a>
+    <a class="menu-item" href="/shorts-editor.html">
+      <span class="ico"><i class="fa-solid fa-film"></i></span>
+      <span>영상</span>
+    </a>
+    <a class="menu-item" href="/sajangpick-book.html">
+      <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+      <span>전자책</span>
+    </a>
     <a class="menu-item" href="/news-board.html">
       <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
       <span>정보</span>
@@ -1284,19 +1544,22 @@
 
   <div class="main-content">
     <div class="container">
-        <div class="page-header">
-            <h1>AI 블로그 생성기</h1>
-            <p>AI를 활용하여 고품질 블로그 콘텐츠를 자동으로 생성해보세요.</p>
-        </div>
-
-        <!-- 탭 네비게이션 -->
-        <div class="tab-navigation">
-            <button class="tab-btn active" data-tab="our-store">우리매장</button>
-            <button class="tab-btn" data-tab="review-team">체험단리뷰</button>
+        <!-- 헤더 섹션 (타이틀만) -->
+        <div class="header-section">
+            <div class="page-header">
+                <h1>AI 블로그 생성기</h1>
+                <p>AI를 활용하여 고품질 블로그 콘텐츠를 자동으로 생성해보세요.</p>
+            </div>
         </div>
 
         <div class="form-section">
             <div class="review-content">
+                <!-- 탭 네비게이션 (설명 아래) -->
+                <div class="tab-navigation" style="margin-bottom: 24px;">
+                    <button class="tab-btn active" data-tab="our-store">우리매장</button>
+                    <button class="tab-btn" data-tab="review-team">체험단리뷰</button>
+                </div>
+
                 <!-- 우리매장 탭 -->
                 <div class="tab-content active" id="our-store-tab">
                     <!-- 안내 문구 -->
@@ -1304,12 +1567,12 @@
                     <p style="margin: 0; color: var(--accent-color); font-size: 14px; margin-bottom: 10px;">
                         💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
                     </p>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" id="loadStoreInfoBtn" class="btn btn-primary" style="flex: 1;">
-                            📥 저장된 정보 불러오기
+                    <div class="store-buttons-container" style="display: flex !important; flex-direction: row !important; gap: 10px; align-items: stretch;">
+                        <button type="button" id="loadStoreInfoBtn" class="btn btn-primary" style="flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; max-width: none !important; font-size: 12px;">
+                            📥 저장된 정보<br>불러오기
                         </button>
-                        <button type="button" id="saveStoreInfoBtn" class="btn" style="flex: 1;">
-                            📌 가게 정보 저장하기
+                        <button type="button" id="saveStoreInfoBtn" class="btn" style="flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; max-width: none !important; font-size: 12px;">
+                            📌 가게 정보<br>저장하기
                         </button>
                     </div>
                 </div>
@@ -1321,7 +1584,7 @@
                 type="text"
                         id="companyName" 
                         name="companyName" 
-                        placeholder="예: 동흥안가"
+                        placeholder="예: 해운대국밥"
               />
                     <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
             </div>
@@ -1332,7 +1595,7 @@
                 type="text"
                         id="companyAddress" 
                         name="companyAddress" 
-                        placeholder="예: 부산광역시 해운대구 우동 1394-84"
+                        placeholder="예: 부산광역시 해운대구 우동 999-1"
                     />
                     <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
             </div>
@@ -1531,38 +1794,40 @@
           </div>
 
         <div class="result-section" id="resultSection">
-            <div class="step-indicator">
-                <div class="step" id="step1">1. 가게 정보 분석</div>
-                <div class="step" id="step2">2. 메뉴 분석</div>
-                <div class="step" id="step3">3. 주제 추천</div>
-                <div class="step" id="step4">4. 글 생성</div>
-          </div>
+            <div class="result-content">
+                <div class="step-indicator">
+                    <div class="step" id="step1">1. 가게 정보 분석</div>
+                    <div class="step" id="step2">2. 메뉴 분석</div>
+                    <div class="step" id="step3">3. 주제 추천</div>
+                    <div class="step" id="step4">4. 글 생성</div>
+                </div>
 
-            <div id="loadingDiv" class="loading">
-                <div class="spinner"></div>
-                <p>AI가 가게 정보를 분석하고 있습니다...</p>
+                <div id="loadingDiv" class="loading">
+                    <div class="spinner"></div>
+                    <p>AI가 가게 정보를 분석하고 있습니다...</p>
+                </div>
+
+                <div id="errorDiv" class="error" style="display: none;">
+                    <strong>오류가 발생했습니다:</strong>
+                    <p id="errorMessage"></p>
+                </div>
+
+                <div id="successDiv" class="success" style="display: none;">
+                    <strong>블로그가 성공적으로 생성되었습니다!</strong>
+                </div>
+
+                <div id="blogTopics" style="display: none;">
+                    <h3>추천 블로그 주제 (5개) - 클릭하여 선택</h3>
+                    <p>마음에 드는 주제를 클릭하시면 해당 주제로 블로그 글을 생성합니다</p>
+                    <div id="topicsList"></div>
+                </div>
+
+                <div id="blogContent" style="display: none;">
+                    <h3>생성된 블로그 글</h3>
+                    <div id="blogText" class="blog-content"></div>
+                </div>
+            </div>
         </div>
-
-            <div id="errorDiv" class="error" style="display: none;">
-                <strong>오류가 발생했습니다:</strong>
-                <p id="errorMessage"></p>
-            </div>
-
-            <div id="successDiv" class="success" style="display: none;">
-                <strong>블로그가 성공적으로 생성되었습니다!</strong>
-            </div>
-
-            <div id="blogTopics" style="display: none;">
-                <h3>추천 블로그 주제 (5개) - 클릭하여 선택</h3>
-                <p style="color: #666; margin: 10px 0;">마음에 드는 주제를 클릭하시면 해당 주제로 블로그 글을 생성합니다</p>
-                <div id="topicsList"></div>
-            </div>
-
-            <div id="blogContent" style="display: none;">
-                <h3>생성된 블로그 글</h3>
-                <div id="blogText" class="blog-content"></div>
-            </div>
-      </div>
     </div>
   </div>
 
@@ -2075,6 +2340,7 @@
                 // 앵글 정보 표시
                 if (metadata.writingAngle) {
                     const angleInfo = document.createElement('div');
+                    angleInfo.className = 'angle-info-box';
                     angleInfo.style.cssText = 'background: #e7f3ff; border: 1px solid #2196F3; border-radius: 10px; padding: 15px; margin-bottom: 20px; color: #1976D2;';
                     angleInfo.innerHTML = `<strong>📝 글쓰기 관점:</strong> ${metadata.writingAngle}<br><small>이 관점으로 글이 작성되었습니다. 다음에는 다른 관점으로 작성됩니다!</small>`;
                     blogContent.insertBefore(angleInfo, blogText);
@@ -2347,74 +2613,210 @@
     <script src="/assets/performance-tracker.js"></script>
 
     <script>
-      // 로그인 상태 UI 업데이트 (Supabase 세션 기반)
-      async function updateAuthUI() {
-        const authUser = document.getElementById("authUser");
+      // 로그인 상태 확인 및 UI 업데이트 함수들
+      async function getActiveSession() {
+        if (!window.authState?.supabase) {
+          return null;
+        }
+        try {
+          const { data } = await window.authState.supabase.auth.getSession();
+          return data?.session ?? null;
+        } catch (error) {
+          console.error("세션 조회 실패:", error);
+          return null;
+        }
+      }
+
+      function getCurrentUser() {
+        try {
+          const raw = localStorage.getItem('userData');
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          console.warn('[auth] 사용자 정보를 읽을 수 없습니다:', error);
+          return null;
+        }
+      }
+
+      function renderLoggedOut() {
         const loginBtn = document.getElementById("loginBtn");
         const signupBtn = document.getElementById("signupBtn");
-        const userAvatar = document.getElementById("userAvatar");
         const userEmailSpan = document.getElementById("userEmail");
         const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
 
-        // Supabase 세션 확인
-        let session = null;
-        if (window.authState?.supabase) {
-          try {
-            const { data } = await window.authState.supabase.auth.getSession();
-            session = data?.session;
-          } catch (error) {
-            console.error("세션 확인 오류:", error);
-          }
+        if (authUser) authUser.style.display = "none";
+        if (loginBtn) loginBtn.style.display = "inline-flex";
+        if (signupBtn) signupBtn.style.display = "inline-flex";
+        if (userEmailSpan) {
+          userEmailSpan.textContent = "";
+          userEmailSpan.title = "";
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = "none";
+          logoutBtn.onclick = null;
+        }
+      }
+
+      function renderLoggedIn(user) {
+        const loginBtn = document.getElementById("loginBtn");
+        const signupBtn = document.getElementById("signupBtn");
+        const userEmailSpan = document.getElementById("userEmail");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+        const userAvatar = document.getElementById("userAvatar");
+
+        if (loginBtn) loginBtn.style.display = "none";
+        if (signupBtn) signupBtn.style.display = "none";
+        if (authUser) authUser.style.display = "flex";
+
+        if (userEmailSpan) {
+          const email = user.email || user.displayName || "마이페이지";
+          userEmailSpan.textContent = email;
+          userEmailSpan.title = `${email} (마이페이지로 이동)`;
         }
 
-        if (session?.user) {
-          const user = session.user;
+        if (userAvatar) {
+          const base =
+            user.user_metadata?.full_name ||
+            user.displayName ||
+            user.email ||
+            user.app_metadata?.provider ||
+            "U";
+          const initial = (base.trim()[0] || "U").toUpperCase();
+          userAvatar.textContent = initial;
+          userAvatar.setAttribute("aria-label", `${base} 프로필`);
+        }
 
-          // 로그인 버튼 숨기기
-          if (loginBtn) loginBtn.style.display = "none";
-          if (signupBtn) signupBtn.style.display = "none";
-
-          // 사용자 정보 표시
-          if (authUser) authUser.style.display = "flex";
-          if (userEmailSpan) {
-            const email = user.email || "마이페이지";
-            userEmailSpan.textContent = email;
-            userEmailSpan.title = `${email} (마이페이지로 이동)`;
-          }
-          if (userAvatar) {
-            const base = user.user_metadata?.full_name || user.email || "U";
-            userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-          }
-          if (logoutBtn) {
-            logoutBtn.style.display = "inline-flex";
-            logoutBtn.onclick = async function () {
-              if (!confirm("로그아웃 하시겠습니까?")) return;
-              try {
-                if (window.authState?.signOut) {
-                  await window.authState.signOut();
-                }
-              } finally {
-                localStorage.removeItem("isLoggedIn");
-                localStorage.removeItem("userData");
-                location.href = "/login.html";
+        if (logoutBtn) {
+          logoutBtn.style.display = "inline-flex";
+          logoutBtn.onclick = async function () {
+            if (!confirm("로그아웃 하시겠습니까?")) return;
+            try {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
               }
-            };
+            } finally {
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("userData");
+              location.href = "/login.html";
+            }
+          };
+        }
+      }
+
+      let authRenderToken = 0;
+
+      async function updateAuthUI() {
+        const currentToken = ++authRenderToken;
+        
+        // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
+        const storedUserData = getCurrentUser();
+        if (storedUserData && storedUserData.email) {
+          // localStorage에 사용자 정보가 있으면 즉시 로그인 상태로 표시
+          if (currentToken === authRenderToken) {
+            renderLoggedIn({
+              email: storedUserData.email,
+              displayName: storedUserData.displayName,
+              user_metadata: { full_name: storedUserData.displayName },
+              app_metadata: { provider: storedUserData.provider || 'kakao' }
+            });
           }
         } else {
-          // 로그인하지 않은 상태
-          if (authUser) authUser.style.display = "none";
-          if (loginBtn) loginBtn.style.display = "inline-flex";
-          if (signupBtn) signupBtn.style.display = "inline-flex";
-          if (logoutBtn) logoutBtn.style.display = "none";
+          // localStorage에 사용자 정보가 없으면 로그아웃 상태로 표시
+          if (currentToken === authRenderToken) {
+            renderLoggedOut();
+          }
+        }
+
+        // Supabase 세션 확인 (auth-state.js가 로드된 경우)
+        if (window.authState?.supabase) {
+          try {
+            const session = await getActiveSession();
+            if (currentToken !== authRenderToken) return;
+
+            if (session?.user) {
+              renderLoggedIn(session.user);
+            } else if (!storedUserData) {
+              // 세션이 없고 localStorage에도 없으면 로그아웃 상태
+              renderLoggedOut();
+            }
+          } catch (error) {
+            console.error("인증 상태 확인 실패:", error);
+            // 에러 발생 시 localStorage 기반으로 표시
+            if (currentToken === authRenderToken && !storedUserData) {
+              renderLoggedOut();
+            }
+          }
         }
       }
 
-      // 페이지 로드 시 실행
-      updateAuthUI();
-      window.addEventListener("auth:state-changed", updateAuthUI);
-      if (window.authState?.syncSession) {
-        window.authState.syncSession();
+      // 인증 상태 UI 업데이트 (즉시 실행 및 auth-state.js 로드 후 재실행)
+      async function initAuthUI() {
+        // 즉시 localStorage 기반으로 UI 업데이트 (빠른 초기 렌더링)
+        if (typeof updateAuthUI === 'function') {
+          await updateAuthUI();
+        }
+
+        // auth-state.js가 로드될 때까지 대기
+        let waitCount = 0;
+        const maxWait = 200; // 20초 대기
+        while (!window.authState && waitCount < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waitCount++;
+        }
+
+        if (window.authState) {
+          try {
+            // Supabase 세션 동기화 후 UI 업데이트
+            if (window.authState?.syncSession) {
+              await window.authState.syncSession();
+            }
+            await updateAuthUI();
+            
+            // 인증 상태 변경 이벤트 리스너 등록
+            window.addEventListener("auth:state-changed", updateAuthUI);
+          } catch (error) {
+            console.error('[auth] 인증 UI 업데이트 실패:', error);
+            // 에러 발생 시에도 localStorage 기반으로 UI 표시
+            if (typeof updateAuthUI === 'function') {
+              await updateAuthUI();
+            }
+          }
+        } else {
+          console.warn('[auth] auth-state.js를 로드할 수 없습니다. localStorage 기반으로 표시합니다.');
+          // auth-state.js가 로드되지 않아도 localStorage 기반으로 UI 표시
+          if (typeof updateAuthUI === 'function') {
+            await updateAuthUI();
+          }
+        }
       }
+
+      function forceUpdateAuthUI() {
+        if (typeof updateAuthUI === 'function') {
+          updateAuthUI();
+        }
+      }
+
+      // DOMContentLoaded 시 즉시 실행
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAuthUI);
+      } else {
+        initAuthUI();
+      }
+      
+      // 페이지 로드 완료 후 재확인
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          initAuthUI();
+        }, 100);
+      });
+      
+      // 인증 상태 변경 이벤트 리스너
+      window.addEventListener('auth:state-changed', function() {
+        if (typeof updateAuthUI === 'function') {
+          updateAuthUI();
+        }
+      });
     </script>
   </body>
 </html>

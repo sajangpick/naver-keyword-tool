@@ -8,12 +8,20 @@
 (function() {
   'use strict';
   
-  //Supabase 클라이언트 (common-header.js에서 이미 초기화됨)
-  const supabase = window.supabase;
-  
-  if (!supabase) {
-    console.warn('⚠️ Supabase 클라이언트가 초기화되지 않았습니다.');
-    return;
+  // Supabase 클라이언트 가져오기 함수
+  function getSupabaseClient() {
+    // authState에서 supabase 클라이언트 가져오기
+    if (window.authState?.supabase) {
+      return window.authState.supabase;
+    }
+    // fallback: window.supabase 직접 사용
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      // 이미 생성된 클라이언트가 있는지 확인
+      if (window.SUPABASE_CLIENT) {
+        return window.SUPABASE_CLIENT;
+      }
+    }
+    return null;
   }
   
   // 에러 로깅 큐 (배치 전송을 위해)
@@ -153,6 +161,23 @@
    */
   async function sendErrorLog(errorData) {
     try {
+      const supabase = getSupabaseClient();
+      
+      // Supabase 클라이언트가 없으면 로그만 출력
+      if (!supabase) {
+        console.warn('⚠️ Supabase 클라이언트가 없어 에러 로그를 저장할 수 없습니다:', {
+          type: errorData.error_type,
+          message: errorData.error_message.substring(0, 100)
+        });
+        return;
+      }
+      
+      // supabase.from이 함수인지 확인
+      if (typeof supabase.from !== 'function') {
+        console.warn('⚠️ Supabase 클라이언트가 올바르게 초기화되지 않았습니다.');
+        return;
+      }
+      
       const { error } = await supabase
         .from('error_logs')
         .insert(errorData);

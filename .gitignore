@@ -35,3 +35,5 @@ debug-screenshot.png
 .vscode/
 .idea/naver-keyword-tool/
 .env.example
+
+.vercel

@@ -12,7 +12,7 @@
     {
       icon: '📊',
       title: '대시보드',
-      path: '/admin/pages/dashboard.html',
+      path: './pages/dashboard.html',
       badge: null
     },
     {
@@ -21,37 +21,37 @@
     {
       icon: '👥',
       title: '회원 관리',
-      path: '/admin/member-management.html',
+      path: './member-management.html',
       badge: null
     },
     {
       icon: '🔔',
       title: '리뷰 모니터링',
-      path: '/admin/review-monitoring.html',
+      path: './review-monitoring.html',
       badge: null
     },
     {
       icon: '📊',
       title: '순위 리포트',
-      path: '/admin/rank-report.html',
+      path: './rank-report.html',
       badge: null
     },
     {
       icon: '📰',
       title: '뉴스 관리',
-      path: '/admin/news-management.html',
+      path: './news-management.html',
       badge: null
     },
     {
       icon: '🏛️',
       title: '정책지원금 관리',
-      path: '/admin/policy-management.html',
+      path: './policy-management.html',
       badge: null
     },
     {
       icon: '📈',
       title: 'ADLOG 순위 추적',
-      path: '/admin/pages/ranking-dashboard-real.html',
+      path: './pages/ranking-dashboard-real.html',
       badge: 'REAL'
     },
     {
@@ -60,19 +60,19 @@
     {
       icon: '💰',
       title: '토큰 가격설정',
-      path: '/admin/pages/subscription-settings.html',
+      path: './pages/subscription-settings.html',
       badge: null
     },
     {
       icon: '📊',
       title: '토큰 대시보드',
-      path: '/admin/pages/token-dashboard.html',
+      path: './pages/token-dashboard.html',
       badge: 'NEW'
     },
     {
       icon: '⚙️',
       title: '회원 맞춤 설정',
-      path: '/admin/pages/member-subscription-customization.html',
+      path: './pages/member-subscription-customization.html',
       badge: null
     },
     {
@@ -81,7 +81,7 @@
     {
       icon: '🗄️',
       title: 'DB 뷰어',
-      path: '/admin/db-view.html',
+      path: './db-view.html',
       badge: null
     },
     {
@@ -90,19 +90,19 @@
     {
       icon: '📈',
       title: '분석',
-      path: '/admin/analytics.html',
+      path: './analytics.html',
       badge: null
     },
     {
       icon: '⚡',
       title: '성능',
-      path: '/admin/performance.html',
+      path: './performance.html',
       badge: null
     },
     {
       icon: '🐛',
       title: '에러',
-      path: '/admin/errors.html',
+      path: './errors.html',
       badge: null
     }
   ];
@@ -118,7 +118,7 @@
 
     let html = `
       <div class="sidebar-header">
-        <a href="/" class="logo-link">
+        <a href="../index.html" class="logo-link">
           <div class="logo">
             <span class="logo-icon">🎯</span>
             <span class="logo-text">사장픽</span>
@@ -137,8 +137,8 @@
         html += `<div class="nav-section">${item.section}</div>`;
       } else {
         // 메뉴 아이템
-        const isActive = currentPath === item.path || 
-                        (item.path === '/admin/pages/dashboard.html' && currentPath === '/admin/' || currentPath === '/admin/index.html');
+        const isActive = currentPath.includes(item.path.replace('./', '')) || 
+                        (item.path === './pages/dashboard.html' && (currentPath.includes('/admin/') || currentPath.includes('/admin/index.html')));
         
         html += `
           <a href="${item.path}" class="nav-item ${isActive ? 'active' : ''}">
@@ -154,7 +154,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <a href="/" class="footer-link">
+        <a href="../index.html" class="footer-link">
           <span class="footer-icon">🏠</span>
           <span class="footer-text">메인으로</span>
         </a>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com http://127.0.0.1:* http://localhost:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>로그인 - 사장픽</title>
@@ -398,6 +398,17 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+    <script>
+      // ⚠️ 중요: Live Server 대신 Express 서버를 사용하세요!
+      // Express 서버 실행 방법:
+      // 1. 터미널에서 프로젝트 폴더로 이동
+      // 2. 'node server.js' 실행
+      // 3. 브라우저에서 http://localhost:3003/login.html 접속
+      //
+      // Live Server를 사용하는 경우 아래 주석을 해제하고 .env 파일의 값을 입력하세요:
+      // window.SUPABASE_URL = 'https://your-project.supabase.co';
+      // window.SUPABASE_ANON_KEY = 'your-anon-key';
+    </script>
     <script src="/assets/auth-state.js?v=202410" defer></script>
     <script>
       const params = new URLSearchParams(window.location.search);

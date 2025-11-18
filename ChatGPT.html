@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://sajangpick-kwon-teamjang.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3003 http://127.0.0.1:3003 https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>ChatGPT 채팅 - 사장픽</title>
@@ -64,6 +64,7 @@
         justify-content: space-between;
         gap: 20px;
         position: relative;
+        box-sizing: border-box;
       }
 
       .logo-container {
@@ -71,27 +72,28 @@
         align-items: center;
         gap: 10px;
         font-weight: 800;
-        font-size: 20px;
+        font-size: 12px;
         color: var(--text-primary);
         cursor: pointer;
         flex: 0 0 auto;
       }
 
       .logo-icon {
-        width: 40px;
-        height: 40px;
+        width: 28px;
+        height: 28px;
         border-radius: 12px;
         background: var(--accent-color);
         color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 14px;
       }
 
       .logo-text {
         letter-spacing: -0.03em;
         text-transform: lowercase;
+        font-size: 12px;
       }
 
       .header-slogan {
@@ -116,6 +118,9 @@
         .header-inner {
           padding: 12px 16px;
           flex-wrap: wrap;
+          box-sizing: border-box;
+          width: 100%;
+          max-width: 100%;
         }
         
         .header-slogan {
@@ -136,12 +141,25 @@
         .header-auth {
           order: 2;
         }
+
+        .logo-icon {
+          width: 26px;
+          height: 26px;
+          font-size: 13px;
+        }
+
+        .logo-text {
+          font-size: 12px;
+        }
       }
 
       @media (max-width: 480px) {
         .header-inner {
           padding: 10px 12px;
           gap: 12px;
+          box-sizing: border-box;
+          width: 100%;
+          max-width: 100%;
         }
         
         .header-slogan {
@@ -161,6 +179,9 @@
           flex-wrap: nowrap;
           justify-content: space-between;
           align-items: center;
+          box-sizing: border-box;
+          width: 100%;
+          max-width: 100%;
         }
 
         .logo-container {
@@ -193,12 +214,15 @@
           flex-shrink: 0;
           margin-left: auto;
           margin-right: 0;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
         .auth-buttons {
           gap: 2px;
           flex-wrap: nowrap;
           justify-content: flex-end;
+          box-sizing: border-box;
         }
 
         .auth-btn {
@@ -207,6 +231,8 @@
           font-size: 9px;
           min-width: auto;
           flex-shrink: 0;
+          box-sizing: border-box;
+          white-space: nowrap;
         }
 
         .auth-btn i {
@@ -455,7 +481,7 @@
 
         .main-content {
           padding-left: 0;
-          padding-bottom: 90px;
+          padding-bottom: 0;
         }
       }
 
@@ -497,7 +523,7 @@
         }
 
         .main-content {
-          padding-bottom: 70px;
+          padding-bottom: 0;
         }
       }
 
@@ -568,7 +594,7 @@
         gap: 14px;
         padding: 10px 16px;
         border-radius: 16px;
-        background: rgba(3, 199, 90, 0.12);
+        background: rgba(255, 123, 84, 0.12);
         color: var(--text-primary);
       }
 
@@ -680,13 +706,15 @@
 
       @media (max-width: 768px) {
         .container {
-          padding: 16px;
+          padding: 16px 12px 0 12px;
+          padding-top: 8px;
         }
       }
 
       @media (max-width: 360px) {
         .container {
-          padding: 12px;
+          padding: 16px 12px 0 12px;
+          padding-top: 8px;
         }
       }
 
@@ -694,63 +722,84 @@
       .header-section {
         background: #ffe8d9;
         border-radius: 20px 20px 0 0;
-        padding: 40px 40px 20px 40px;
+        padding: 8px 20px 8px 20px;
         margin-bottom: 0;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .page-header {
-        margin-bottom: 24px;
+        margin-bottom: 0;
         text-align: center;
+        width: 100%;
       }
 
       .page-header h1 {
-        font-size: 32px;
+        font-size: 12pt;
         font-weight: 800;
         color: var(--text-primary);
-        margin-bottom: 8px;
+        margin-bottom: 2px;
+        line-height: 1.2;
       }
 
       .page-header p {
-        font-size: 16px;
+        font-size: 8pt;
         color: var(--text-secondary);
-        line-height: 1.6;
+        line-height: 1.3;
+        margin: 0;
       }
 
       @media (max-width: 768px) {
         .header-section {
-          padding: 24px 20px 16px 20px;
+          padding: 8px 12px 8px 12px;
           border-radius: 16px 16px 0 0;
+          min-height: 56px;
         }
 
         .page-header {
-          margin-bottom: 20px;
+          margin-bottom: 0;
         }
 
         .page-header h1 {
-          font-size: 24px;
+          font-size: 12pt;
+          margin-bottom: 2px;
+          line-height: 1.2;
         }
 
         .page-header p {
-          font-size: 14px;
+          font-size: 8pt;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.3;
         }
       }
 
       @media (max-width: 360px) {
         .header-section {
-          padding: 20px 12px 12px 12px;
+          padding: 8px 8px 8px 8px;
           border-radius: 12px 12px 0 0;
+          min-height: 56px;
         }
 
         .page-header {
-          margin-bottom: 16px;
+          margin-bottom: 0;
         }
 
         .page-header h1 {
-          font-size: 20px;
+          font-size: 12pt;
+          margin-bottom: 2px;
+          line-height: 1.2;
         }
 
         .page-header p {
-          font-size: 12px;
+          font-size: 8pt;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.3;
         }
       }
 
@@ -769,48 +818,19 @@
 
       @media (max-width: 768px) {
         .chat-container {
-          height: calc(100vh - 200px);
-          min-height: 400px;
+          height: calc(100vh - 165px);
+          min-height: calc(100vh - 165px);
           border-radius: 16px;
+          margin-bottom: 0;
         }
       }
 
       @media (max-width: 360px) {
         .chat-container {
-          height: calc(100vh - 180px);
-          min-height: 350px;
+          height: calc(100vh - 135px);
+          min-height: calc(100vh - 135px);
           border-radius: 12px;
-        }
-      }
-
-      .chat-header {
-        background: linear-gradient(
-          135deg,
-          var(--accent-color),
-          #e56548
-        );
-        color: white;
-        padding: 25px;
-        text-align: center;
-        font-size: 1.3em;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-      }
-
-      @media (max-width: 768px) {
-        .chat-header {
-          padding: 18px;
-          font-size: 1.1em;
-        }
-      }
-
-      @media (max-width: 360px) {
-        .chat-header {
-          padding: 12px;
-          font-size: 0.95em;
+          margin-bottom: 0;
         }
       }
 
@@ -828,6 +848,13 @@
         .chat-messages {
           padding: 16px;
           gap: 16px;
+          justify-content: center;
+        }
+
+        .welcome-message {
+          padding: 24px 16px;
+          margin-top: auto;
+          margin-bottom: auto;
         }
       }
 
@@ -835,6 +862,13 @@
         .chat-messages {
           padding: 12px;
           gap: 12px;
+          justify-content: center;
+        }
+
+        .welcome-message {
+          padding: 20px 12px;
+          margin-top: auto;
+          margin-bottom: auto;
         }
       }
 
@@ -899,6 +933,74 @@
         box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
       }
 
+      .bot-message table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 12px 0;
+        font-size: 14px;
+      }
+
+      .bot-message table th,
+      .bot-message table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .bot-message table th {
+        background-color: #f5f5f5;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .bot-message table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .bot-message table tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      .bot-message h1,
+      .bot-message h2,
+      .bot-message h3 {
+        margin: 12px 0 8px 0;
+        font-weight: 600;
+      }
+
+      .bot-message h1 {
+        font-size: 20px;
+      }
+
+      .bot-message h2 {
+        font-size: 18px;
+      }
+
+      .bot-message h3 {
+        font-size: 16px;
+      }
+
+      .bot-message code {
+        background-color: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+      }
+
+      .bot-message pre {
+        background-color: #f5f5f5;
+        padding: 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin: 8px 0;
+      }
+
+      .bot-message pre code {
+        background-color: transparent;
+        padding: 0;
+      }
+
       .message-time {
         font-size: 11px;
         opacity: 0.7;
@@ -933,6 +1035,15 @@
       @media (max-width: 768px) {
         .message-input {
           width: 100%;
+          min-height: 80px;
+          max-height: 200px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .message-input {
+          min-height: 70px;
+          max-height: 180px;
         }
       }
 
@@ -1053,6 +1164,79 @@
         font-style: italic;
       }
 
+      .welcome-message h3 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+      }
+
+      .welcome-message p {
+        font-size: 16px;
+        margin-bottom: 0;
+        color: var(--text-secondary);
+      }
+
+      @media (max-width: 768px) {
+        .welcome-message {
+          padding: 24px 16px;
+        }
+
+        .welcome-message > div[style*="font-size: 3rem"] {
+          font-size: 2rem !important;
+          margin-bottom: 12px !important;
+        }
+
+        .welcome-message h3 {
+          font-size: 18px;
+          margin-bottom: 8px;
+        }
+
+        .welcome-message p {
+          font-size: 14px;
+        }
+
+        .suggestions {
+          margin-top: 16px;
+          gap: 8px;
+        }
+
+        .suggestion-btn {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .welcome-message {
+          padding: 20px 12px;
+        }
+
+        .welcome-message > div[style*="font-size: 3rem"] {
+          font-size: 1.5rem !important;
+          margin-bottom: 10px !important;
+        }
+
+        .welcome-message h3 {
+          font-size: 16px;
+          margin-bottom: 6px;
+        }
+
+        .welcome-message p {
+          font-size: 12px;
+        }
+
+        .suggestions {
+          margin-top: 12px;
+          gap: 6px;
+        }
+
+        .suggestion-btn {
+          padding: 5px 10px;
+          font-size: 11px;
+        }
+      }
+
       .suggestions {
         display: flex;
         flex-wrap: wrap;
@@ -1080,102 +1264,34 @@
 
 
       @media (max-width: 768px) {
-        /* 헤더 겹침 방지 및 내비게이션 스크롤 */
-        .top-nav {
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-        }
-        .user-actions {
-          position: static;
-          right: auto;
-          width: 100%;
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .logo {
-          font-size: 26px;
-        }
-        .login-btn,
-        .signup-btn {
-          padding: 8px 14px;
-          font-size: 13px;
-          border-radius: 16px;
-        }
-        .nav-container {
-          padding: 14px;
-          gap: 12px;
-        }
-        .nav-menu {
-          justify-content: flex-start;
-          overflow-x: auto;
-          white-space: nowrap;
-          padding: 5px 0;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .nav-menu::-webkit-scrollbar {
-          display: none;
-        }
-        .nav-menu li {
-          flex-shrink: 0;
-        }
-        .nav-menu a {
-          font-size: 12px;
-          padding: 8px 12px;
-          white-space: nowrap;
-        }
-        body {
-          padding-top: 60px;
-        }
-        .page-header h1 {
-          font-size: 1.5rem;
-        }
-        .page-header p {
-          font-size: 0.9rem;
-        }
-        .page-header {
-          margin-bottom: 20px;
-          margin-top: 10px;
-        }
-        .container {
-          padding: 20px 15px;
-        }
-        textarea, input[type="text"] {
-          font-size: 0.85rem !important;
-        }
-        .chat-input {
-          font-size: 0.85rem;
-        }
-        button {
-          font-size: 12px;
-        }
-        .chat-container {
-          height: 60vh;
-          min-height: 500px;
-        }
-        .message {
-          max-width: 85%;
-        }
-      }
-
-      @media (max-width: 768px) {
         .input-container {
           padding: 16px;
           gap: 12px;
+          align-items: center;
         }
 
         .message-input {
           padding: 12px 16px;
           font-size: 14px;
           width: 100%;
+          flex: 1;
         }
 
         .send-button {
-          padding: 12px 20px;
-          font-size: 14px;
+          padding: 10px 12px;
+          font-size: 13px;
+          flex-shrink: 0;
+          min-width: auto;
+          width: auto;
+        }
+
+        .send-button .send-text {
+          display: none;
+        }
+
+        .send-button i {
+          display: inline-block;
+          margin: 0;
         }
       }
 
@@ -1183,7 +1299,8 @@
         .input-container {
           padding: 12px;
           gap: 8px;
-          flex-wrap: wrap;
+          align-items: center;
+          flex-wrap: nowrap;
         }
 
         .message-input {
@@ -1191,17 +1308,466 @@
           font-size: 12px;
           border-radius: 20px;
           width: 100%;
+          flex: 1;
         }
 
         .send-button {
-          padding: 10px 16px;
+          padding: 8px 10px;
           font-size: 12px;
           border-radius: 20px;
-          flex: 1 1 100%;
-          justify-content: center;
+          flex-shrink: 0;
+          min-width: auto;
+          width: auto;
+        }
+
+        .send-button .send-text {
+          display: none;
+        }
+
+        .send-button i {
+          display: inline-block;
+          margin: 0;
         }
       }
     </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a href="/" class="logo-container">
+          <div class="logo-icon">
+            <i class="fa-solid fa-thumbtack"></i>
+          </div>
+          <span class="logo-text">sajang pick</span>
+        </a>
+        
+        <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
+        
+        <div class="header-auth">
+          <div class="auth-buttons" id="authButtons">
+            <div class="auth-user" id="authUser" style="display: none;">
+              <div class="auth-user__avatar" id="userAvatar">U</div>
+              <div class="auth-user__meta">
+                <a href="/mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
+                <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
+              </div>
+              <button class="auth-user__logout" id="logoutBtn" type="button">
+                로그아웃
+              </button>
+            </div>
+            <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+              <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px;"></i>
+              <span>로그인</span>
+            </a>
+            <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+              <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i>
+              <span>회원가입</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <aside class="side-nav" aria-label="사이드 네비게이션">
+      <a class="menu-item" href="/">
+        <span class="ico"><i class="fa-solid fa-house"></i></span>
+        <span>홈</span>
+      </a>
+      <a class="menu-item" href="/naver_search.html">
+        <span class="ico"><i class="fa-solid fa-key"></i></span>
+        <span>키워드</span>
+      </a>
+      <a class="menu-item" href="/AI-Review.html">
+        <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
+        <span>리뷰</span>
+      </a>
+      <a class="menu-item" href="/Blog-Editor.html">
+        <span class="ico"><i class="fa-solid fa-blog"></i></span>
+        <span>블로그</span>
+      </a>
+      <a class="menu-item" href="/recipe-manager.html">
+        <span class="ico"><i class="fa-solid fa-utensils"></i></span>
+        <span>레시피</span>
+      </a>
+      <a class="menu-item" href="/shorts-editor.html">
+        <span class="ico"><i class="fa-solid fa-film"></i></span>
+        <span>영상</span>
+      </a>
+      <a class="menu-item" href="/sajangpick-book.html">
+        <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+        <span>전자책</span>
+      </a>
+      <a class="menu-item" href="/news-board.html">
+        <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
+        <span>정보</span>
+      </a>
+      <a class="menu-item" href="/policy-support.html">
+        <span class="ico"><i class="fa-solid fa-coins"></i></span>
+        <span>정책</span>
+      </a>
+    </aside>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="main-content">
+
+      <div class="container">
+        <!-- 헤더 섹션 -->
+        <div class="header-section">
+          <div class="page-header">
+            <h1>ChatGPT 채팅</h1>
+            <p>AI와 실시간으로 대화하며 궁금한 것들을 물어보세요</p>
+          </div>
+        </div>
+
+        <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <div class="welcome-message">
+            <div style="font-size: 3rem; margin-bottom: 20px">🤖</div>
+            <h3>안녕하세요! ChatGPT입니다.</h3>
+            <p>무엇이든 물어보세요. 도움이 되도록 최선을 다하겠습니다!</p>
+
+            <div class="suggestions">
+              <button
+                class="suggestion-btn"
+                onclick="sendSuggestion('안녕하세요!')"
+              >
+                안녕하세요!
+              </button>
+              <button
+                class="suggestion-btn"
+                onclick="sendSuggestion('오늘 날씨가 어때요?')"
+              >
+                오늘 날씨 문의
+              </button>
+              <button
+                class="suggestion-btn"
+                onclick="sendSuggestion('간단한 요리 레시피 추천해주세요')"
+              >
+                요리 레시피
+              </button>
+              <button
+                class="suggestion-btn"
+                onclick="sendSuggestion('신제품 마케팅 방법이 궁금해요')"
+              >
+마케팅방법              </button>
+              <button
+                class="suggestion-btn"
+                onclick="sendSuggestion('창의적인 아이디어가 필요해요')"
+              >
+                창의적 아이디어
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-container">
+          <textarea
+            id="messageInput"
+            class="message-input"
+            placeholder="메시지를 입력하세요. (Shift+Enter로 줄바꿈, Enter로 전송)"
+            rows="1"
+          ></textarea>
+          <button onclick="sendMessage()" id="sendButton" class="send-button">
+            <i class="fas fa-paper-plane"></i>
+            <span class="send-text">전송</span>
+          </button>
+        </div>
+
+        <div class="status-bar">
+          <div class="connection-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">연결 확인 중...</span>
+          </div>
+          <div id="tokenCount">토큰 사용량: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+    <script src="/assets/auth-state.js?v=202410"></script>
+    <script>
+      // 전역 설정: 환경에 따라 API 주소 자동 감지
+      const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
+      const FALLBACK_API_BASE = 'https://naver-keyword-tool.onrender.com';
+      
+      let totalTokens = 0;
+      let isConnected = false;
+
+      // DOM 요소
+      const messageInput = document.getElementById("messageInput");
+      const sendButton = document.getElementById("sendButton");
+      const chatMessages = document.getElementById("chatMessages");
+      const statusDot = document.getElementById("statusDot");
+      const statusText = document.getElementById("statusText");
+      const tokenCount = document.getElementById("tokenCount");
+
+      // 자동 높이 조절
+      messageInput.addEventListener("input", function () {
+        this.style.height = "auto";
+        this.style.height = Math.min(this.scrollHeight, 120) + "px";
+      });
+
+      // 안전한 JSON 파싱 함수
+      async function readJsonSafely(response) {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          try {
+            const text = await response.text();
+            if (!text || text.trim().length === 0) {
+              return { error: "서버에서 빈 응답을 받았습니다.", status: response.status };
+            }
+            return JSON.parse(text);
+          } catch (parseError) {
+            console.error("JSON 파싱 오류:", parseError);
+            return { error: "응답 형식이 올바르지 않습니다.", status: response.status };
+          }
+        }
+        try {
+          const text = await response.text();
+          return text
+            ? { error: text.substring(0, 200), status: response.status }
+            : { error: "서버 응답이 없습니다.", status: response.status };
+        } catch (readError) {
+          return { error: "응답을 읽을 수 없습니다.", status: response.status };
+        }
+      }
+
+      // 메시지 전송 함수
+      async function sendMessage() {
+        const message = messageInput.value.trim();
+
+        if (!message) return;
+
+        // 사용자 메시지 추가
+        addMessage(message, "user");
+        messageInput.value = "";
+        messageInput.style.height = "auto";
+
+        // 전송 버튼 비활성화
+        sendButton.disabled = true;
+        sendButton.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i><span class="send-text">전송 중...</span>';
+
+        // 로딩 표시
+        const loadingId = showLoading();
+
+        try {
+          // API 엔드포인트 결정 (로컬이면 localhost, 아니면 상대 경로)
+          const apiUrl = API_BASE ? `${API_BASE}/api/chat` : `/api/chat`;
+          
+          let response;
+          let lastError = null;
+          
+          // 첫 번째 시도: 기본 API
+          try {
+            response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ message: message }),
+            });
+            
+            // 성공하면 그대로 사용
+            if (response.ok) {
+              // 응답 처리 계속
+            } else {
+              throw new Error(`HTTP ${response.status}`);
+            }
+          } catch (fetchError) {
+            lastError = fetchError;
+            
+            // 로컬이 아니고 실패했으면 폴백 서버 시도
+            if (!API_BASE && FALLBACK_API_BASE) {
+              try {
+                console.log('기본 API 실패, 폴백 서버 시도:', `${FALLBACK_API_BASE}/api/chat`);
+                response = await fetch(`${FALLBACK_API_BASE}/api/chat`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ message: message }),
+                });
+              } catch (fallbackError) {
+                throw new Error(`API 연결 실패: ${lastError.message}`);
+              }
+            } else {
+              throw fetchError;
+            }
+          }
+
+          // 안전하게 JSON 파싱 (응답은 한 번만 읽을 수 있음)
+          const data = await readJsonSafely(response);
+
+          // 응답 상태 확인
+          if (!response.ok) {
+            throw new Error(data.error || `서버 오류 (${response.status})`);
+          }
+
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          if (data.success && data.reply) {
+            hideLoading(loadingId);
+            addMessage(data.reply, "bot");
+
+            // 메시지 전송 성공 시 연결 상태 업데이트
+            isConnected = true;
+            statusDot.classList.remove("disconnected");
+            statusText.textContent = "연결됨";
+
+            // 토큰 사용량 업데이트
+            if (data.usage) {
+              totalTokens += data.usage.total_tokens;
+              updateTokenCount();
+            }
+          } else {
+            throw new Error(data.error || "API 응답 형식이 올바르지 않습니다.");
+          }
+        } catch (error) {
+          hideLoading(loadingId);
+          console.error("채팅 오류:", error);
+          
+          // 에러 발생 시 연결 상태 업데이트
+          isConnected = false;
+          statusDot.classList.add("disconnected");
+          statusText.textContent = "연결 실패";
+          
+          // 네트워크 오류인지 확인
+          if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showError("서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.");
+          } else if (error.message.includes('JSON')) {
+            showError("서버 응답을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.");
+          } else {
+            showError(error.message || "메시지 전송 중 오류가 발생했습니다.");
+          }
+        } finally {
+          // 전송 버튼 복원
+          sendButton.disabled = false;
+          sendButton.innerHTML = '<i class="fas fa-paper-plane"></i><span class="send-text">전송</span>';
+          messageInput.focus();
+        }
+      }
+
+      // 제안 메시지 전송
+      function sendSuggestion(suggestion) {
+        messageInput.value = suggestion;
+        sendMessage();
+      }
+
+      // 마크다운을 HTML로 변환하는 함수 (개선된 버전)
+      function markdownToHtml(markdown) {
+        let html = markdown;
+        const lines = html.split('\n');
+        let result = [];
+        let inTable = false;
+        let tableRows = [];
+        let i = 0;
+        
+        while (i < lines.length) {
+          const line = lines[i].trim();
+          
+          // 테이블 감지
+          if (line.match(/^\|.+\|$/)) {
+            if (!inTable) {
+              inTable = true;
+              tableRows = [];
+            }
+            tableRows.push(line);
+          } else {
+            // 테이블이 끝났을 때 처리
+            if (inTable && tableRows.length > 0) {
+              result.push(parseMarkdownTable(tableRows));
+              tableRows = [];
+              inTable = false;
+            }
+            
+            // 코드 블록 처리
+            if (line.startsWith('```')) {
+              const codeBlock = [];
+              i++;
+              while (i < lines.length && !lines[i].trim().startsWith('```')) {
+                codeBlock.push(lines[i]);
+                i++;
+              }
+              result.push('<pre><code>' + codeBlock.join('\n') + '</code></pre>');
+              i++;
+              continue;
+            }
+            
+            // 헤더 처리
+            if (line.startsWith('### ')) {
+              result.push('<h3>' + line.substring(4) + '</h3>');
+            } else if (line.startsWith('## ')) {
+              result.push('<h2>' + line.substring(3) + '</h2>');
+            } else if (line.startsWith('# ')) {
+              result.push('<h1>' + line.substring(2) + '</h1>');
+            } else if (line.length > 0) {
+              // 일반 텍스트 (볼드, 이탤릭 처리 후)
+              let processedLine = line;
+              processedLine = processedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+              processedLine = processedLine.replace(/\*(.*?)\*/g, '<em>$1</em>');
+              processedLine = processedLine.replace(/`([^`]+)`/g, '<code>$1</code>');
+              result.push('<p>' + processedLine + '</p>');
+            } else {
+              result.push('<br>');
+            }
+          }
+          i++;
+        }
+        
+        // 마지막 테이블 처리
+        if (inTable && tableRows.length > 0) {
+          result.push(parseMarkdownTable(tableRows));
+        }
+        
+        return result.join('\n');
+      }
+      
+      // 마크다운 테이블 파싱
+      function parseMarkdownTable(tableRows) {
+        if (tableRows.length < 2) return '';
+        
+        let html = '<table>';
+        let isHeader = true;
+        
+        for (let i = 0; i < tableRows.length; i++) {
+          const row = tableRows[i];
+          
+          // 구분선 스킵
+          if (row.match(/^\|[\s\-:]+\|$/)) {
+            isHeader = false;
+            continue;
+          }
+          
+          // 셀 추출
+          const cells = row.split('|').map(cell => cell.trim()).filter(cell => cell.length > 0);
+          
+          if (isHeader) {
+            html += '<thead><tr>';
+            cells.forEach(cell => {
+              html += '<th>' + cell + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+          } else {
+            html += '<tr>';
+            cells.forEach(cell => {
+              html += '<td>' + cell + '</td>';
+            });
+            html += '</tr>';
+          }
+        }
+        
+        html += '</tbody></table>';
+        return html;
+      }
+
+      // 메시지 추가 함수
+      function addMessage(text, sender) {
+        // 웰컴 메시지 제거
+        const welcomeMessage = document.querySelector(".welcome-message");
         if (welcomeMessage) {
           welcomeMessage.remove();
         }
@@ -1215,8 +1781,11 @@
           minute: "2-digit",
         });
 
+        // 마크다운을 HTML로 변환
+        const htmlContent = sender === 'bot' ? markdownToHtml(text) : text.replace(/\n/g, '<br>');
+
         messageDiv.innerHTML = `
-                <div>${text}</div>
+                <div>${htmlContent}</div>
                 <div class="message-time">${timeStr}</div>
             `;
 
@@ -1284,19 +1853,40 @@
       // 연결 상태 확인
       async function checkConnection() {
         try {
-          const response = await fetch(`/api/health`);
-          if (response.ok) {
-            isConnected = true;
-            statusDot.classList.remove("disconnected");
-            statusText.textContent = "연결됨";
-          } else {
-            throw new Error("서버 응답 오류");
+          const healthUrl = API_BASE ? `${API_BASE}/health` : `/api/health`;
+          let response;
+          
+          try {
+            response = await fetch(healthUrl);
+            if (response.ok) {
+              isConnected = true;
+              statusDot.classList.remove("disconnected");
+              statusText.textContent = "연결됨";
+              return;
+            }
+          } catch (error) {
+            // 로컬이 아니고 실패했으면 폴백 서버 시도
+            if (!API_BASE && FALLBACK_API_BASE) {
+              try {
+                response = await fetch(`${FALLBACK_API_BASE}/health`);
+                if (response.ok) {
+                  isConnected = true;
+                  statusDot.classList.remove("disconnected");
+                  statusText.textContent = "연결됨";
+                  return;
+                }
+              } catch (fallbackError) {
+                // 폴백도 실패
+              }
+            }
           }
+          
+          // health 엔드포인트가 실패해도 "연결 확인 중..."으로 유지
+          // 실제 메시지 전송이 성공하면 자동으로 "연결됨"으로 변경됨
+          console.log("Health 체크 실패, 실제 메시지 전송 시 연결 상태 확인됨");
         } catch (error) {
-          isConnected = false;
-          statusDot.classList.add("disconnected");
-          statusText.textContent = "연결 실패";
-          console.error("연결 상태 확인 실패:", error);
+          // 에러가 발생해도 "연결 확인 중..." 유지
+          console.debug("연결 상태 확인 중:", error);
         }
       }
 
@@ -1317,19 +1907,20 @@
         setInterval(checkConnection, 5 * 60 * 1000);
       });
 
-      // initialChatPrompt가 있으면 입력창에 채워넣고 포커스
+      // initialChatPrompt가 있으면 입력창에 채워넣고 자동으로 전송
       (function() {
         try {
           const saved = localStorage.getItem('initialChatPrompt');
           if (saved) {
             messageInput.value = saved;
-            // 한 박자 뒤에 포커스 및 커서 이동
-            setTimeout(() => {
-              messageInput.focus();
-              messageInput.selectionStart = messageInput.selectionEnd = messageInput.value.length;
-            }, 50);
             // 사용 후 제거
             localStorage.removeItem('initialChatPrompt');
+            
+            // 한 박자 뒤에 자동으로 전송
+            setTimeout(() => {
+              messageInput.focus();
+              sendMessage();
+            }, 300);
           }
         } catch (e) {
           console.debug('initialChatPrompt read error', e);
@@ -1422,7 +2013,7 @@
         window.location.replace(buildRedirectUrl());
       }
 
-      // 페이지 로드 시 인증 확인
+      // 페이지 로드 시 인증 확인 (로그인 선택적)
       (async function initAuth() {
         // Supabase 초기화 대기
         while (!window.authState?.supabase) {
@@ -1435,13 +2026,13 @@
             // 세션이 있으면 UI 업데이트
             await updateAuthUI();
           } else {
-            // 세션이 없으면 로그인 페이지로 리다이렉트
-            redirectToLogin();
+            // 세션이 없어도 채팅 사용 가능 (로그인 선택적)
+            await updateAuthUI();
           }
         } catch (error) {
           console.error("세션 확인 실패:", error);
-          // 에러 발생 시에도 로그인 페이지로
-          redirectToLogin();
+          // 에러 발생해도 채팅 사용 가능
+          await updateAuthUI();
         }
         
         // 인증 상태 변경 감지

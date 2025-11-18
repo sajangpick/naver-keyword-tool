@@ -5,7 +5,7 @@
 
 const fetch = require('node-fetch');
 
-const API_BASE_URL = process.env.API_BASE_URL || 'https://sajangpick-kwon-teamjang.onrender.com'; // 프로덕션 API URL
+const API_BASE_URL = process.env.API_BASE_URL || 'https://naver-keyword-tool.onrender.com'; // 프로덕션 API URL
 
 async function testAPIs() {
   console.log('🚀 구독 API 테스트 시작...\n');

@@ -1100,11 +1100,28 @@
           if (search) params.append('search', search);
 
           const response = await fetch(`/api/admin/members?${params}`);
+          
+          // HTTP 상태 코드 체크
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`서버 오류 (${response.status}): ${errorText || '알 수 없는 오류'}`);
+          }
+
           const result = await response.json();
 
-          if (!result.success) throw new Error(result.error);
+          if (!result.success) {
+            throw new Error(result.error || '알 수 없는 오류');
+          }
 
-          // 통계 업데이트
+          // 데이터 검증
+          if (!result.members) {
+            result.members = [];
+          }
+          if (result.total === undefined || result.total === null) {
+            result.total = 0;
+          }
+
+          // 통계 업데이트 (전체 통계를 위해 별도 API 호출 필요하지만, 일단 현재 페이지 기준으로 표시)
           updateStats(result.members, result.total);
 
           // 테이블 렌더링
@@ -1113,6 +1130,8 @@
           // 페이지네이션
           if (result.total > 20) {
             renderPagination(result.page, result.total, result.limit);
+          } else {
+            document.getElementById('pagination').style.display = 'none';
           }
 
           console.log(`✅ 회원 ${result.members.length}명 로드 완료 (전체: ${result.total}명)`);
@@ -1120,6 +1139,8 @@
         } catch (error) {
           console.error('❌ 회원 로드 실패:', error);
           showError('회원 목록을 불러올 수 없습니다: ' + error.message);
+          // 에러 발생 시 빈 테이블 표시
+          renderMembers([]);
         } finally {
           showLoading(false);
         }
@@ -1568,11 +1589,33 @@
         }).join('');
       }
 
-      function updateStats(members, total) {
+      async function updateStats(members, total) {
+        // 현재 페이지의 회원 수 (표시용)
         const ownerCount = members.filter(m => m.user_type === 'owner').length;
         const agencyCount = members.filter(m => m.user_type === 'agency').length;
         const adminCount = members.filter(m => m.user_type === 'admin').length;
 
+        // 전체 통계를 가져오기 위해 별도 API 호출 (필터가 없을 때만)
+        if (!currentFilter && !currentSearch) {
+          try {
+            const statsResponse = await fetch('/api/admin/members?limit=1000');
+            if (statsResponse.ok) {
+              const statsResult = await statsResponse.json();
+              if (statsResult.success && statsResult.members) {
+                const allMembers = statsResult.members;
+                document.getElementById('stat-total').textContent = statsResult.total || 0;
+                document.getElementById('stat-owner').textContent = allMembers.filter(m => m.user_type === 'owner').length;
+                document.getElementById('stat-agency').textContent = allMembers.filter(m => m.user_type === 'agency').length;
+                document.getElementById('stat-admin').textContent = allMembers.filter(m => m.user_type === 'admin').length;
+                return;
+              }
+            }
+          } catch (error) {
+            console.warn('통계 조회 실패, 현재 페이지 기준으로 표시:', error);
+          }
+        }
+
+        // 필터가 있거나 통계 조회 실패 시 현재 페이지 기준으로 표시
         document.getElementById('stat-total').textContent = total || 0;
         document.getElementById('stat-owner').textContent = ownerCount;
         document.getElementById('stat-agency').textContent = agencyCount;
@@ -1663,12 +1706,28 @@
 
       function showError(message) {
         const container = document.getElementById('errorContainer');
+        const tableContainer = document.getElementById('tableContainer');
+        
         container.innerHTML = `
           <div class="error">
-            <i class="fas fa-exclamation-triangle"></i> ${message}
+            <i class="fas fa-exclamation-triangle"></i> 
+            <strong>오류 발생:</strong> ${message}
+            <br><br>
+            <small style="color: #666;">
+              💡 해결 방법:<br>
+              1. 브라우저 콘솔(F12)에서 자세한 오류 확인<br>
+              2. 서버가 실행 중인지 확인 (Render 서버)<br>
+              3. 네트워크 탭에서 API 응답 확인<br>
+              4. 새로고침 버튼을 클릭해 다시 시도
+            </small>
           </div>
         `;
         container.style.display = 'block';
+        
+        // 테이블은 숨기고 에러만 표시
+        if (tableContainer) {
+          tableContainer.style.display = 'none';
+        }
       }
 
       function hideError() {

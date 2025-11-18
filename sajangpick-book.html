@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>사장픽 전자책 다운로드 - 사장픽</title>
+    <meta
+      name="description"
+      content="사장픽 네이버 플레이스 입문 가이드를 사이트 오픈 기념 깜짝 무료로 만나보세요."
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      as="style"
+      crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
+    />
+    <style>
+      :root {
+        --accent-color: #ff7b54;
+        --bg-color: #fff7f0;
+        --text-primary: #201a17;
+        --text-secondary: #7a6a60;
+        --primary: var(--accent-color);
+        --primary-dark: #e56548;
+        --secondary: #ffe8d9;
+        --text: var(--text-primary);
+        --border: rgba(0, 0, 0, 0.08);
+        --white: #ffffff;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Pretendard Variable", Pretendard, -apple-system,
+          BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
+          "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+        background: var(--bg-color);
+        color: var(--text-primary);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--bg-color);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: none;
+      }
+
+      .header-inner {
+        max-width: 100%;
+        margin: 0;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        position: relative;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 12px;
+        color: var(--text-primary);
+        cursor: pointer;
+        flex: 0 0 auto;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+
+      .logo-text {
+        letter-spacing: -0.03em;
+        text-transform: lowercase;
+        font-size: 12px;
+      }
+
+      .header-slogan {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin: 0;
+        white-space: nowrap;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+      }
+
+      .auth-buttons {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .auth-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 44px;
+        padding: 0 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: #fff;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+      }
+
+      .auth-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      }
+
+      .auth-btn--primary {
+        background: transparent;
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
+      }
+
+      .auth-btn--primary:hover {
+        background: var(--accent-color);
+        color: #fff;
+      }
+
+      .auth-user {
+        display: none;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+        border-radius: 16px;
+        background: rgba(255, 123, 84, 0.12);
+        color: var(--text-primary);
+      }
+
+      .auth-user__avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .auth-user__avatar {
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+
+      .auth-user__meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+
+      .auth-user__label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-decoration: none;
+      }
+
+      .auth-user__email {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: color 0.2s ease;
+        text-decoration: none;
+      }
+
+      .auth-user__email:hover {
+        color: var(--accent-color);
+      }
+
+      .auth-user__logout {
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        color: var(--text-primary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .auth-user__logout:hover {
+        background: rgba(255, 126, 70, 0.12);
+        transform: translateY(-2px);
+      }
+
+      .side-nav {
+        background: var(--secondary);
+        border-radius: 18px;
+        padding: 18px 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        align-items: center;
+        position: fixed;
+        left: 20px;
+        top: 120px;
+        width: 66px;
+        max-height: calc(100vh - 160px);
+        overflow-y: auto;
+        z-index: 40;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+      }
+
+      .side-nav .menu-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 9px 6px;
+        color: #5a5a5a;
+        font-weight: 500;
+        font-size: 9px;
+        border-radius: 11px;
+        transition: all 0.3s ease;
+        width: 43px;
+        background: transparent;
+      }
+
+      .side-nav .menu-item:hover {
+        background: #ffffff;
+        color: var(--accent-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 126, 70, 0.3);
+      }
+
+      .side-nav .ico {
+        width: 29px;
+        height: 29px;
+        border-radius: 7px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        color: #5a5a5a;
+        font-size: 13px;
+        transition: all 0.3s ease;
+      }
+
+      .side-nav .menu-item.active {
+        background: #ffffff;
+        color: var(--accent-color);
+      }
+
+      .side-nav .menu-item.active .ico {
+        color: var(--accent-color);
+        background: rgba(255, 126, 70, 0.1);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding-left: 100px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+
+      .header-section {
+        background: var(--secondary);
+        border-radius: 20px 20px 0 0;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .page-title {
+        text-align: center;
+      }
+
+      .page-title h1 {
+        font-size: 12pt;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        line-height: 1.2;
+      }
+
+      .page-title p {
+        font-size: 8pt;
+        color: var(--text-secondary);
+        line-height: 1.3;
+      }
+
+      .beta-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: var(--accent-color);
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 20px;
+        margin-left: 10px;
+        vertical-align: middle;
+      }
+
+      .content-card {
+        background: #ffffff;
+        border-radius: 0 0 20px 20px;
+        padding: 32px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        margin-bottom: 36px;
+      }
+
+      .ebook-hero {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 32px;
+        align-items: center;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(255, 123, 84, 0.15);
+        color: var(--accent-color);
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+
+      .ebook-hero h2 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        line-height: 1.4;
+      }
+
+      .ebook-hero p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        line-height: 1.6;
+      }
+
+      .price-labels {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .price-original {
+        text-decoration: line-through;
+        color: var(--text-secondary);
+        font-size: 16px;
+      }
+
+      .price-free {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--accent-color);
+      }
+
+      .cta-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .cta-primary {
+        background: var(--accent-color);
+        color: #fff;
+        border: none;
+        padding: 14px 26px;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 10px 24px rgba(255, 123, 84, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .cta-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 32px rgba(255, 123, 84, 0.4);
+      }
+
+      .cta-secondary {
+        padding: 14px 22px;
+        border-radius: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .cta-secondary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      .status-hint {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .hero-meta {
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .hero-meta .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(32, 26, 23, 0.06);
+        font-size: 12px;
+      }
+
+      .ebook-visual {
+        background: #fff5ef;
+        border-radius: 18px;
+        padding: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: inset 0 0 0 1px rgba(255, 123, 84, 0.12);
+      }
+
+      .ebook-visual img {
+        width: 100%;
+        max-width: 380px;
+        max-height: 380px;
+        object-fit: contain;
+        border-radius: 12px;
+        margin: 0 auto;
+        display: block;
+      }
+
+      .two-column {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+      }
+
+      .feature-card {
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 20px;
+        padding: 22px;
+        background: #fff;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+      }
+
+      .feature-card h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .feature-card p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 18px;
+      }
+
+      .step-card {
+        background: rgba(255, 232, 217, 0.6);
+        border-radius: 18px;
+        padding: 20px;
+        border: 1px solid rgba(255, 123, 84, 0.2);
+        text-align: center;
+      }
+
+      .step-index {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #fff;
+        color: var(--accent-color);
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        box-shadow: 0 8px 20px rgba(255, 123, 84, 0.25);
+      }
+
+      .step-card h4 {
+        font-size: 16px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .step-card p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .trust-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 18px;
+      }
+
+      .trust-item {
+        border-radius: 18px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        background: #fff;
+        padding: 22px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+      }
+
+      .trust-item h3 {
+        font-size: 16px;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+      }
+
+      .trust-item p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .cta-panel {
+        background: linear-gradient(135deg, #ff9966, #ff5e62);
+        color: #fff;
+        border-radius: 22px;
+        padding: 38px 28px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .cta-panel::before,
+      .cta-panel::after {
+        content: "";
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .cta-panel::before {
+        top: -100px;
+        left: -60px;
+      }
+
+      .cta-panel::after {
+        bottom: -120px;
+        right: -60px;
+      }
+
+      .cta-panel h2 {
+        font-size: 20px;
+        font-weight: 800;
+        margin-bottom: 14px;
+        position: relative;
+      }
+
+      .cta-panel p {
+        font-size: 13px;
+        margin-bottom: 24px;
+        opacity: 0.95;
+        position: relative;
+      }
+
+      .cta-panel .cta-buttons {
+        justify-content: center;
+      }
+
+      footer {
+        max-width: 1200px;
+        margin: 0 auto 60px;
+        padding: 0 32px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+
+      @media (max-width: 992px) {
+        .header {
+          display: none;
+        }
+
+        .side-nav {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          top: auto;
+          flex-direction: row;
+          width: auto;
+          max-width: calc(100vw - 40px);
+          padding: 12px 16px;
+          overflow-x: hidden;
+          overflow-y: hidden;
+          gap: 8px;
+          border-radius: 24px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+          justify-content: space-between;
+        }
+
+        .side-nav .menu-item {
+          flex-direction: column;
+          min-width: 0;
+          padding: 8px 6px;
+          font-size: 8px;
+          flex: 1 1 auto;
+        }
+
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: var(--accent-color);
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: var(--accent-color);
+          background: rgba(255, 126, 70, 0.1);
+        }
+
+        .side-nav .menu-item .ico {
+          width: 32px;
+          height: 32px;
+          font-size: 14px;
+        }
+
+        .main-content {
+          padding-left: 0;
+          padding-bottom: 90px;
+        }
+
+        .container {
+          padding: 20px 14px;
+        }
+
+        .ebook-hero {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .page-title h1 {
+          font-size: 12pt;
+          margin-bottom: 2px;
+          line-height: 1.2;
+        }
+
+        .page-title p {
+          font-size: 8pt;
+          line-height: 1.3;
+        }
+
+        .ebook-hero h2 {
+          font-size: 16px;
+        }
+
+        .ebook-hero p {
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .content-card {
+          padding: 22px 18px;
+        }
+
+        .cta-buttons {
+          flex-direction: column;
+        }
+
+        .cta-buttons > * {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .side-nav {
+          bottom: 12px;
+          max-width: calc(100vw - 16px);
+          padding: 8px 4px;
+          gap: 2px;
+          border-radius: 18px;
+          overflow-x: hidden;
+          justify-content: space-between;
+        }
+
+        .side-nav .menu-item {
+          min-width: 0;
+          padding: 4px 1px;
+          font-size: 6px;
+          flex: 1 1 calc((100% - 12px) / 7);
+          max-width: calc((100% - 12px) / 7);
+          gap: 2px;
+        }
+
+        .side-nav .menu-item .ico {
+          width: 22px;
+          height: 22px;
+          font-size: 10px;
+        }
+
+        .side-nav .menu-item span:not(.ico) {
+          font-size: 6px;
+          word-break: keep-all;
+          line-height: 1.2;
+          text-align: center;
+        }
+
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: var(--accent-color);
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: var(--accent-color);
+          background: rgba(255, 126, 70, 0.1);
+        }
+
+        .main-content {
+          padding-bottom: 70px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a href="/" class="logo-container">
+          <div class="logo-icon">
+            <i class="fa-solid fa-thumbtack"></i>
+          </div>
+          <span class="logo-text">sajang pick</span>
+        </a>
+
+        <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
+
+        <div class="auth-buttons" id="authButtons">
+          <div class="auth-user" id="authUser" style="display: none">
+            <div class="auth-user__avatar" id="userAvatar">U</div>
+            <div class="auth-user__meta">
+              <a
+                href="/mypage.html"
+                class="auth-user__label"
+                style="cursor: pointer"
+                >나의 페이지</a
+              >
+              <a
+                href="/mypage.html"
+                class="auth-user__email"
+                id="userEmail"
+                style="cursor: pointer"
+              ></a>
+            </div>
+            <button class="auth-user__logout" id="logoutBtn" type="button">
+              로그아웃
+            </button>
+          </div>
+          <a
+            href="/login.html"
+            class="auth-btn auth-btn--primary"
+            id="loginBtn"
+          >
+            <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px"></i>
+            <span>로그인</span>
+          </a>
+          <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+            <i class="fa-solid fa-user-plus" style="margin-right: 8px"></i>
+            <span>회원가입</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <aside class="side-nav" aria-label="사이드 네비게이션">
+      <a class="menu-item" href="/">
+        <span class="ico"><i class="fa-solid fa-house"></i></span>
+        <span>홈</span>
+      </a>
+      <a class="menu-item" href="/naver_search.html">
+        <span class="ico"><i class="fa-solid fa-key"></i></span>
+        <span>키워드</span>
+      </a>
+      <a class="menu-item" href="/AI-Review.html">
+        <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
+        <span>리뷰</span>
+      </a>
+      <a class="menu-item" href="/Blog-Editor.html">
+        <span class="ico"><i class="fa-solid fa-blog"></i></span>
+        <span>블로그</span>
+      </a>
+      <a class="menu-item" href="/recipe-manager.html">
+        <span class="ico"><i class="fa-solid fa-utensils"></i></span>
+        <span>레시피</span>
+      </a>
+      <a class="menu-item" href="/shorts-editor.html">
+        <span class="ico"><i class="fa-solid fa-film"></i></span>
+        <span>영상</span>
+      </a>
+      <a class="menu-item active" href="/sajangpick-book.html">
+        <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+        <span>전자책</span>
+      </a>
+      <a class="menu-item" href="/news-board.html">
+        <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
+        <span>정보</span>
+      </a>
+      <a class="menu-item" href="/policy-support.html">
+        <span class="ico"><i class="fa-solid fa-coins"></i></span>
+        <span>정책</span>
+      </a>
+    </aside>
+
+    <div class="main-content">
+      <div class="container">
+        <div class="header-section">
+          <div class="page-title">
+            <h1>
+              사장픽 전자책 다운로드 <span class="beta-badge">깜짝 무료</span>
+            </h1>
+            <p>
+              네이버 플레이스 초보 사장님을 위한 실전 입문 가이드를 로그인
+              고객에게만 무료로 제공합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="ebook-hero">
+            <div>
+              <div class="hero-badge">
+                <i class="fa-solid fa-gift"></i>
+                사이트 오픈 기념 한정 이벤트
+              </div>
+              <h2>로그인만 하면 0원으로 받는 네이버 플레이스 입문서</h2>
+              <p>
+                네이버 스마트스토어에서 정가로 판매 중인 사장픽 전자책을 지금
+                로그인 회원에게만 무료로 드립니다. 예고 없이 유료로 전환될 수
+                있는 깜짝 이벤트이니 놓치지 마세요.
+              </p>
+              <div class="price-labels">
+                <span class="price-original">정가 79,000원</span>
+                <span class="price-free">→ 지금은 0원</span>
+              </div>
+              <div class="cta-buttons">
+                <button class="cta-primary" type="button" id="downloadBtn">
+                  <i class="fa-solid fa-download"></i>
+                  전자책 무료 다운로드
+                </button>
+                <a class="cta-secondary" id="loginCta" href="/login.html">
+                  <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                  로그인하고 받기
+                </a>
+              </div>
+              <div class="status-hint" id="downloadStatus">
+                로그인 회원에게만 다운로드 링크가 열립니다.
+              </div>
+              <div class="hero-meta">
+                <a
+                  href="https://smartstore.naver.com/sanao/products/12315210567"
+                  target="_blank"
+                  rel="noopener"
+                  class="tag"
+                >
+                  <i class="fa-solid fa-store"></i>
+                  사장픽 스마트스토어 정식 판매 도서
+                </a>
+                <span class="tag">
+                  <i class="fa-solid fa-clock"></i>
+                  깜짝 이벤트는 예고 없이 종료됩니다
+                </span>
+              </div>
+            </div>
+            <div class="ebook-visual">
+              <img
+                src="/docs/01_기능_사용설명서/image/07_레시피관리_AI생성시스템/ebook-cover.jpg"
+                alt="사장픽 네이버 플레이스 입문 가이드 전자책 표지"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="two-column" style="margin-bottom: 24px">
+            <div class="feature-card">
+              <h3>
+                <i class="fa-solid fa-list-check"></i> 전자책에서 바로 써먹는
+                핵심 노하우
+              </h3>
+              <p>
+                플레이스 기본 세팅부터 리뷰 관리, 상위 노출 전략까지 초보
+                사장님이 당장 따라 할 수 있는 순서로 정리했습니다. 실전
+                체크리스트와 사례 중심으로 구성되어 있어 매장 운영에 바로 적용할
+                수 있습니다.
+              </p>
+            </div>
+            <div class="feature-card">
+              <h3>
+                <i class="fa-solid fa-envelope-open-text"></i> 후속 자료와
+                업데이트
+              </h3>
+              <p>
+                전자책을 무료로 받아가신 회원에게는 플레이스 운영 꿀팁, 라이브
+                웨비나, 정책 지원 소식까지 이어서 전해드립니다. 한 번
+                다운로드하면 계속해서 최신 정보를 받아볼 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="steps-grid">
+            <div class="step-card">
+              <div class="step-index">1</div>
+              <h4>사장픽 로그인</h4>
+              <p>
+                카카오 로그인 또는 이메일 회원가입 후 로그인하면 다운로드 준비가
+                끝납니다.
+              </p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">2</div>
+              <h4>무료 다운로드 버튼 클릭</h4>
+              <p>
+                버튼을 누르면 PDF가 새 창으로 열리고, 내 계정에도 즉시
+                저장됩니다.
+              </p>
+            </div>
+            <div class="step-card">
+              <div class="step-index">3</div>
+              <h4>PDF 열람 & 이메일 수신</h4>
+              <p>
+                브라우저에서 바로 확인하고, 이메일로도 다운로드 링크를 다시
+                받아볼 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <h2
+            style="
+              font-size: 20px;
+              font-weight: 800;
+              color: var(--text-primary);
+              margin-bottom: 18px;
+            "
+          >
+            사장님들이 안심하고 선택하는 이유
+          </h2>
+          <div class="trust-grid">
+            <div class="trust-item">
+              <h3>
+                <i
+                  class="fa-solid fa-medal"
+                  style="color: var(--accent-color); margin-right: 8px"
+                ></i
+                >스마트스토어 정식 판매 콘텐츠
+              </h3>
+              <p>
+                실제로 판매 중인 검증된 콘텐츠를 깜짝 무료로 제공해 드립니다.
+                유료로 구매한 사장님들의 만족 후기가 계속 이어지고 있습니다.
+              </p>
+            </div>
+            <div class="trust-item">
+              <h3>
+                <i
+                  class="fa-solid fa-briefcase"
+                  style="color: var(--accent-color); margin-right: 8px"
+                ></i
+                >사장픽 실무진의 노하우
+              </h3>
+              <p>
+                매장 컨설팅과 데이터 분석을 진행해 온 사장픽 팀이 직접 작성한
+                가이드입니다. 현장에서 바로 써먹을 수 있는 팁만 모았습니다.
+              </p>
+            </div>
+            <div class="trust-item">
+              <h3>
+                <i
+                  class="fa-solid fa-bell"
+                  style="color: var(--accent-color); margin-right: 8px"
+                ></i
+                >업데이트 & 정책 소식
+              </h3>
+              <p>
+                전자책을 받으신 이후에도 플레이스 정책 변경, 정부 지원 소식, AI
+                활용법 등 실무 정보를 이메일로 계속 안내해 드립니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="cta-panel">
+            <h2>지금 로그인하고 깜짝 무료 혜택을 잡으세요</h2>
+            <p>
+              이벤트 종료 후에는 다시 유료로 전환됩니다. 사장님 전용 네이버
+              플레이스 입문 가이드를 지금 무료로 받아보세요.
+            </p>
+            <div class="cta-buttons">
+              <button class="cta-primary" type="button" id="ctaDownloadBtn">
+                <i class="fa-solid fa-arrow-down-long"></i>
+                지금 바로 무료 다운로드
+              </button>
+              <a class="cta-secondary" id="ctaLoginBtn" href="/login.html">
+                <i class="fa-solid fa-user"></i>
+                로그인 페이지로 이동
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <footer>
+          © <span id="footerYear"></span> 사장픽. 모든 권리 보유.
+          <span style="margin-left: 12px"
+            >개인정보처리방침·이용약관은 곧 공개됩니다.</span
+          >
+        </footer>
+      </div>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
+      integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug"
+      crossorigin="anonymous"
+    ></script>
+    <script src="/assets/auth-state.js?v=20251114"></script>
+    <script>
+      // ⚠️ 캐시 방지를 위한 버전 번호 (2025-11-14 수정: 2026 → 2025 수정)
+      console.log("========================================");
+      console.log("📚 전자책 다운로드 페이지 로드됨");
+      console.log("📅 스크립트 버전: 2025-11-14");
+      console.log("✅ 2026 버전 사용");
+      console.log("========================================");
+    </script>
+    <script>
+      (function () {
+        // 전자책 PDF 파일 경로 (영문 파일명) - 2026 버전 사용
+        // 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf
+        let ebookPath =
+          "/docs/Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+
+        // 중복 확장자 방지
+        if (ebookPath.includes(".pdf.pdf")) {
+          console.error(
+            "[전자책] ❌ 중복 확장자 감지! .pdf.pdf를 .pdf로 변경합니다."
+          );
+          ebookPath = ebookPath.replace(".pdf.pdf", ".pdf");
+        }
+
+        // 최종 검증된 경로를 상수로 설정
+        const EBOOK_PATH = ebookPath;
+
+        // 파일명 검증 (디버깅용)
+        console.log("[전자책] ✅ 파일 경로 설정:", EBOOK_PATH);
+        console.log(
+          "[전자책] ✅ 예상 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf"
+        );
+        const downloadBtn = document.getElementById("downloadBtn");
+        const loginCta = document.getElementById("loginCta");
+        const statusText = document.getElementById("downloadStatus");
+        const ctaDownloadBtn = document.getElementById("ctaDownloadBtn");
+        const ctaLoginBtn = document.getElementById("ctaLoginBtn");
+        const footerYear = document.getElementById("footerYear");
+        let currentUser = null;
+        let sessionCheckAttempts = 0;
+        const MAX_SESSION_CHECK_ATTEMPTS = 50; // 최대 5초 대기 (50 * 100ms)
+
+        footerYear.textContent = new Date().getFullYear();
+
+        function setLoggedInUI(user) {
+          currentUser = user;
+
+          // 다운로드 버튼 영역 업데이트
+          if (loginCta) loginCta.style.display = "none";
+          if (ctaLoginBtn) ctaLoginBtn.style.display = "none";
+          if (statusText) {
+            statusText.textContent =
+              "로그인이 확인되었습니다. 버튼을 눌러 전자책을 다운로드하세요.";
+            statusText.style.color = "#d9480f";
+          }
+
+          // 헤더 업데이트
+          const authUser = document.getElementById("authUser");
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+          const userEmail = document.getElementById("userEmail");
+          const userAvatar = document.getElementById("userAvatar");
+          const logoutBtn = document.getElementById("logoutBtn");
+
+          if (authUser) authUser.style.display = "flex";
+          if (loginBtn) loginBtn.style.display = "none";
+          if (signupBtn) signupBtn.style.display = "none";
+
+          if (userEmail && user?.email) {
+            userEmail.textContent = user.email;
+          }
+
+          if (userAvatar && user?.email) {
+            const initial = user.email.charAt(0).toUpperCase();
+            userAvatar.textContent = initial;
+          }
+
+          // 로그아웃 버튼 이벤트 리스너
+          if (logoutBtn) {
+            logoutBtn.onclick = async () => {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
+              }
+              window.location.reload();
+            };
+          }
+        }
+
+        function setLoggedOutUI() {
+          currentUser = null;
+
+          // 다운로드 버튼 영역 업데이트
+          if (loginCta) loginCta.style.display = "inline-flex";
+          if (ctaLoginBtn) ctaLoginBtn.style.display = "inline-flex";
+          if (statusText) {
+            statusText.textContent =
+              "로그인하지 않은 경우 다운로드 전에 로그인 안내가 표시됩니다.";
+            statusText.style.color = "var(--text-secondary)";
+          }
+
+          // 헤더 업데이트
+          const authUser = document.getElementById("authUser");
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+
+          if (authUser) authUser.style.display = "none";
+          if (loginBtn) loginBtn.style.display = "inline-flex";
+          if (signupBtn) signupBtn.style.display = "inline-flex";
+        }
+
+        async function resolveSession() {
+          // authState가 아직 초기화되지 않았으면 재시도
+          if (!window.authState?.supabase) {
+            sessionCheckAttempts++;
+            if (sessionCheckAttempts < MAX_SESSION_CHECK_ATTEMPTS) {
+              setTimeout(resolveSession, 100);
+              return;
+            } else {
+              console.warn("[전자책] authState 초기화 대기 시간 초과");
+              setLoggedOutUI();
+              return;
+            }
+          }
+
+          try {
+            const { data, error } =
+              await window.authState.supabase.auth.getSession();
+            if (error) {
+              console.error("[전자책] 세션 확인 오류:", error);
+              setLoggedOutUI();
+              return;
+            }
+
+            const session = data?.session;
+            if (session?.user) {
+              console.log("[전자책] 로그인 확인됨:", session.user.email);
+              setLoggedInUI(session.user);
+            } else {
+              console.log("[전자책] 로그인되지 않음");
+              setLoggedOutUI();
+            }
+          } catch (error) {
+            console.error("[전자책] 세션 확인 실패:", error);
+            setLoggedOutUI();
+          }
+        }
+
+        function requireLogin() {
+          if (!currentUser) {
+            alert("로그인 후 이용할 수 있습니다. 로그인 페이지로 이동합니다.");
+            window.location.href = "/login.html?redirect=/sajangpick-book.html";
+            return false;
+          }
+          return true;
+        }
+
+        // 모바일 기기 감지 함수
+        function isMobileDevice() {
+          return (
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+              navigator.userAgent
+            ) || window.innerWidth <= 768
+          );
+        }
+
+        async function handleDownload() {
+          if (!requireLogin()) return;
+
+          try {
+            // ⚠️ 강제로 올바른 파일명 사용 (2026 버전)
+            const CORRECT_FILENAME =
+              "Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+            let finalPath = "/docs/" + CORRECT_FILENAME;
+
+            // 중복 확장자 제거
+            finalPath = finalPath.replace(/\.pdf\.pdf/g, ".pdf");
+
+            // 절대 경로로 변환 (배포 환경 대응)
+            const absolutePath = finalPath.startsWith("/")
+              ? finalPath
+              : "/" + finalPath;
+
+            console.log("========================================");
+            console.log("[전자책] ✅ 다운로드 시작");
+            console.log("[전자책] ✅ 최종 다운로드 경로:", absolutePath);
+            console.log("[전자책] ✅ 파일명:", CORRECT_FILENAME);
+            console.log("[전자책] ✅ 모바일 기기:", isMobileDevice());
+            console.log("========================================");
+
+            // 파일 존재 여부 확인
+            const response = await fetch(absolutePath, {
+              method: "HEAD",
+              cache: "no-cache",
+            });
+
+            console.log(
+              "[전자책] 파일 확인 응답:",
+              response.status,
+              response.statusText
+            );
+
+            if (!response.ok) {
+              console.error(
+                "[전자책] 파일을 찾을 수 없습니다:",
+                absolutePath,
+                response.status
+              );
+              if (statusText) {
+                statusText.textContent = `파일을 찾을 수 없습니다. (${response.status}) 관리자에게 문의해주세요.`;
+                statusText.style.color = "#b91c1c";
+              }
+              alert(
+                `전자책 파일을 찾을 수 없습니다. (오류 코드: ${response.status})\n\n파일 경로: ${absolutePath}\n\n관리자에게 문의해주세요.`
+              );
+              return;
+            }
+
+            // PDF 다운로드 (캐시 방지를 위해 타임스탬프 추가)
+            const downloadUrl =
+              absolutePath +
+              (absolutePath.includes("?") ? "&" : "?") +
+              "_t=" +
+              Date.now();
+            console.log("[전자책] PDF 다운로드 URL:", downloadUrl);
+            console.log("[전자책] 원본 경로:", absolutePath);
+
+            // 모바일과 데스크톱에서 다른 방식으로 처리
+            if (isMobileDevice()) {
+              // 모바일: 숨겨진 <a> 태그를 생성하여 다운로드 (팝업 차단 방지)
+              console.log(
+                "[전자책] 모바일 기기 감지 - 직접 다운로드 방식 사용"
+              );
+              const link = document.createElement("a");
+              link.href = downloadUrl;
+              link.download = CORRECT_FILENAME; // 다운로드 파일명 지정
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.style.display = "none";
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+
+              if (statusText) {
+                statusText.textContent =
+                  "PDF 다운로드가 시작됩니다. 이메일로도 곧 발송될 예정입니다.";
+                statusText.style.color = "#d9480f";
+              }
+            } else {
+              // 데스크톱: 새 창에서 열기
+              console.log("[전자책] 데스크톱 기기 감지 - 새 창에서 열기");
+              window.open(downloadUrl, "_blank", "noopener");
+              if (statusText) {
+                statusText.textContent =
+                  "PDF가 새 창에서 열립니다. 이메일로도 곧 발송될 예정입니다.";
+                statusText.style.color = "#d9480f";
+              }
+            }
+          } catch (error) {
+            console.error("[전자책] 다운로드 실패:", error);
+            console.error("[전자책] 오류 상세:", error.message, error.stack);
+            if (statusText) {
+              statusText.textContent =
+                "다운로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+              statusText.style.color = "#b91c1c";
+            }
+            alert(
+              `다운로드 중 오류가 발생했습니다.\n\n오류: ${error.message}\n\n잠시 후 다시 시도해주세요.`
+            );
+          }
+        }
+
+        downloadBtn?.addEventListener("click", handleDownload);
+        ctaDownloadBtn?.addEventListener("click", handleDownload);
+
+        // auth:state-changed 이벤트 리스너 등록
+        window.addEventListener("auth:state-changed", () => {
+          console.log("[전자책] auth:state-changed 이벤트 수신");
+          sessionCheckAttempts = 0; // 재시도 카운터 리셋
+          resolveSession();
+        });
+
+        // 초기 세션 확인 (DOMContentLoaded 후 실행)
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(resolveSession, 200);
+          });
+        } else {
+          setTimeout(resolveSession, 200);
+        }
+      })();
+    </script>
+  </body>
+</html>

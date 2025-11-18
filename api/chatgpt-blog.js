@@ -1357,13 +1357,106 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
 /**
  * AI를 사용한 레시피 생성
  */
-async function generateRecipeWithAI(ingredients, style, maxTime, userId) {
+// 재료로 만들 수 있는 요리 5가지 제안
+async function suggestDishesWithAI(ingredients, userId) {
+    try {
+        console.log('[요리 제안] 시작:', {
+            ingredients,
+            userId
+        });
+
+        const systemPrompt = `당신은 창의적인 요리 전문가입니다.
+주어진 재료로 만들 수 있는 다양한 요리를 제안해주세요.
+
+중요 지침:
+1. 재료를 최대한 활용할 수 있는 요리 추천
+2. 다양한 조리법 제시 (볶음, 찜, 구이, 전, 조림 등)
+3. 간단한 것부터 복잡한 것까지 다양하게
+4. 한국 가정식/식당 메뉴 위주
+5. 실제로 만들 수 있는 현실적인 요리만`;
+
+        const userPrompt = `다음 재료로 만들 수 있는 요리 5가지를 추천해주세요:
+
+재료: ${ingredients}
+
+다음 형식으로 정확히 5개만 작성해주세요:
+
+1. [요리명] - [한 줄 설명]
+2. [요리명] - [한 줄 설명]
+3. [요리명] - [한 줄 설명]
+4. [요리명] - [한 줄 설명]
+5. [요리명] - [한 줄 설명]
+
+예시:
+1. 감자샐러드 - 상큼한 마요네즈 드레싱의 간단한 반찬
+2. 감자스프 - 부드럽고 고소한 크림 수프
+3. 감자전 - 바삭한 식감의 전통 간식
+4. 감자조림 - 달콤짭짤한 밑반찬
+5. 감자볶음 - 고소하고 매콤한 볶음 요리`;
+
+        // AI 호출 (토큰 추적 포함)
+        const completion = await callOpenAIWithTracking(
+            userId,
+            async () => {
+                return await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.9,  // 창의성 높게
+                    max_tokens: 500
+                });
+            },
+            'dish-suggestion'
+        );
+
+        const dishesText = completion.choices[0].message.content;
+
+        // 5가지 요리 파싱
+        const dishes = parseDishSuggestions(dishesText);
+
+        console.log('[요리 제안] 완료:', dishes);
+
+        return {
+            dishes,
+            rawText: dishesText,
+            timestamp: new Date().toISOString()
+        };
+
+    } catch (error) {
+        console.error('[요리 제안] 오류:', error);
+        throw new Error('요리 제안에 실패했습니다: ' + error.message);
+    }
+}
+
+// 요리 제안 텍스트 파싱
+function parseDishSuggestions(text) {
+    const dishes = [];
+    const lines = text.split('\n');
+
+    for (const line of lines) {
+        // "1. 감자샐러드 - 상큼한 마요네즈 드레싱의 간단한 반찬" 형식 파싱
+        const match = line.match(/^\d+\.\s*(.+?)\s*-\s*(.+)$/);
+        if (match) {
+            dishes.push({
+                name: match[1].trim(),
+                description: match[2].trim()
+            });
+        }
+    }
+
+    return dishes;
+}
+
+async function generateRecipeWithAI(ingredients, style, maxTime, userId, dishName = null) {
     try {
         console.log('[레시피 생성] 파라미터:', {
             ingredients,
             style,
             maxTime,
-            userId
+            userId,
+            dishName
         });
 
         const systemPrompt = `당신은 전문 요리사이자 레시피 개발 전문가입니다.
@@ -1377,7 +1470,15 @@ async function generateRecipeWithAI(ingredients, style, maxTime, userId) {
 5. 단계별 조리 과정을 명확하게
 6. 실용적인 팁과 주의사항 포함`;
 
-        const userPrompt = `다음 재료로 레시피를 만들어주세요:
+        const userPrompt = dishName 
+            ? `다음 재료로 "${dishName}" 레시피를 만들어주세요:
+
+재료: ${ingredients}
+요리명: ${dishName}
+${style ? `원하는 스타일: ${style}` : ''}
+
+다음 형식으로 작성해주세요:`
+            : `다음 재료로 레시피를 만들어주세요:
 
 재료: ${ingredients}
 ${style ? `원하는 스타일: ${style}` : ''}
@@ -1812,21 +1913,49 @@ module.exports = async function handler(req, res) {
                     });
                 }
 
+            case 'suggest-dishes':
+                {
+                    try {
+                        console.log('[요리 제안] 시작:', {
+                            userId: data.userId || 'anonymous',
+                            ingredients: data.ingredients
+                        });
+
+                        const suggestResult = await suggestDishesWithAI(
+                            data.ingredients,
+                            data.userId || null  // userId 없으면 null 전달
+                        );
+
+                        return res.status(200).json({
+                            success: true,
+                            data: suggestResult
+                        });
+                    } catch (error) {
+                        console.error('[요리 제안] 오류:', error);
+                        return res.status(500).json({
+                            success: false,
+                            error: `요리 제안 실패: ${error.message}`
+                        });
+                    }
+                }
+
             case 'generate-recipe':
                 {
                     try {
                         console.log('[레시피 생성] 시작:', {
-                            userId: data.userId,
+                            userId: data.userId || 'anonymous',
                             ingredients: data.ingredients,
                             style: data.style,
-                            maxTime: data.maxTime
+                            maxTime: data.maxTime,
+                            dishName: data.dishName
                         });
 
                         const recipeResult = await generateRecipeWithAI(
                             data.ingredients, 
                             data.style, 
                             data.maxTime,
-                            data.userId
+                            data.userId || null,  // userId 없으면 null 전달
+                            data.dishName  // 선택한 요리명 추가
                         );
 
                         return res.status(200).json({
