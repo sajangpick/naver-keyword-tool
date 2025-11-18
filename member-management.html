@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>회원 관리 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      /* 회원 관리 전용 스타일 */
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      /* 필터 */
+      .filters {
+        display: grid;
+        grid-template-columns: 1fr 300px auto;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .filter-group {
+        display: flex;
+        gap: 8px;
+      }
+
+      .filter-btn {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .filter-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .filter-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      input[type="text"],
+      select {
+        width: 100%;
+        padding: 10px 14px;
+        background: #fff;
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1);
+      }
+
+      /* 테이블 */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 14px 12px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 14px;
+        text-align: left;
+      }
+
+      th {
+        color: #6b7280;
+        font-weight: 700;
+        background: #fafafa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      td {
+        color: #374151;
+      }
+
+      tr:hover td {
+        background: #f9fafb;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .badge.owner {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .badge.agency {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .badge.admin {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .badge.seed {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+
+      .badge.power {
+        background: #ddd6fe;
+        color: #5b21b6;
+      }
+
+      .badge.big_power {
+        background: #fce7f3;
+        color: #9f1239;
+      }
+
+      .badge.premium {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .badge.elite {
+        background: #fef9c3;
+        color: #713f12;
+      }
+
+      .badge.expert {
+        background: #fed7aa;
+        color: #7c2d12;
+      }
+
+      .badge.master {
+        background: #fecaca;
+        color: #7f1d1d;
+      }
+
+      .badge.platinum {
+        background: #e9d5ff;
+        color: #581c87;
+      }
+
+      /* 버튼 */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: white;
+        color: #374151;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-1px);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+
+      .btn.primary:hover {
+        background: var(--naver-green-dark);
+        transform: translateY(-1px);
+      }
+
+      .btn.danger {
+        color: #dc2626;
+        border-color: #fecaca;
+      }
+
+      .btn.danger:hover {
+        background: #fee2e2;
+        border-color: #dc2626;
+      }
+
+      /* 사용량 바 */
+      .usage-bar {
+        width: 100%;
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+
+      .usage-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        transition: width 0.3s;
+      }
+
+      .usage-bar-fill.warning {
+        background: #f59e0b;
+      }
+
+      .usage-bar-fill.danger {
+        background: #ef4444;
+      }
+
+      /* 로딩 */
+      .loading {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--muted);
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border: 1px solid #fecaca;
+      }
+
+      /* 페이지네이션 */
+      .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      .page-btn {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .page-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .page-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* 통계 카드 */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+
+      .stat-card .label {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .stat-card .value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      /* 드롭다운 */
+      .dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background: white;
+        min-width: 200px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        z-index: 1000;
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+
+      .dropdown-content.show {
+        display: block;
+      }
+
+      .dropdown-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 13px;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.2s;
+      }
+
+      .dropdown-item:last-child {
+        border-bottom: none;
+      }
+
+      .dropdown-item:hover {
+        background: #f9fafb;
+      }
+
+      /* 모달 */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal.show {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-header {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+
+      .modal-body {
+        margin-bottom: 20px;
+      }
+
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+      }
+
+      /* 상세보기 모달 스타일 */
+      .modal-large {
+        max-width: 900px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        position: relative;
+      }
+
+      .close-btn {
+        position: absolute;
+        right: 0;
+        top: -8px;
+        background: none;
+        border: none;
+        font-size: 32px;
+        cursor: pointer;
+        color: #6b7280;
+        line-height: 1;
+      }
+
+      .close-btn:hover {
+        color: #111827;
+      }
+
+      .detail-section {
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .detail-section:last-child {
+        border-bottom: none;
+      }
+
+      .detail-section h3 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .info-item label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+      }
+
+      .info-item span {
+        font-size: 14px;
+        color: #111827;
+      }
+
+      .usage-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .usage-card {
+        background: #f9fafb;
+        padding: 16px;
+        border-radius: 8px;
+      }
+
+      .usage-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 8px;
+      }
+
+      .usage-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 8px;
+      }
+
+      .usage-value .current {
+        color: var(--accent);
+      }
+
+      .usage-value .limit {
+        color: #9ca3af;
+        font-size: 18px;
+      }
+
+      .usage-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .usage-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        transition: width 0.3s;
+        border-radius: 4px;
+      }
+
+      .usage-bar-fill.warning {
+        background: #f59e0b;
+      }
+
+      .usage-bar-fill.danger {
+        background: #ef4444;
+      }
+
+      .activity-list {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .activity-item {
+        background: #f9fafb;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border-left: 3px solid var(--accent);
+      }
+
+      .activity-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .activity-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .activity-date {
+        font-size: 12px;
+        color: #9ca3af;
+      }
+
+      .activity-content {
+        font-size: 13px;
+        color: #6b7280;
+        line-height: 1.5;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .activity-meta {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #9ca3af;
+      }
+
+      .activity-empty {
+        text-align: center;
+        padding: 40px;
+        color: #9ca3af;
+      }
+
+      .activity-empty i {
+        font-size: 48px;
+        opacity: 0.3;
+        display: block;
+        margin-bottom: 12px;
+      }
+
+      /* 반응형 */
+      @media (max-width: 900px) {
+        .filters {
+          grid-template-columns: 1fr;
+        }
+
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        table {
+          font-size: 12px;
+        }
+
+        th,
+        td {
+          padding: 10px 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <h1><i class="fas fa-users"></i> 회원 관리</h1>
+      <p class="subtitle">
+        전체 회원 목록 조회 및 등급 관리 · 
+        <strong>A안 (프론트엔드 직접)</strong> · 
+        나중에 B안(서버 API)으로 전환 예정
+      </p>
+
+      <!-- 통계 -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="label">전체 회원</div>
+          <div class="value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">식당 대표</div>
+          <div class="value" id="stat-owner">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">대행사/블로거</div>
+          <div class="value" id="stat-agency">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">관리자</div>
+          <div class="value" id="stat-admin">0</div>
+        </div>
+      </div>
+
+      <!-- 메인 카드 -->
+      <section class="card">
+        <div class="card-header">
+          <div class="title">
+            <i class="fas fa-list"></i>
+            회원 목록
+          </div>
+          <button class="btn primary" onclick="window.location.reload()">
+            <i class="fas fa-sync"></i> 새로고침
+          </button>
+        </div>
+
+        <div class="card-body">
+          <!-- 필터 -->
+          <div class="filters">
+            <div class="filter-group">
+              <button class="filter-btn active" data-type="" onclick="filterByType(this, '')">
+                전체
+              </button>
+              <button class="filter-btn" data-type="owner" onclick="filterByType(this, 'owner')">
+                식당 대표
+              </button>
+              <button class="filter-btn" data-type="agency" onclick="filterByType(this, 'agency')">
+                대행사/블로거
+              </button>
+              <button class="filter-btn" data-type="admin" onclick="filterByType(this, 'admin')">
+                관리자
+              </button>
+            </div>
+
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="이름 또는 이메일 검색..."
+              onkeyup="handleSearch(event)"
+            />
+
+            <button class="btn primary" onclick="loadMembers()">
+              <i class="fas fa-search"></i> 검색
+            </button>
+          </div>
+
+          <!-- 로딩/에러 -->
+          <div id="loadingContainer" class="loading" style="display: none">
+            <div class="spinner"></div>
+            <p style="margin-top: 16px">로딩 중...</p>
+          </div>
+
+          <div id="errorContainer" style="display: none"></div>
+
+          <!-- 테이블 -->
+          <div id="tableContainer" style="max-height: 600px; overflow: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>회원명</th>
+                  <th>이메일</th>
+                  <th>회원 유형</th>
+                  <th>등급</th>
+                  <th>사용량 (리뷰)</th>
+                  <th>사용량 (블로그)</th>
+                  <th>가입일</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="memberTableBody">
+                <!-- JavaScript로 채워짐 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 페이지네이션 -->
+          <div class="pagination" id="pagination" style="display: none"></div>
+        </div>
+      </section>
+
+      <!-- 플레이스 크롤링 기록 -->
+      <section class="card" style="margin-top: 24px;">
+        <div class="card-header">
+          <div class="title">
+            <i class="fas fa-database" style="color: var(--accent);"></i>
+            플레이스 크롤링 캐시
+          </div>
+          <button class="btn" onclick="loadPlaceCache()">
+            <i class="fas fa-sync"></i> 새로고침
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table id="placeCacheTable">
+              <thead>
+                <tr>
+                  <th>가게명</th>
+                  <th>주소</th>
+                  <th>영업시간</th>
+                  <th>크롤링 횟수</th>
+                  <th>마지막 크롤링</th>
+                  <th>생성일</th>
+                </tr>
+              </thead>
+              <tbody id="placeCacheBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 등급 변경 모달 -->
+    <div id="levelModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">회원 등급 및 유형 변경</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>회원명</label>
+            <input type="text" id="modal-member-name" readonly />
+          </div>
+
+          <div class="form-group">
+            <label>새 등급</label>
+            <select id="modal-new-level">
+              <optgroup label="식당 대표 (owner)">
+                <option value="owner:member:seed">씨앗 (월 10개)</option>
+                <option value="owner:member:power">파워 (월 50개)</option>
+                <option value="owner:member:big_power">빅파워 (월 200개)</option>
+                <option value="owner:member:premium">프리미엄 (무제한)</option>
+              </optgroup>
+              <optgroup label="대행사/블로거 (agency)">
+                <option value="agency:member:elite">엘리트 (월 100개)</option>
+                <option value="agency:member:expert">전문가 (월 500개)</option>
+                <option value="agency:member:master">마스터 (월 2000개)</option>
+                <option value="agency:member:platinum">플래티넘 (무제한)</option>
+              </optgroup>
+              <optgroup label="매니저 (manager)">
+                <option value="manager:general:admin">🙋 일반 매니저 (뷰만 가능)</option>
+                <option value="manager:super:admin">👑 수퍼 매니저 (제한된 편집)</option>
+              </optgroup>
+              <optgroup label="관리자 (admin)">
+                <option value="admin:general:admin">👔 일반 관리자 (오너가 제약)</option>
+                <option value="admin:owner:admin">👨‍💼 오너 관리자 (모든 권한)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="modal-reset-usage" />
+            <label for="modal-reset-usage">사용량 초기화</label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" onclick="closeLevelModal()">취소</button>
+          <button class="btn primary" onclick="confirmLevelChange()">
+            <i class="fas fa-check"></i> 변경
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 회원 상세보기 모달 -->
+    <div id="detailModal" class="modal">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <span id="detail-member-name">회원 상세정보</span>
+          <button class="close-btn" onclick="closeDetailModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- 회원 기본 정보 -->
+          <section class="detail-section">
+            <h3><i class="fas fa-user-circle"></i> 회원 정보</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>이름</label>
+                <span id="detail-name">-</span>
+              </div>
+              <div class="info-item">
+                <label>이메일</label>
+                <span id="detail-email">-</span>
+              </div>
+              <div class="info-item">
+                <label>회원 유형</label>
+                <span id="detail-user-type">-</span>
+              </div>
+              <div class="info-item">
+                <label>등급</label>
+                <span id="detail-level">-</span>
+              </div>
+              <div class="info-item">
+                <label>가입일</label>
+                <span id="detail-created">-</span>
+              </div>
+              <div class="info-item">
+                <label>마지막 수정</label>
+                <span id="detail-updated">-</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 가게 정보 -->
+          <section class="detail-section">
+            <h3><i class="fas fa-store"></i> 가게 정보</h3>
+            <p style="color: #666; font-size: 13px; margin-bottom: 12px;">블로그 작성 시 자동으로 입력되는 정보</p>
+            <div class="info-grid">
+              <div class="info-item" style="grid-column: 1 / -1;">
+                <label>플레이스 URL</label>
+                <span id="detail-store-url" style="word-break: break-all;">-</span>
+              </div>
+              <div class="info-item">
+                <label>가게 이름</label>
+                <span id="detail-store-name">-</span>
+              </div>
+              <div class="info-item">
+                <label>가게 주소</label>
+                <span id="detail-store-address">-</span>
+              </div>
+              <div class="info-item">
+                <label>영업시간</label>
+                <span id="detail-store-hours">-</span>
+              </div>
+              <div class="info-item">
+                <label>가게 전화번호</label>
+                <span id="detail-store-phone">-</span>
+              </div>
+              <div class="info-item">
+                <label>대표메뉴</label>
+                <span id="detail-store-menu">-</span>
+              </div>
+              <div class="info-item">
+                <label>주변 랜드마크</label>
+                <span id="detail-store-landmarks">-</span>
+              </div>
+              <div class="info-item">
+                <label>키워드</label>
+                <span id="detail-store-keywords">-</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 이번 달 사용량 통계 -->
+          <section class="detail-section">
+            <h3><i class="fas fa-chart-bar"></i> 이번 달 사용량</h3>
+            <div class="usage-stats">
+              <div class="usage-card">
+                <div class="usage-label">리뷰 답글</div>
+                <div class="usage-value">
+                  <span class="current" id="detail-review-count">0</span> / 
+                  <span class="limit" id="detail-review-limit">0</span>
+                </div>
+                <div class="usage-bar">
+                  <div class="usage-bar-fill" id="detail-review-bar"></div>
+                </div>
+              </div>
+              <div class="usage-card">
+                <div class="usage-label">블로그 포스팅</div>
+                <div class="usage-value">
+                  <span class="current" id="detail-blog-count">0</span> / 
+                  <span class="limit" id="detail-blog-limit">0</span>
+                </div>
+                <div class="usage-bar">
+                  <div class="usage-bar-fill" id="detail-blog-bar"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 리뷰 답글 내역 -->
+          <section class="detail-section">
+            <h3><i class="fas fa-comment-dots"></i> 최근 리뷰 답글 (최근 10개)</h3>
+            <div id="detail-reviews-container" class="activity-list">
+              <div class="loading-spinner">
+                <div class="spinner"></div>
+                로딩 중...
+              </div>
+            </div>
+          </section>
+
+          <!-- 블로그 포스팅 내역 -->
+          <section class="detail-section">
+            <h3><i class="fas fa-blog"></i> 최근 블로그 포스팅 (최근 10개)</h3>
+            <div id="detail-blogs-container" class="activity-list">
+              <div class="loading-spinner">
+                <div class="spinner"></div>
+                로딩 중...
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" onclick="closeDetailModal()">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
+
+    <script>
+      // ==================== 설정 ====================
+      
+      // TODO: 블로그 작업 완료 후 B안으로 전환
+      // 현재: A안 (프론트엔드에서 Supabase 직접 호출)
+      // 나중: B안 (server.js API 호출)
+      
+      // Supabase 클라이언트 초기화
+      let supabase;
+      
+      async function ensureSupabase() {
+        if (!supabase) {
+          supabase = await AdminBootstrap.getSupabaseClient();
+          console.log('✅ Supabase 초기화 완료');
+        }
+        return supabase;
+      }
+
+      // 회원 등급 제한 정보
+      const LIMITS = {
+        owner: {
+          seed: { review: 10, blog: 2 },
+          power: { review: 50, blog: 10 },
+          big_power: { review: 200, blog: 30 },
+          premium: { review: null, blog: 100 }
+        },
+        agency: {
+          elite: { review: 100, blog: 50 },
+          expert: { review: 500, blog: 200 },
+          master: { review: 2000, blog: 500 },
+          platinum: { review: null, blog: null }
+        },
+        admin: {
+          admin: { review: null, blog: null }
+        }
+      };
+
+      // 등급 한글명
+      const LEVEL_NAMES = {
+        seed: '씨앗',
+        power: '파워',
+        big_power: '빅파워',
+        premium: '프리미엄',
+        elite: '엘리트',
+        expert: '전문가',
+        master: '마스터',
+        platinum: '플래티넘',
+        admin: '관리자'
+      };
+
+      // 상태 변수
+      let currentFilter = '';
+      let currentSearch = '';
+      let currentPage = 1;
+      let selectedMember = null;
+
+      // ==================== 초기화 ====================
+
+      window.addEventListener('load', async function() {
+        await ensureSupabase();
+        await loadMembers();
+      });
+
+      // ==================== B안: Server API 호출 ====================
+
+      async function loadMembers(userType = currentFilter, search = currentSearch, page = currentPage) {
+        try {
+          showLoading(true);
+          hideError();
+
+          // B안: API 호출
+          const params = new URLSearchParams({ page, limit: 20 });
+          if (userType) params.append('user_type', userType);
+          if (search) params.append('search', search);
+
+          const response = await fetch(`/api/admin/members?${params}`);
+          
+          // HTTP 상태 코드 체크
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`서버 오류 (${response.status}): ${errorText || '알 수 없는 오류'}`);
+          }
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error || '알 수 없는 오류');
+          }
+
+          // 데이터 검증
+          if (!result.members) {
+            result.members = [];
+          }
+          if (result.total === undefined || result.total === null) {
+            result.total = 0;
+          }
+
+          // 통계 업데이트 (전체 통계를 위해 별도 API 호출 필요하지만, 일단 현재 페이지 기준으로 표시)
+          updateStats(result.members, result.total);
+
+          // 테이블 렌더링
+          renderMembers(result.members);
+
+          // 페이지네이션
+          if (result.total > 20) {
+            renderPagination(result.page, result.total, result.limit);
+          } else {
+            document.getElementById('pagination').style.display = 'none';
+          }
+
+          console.log(`✅ 회원 ${result.members.length}명 로드 완료 (전체: ${result.total}명)`);
+
+        } catch (error) {
+          console.error('❌ 회원 로드 실패:', error);
+          showError('회원 목록을 불러올 수 없습니다: ' + error.message);
+          // 에러 발생 시 빈 테이블 표시
+          renderMembers([]);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function updateMemberLevel(memberId, memberName, currentLevel, currentUserType) {
+        selectedMember = { id: memberId, name: memberName, level: currentLevel, userType: currentUserType };
+        
+        document.getElementById('modal-member-name').value = memberName;
+        // 기존 등급에 맞는 값을 찾아 설정
+        document.getElementById('modal-new-level').value = currentLevel;
+        document.getElementById('modal-reset-usage').checked = false;
+        
+        document.getElementById('levelModal').classList.add('show');
+      }
+
+      async function confirmLevelChange() {
+        if (!selectedMember) return;
+
+        const levelValue = document.getElementById('modal-new-level').value;
+        const resetUsage = document.getElementById('modal-reset-usage').checked;
+        
+        // 선택된 값을 파싱: "user_type:role:membership_level"
+        const [newUserType, newRole, newLevel] = levelValue.split(':');
+        
+        // selectedMember를 먼저 저장 (closeLevelModal이 null로 만들기 전에)
+        const memberId = selectedMember.id;
+        const memberName = selectedMember.name;
+
+        try {
+          showLoading(true);
+          closeLevelModal();
+
+          // B안: API 호출
+          const response = await fetch(`/api/admin/members/${memberId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              user_type: newUserType,
+              membership_level: newLevel,
+              role: newRole,
+              reset_usage: resetUsage 
+            })
+          });
+
+          const result = await response.json();
+
+          if (!result.success) throw new Error(result.error);
+
+          alert(`${memberName} 회원의 등급이 변경되었습니다.`);
+          await loadMembers();
+
+        } catch (error) {
+          console.error('❌ 등급 변경 실패:', error);
+          alert('등급 변경 실패: ' + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // 회원 유형에 따라 역할 옵션 업데이트 (제거됨 - 더 이상 필요 없음)
+      // 이전 updateRoleOptions() 함수는 제거되었습니다.
+
+      async function deleteMember(memberId, memberName) {
+        if (!confirm(`${memberName} 회원을 삭제하시겠습니까?\n\n관련된 모든 데이터가 삭제됩니다.`)) {
+          return;
+        }
+
+        try {
+          showLoading(true);
+
+          // B안: API 호출
+          const response = await fetch(`/api/admin/members/${memberId}`, {
+            method: 'DELETE'
+          });
+
+          const result = await response.json();
+
+          if (!result.success) throw new Error(result.error);
+
+          alert(`${memberName} 회원이 삭제되었습니다.`);
+          await loadMembers();
+
+        } catch (error) {
+          console.error('❌ 회원 삭제 실패:', error);
+          alert('회원 삭제 실패: ' + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // ==================== 회원 상세보기 ====================
+      // 주의: 상세보기는 아직 Supabase 직접 호출 사용 (향후 API로 전환 가능)
+
+      async function showMemberDetail(memberId) {
+        try {
+          await ensureSupabase();
+          // 회원 정보 조회 (가게 정보 포함)
+          const { data: member, error: memberError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', memberId)
+            .single();
+
+          if (memberError) throw new Error(memberError.message);
+          if (!member) throw new Error('회원 정보를 찾을 수 없습니다.');
+
+          // 모달 열기
+          document.getElementById('detailModal').classList.add('show');
+
+          // 회원 기본 정보 표시
+          document.getElementById('detail-member-name').textContent = `${member.name} 회원 상세정보`;
+          document.getElementById('detail-name').textContent = member.name || '-';
+          document.getElementById('detail-email').textContent = member.email || '-';
+          
+          const userTypeText = member.user_type === 'owner' ? '식당 대표' : 
+                               member.user_type === 'agency' ? '대행사/블로거' : '관리자';
+          document.getElementById('detail-user-type').innerHTML = 
+            `<span class="badge ${member.user_type}">${userTypeText}</span>`;
+          
+          const levelText = LEVEL_NAMES[member.membership_level] || member.membership_level;
+          document.getElementById('detail-level').innerHTML = 
+            `<span class="badge ${member.membership_level}">${levelText}</span>`;
+          
+          document.getElementById('detail-created').textContent = 
+            new Date(member.created_at).toLocaleDateString('ko-KR', { 
+              year: 'numeric', month: 'long', day: 'numeric' 
+            });
+          
+          document.getElementById('detail-updated').textContent = 
+            new Date(member.updated_at).toLocaleDateString('ko-KR', { 
+              year: 'numeric', month: 'long', day: 'numeric' 
+            });
+
+          // 가게 정보 표시
+          document.getElementById('detail-store-url').textContent = member.store_place_url || '-';
+          document.getElementById('detail-store-name').textContent = member.store_name || '-';
+          document.getElementById('detail-store-address').textContent = member.store_address || '-';
+          document.getElementById('detail-store-hours').textContent = member.store_business_hours || '-';
+          document.getElementById('detail-store-phone').textContent = member.store_phone_number || '-';
+          document.getElementById('detail-store-menu').textContent = member.store_main_menu || '-';
+          document.getElementById('detail-store-landmarks').textContent = member.store_landmarks || '-';
+          document.getElementById('detail-store-keywords').textContent = member.store_keywords || '-';
+
+          // 사용량 통계
+          const reviewLimit = LIMITS[member.user_type]?.[member.membership_level]?.review;
+          const blogLimit = LIMITS[member.user_type]?.[member.membership_level]?.blog;
+          
+          const reviewUsage = member.monthly_review_count || 0;
+          const blogUsage = member.monthly_blog_count || 0;
+          
+          document.getElementById('detail-review-count').textContent = reviewUsage;
+          document.getElementById('detail-review-limit').textContent = reviewLimit || '무제한';
+          document.getElementById('detail-blog-count').textContent = blogUsage;
+          document.getElementById('detail-blog-limit').textContent = blogLimit || '무제한';
+          
+          // 사용량 바
+          const reviewPercent = reviewLimit ? Math.min((reviewUsage / reviewLimit * 100), 100) : 0;
+          const blogPercent = blogLimit ? Math.min((blogUsage / blogLimit * 100), 100) : 0;
+          
+          const reviewBar = document.getElementById('detail-review-bar');
+          reviewBar.style.width = reviewPercent + '%';
+          reviewBar.className = 'usage-bar-fill';
+          if (reviewPercent >= 90) reviewBar.classList.add('danger');
+          else if (reviewPercent >= 70) reviewBar.classList.add('warning');
+          
+          const blogBar = document.getElementById('detail-blog-bar');
+          blogBar.style.width = blogPercent + '%';
+          blogBar.className = 'usage-bar-fill';
+          if (blogPercent >= 90) blogBar.classList.add('danger');
+          else if (blogPercent >= 70) blogBar.classList.add('warning');
+
+          // 리뷰 내역 조회 (비동기)
+          loadMemberReviews(memberId);
+          
+          // 블로그 내역 조회 (비동기)
+          loadMemberBlogs(memberId);
+
+        } catch (error) {
+          console.error('❌ 회원 상세정보 조회 실패:', error);
+          alert('회원 상세정보 조회 실패: ' + error.message);
+        }
+      }
+
+      async function loadMemberReviews(memberId) {
+        const container = document.getElementById('detail-reviews-container');
+        
+        try {
+          await ensureSupabase();
+          console.log('🔍 리뷰 내역 조회 시작:', memberId);
+          
+          // 타임아웃 추가 (10초)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('요청 시간 초과 (10초)')), 10000)
+          );
+          
+          // Supabase 쿼리를 Promise로 감싸기
+          const queryPromise = (async () => {
+            return await supabase
+              .from('review_responses')
+              .select('*')
+              .eq('user_id', memberId)
+              .order('created_at', { ascending: false })
+              .limit(10);
+          })();
+          
+          // Race between timeout and query
+          const { data: reviews, error } = await Promise.race([queryPromise, timeoutPromise]);
+          
+          console.log('📊 리뷰 데이터:', reviews, '에러:', error);
+
+          if (error) {
+            console.error('❌ Supabase 에러:', error);
+            throw new Error(error.message);
+          }
+
+          if (!reviews || reviews.length === 0) {
+            console.log('ℹ️ 리뷰 데이터 없음');
+            container.innerHTML = `
+              <div class="activity-empty">
+                <i class="fas fa-inbox"></i>
+                <div>작성한 리뷰 답글이 없습니다</div>
+              </div>
+            `;
+            return;
+          }
+
+          console.log('✅ 리뷰 데이터 로드 성공:', reviews.length + '개');
+          container.innerHTML = reviews.map(review => `
+            <div class="activity-item">
+              <div class="activity-header">
+                <div class="activity-title">
+                  ${review.place_id || '플레이스 정보 없음'}
+                </div>
+                <div class="activity-date">
+                  ${new Date(review.created_at).toLocaleString('ko-KR', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+              <div class="activity-content">
+                ${review.customer_review ? review.customer_review.substring(0, 100) + '...' : '-'}
+              </div>
+              <div class="activity-meta">
+                <span><i class="fas fa-comment"></i> 리뷰 답글</span>
+                ${review.ai_response ? '<span><i class="fas fa-check-circle"></i> 답글 생성됨</span>' : '<span><i class="fas fa-clock"></i> 답글 대기</span>'}
+              </div>
+            </div>
+          `).join('');
+
+        } catch (error) {
+          console.error('❌ 리뷰 내역 조회 실패:', error);
+          container.innerHTML = `
+            <div class="activity-empty">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>리뷰 내역을 불러오는 중 오류가 발생했습니다</div>
+              <div style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                ${error.message || '알 수 없는 오류'}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      async function loadMemberBlogs(memberId) {
+        const container = document.getElementById('detail-blogs-container');
+        
+        try {
+          await ensureSupabase();
+          console.log('🔍 블로그 내역 조회 시작:', memberId);
+          
+          // 타임아웃 추가 (10초)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('요청 시간 초과 (10초)')), 10000)
+          );
+          
+          // Supabase 쿼리를 Promise로 감싸기
+          const queryPromise = (async () => {
+            return await supabase
+              .from('blog_posts')
+              .select('*')
+              .eq('user_id', memberId)
+              .order('created_at', { ascending: false })
+              .limit(10);
+          })();
+          
+          // Race between timeout and query
+          const { data: blogs, error } = await Promise.race([queryPromise, timeoutPromise]);
+          
+          console.log('📊 블로그 데이터:', blogs, '에러:', error);
+
+          if (error) {
+            console.error('❌ Supabase 에러:', error);
+            throw new Error(error.message);
+          }
+
+          if (!blogs || blogs.length === 0) {
+            console.log('ℹ️ 블로그 데이터 없음');
+            container.innerHTML = `
+              <div class="activity-empty">
+                <i class="fas fa-inbox"></i>
+                <div>작성한 블로그 포스팅이 없습니다</div>
+              </div>
+            `;
+            return;
+          }
+
+          console.log('✅ 블로그 데이터 로드 성공:', blogs.length + '개');
+          container.innerHTML = blogs.map(blog => {
+            const statusText = blog.status === 'published' ? '발행됨' : 
+                              blog.status === 'scheduled' ? '예약됨' : '임시저장';
+            const statusIcon = blog.status === 'published' ? 'check-circle' : 
+                              blog.status === 'scheduled' ? 'clock' : 'save';
+            
+            return `
+              <div class="activity-item">
+                <div class="activity-header">
+                  <div class="activity-title">
+                    ${blog.blog_title || '제목 없음'}
+                  </div>
+                  <div class="activity-date">
+                    ${new Date(blog.created_at).toLocaleString('ko-KR', { 
+                      year: 'numeric', 
+                      month: '2-digit', 
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+                <div class="activity-content">
+                  ${blog.blog_content ? blog.blog_content.substring(0, 100) + '...' : '-'}
+                </div>
+                <div class="activity-meta">
+                  <span><i class="fas fa-${statusIcon}"></i> ${statusText}</span>
+                  ${blog.target_platform ? `<span><i class="fas fa-globe"></i> ${blog.target_platform}</span>` : ''}
+                  ${blog.keywords && blog.keywords.length > 0 ? `<span><i class="fas fa-tags"></i> ${blog.keywords.slice(0, 3).join(', ')}</span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+        } catch (error) {
+          console.error('❌ 블로그 내역 조회 실패:', error);
+          container.innerHTML = `
+            <div class="activity-empty">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>블로그 내역을 불러오는 중 오류가 발생했습니다</div>
+              <div style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                ${error.message || '알 수 없는 오류'}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      function closeDetailModal() {
+        document.getElementById('detailModal').classList.remove('show');
+      }
+
+      // ==================== UI 렌더링 ====================
+
+      function renderMembers(members) {
+        const tbody = document.getElementById('memberTableBody');
+
+        if (!members || members.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 60px; color: #6b7280;">
+                <i class="fas fa-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px;"></i>
+                회원이 없습니다
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = members.map(member => {
+          const reviewLimit = LIMITS[member.user_type]?.[member.membership_level]?.review;
+          const blogLimit = LIMITS[member.user_type]?.[member.membership_level]?.blog;
+
+          const reviewUsage = member.monthly_review_count || 0;
+          const blogUsage = member.monthly_blog_count || 0;
+
+          const reviewPercent = reviewLimit ? (reviewUsage / reviewLimit * 100) : 0;
+          const blogPercent = blogLimit ? (blogUsage / blogLimit * 100) : 0;
+
+          const reviewBarClass = reviewPercent >= 90 ? 'danger' : reviewPercent >= 70 ? 'warning' : '';
+          const blogBarClass = blogPercent >= 90 ? 'danger' : blogPercent >= 70 ? 'warning' : '';
+
+          return `
+            <tr>
+              <td><strong>${member.name || '-'}</strong></td>
+              <td>${member.email || '-'}</td>
+              <td>
+                <span class="badge ${member.user_type}">
+                  ${member.user_type === 'owner' ? '식당 대표' : 
+                    member.user_type === 'agency' ? '대행사/블로거' : '관리자'}
+                </span>
+              </td>
+              <td>
+                <span class="badge ${member.membership_level}">
+                  ${LEVEL_NAMES[member.membership_level] || member.membership_level}
+                </span>
+              </td>
+              <td>
+                <div>${reviewUsage} / ${reviewLimit || '무제한'}</div>
+                ${reviewLimit ? `
+                  <div class="usage-bar">
+                    <div class="usage-bar-fill ${reviewBarClass}" style="width: ${reviewPercent}%"></div>
+                  </div>
+                ` : ''}
+              </td>
+              <td>
+                <div>${blogUsage} / ${blogLimit || '무제한'}</div>
+                ${blogLimit ? `
+                  <div class="usage-bar">
+                    <div class="usage-bar-fill ${blogBarClass}" style="width: ${blogPercent}%"></div>
+                  </div>
+                ` : ''}
+              </td>
+              <td>${new Date(member.created_at).toLocaleString('ko-KR', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</td>
+              <td>
+                <button class="btn primary" onclick="showMemberDetail('${member.id}')" title="회원 상세정보">
+                  <i class="fas fa-info-circle"></i> 상세보기
+                </button>
+                <button class="btn" onclick="updateMemberLevel('${member.id}', '${member.name}', '${member.membership_level}', '${member.user_type}')" title="회원 등급 및 유형 변경">
+                  <i class="fas fa-edit"></i> 등급 변경
+                </button>
+                <button class="btn danger" onclick="deleteMember('${member.id}', '${member.name}')" title="회원 삭제">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      async function updateStats(members, total) {
+        // 현재 페이지의 회원 수 (표시용)
+        const ownerCount = members.filter(m => m.user_type === 'owner').length;
+        const agencyCount = members.filter(m => m.user_type === 'agency').length;
+        const adminCount = members.filter(m => m.user_type === 'admin').length;
+
+        // 전체 통계를 가져오기 위해 별도 API 호출 (필터가 없을 때만)
+        if (!currentFilter && !currentSearch) {
+          try {
+            const statsResponse = await fetch('/api/admin/members?limit=1000');
+            if (statsResponse.ok) {
+              const statsResult = await statsResponse.json();
+              if (statsResult.success && statsResult.members) {
+                const allMembers = statsResult.members;
+                document.getElementById('stat-total').textContent = statsResult.total || 0;
+                document.getElementById('stat-owner').textContent = allMembers.filter(m => m.user_type === 'owner').length;
+                document.getElementById('stat-agency').textContent = allMembers.filter(m => m.user_type === 'agency').length;
+                document.getElementById('stat-admin').textContent = allMembers.filter(m => m.user_type === 'admin').length;
+                return;
+              }
+            }
+          } catch (error) {
+            console.warn('통계 조회 실패, 현재 페이지 기준으로 표시:', error);
+          }
+        }
+
+        // 필터가 있거나 통계 조회 실패 시 현재 페이지 기준으로 표시
+        document.getElementById('stat-total').textContent = total || 0;
+        document.getElementById('stat-owner').textContent = ownerCount;
+        document.getElementById('stat-agency').textContent = agencyCount;
+        document.getElementById('stat-admin').textContent = adminCount;
+      }
+
+      function renderPagination(currentPage, total, limit) {
+        const totalPages = Math.ceil(total / limit);
+        const pagination = document.getElementById('pagination');
+
+        if (totalPages <= 1) {
+          pagination.style.display = 'none';
+          return;
+        }
+
+        pagination.style.display = 'flex';
+
+        let html = '';
+
+        // 이전 버튼
+        html += `
+          <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} 
+                  onclick="goToPage(${currentPage - 1})">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+        `;
+
+        // 페이지 번호
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            html += `
+              <button class="page-btn ${i === currentPage ? 'active' : ''}" 
+                      onclick="goToPage(${i})">
+                ${i}
+              </button>
+            `;
+          } else if (i === currentPage - 3 || i === currentPage + 3) {
+            html += '<span style="padding: 8px;">...</span>';
+          }
+        }
+
+        // 다음 버튼
+        html += `
+          <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} 
+                  onclick="goToPage(${currentPage + 1})">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        `;
+
+        pagination.innerHTML = html;
+      }
+
+      // ==================== 이벤트 핸들러 ====================
+
+      function filterByType(btn, type) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        currentFilter = type;
+        currentPage = 1;
+        loadMembers(currentFilter, currentSearch, currentPage);
+      }
+
+      function handleSearch(event) {
+        if (event.key === 'Enter') {
+          currentSearch = event.target.value.trim();
+          currentPage = 1;
+          loadMembers(currentFilter, currentSearch, currentPage);
+        }
+      }
+
+      function goToPage(page) {
+        currentPage = page;
+        loadMembers(currentFilter, currentSearch, currentPage);
+      }
+
+      function closeLevelModal() {
+        document.getElementById('levelModal').classList.remove('show');
+        selectedMember = null;
+      }
+
+      // ==================== 유틸리티 ====================
+
+      function showLoading(show) {
+        document.getElementById('loadingContainer').style.display = show ? 'block' : 'none';
+        document.getElementById('tableContainer').style.display = show ? 'none' : 'block';
+      }
+
+      function showError(message) {
+        const container = document.getElementById('errorContainer');
+        const tableContainer = document.getElementById('tableContainer');
+        
+        container.innerHTML = `
+          <div class="error">
+            <i class="fas fa-exclamation-triangle"></i> 
+            <strong>오류 발생:</strong> ${message}
+            <br><br>
+            <small style="color: #666;">
+              💡 해결 방법:<br>
+              1. 브라우저 콘솔(F12)에서 자세한 오류 확인<br>
+              2. 서버가 실행 중인지 확인 (Render 서버)<br>
+              3. 네트워크 탭에서 API 응답 확인<br>
+              4. 새로고침 버튼을 클릭해 다시 시도
+            </small>
+          </div>
+        `;
+        container.style.display = 'block';
+        
+        // 테이블은 숨기고 에러만 표시
+        if (tableContainer) {
+          tableContainer.style.display = 'none';
+        }
+      }
+
+      function hideError() {
+        document.getElementById('errorContainer').style.display = 'none';
+      }
+
+      // 모달 외부 클릭 시 닫기
+      window.addEventListener('click', function(event) {
+        const modal = document.getElementById('levelModal');
+        if (event.target === modal) {
+          closeLevelModal();
+        }
+      });
+
+      // ==================== 플레이스 크롤링 캐시 ====================
+
+      // 플레이스 캐시 로드
+      async function loadPlaceCache() {
+        const tbody = document.getElementById('placeCacheBody');
+        
+        try {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+              </td>
+            </tr>
+          `;
+
+          const response = await fetch('/api/admin/place-cache');
+          if (!response.ok) {
+            throw new Error('플레이스 캐시 로드 실패');
+          }
+
+          const result = await response.json();
+          
+          if (!result.success || !result.data || result.data.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+                  <i class="fas fa-inbox"></i> 크롤링된 플레이스가 없습니다
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          tbody.innerHTML = result.data.map(place => `
+            <tr>
+              <td><strong>${place.place_name || '-'}</strong></td>
+              <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${place.place_address || '-'}
+              </td>
+              <td>${place.business_hours || '-'}</td>
+              <td style="text-align: center;">
+                <span class="badge ${place.crawl_count > 1 ? 'premium' : 'seed'}">
+                  ${place.crawl_count}회
+                </span>
+              </td>
+              <td>${formatDate(place.last_crawled_at)}</td>
+              <td>${formatDate(place.created_at)}</td>
+            </tr>
+          `).join('');
+
+        } catch (error) {
+          console.error('플레이스 캐시 로드 오류:', error);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #e74c3c;">
+                <i class="fas fa-exclamation-triangle"></i> 로드 실패: ${error.message}
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      // 날짜 포맷
+      function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+      }
+
+      // 페이지 로드 시 플레이스 캐시 자동 로드
+      setTimeout(() => {
+        loadPlaceCache();
+      }, 1000);
+    </script>
+
+    <!-- 공통 관리자 스크립트 -->
+    <script src="/admin/assets/admin-sidebar.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-header.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
+
+    <script>
+      // 관리자 권한 체크
+      (async function() {
+        const isAdmin = await AdminUtils.requireAdmin();
+        if (!isAdmin) return;
+      })();
+    </script>
+
+    <!-- 추적 및 모니터링 스크립트 -->
+    <script src="/assets/analytics.js"></script>
+    <script src="/assets/error-logger.js"></script>
+    <script src="/assets/performance-tracker.js"></script>
+  </body>
+</html>
+
