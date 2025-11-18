@@ -326,7 +326,14 @@ function rateLimiter(req, res, next) {
   next();
 }
 
-app.use("/api/", rateLimiter);
+// Rate limiter 적용 (정책 조회 API는 제외)
+app.use("/api/", (req, res, next) => {
+  // 정책 조회 API는 rate limiter 제외 (관리자 페이지에서 자주 조회)
+  if (req.path.startsWith('/policy-support') && req.method === 'GET') {
+    return next();
+  }
+  rateLimiter(req, res, next);
+});
 app.use("/auth/", rateLimiter);
 // Periodic cleanup for rate limiter map (memory hygiene)
 setInterval(() => {
@@ -775,6 +782,14 @@ app.post("/api/subscription/user-dashboard", userDashboardHandler);
 // 크론 작업 API (수동 실행용)
 const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
 app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
+
+// 정책 상태 자동 업데이트 크론 작업
+const policyStatusUpdateHandler = require("./api/cron/policy-status-update");
+app.get("/api/cron/policy-status-update", async (req, res) => {
+  const updateExpiredPolicies = require("./api/cron/policy-status-update");
+  const result = await updateExpiredPolicies();
+  res.json(result);
+});
 
 // ==================== 블로그 스타일 설정 API ====================
 const blogStyleHandler = require("./api/blog-style");
@@ -3092,6 +3107,73 @@ app.post("/api/store-info", async (req, res) => {
   }
 });
 
+// 통합 가게 정보 조회 (profiles + store_promotions)
+app.get("/api/store-info-all", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: "userId가 필요합니다" });
+    }
+
+    // profiles 정보 조회 (기본 정보)
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('store_place_url, store_name, store_address, store_business_hours, store_phone_number, store_main_menu, store_landmarks, store_keywords')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      devError('통합 정보 조회 - Profile 오류:', profileError);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+
+    // store_promotions 정보 조회 (심도 있는 정보)
+    const { data: promotionData } = await supabase
+      .from('store_promotions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    // 작성 개수 계산
+    let filledCount = 0;
+    if (promotionData) {
+      if (promotionData.signature_menu?.trim()) filledCount++;
+      if (promotionData.special_ingredients?.trim()) filledCount++;
+      if (promotionData.atmosphere_facilities?.trim()) filledCount++;
+      if (promotionData.owner_story?.trim()) filledCount++;
+      if (promotionData.recommended_situations?.trim()) filledCount++;
+      if (promotionData.sns_photo_points?.trim()) filledCount++;
+      if (promotionData.special_events?.trim()) filledCount++;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        basic: profileData,
+        promotion: promotionData || null
+      },
+      hasPromotion: !!promotionData,
+      filledCount: filledCount,
+      totalCount: 7
+    });
+
+  } catch (error) {
+    devError("통합 정보 조회 오류:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "서버 오류", 
+      details: error.message 
+    });
+  }
+});
+
 // 플레이스 크롤링 캐시 조회 (내 URL)
 app.get("/api/place-cache", async (req, res) => {
   try {
@@ -4470,14 +4552,16 @@ if (process.env.VERCEL) {
   try {
     const cron = require('node-cron');
     const { renewExpiredSubscriptions, notifyTokenExceeded, recordDailyStats } = require('./api/cron/subscription-renewal');
+    const updateExpiredPolicies = require('./api/cron/policy-status-update');
 
-    // 매일 자정에 구독 갱신
+    // 매일 자정에 구독 갱신 및 정책 상태 업데이트
     cron.schedule('0 0 * * *', async () => {
-      devLog('🔄 [CRON] 자정 구독 갱신 작업 시작...');
+      devLog('🔄 [CRON] 자정 구독 갱신 및 정책 상태 업데이트 작업 시작...');
       try {
         await renewExpiredSubscriptions();
         await recordDailyStats();
-        devLog('✅ [CRON] 구독 갱신 작업 완료');
+        const policyResult = await updateExpiredPolicies();
+        devLog('✅ [CRON] 구독 갱신 및 정책 상태 업데이트 작업 완료', policyResult);
       } catch (error) {
         devError('❌ [CRON] 구독 갱신 실패:', error);
       }

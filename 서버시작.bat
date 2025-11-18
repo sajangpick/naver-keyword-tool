@@ -1,143 +1,57 @@
 @echo off
-chcp 949 >nul 2>nul
-title Server Start
+chcp 65001 >nul
 echo ========================================
-echo   Server Start
+echo   서버 시작
 echo ========================================
-echo.
-echo Batch file is running...
 echo.
 
-REM Change to batch file directory
+REM 현재 디렉토리로 이동
 cd /d "%~dp0"
-if errorlevel 1 (
-    echo [ERROR] Failed to change directory
-    pause
-    exit /b 1
-)
-echo Current directory: %CD%
+echo 현재 디렉토리: %CD%
 echo.
 
-REM Check Node.js installation
+REM Node.js 설치 확인
 where node >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Node.js is not installed or not in PATH
-    echo Please install Node.js or add it to PATH
+    echo [오류] Node.js가 설치되어 있지 않거나 PATH에 등록되지 않았습니다.
+    echo Node.js를 설치하거나 PATH에 추가해주세요.
     pause
     exit /b 1
 )
 
-REM Check Node.js version
-echo Checking Node.js version...
+REM Node.js 버전 확인
+echo Node.js 버전 확인 중...
 node --version
-if errorlevel 1 (
-    echo [ERROR] Failed to run Node.js
+if %errorlevel% neq 0 (
+    echo [오류] Node.js 실행에 실패했습니다.
     pause
     exit /b 1
 )
 echo.
 
-REM Check server.js file
+REM server.js 파일 존재 확인
 if not exist "server.js" (
-    echo [ERROR] server.js file not found
-    echo Current directory: %CD%
+    echo [오류] server.js 파일을 찾을 수 없습니다.
+    echo 현재 디렉토리: %CD%
     pause
     exit /b 1
 )
-echo server.js file found
+echo server.js 파일 확인 완료
 echo.
-
-REM Check and install dependencies
-if not exist "node_modules" (
-    echo ========================================
-    echo Installing required packages...
-    echo This will only run once.
-    echo ========================================
-    echo.
-    
-    REM Try pnpm first, fallback to npm if it fails
-    where pnpm >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo Trying pnpm to install packages...
-        pnpm install
-        if errorlevel 1 (
-            echo pnpm failed, trying npm instead...
-            npm install
-            if errorlevel 1 (
-                echo [ERROR] Failed to install packages with npm
-                echo Please check your internet connection or run as administrator
-                pause
-                exit /b 1
-            )
-        )
-    ) else (
-        REM Use npm if pnpm not available
-        echo pnpm not found, using npm to install packages...
-        npm install
-        if errorlevel 1 (
-            echo [ERROR] Failed to install packages
-            echo Please check your internet connection or run as administrator
-            pause
-            exit /b 1
-        )
-    )
-    echo.
-    echo Packages installed successfully!
-    echo.
-) else (
-    echo Packages already installed.
-    echo.
-)
 
 echo ========================================
-echo Starting server...
-echo Access http://localhost:3003 in browser
+echo 서버를 시작합니다...
+echo 브라우저에서 http://localhost:3003/health 로 접속하여 확인하세요
 echo.
-echo Press Ctrl+C in server window to stop
+echo 서버를 종료하려면 Ctrl+C를 누르세요
 echo ========================================
 echo.
 
-REM Start server in new window
-echo Starting server in new window...
-cd /d "%~dp0"
+REM 서버 실행
+node server.js
 
-REM Use pushd/popd for better path handling
-pushd "%~dp0"
-start "SajangPick Server" cmd /k "cd /d %CD% && echo ======================================== && echo Server Starting... && echo ======================================== && node server.js"
-popd
-
-REM Wait a bit for server to start
-echo Waiting for server to start (10 seconds)...
-timeout /t 10 /nobreak >nul
-
-REM Check if server is running
-netstat -ano | findstr :3003 >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [SUCCESS] Server is running on port 3003!
-    echo.
-    echo Opening browser...
-    start http://localhost:3003
-    echo.
-    echo ========================================
-    echo Server started successfully!
-    echo.
-    echo - Server is running in separate window
-    echo - Press Ctrl+C in server window to stop
-    echo - Access http://localhost:3003 in browser
-    echo - You can close this window
-    echo ========================================
-) else (
-    echo [ERROR] Server failed to start!
-    echo.
-    echo Please check the server window for error messages.
-    echo Common issues:
-    echo - Missing environment variables
-    echo - Port 3003 already in use
-    echo - Node.js errors
-    echo.
-    echo Press any key to close...
-)
-
+REM 서버가 종료되면 메시지 표시
 echo.
+echo 서버가 종료되었습니다.
 pause
 

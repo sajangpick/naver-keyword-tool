@@ -225,77 +225,21 @@ async function fetchRealPolicies() {
         // 엔드포인트: https://apis.data.go.kr/B552735/kisedKstartupService01
         // 서비스 메서드: getAnnouncementInformation01, getBusinessInformation01
         const apiEndpoints = [
-          // K-Startup 사업공고 정보 조회 (우선순위 1) - 실제 작동하는 메서드
+          // K-Startup 사업공고 정보 조회 (모든 페이지 순회)
           {
             url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'k-startup',
             priority: 1,
-            note: 'K-Startup 사업공고 정보 조회'
+            note: 'K-Startup 사업공고 정보 조회 (전체)'
           },
-          // K-Startup 사업 정보 조회 (우선순위 2) - 사업 상세 정보
+          // 중소벤처기업부 사업공고 목록 조회 (모든 페이지 순회)
           {
-            url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBusinessInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
-            type: 'xml',
-            source: 'k-startup',
-            priority: 2,
-            note: 'K-Startup 사업 정보 조회'
-          },
-          // 중소벤처기업부 사업공고 목록 조회 (백업)
-          {
-            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
+            url: `https://apis.data.go.kr/1421000/mssBizService_v2/getbizList_v2?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'mss-biz',
-            priority: 4,
-            note: '중소벤처기업부 사업공고 목록'
-          },
-          // 중소기업 지원사업 정보 (JSON) - 여러 페이지 순회
-          {
-            url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
-            type: 'json',
-            source: 'bizinfo'
-          },
-          // 중소기업 지원사업 정보 (XML) - 여러 페이지 순회
-          {
-            url: `https://api.odcloud.kr/api/3074462/v1/uddi:f3f4df8b-5b64-4165-8581-973bf5d50c94?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&returnType=XML`,
-            type: 'xml',
-            source: 'bizinfo'
-          },
-          // 기업마당 지원사업 검색 API - 여러 페이지 순회
-          {
-            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&target=소상공인`,
-            type: 'json',
-            source: 'bizinfo'
-          },
-          // 공공데이터포털 - 중소기업 정책자금 정보 - 여러 페이지 순회
-          {
-            url: `https://api.odcloud.kr/api/ApplyhomeInfoSvc/v1/getAPTLttotPblancMdl?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
-            type: 'json',
-            source: 'bizinfo'
-          },
-          // K-Startup API - 창업진흥원 사업공고 조회 (공공데이터포털) - 여러 페이지 순회
-          // 공공데이터포털 API ID: 15125364
-          // 다양한 엔드포인트 패턴 시도
-          {
-            url: `https://api.odcloud.kr/api/15125364/v1/uddi:사업공고?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
-            type: 'json',
-            source: 'k-startup'
-          },
-          {
-            url: `https://api.odcloud.kr/api/15125364/v1/uddi:진행중?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
-            type: 'json',
-            source: 'k-startup'
-          },
-          {
-            url: `https://api.odcloud.kr/api/15125364/v1/uddi:bizpbanc?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
-            type: 'json',
-            source: 'k-startup'
-          },
-          // 소상공인시장진흥공단 API (공공데이터포털) - 여러 페이지 순회
-          {
-            url: `https://api.odcloud.kr/api/3074462/v1/uddi:소상공인?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
-            type: 'json',
-            source: 'semas'
+            priority: 2,
+            note: '중소벤처기업부 사업공고 목록 (전체)'
           }
         ];
         
@@ -311,15 +255,17 @@ async function fetchRealPolicies() {
           totalApiCalls++;
           console.log(`\n🔄 [${totalApiCalls}/${apiEndpoints.length}] ${endpoint.source} 엔드포인트 처리 시작`);
           try {
-            // 여러 페이지를 순회하며 모든 데이터 가져오기
+            // 모든 페이지를 순회하며 현재 신청 가능한 공고만 가져오기
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
-            const maxPages = 10; // 최대 10페이지까지 (한 번에 50개씩)
-            const perPage = 50; // 페이지당 50개씩만 가져오기
+            let totalCount = null; // 전체 개수 (첫 페이지에서 확인)
+            let totalPages = null; // 전체 페이지 수
+            const maxPages = 100; // 최대 100페이지까지 순회 (충분히 큰 값)
+            const perPage = 50; // 페이지당 50개씩 가져오기
             
-            console.log(`🔄 ${endpoint.source} 엔드포인트: 여러 페이지 순회 시작 (최대 ${maxPages}페이지)`);
-            console.log(`🔗 첫 번째 요청 URL: ${endpoint.url}`);
+            console.log(`🔄 ${endpoint.source} 엔드포인트: 모든 페이지 순회 시작 (현재 신청 가능한 공고만 필터링)`);
+            console.log(`🔗 요청 URL: ${endpoint.url}`);
             
             while (hasMorePages && currentPage <= maxPages) {
               // URL에서 page와 perPage 파라미터 업데이트
@@ -406,36 +352,18 @@ async function fetchRealPolicies() {
                       }
                     }
                     
-                    // 페이지네이션 정보 확인
-                    const totalCount = response.data.totalCount || 
-                                      response.data.response?.body?.totalCount ||
-                                      response.data.response?.body?.totalCount ||
-                                      response.data.total ||
-                                      response.data.count ||
-                                      (response.data.response?.body ? parseInt(response.data.response.body.totalCount) : null);
-                    
-                    const currentCount = Array.isArray(data) ? data.length : (data ? 1 : 0);
-                    
-                    // 공공데이터포털 XML 응답의 경우 totalCount 확인
-                    if (endpoint.type === 'xml' && typeof response.data === 'string') {
-                      const totalMatch = response.data.match(/<totalCount>(\d+)<\/totalCount>/i) || 
-                                        response.data.match(/<totalCount>(\d+)<\/totalCount>/i);
-                      if (totalMatch) {
-                        const xmlTotalCount = parseInt(totalMatch[1]);
-                        const xmlTotalPages = Math.ceil(xmlTotalCount / perPage);
-                        if (currentPage >= xmlTotalPages) {
-                          hasMorePages = false;
-                          console.log(`📄 XML 총 ${xmlTotalCount}개 중 ${allData.length}개 수집 완료 (${xmlTotalPages}페이지)`);
-                        }
-                      }
-                    }
-                    
-                    // 총 개수가 있고 현재 페이지가 마지막 페이지인지 확인
-                    if (totalCount) {
-                      const totalPages = Math.ceil(totalCount / perPage);
-                      if (currentPage >= totalPages) {
-                        hasMorePages = false;
-                        console.log(`📄 총 ${totalCount}개 중 ${allData.length}개 수집 완료 (${totalPages}페이지)`);
+                    // 페이지네이션 정보 확인 (JSON 응답)
+                    if (currentPage === 1) {
+                      const jsonTotalCount = response.data.totalCount || 
+                                            response.data.response?.body?.totalCount ||
+                                            response.data.total ||
+                                            response.data.count ||
+                                            (response.data.response?.body ? parseInt(response.data.response.body.totalCount) : null);
+                      
+                      if (jsonTotalCount && totalCount === null) {
+                        totalCount = parseInt(jsonTotalCount);
+                        totalPages = Math.ceil(totalCount / perPage);
+                        console.log(`📊 총 데이터 개수: ${totalCount}개, 예상 페이지 수: ${totalPages}페이지`);
                       }
                     }
                   }
@@ -483,8 +411,14 @@ async function fetchRealPolicies() {
                     continue;
                   }
                   
-                  // XML 샘플 로그 (첫 페이지만)
+                  // XML에서 totalCount 먼저 추출 (첫 페이지만)
                   if (currentPage === 1) {
+                    const totalMatch = response.data.match(/<totalCount>(\d+)<\/totalCount>/i);
+                    if (totalMatch) {
+                      totalCount = parseInt(totalMatch[1]);
+                      totalPages = Math.ceil(totalCount / perPage);
+                      console.log(`📊 총 데이터 개수: ${totalCount}개, 예상 페이지 수: ${totalPages}페이지`);
+                    }
                     console.log(`📄 XML 응답 샘플 (처음 500자): ${response.data.substring(0, 500)}`);
                   }
                   
@@ -518,17 +452,25 @@ async function fetchRealPolicies() {
                 if (Array.isArray(data) && data.length > 0) {
                   allData = allData.concat(data);
                   // 모든 페이지 로그 출력 (50개씩이므로 로그가 많지 않음)
-                  console.log(`✅ ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 수집 (누적: ${allData.length}개)`);
+                  console.log(`✅ ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 수집 (누적: ${allData.length}개${totalCount ? ` / 총 ${totalCount}개` : ''})`);
                   
                   // 첫 번째 항목 샘플 출력 (첫 페이지만)
                   if (currentPage === 1 && data.length > 0) {
                     console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
                   }
                   
-                  // 데이터가 perPage보다 적으면 마지막 페이지
-                  if (data.length < perPage) {
-                    hasMorePages = false;
-                    console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
+                  // totalCount가 있으면 정확히 그만큼만 순회
+                  if (totalCount !== null && totalPages !== null) {
+                    if (currentPage >= totalPages) {
+                      hasMorePages = false;
+                      console.log(`📄 모든 페이지 수집 완료: ${allData.length}개 항목 (총 ${totalCount}개 중)`);
+                    }
+                  } else {
+                    // totalCount가 없으면 데이터가 perPage보다 적으면 마지막 페이지
+                    if (data.length < perPage) {
+                      hasMorePages = false;
+                      console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
+                    }
                   }
                 } else {
                   console.warn(`⚠️ 페이지 ${currentPage}: 데이터가 비어있거나 배열이 아님 (타입: ${typeof data}, 길이: ${Array.isArray(data) ? data.length : 'N/A'})`);
@@ -564,12 +506,15 @@ async function fetchRealPolicies() {
               allData.forEach((item, index) => {
                 processedCount++;
                 
-                // K-Startup API 필드 매핑 (우선) + 중소벤처기업부 사업공고 API 필드 매핑
+                // K-Startup API 필드 매핑 (우선) + 중소벤처기업부 사업공고 API 필드 매핑 + getbizList_v2 필드 매핑
                 const title = item.title || item['biz_pbanc_nm'] || item['intg_pbanc_biz_nm'] || item['pbanc_pbanc_nm'] || 
                              item['사업명'] || item.pblancNm || item.사업명 || item['제목'] || item['pblancNm'] || item['pblancNmKr'] || item['pblancNmEn'] || '';
-                const summary = item.summary || item['pbanc_ctnt']?.substring(0, 200) || 
+                // getbizList_v2의 dataContents에서 HTML 태그 제거하여 요약 추출
+                const rawDataContents = item.dataContents || item['dataContents'] || '';
+                const cleanDataContents = rawDataContents ? rawDataContents.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : '';
+                const summary = item.summary || cleanDataContents?.substring(0, 200) || item['pbanc_ctnt']?.substring(0, 200) || 
                                item['사업개요'] || item.bsnsSumryCn || item.사업개요 || item['요약'] || item['bsnsSumryCn'] || item['pblancSumryCn'] || item['pblancCn'] || '';
-                const description = item.description || item['pbanc_ctnt'] || 
+                const description = item.description || cleanDataContents || item['pbanc_ctnt'] || 
                                    item['지원내용'] || item.sportCn || item.지원내용 || item['내용'] || item['pblancCn'] || item['bsnsCn'] || summary;
                 
                 // 제목이 없으면 제외 (최소 조건)
@@ -594,11 +539,11 @@ async function fetchRealPolicies() {
                   return;
                 }
                 
-                // 날짜 정보 추출 (K-Startup API 우선)
-                const startDate = item.application_start_date || item['pbanc_rcpt_bgng_dt'] || 
-                                 item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
-                const endDate = item.application_end_date || item['pbanc_rcpt_end_dt'] || 
-                               item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
+                // 날짜 정보 추출 (K-Startup API 우선) + getbizList_v2 필드
+                const startDate = item.application_start_date || item.applicationStartDate || item['applicationStartDate'] ||
+                                 item['pbanc_rcpt_bgng_dt'] || item['신청시작일'] || item.rceptBeginDe || item.startDate || item.신청시작일 || item['rceptBeginDe'] || item['pblancBeginDe'] || '';
+                const endDate = item.application_end_date || item.applicationEndDate || item['applicationEndDate'] ||
+                               item['pbanc_rcpt_end_dt'] || item['신청마감일'] || item.rceptEndDe || item.endDate || item.신청마감일 || item['rceptEndDe'] || item['pblancEndDe'] || '';
                 const publishDate = item['공고일'] || item.pblancDe || item.publishDate || item.공고일 || item['pblancDe'] || item['pblancRegistDe'] || '';
                 
                 // 날짜 형식 정규화
@@ -616,26 +561,41 @@ async function fetchRealPolicies() {
                 const normalizedEnd = normalizeDate(endDate);
                 const normalizedPublish = normalizeDate(publishDate);
                 
-                // 중소벤처기업부 API는 모든 필터링 제외
-                const isFromMssBiz = endpoint.source === 'mss-biz';
+                // 현재 신청 가능한 공고만 필터링 (신청 마감일이 오늘 이후이거나 없는 것만)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
                 
-                // 날짜 필터링: 2010년 이전만 제외 (최근 15년 포함)
-                if (!isFromMssBiz) {
-                  const minYear = 2010;
-                  const isVeryOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
-                                    normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
-                                    normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
+                // 신청 마감일이 있는 경우, 오늘 이후인 것만 포함
+                if (normalizedEnd) {
+                  const endDateObj = new Date(normalizedEnd);
+                  endDateObj.setHours(0, 0, 0, 0);
                   
-                  if (isVeryOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                  // 마감일이 오늘 이전이면 제외
+                  if (endDateObj < today) {
                     if (index < 3) {
-                      console.log(`⚠️ 항목 ${index + 1}: 2010년 이전 공고, 건너뜀`);
+                      console.log(`⚠️ 항목 ${index + 1}: 신청 마감됨 (${normalizedEnd}), 건너뜀`);
                     }
                     filteredCount++;
                     return;
                   }
                 }
+                // 마감일이 없으면 포함 (상시 모집 또는 마감일 미정)
                 
-                // 모든 정책 포함 (필터링 최소화)
+                // 날짜 필터링: 2010년 이전만 제외
+                const minYear = 2010;
+                const isVeryOld = normalizedStart && parseInt(normalizedStart.substring(0, 4)) < minYear ||
+                                  normalizedEnd && parseInt(normalizedEnd.substring(0, 4)) < minYear ||
+                                  normalizedPublish && parseInt(normalizedPublish.substring(0, 4)) < minYear;
+                
+                if (isVeryOld && (normalizedStart || normalizedEnd || normalizedPublish)) {
+                  if (index < 3) {
+                    console.log(`⚠️ 항목 ${index + 1}: 2010년 이전 공고, 건너뜀`);
+                  }
+                  filteredCount++;
+                  return;
+                }
+                
+                // 현재 신청 가능한 정책만 포함
                 if (title) {
                   if (policies.length < 10 || policies.length % 10 === 0) {
                     console.log(`✅ 정책 추가: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
@@ -661,12 +621,13 @@ async function fetchRealPolicies() {
                     application_end_date: normalizedEnd || null,
                     application_method: item['aply_mthd_onli_rcpt_istc'] ? '온라인 신청' : 
                                        (item['신청방법'] || item.applicationMethod || item.신청방법 || item['rceptMth'] || '온라인 신청'),
-                    application_url: item.application_url || item['biz_aply_url'] || item['aply_mthd_onli_rcpt_istc'] || 
+                    application_url: item.application_url || item.viewUrl || item['viewUrl'] || item['biz_aply_url'] || item['aply_mthd_onli_rcpt_istc'] || 
                                    item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || item['rceptUrl'] || null,
-                    contact_info: item['pbanc_ntrp_nm'] || item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || item['rqutProcCn'] || '별도 문의',
-                    phone_number: item.phone_number || item['prch_cnpl_no'] || 
+                    contact_info: item['pbanc_ntrp_nm'] || item.writerName || item['writerName'] || item.writerPosition || item['writerPosition'] ||
+                                 item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || item['rqutProcCn'] || '중소벤처기업부',
+                    phone_number: item.phone_number || item.writerPhone || item['writerPhone'] || item['prch_cnpl_no'] || 
                                 item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null,
-                    website_url: item.website_url || item['detl_pg_url'] || item['biz_gdnc_url'] || 
+                    website_url: item.website_url || item.viewUrl || item['viewUrl'] || item['detl_pg_url'] || item['biz_gdnc_url'] || 
                                item['홈페이지'] || item.website || item.홈페이지 || item['homepage'] || null,
                     status: getStatus(normalizedEnd),
                     is_featured: false,
@@ -969,6 +930,56 @@ function parseXMLResponse(xmlData) {
             item.business_type = text.split(',').map(b => b.trim()).filter(b => b);
           }
           
+          // getbizList_v2 필드 매핑
+          if (name === 'title') {
+            item.title = text.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+          }
+          if (name === 'dataContents') {
+            const cleanText = text.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+            item.dataContents = cleanText;
+            if (!item.description) {
+              item.description = cleanText;
+            }
+            if (!item.summary) {
+              item.summary = cleanText.substring(0, 200);
+            }
+          }
+          if (name === 'applicationStartDate') {
+            item.applicationStartDate = text;
+            item.application_start_date = text;
+          }
+          if (name === 'applicationEndDate') {
+            item.applicationEndDate = text;
+            item.application_end_date = text;
+          }
+          if (name === 'viewUrl') {
+            item.viewUrl = text.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+            if (!item.application_url) {
+              item.application_url = item.viewUrl;
+            }
+            if (!item.website_url) {
+              item.website_url = item.viewUrl;
+            }
+          }
+          if (name === 'writerName') {
+            item.writerName = text;
+            if (!item.contact_info) {
+              item.contact_info = text;
+            }
+          }
+          if (name === 'writerPosition') {
+            item.writerPosition = text;
+          }
+          if (name === 'writerPhone') {
+            item.writerPhone = text;
+            if (!item.phone_number) {
+              item.phone_number = text;
+            }
+          }
+          if (name === 'writerEmail') {
+            item.writerEmail = text;
+          }
+          
           // 원본 데이터도 보존
           item[name] = text;
         });
@@ -992,87 +1003,135 @@ function parseXMLResponse(xmlData) {
             const text = child.textContent?.trim() || '';
             
             // 한글 필드명과 영문 필드명 모두 지원
-            // 중소벤처기업부 사업공고 API 필드 매핑 추가
-            if (tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm') || tagName === 'pblancnmkr') {
-              item.title = text;
-              item['사업명'] = text;
-              item.pblancNm = text;
-              item.pblancNmKr = text;
+            // 중소벤처기업부 사업공고 API 필드 매핑 추가 + getbizList_v2 필드 매핑
+            if (tagName === 'title' || tagName.includes('title') || tagName.includes('사업명') || tagName.includes('pblancnm') || tagName === 'pblancnmkr') {
+              const cleanText = text.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+              item.title = cleanText;
+              item['사업명'] = cleanText;
+              item.pblancNm = cleanText;
+              item.pblancNmKr = cleanText;
             }
-          if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm') || tagName === 'pblancinsttnm') {
-            item.organization = text;
-            item['수행기관'] = text;
-            item.excInsttNm = text;
-            item.pblancInsttNm = text;
+            if (tagName === 'datacontents' || tagName === 'dataContents') {
+              const cleanText = text.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+              item.dataContents = cleanText;
+              if (!item.description) {
+                item.description = cleanText;
+              }
+              if (!item.summary) {
+                item.summary = cleanText.substring(0, 200);
+              }
+            }
+            if (tagName === 'applicationstartdate' || tagName === 'applicationStartDate') {
+              item.applicationStartDate = text;
+              item.application_start_date = text;
+            }
+            if (tagName === 'applicationenddate' || tagName === 'applicationEndDate') {
+              item.applicationEndDate = text;
+              item.application_end_date = text;
+            }
+            if (tagName === 'viewurl' || tagName === 'viewUrl') {
+              const cleanUrl = text.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+              item.viewUrl = cleanUrl;
+              if (!item.application_url) {
+                item.application_url = cleanUrl;
+              }
+              if (!item.website_url) {
+                item.website_url = cleanUrl;
+              }
+            }
+            if (tagName === 'writername' || tagName === 'writerName') {
+              item.writerName = text;
+              if (!item.contact_info) {
+                item.contact_info = text;
+              }
+            }
+            if (tagName === 'writerposition' || tagName === 'writerPosition') {
+              item.writerPosition = text;
+            }
+            if (tagName === 'writerphone' || tagName === 'writerPhone') {
+              item.writerPhone = text;
+              if (!item.phone_number) {
+                item.phone_number = text;
+              }
+            }
+            if (tagName === 'writeremail' || tagName === 'writerEmail') {
+              item.writerEmail = text;
+            }
+            if (tagName.includes('org') || tagName.includes('기관') || tagName.includes('excinsttnm') || tagName === 'pblancinsttnm') {
+              item.organization = text;
+              item['수행기관'] = text;
+              item.excInsttNm = text;
+              item.pblancInsttNm = text;
+            }
+            if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn') || tagName === 'pblancsumrycn') {
+              item.summary = text;
+              item['사업개요'] = text;
+              item.bsnsSumryCn = text;
+              item.pblancSumryCn = text;
+            }
+            if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn') || tagName === 'pblancncn' || tagName === 'bsnsncn') {
+              item.description = text;
+              item['지원내용'] = text;
+              item.sportCn = text;
+              item.pblancCn = text;
+              item.bsnsCn = text;
+            }
+            if (tagName.includes('amount') || tagName.includes('규모') || tagName.includes('sportscle')) {
+              item.supportAmount = text;
+              item['지원규모'] = text;
+              item.sportScle = text;
+            }
+            if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde') || tagName === 'pblancbeginde') {
+              item.startDate = text;
+              item['신청시작일'] = text;
+              item.rceptBeginDe = text;
+              item.pblancBeginDe = text;
+            }
+            if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde') || tagName === 'pblancendde') {
+              item.endDate = text;
+              item['신청마감일'] = text;
+              item.rceptEndDe = text;
+              item.pblancEndDe = text;
+            }
+            if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl') || tagName === 'rcepturl') {
+              item.applicationUrl = text;
+              item['신청URL'] = text;
+              item.reqstUrl = text;
+              item.rceptUrl = text;
+            }
+            if (tagName.includes('contact') || tagName.includes('문의') || tagName.includes('rqutproccn')) {
+              item.contact = text;
+              item['문의처'] = text;
+              item.rqutProcCn = text;
+            }
+            if (tagName.includes('date') || tagName.includes('일') || tagName === 'pblancde' || tagName === 'pblancregistde') {
+              item.publishDate = text;
+              item['공고일'] = text;
+              item.pblancDe = text;
+              item.pblancRegistDe = text;
+            }
+            if (tagName.includes('phone') || tagName.includes('전화') || tagName === 'telno') {
+              item.phone = text;
+              item['전화번호'] = text;
+              item.telno = text;
+            }
+            if (tagName.includes('method') || tagName.includes('방법') || tagName === 'rceptmth') {
+              item.applicationMethod = text;
+              item['신청방법'] = text;
+              item.rceptMth = text;
+            }
+            
+            // 모든 필드를 원본 형태로도 저장
+            item[tagName] = text;
+            item[child.tagName] = text;
           }
-          if (tagName.includes('summary') || tagName.includes('개요') || tagName.includes('bsnssumrycn') || tagName === 'pblancsumrycn') {
-            item.summary = text;
-            item['사업개요'] = text;
-            item.bsnsSumryCn = text;
-            item.pblancSumryCn = text;
-          }
-          if (tagName.includes('content') || tagName.includes('내용') || tagName.includes('sportcn') || tagName === 'pblancncn' || tagName === 'bsnsncn') {
-            item.description = text;
-            item['지원내용'] = text;
-            item.sportCn = text;
-            item.pblancCn = text;
-            item.bsnsCn = text;
-          }
-          if (tagName.includes('amount') || tagName.includes('규모') || tagName.includes('sportscle')) {
-            item.supportAmount = text;
-            item['지원규모'] = text;
-            item.sportScle = text;
-          }
-          if (tagName.includes('start') || tagName.includes('시작') || tagName.includes('rceptbeginde') || tagName === 'pblancbeginde') {
-            item.startDate = text;
-            item['신청시작일'] = text;
-            item.rceptBeginDe = text;
-            item.pblancBeginDe = text;
-          }
-          if (tagName.includes('end') || tagName.includes('마감') || tagName.includes('rceptendde') || tagName === 'pblancendde') {
-            item.endDate = text;
-            item['신청마감일'] = text;
-            item.rceptEndDe = text;
-            item.pblancEndDe = text;
-          }
-          if (tagName.includes('url') || tagName.includes('링크') || tagName.includes('reqsturl') || tagName === 'rcepturl') {
-            item.applicationUrl = text;
-            item['신청URL'] = text;
-            item.reqstUrl = text;
-            item.rceptUrl = text;
-          }
-          if (tagName.includes('contact') || tagName.includes('문의') || tagName.includes('rqutproccn')) {
-            item.contact = text;
-            item['문의처'] = text;
-            item.rqutProcCn = text;
-          }
-          if (tagName.includes('date') || tagName.includes('일') || tagName === 'pblancde' || tagName === 'pblancregistde') {
-            item.publishDate = text;
-            item['공고일'] = text;
-            item.pblancDe = text;
-            item.pblancRegistDe = text;
-          }
-          if (tagName.includes('phone') || tagName.includes('전화') || tagName === 'telno') {
-            item.phone = text;
-            item['전화번호'] = text;
-            item.telno = text;
-          }
-          if (tagName.includes('method') || tagName.includes('방법') || tagName === 'rceptmth') {
-            item.applicationMethod = text;
-            item['신청방법'] = text;
-            item.rceptMth = text;
-          }
-          
-          // 모든 필드를 원본 형태로도 저장
-          item[tagName] = text;
-          item[child.tagName] = text;
-        }
       });
       
       if (item.title || item['사업명'] || item.pblancNm || item.pblancNmKr) {
         items.push(item);
       }
     });
+    }
     
     console.log(`📊 XML 파싱 결과: ${items.length}개 항목 추출`);
     if (items.length === 0) {

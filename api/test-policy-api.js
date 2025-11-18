@@ -106,6 +106,7 @@ module.exports = async (req, res) => {
                               response.data.match(/<resultcode>(\d+)<\/resultcode>/i)?.[1] ||
                               response.data.match(/<code>(\d+)<\/code>/i)?.[1];
             
+            // resultCode가 있고 에러 코드인 경우만 실패로 처리
             if (resultCode && resultCode !== '00' && resultCode !== '0') {
               result.success = false;
               result.errorCode = resultCode;
@@ -115,18 +116,35 @@ module.exports = async (req, res) => {
                                response.data.match(/<msg>(.*?)<\/msg>/i)?.[1];
             }
             
-            // API 키 관련 에러 확인
-            if (response.data.includes('SERVICE_KEY') || 
-                response.data.includes('serviceKey') ||
-                response.data.includes('인증') ||
-                response.data.includes('키') ||
-                response.data.includes('KEY')) {
-              const errorMatch = response.data.match(/(SERVICE_KEY[^<]*|인증[^<]*|키[^<]*)/i);
+            // API 키 관련 에러 확인 (더 엄격한 패턴)
+            // 실제 API 에러 메시지 패턴만 확인 (일반 텍스트의 "키"는 무시)
+            const apiKeyErrorPatterns = [
+              /SERVICE_KEY.*?오류/i,
+              /SERVICE_KEY.*?에러/i,
+              /SERVICE_KEY.*?없음/i,
+              /인증.*?실패/i,
+              /인증.*?오류/i,
+              /인증.*?에러/i,
+              /등록되지.*?서비스/i,
+              /유효하지.*?키/i,
+              /만료.*?키/i
+            ];
+            
+            // resultCode가 없고, 실제 에러 패턴이 있는 경우만 API 키 에러로 판단
+            if (!resultCode && apiKeyErrorPatterns.some(pattern => pattern.test(response.data))) {
+              const errorMatch = response.data.match(/(SERVICE_KEY[^<]*|인증[^<]*|등록되지[^<]*|유효하지[^<]*)/i);
               if (errorMatch) {
                 result.success = false;
                 result.errorCode = 'API_KEY_ERROR';
                 result.errorMsg = errorMatch[1];
               }
+            }
+            
+            // 데이터가 정상적으로 있는 경우 성공으로 처리
+            if (itemCount > 0 && !resultCode) {
+              result.success = true;
+              result.errorCode = null;
+              result.errorMsg = null;
             }
           } else if (endpoint.type === 'json' && typeof response.data === 'object') {
             // JSON 구조 확인

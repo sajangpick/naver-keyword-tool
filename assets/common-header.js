@@ -72,7 +72,7 @@
 
   const headerHtml = `
   <header class="header">
-    <div class="header-inner"><div class="logo" onclick="location.href='./index.html'">사장픽</div></div>
+    <div class="header-inner"><div class="logo" onclick="location.href='/'">사장픽</div></div>
     <section class="top-search">
       <div class="container top-row">
         <form id="topNaverChatForm" class="ns-box">
@@ -82,14 +82,14 @@
         </form>
         <div class="top-actions-row top-actions">
           <div class="top-apps" style="padding:0">
-            <a class="app" href="./naver_search.html"><div class="app-icon"><i class="fa-solid fa-key" style="font-size:20px"></i></div><div class="app-label">키워드</div></a>
-                        <a class="app" href="./AI-Review.html"><div class="app-icon"><i class="fa-solid fa-robot" style="font-size:20px"></i></div><div class="app-label">AI채팅</div></a>
-            <a class="app" href="./AI-Review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
-            <a class="app" href="./Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
-            <a class="app" href="./shorts-editor.html"><div class="app-icon"><i class="fa-solid fa-film" style="font-size:20px"></i></div><div class="app-label">영상편집</div></a>
-            <a class="app" href="./sajangpick-book.html"><div class="app-icon"><i class="fa-solid fa-book-open" style="font-size:20px"></i></div><div class="app-label">전자책</div></a>
-            <a class="app" href="./ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
-            <a class="app" href="./news-board.html"><div class="app-icon"><i class="fa-solid fa-newspaper" style="font-size:20px"></i></div><div class="app-label">정보게시판</div></a>
+            <a class="app" href="/naver_search.html"><div class="app-icon"><i class="fa-solid fa-key" style="font-size:20px"></i></div><div class="app-label">키워드</div></a>
+                        <a class="app" href="/AI-Review.html"><div class="app-icon"><i class="fa-solid fa-robot" style="font-size:20px"></i></div><div class="app-label">AI채팅</div></a>
+            <a class="app" href="/AI-Review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
+            <a class="app" href="/Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
+            <a class="app" href="/shorts-editor.html"><div class="app-icon"><i class="fa-solid fa-film" style="font-size:20px"></i></div><div class="app-label">영상편집</div></a>
+            <a class="app" href="/sajangpick-book.html"><div class="app-icon"><i class="fa-solid fa-book-open" style="font-size:20px"></i></div><div class="app-label">전자책</div></a>
+            <a class="app" href="/ChatGPT.html"><div class="app-icon"><i class="fa-solid fa-comments" style="font-size:20px"></i></div><div class="app-label">채팅</div></a>
+            <a class="app" href="/news-board.html"><div class="app-icon"><i class="fa-solid fa-newspaper" style="font-size:20px"></i></div><div class="app-label">정보게시판</div></a>
           </div>
           <div class="auth-buttons" id="authButtons">
             <div class="auth-user" id="authUser" style="display:none;">
@@ -99,11 +99,11 @@
                 <span class="auth-user__email" id="userEmail"></span>
               </div>
             </div>
-            <a href="./login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+            <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
               <i class="fa-solid fa-arrow-right-to-bracket"></i>
               <span>로그인</span>
             </a>
-            <a href="./join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+            <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
               <i class="fa-solid fa-user-plus"></i>
               <span>회원가입</span>
             </a>
@@ -202,38 +202,35 @@
   const userEmailSpan = document.getElementById("userEmail");
   const userAvatar = document.getElementById("userAvatar");
 
-  async function updateAuthUI() {
-    // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
+  function updateAuthUI() {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const rawUser = localStorage.getItem("userData");
     
     console.log('[Header Auth] 로그인 상태 체크:', { isLoggedIn, hasUserData: !!rawUser });
 
-    let currentUser = null;
-
-    // localStorage에 사용자 정보가 있으면 즉시 표시
     if (isLoggedIn && rawUser) {
       try {
-        currentUser = JSON.parse(rawUser);
-        console.log('[Header Auth] localStorage 사용자 정보:', { email: currentUser.email, id: currentUser.id });
+        const user = JSON.parse(rawUser);
+        console.log('[Header Auth] 사용자 정보:', { email: user.email, id: user.id });
         
-        // 즉시 UI 업데이트
         if (loginBtn) loginBtn.style.display = "none";
         if (signupBtn) signupBtn.style.display = "none";
         if (authUser) authUser.style.display = "flex";
 
         if (userEmailSpan) {
-          userEmailSpan.textContent = currentUser.email || "마이페이지";
-          userEmailSpan.title = currentUser.email ? `${currentUser.email} (마이페이지로 이동)` : "클릭하여 마이페이지로 이동";
+          userEmailSpan.textContent = "마이페이지";
+          userEmailSpan.title = "클릭하여 마이페이지로 이동";
+          // 마이페이지 클릭 시 이동
           userEmailSpan.style.cursor = 'pointer';
           userEmailSpan.onclick = function() {
-            location.href = './mypage.html';
+            location.href = '/mypage.html';
           };
         }
         if (userAvatar) {
           const base =
-            currentUser.displayName ||
-            currentUser.email ||
+            user.displayName ||
+            user.user_metadata?.full_name ||
+            user.email ||
             "U";
           userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
         }
@@ -241,95 +238,21 @@
         console.error("[auth] failed to parse userData", error);
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("userData");
-        currentUser = null;
+        updateAuthUI();
+        return;
       }
-    }
-
-    // Supabase 세션 확인 (auth-state.js가 로드된 경우)
-    if (window.authState?.supabase) {
-      try {
-        const { data } = await window.authState.supabase.auth.getSession();
-        const session = data?.session;
-        
-        if (session?.user) {
-          // Supabase 세션이 있으면 Supabase 사용자 정보 사용
-          currentUser = {
-            email: session.user.email,
-            displayName: session.user.user_metadata?.full_name || session.user.email,
-            id: session.user.id
-          };
-          
-          console.log('[Header Auth] Supabase 세션 확인됨:', { email: currentUser.email });
-          
-          // UI 업데이트
-          if (loginBtn) loginBtn.style.display = "none";
-          if (signupBtn) signupBtn.style.display = "none";
-          if (authUser) authUser.style.display = "flex";
-
-          if (userEmailSpan) {
-            userEmailSpan.textContent = currentUser.email || "마이페이지";
-            userEmailSpan.title = currentUser.email ? `${currentUser.email} (마이페이지로 이동)` : "클릭하여 마이페이지로 이동";
-            userEmailSpan.style.cursor = 'pointer';
-            userEmailSpan.onclick = function() {
-              location.href = './mypage.html';
-            };
-          }
-          if (userAvatar) {
-            const base =
-              currentUser.displayName ||
-              currentUser.email ||
-              "U";
-            userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-          }
-        } else if (!isLoggedIn || !rawUser) {
-          // 세션이 없고 localStorage에도 없으면 로그아웃 상태
-          if (authUser) authUser.style.display = "none";
-          if (loginBtn) loginBtn.style.display = "inline-flex";
-          if (signupBtn) signupBtn.style.display = "inline-flex";
-          if (userEmailSpan) {
-            userEmailSpan.textContent = "";
-            userEmailSpan.title = "";
-            userEmailSpan.onclick = null;
-          }
-        }
-      } catch (error) {
-        console.error("[auth] Supabase 세션 확인 실패:", error);
-        // 에러 발생 시 localStorage 기반으로 유지
-        if (!currentUser) {
-          if (authUser) authUser.style.display = "none";
-          if (loginBtn) loginBtn.style.display = "inline-flex";
-          if (signupBtn) signupBtn.style.display = "inline-flex";
-        }
-      }
-    } else if (!currentUser) {
-      // auth-state.js가 없고 localStorage에도 없으면 로그아웃 상태
+    } else {
       if (authUser) authUser.style.display = "none";
       if (loginBtn) loginBtn.style.display = "inline-flex";
       if (signupBtn) signupBtn.style.display = "inline-flex";
       if (userEmailSpan) {
         userEmailSpan.textContent = "";
         userEmailSpan.title = "";
-        userEmailSpan.onclick = null;
       }
     }
   }
 
-  // 초기 실행
   updateAuthUI();
-  
-  // auth-state.js가 로드될 때까지 대기 후 재실행
-  let waitCount = 0;
-  const maxWait = 50; // 5초 대기
-  const checkAuthState = setInterval(() => {
-    if (window.authState?.supabase) {
-      clearInterval(checkAuthState);
-      updateAuthUI();
-    } else if (waitCount >= maxWait) {
-      clearInterval(checkAuthState);
-    }
-    waitCount++;
-  }, 100);
-
   window.addEventListener("auth:state-changed", updateAuthUI);
 
   // 모바일에서 스크롤 시 헤더 숨김/표시 (kmong 스타일)

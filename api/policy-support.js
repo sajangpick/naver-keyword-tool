@@ -49,17 +49,17 @@ module.exports = async (req, res) => {
     });
   }
 
-  // GET: 카테고리별 정책 수 조회
+  // GET: 카테고리별 정책 수 조회 + 상태별 통계
   if (req.method === 'GET' && isCategories) {
     try {
-      const { data, error } = await supabase
+      // 전체 정책 조회 (상태 필터 없이)
+      const { data: allData, error: allError } = await supabase
         .from('policy_supports')
-        .select('category')
-        .eq('status', 'active');
+        .select('category, status');
 
-      if (error) throw error;
+      if (allError) throw allError;
 
-      // 카테고리별 집계
+      // 카테고리별 집계 (전체)
       const categoryCounts = {
         startup: 0,
         operation: 0,
@@ -70,15 +70,30 @@ module.exports = async (req, res) => {
         other: 0
       };
 
-      data.forEach(item => {
+      // 상태별 집계
+      const statusCounts = {
+        active: 0,
+        upcoming: 0,
+        ended: 0
+      };
+
+      allData.forEach(item => {
+        // 카테고리별 카운트
         if (categoryCounts.hasOwnProperty(item.category)) {
           categoryCounts[item.category]++;
+        }
+        
+        // 상태별 카운트
+        if (statusCounts.hasOwnProperty(item.status)) {
+          statusCounts[item.status]++;
         }
       });
 
       return res.status(200).json({
         success: true,
-        data: categoryCounts
+        data: categoryCounts,
+        status: statusCounts,
+        total: allData.length
       });
 
     } catch (error) {
@@ -314,6 +329,34 @@ module.exports = async (req, res) => {
 
     const { data, error, count } = await query;
     if (error) throw error;
+
+    // 백그라운드에서 마감일이 지난 정책 상태 자동 업데이트 (비동기, 에러 무시)
+    if (data && data.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const expiredPolicies = data.filter(p => 
+        p.application_end_date && 
+        p.application_end_date < todayStr && 
+        p.status !== 'ended'
+      );
+      
+      if (expiredPolicies.length > 0) {
+        // 비동기로 업데이트 (응답을 기다리지 않음)
+        const expiredIds = expiredPolicies.map(p => p.id);
+        supabase
+          .from('policy_supports')
+          .update({ status: 'ended', updated_at: new Date().toISOString() })
+          .in('id', expiredIds)
+          .then(() => {
+            console.log(`✅ ${expiredIds.length}개 정책 상태가 자동으로 'ended'로 업데이트되었습니다.`);
+          })
+          .catch(err => {
+            console.error('⚠️ 정책 상태 자동 업데이트 실패 (무시됨):', err.message);
+          });
+      }
+    }
 
     // 사용자별 관심 정보 추가
     if (user_id && data && data.length > 0) {

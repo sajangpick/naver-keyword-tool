@@ -1,24 +1,35 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
-  <meta name="referrer" content="no-referrer" />
-  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-  <title>AI 리뷰 관리 - 사장픽</title>
-  <link
-    rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E"
-  />
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    rel="stylesheet"
-    integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
-    crossorigin="anonymous"
-  />
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <title>AI 리뷰 관리 - 사장픽</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      as="style"
+      crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
+    />
+    <style>
       :root {
         --accent-color: #ff7b54;
         --bg-color: #fff7f0;
@@ -33,7 +44,10 @@
       }
 
       body {
-        font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        font-family: "Pretendard Variable", Pretendard, -apple-system,
+          BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
+          "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
+          "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
         background: var(--bg-color);
         color: var(--text-primary);
       }
@@ -130,7 +144,7 @@
           padding: 12px 16px;
           flex-wrap: wrap;
         }
-        
+
         .header-slogan {
           font-size: 12px;
           position: static;
@@ -140,12 +154,12 @@
           text-align: center;
           margin-top: 8px;
         }
-        
+
         .logo-container {
           order: 1;
           gap: 8px;
         }
-        
+
         .header-auth {
           order: 2;
         }
@@ -166,7 +180,7 @@
           padding: 10px 12px;
           gap: 12px;
         }
-        
+
         .header-slogan {
           display: none;
         }
@@ -349,14 +363,14 @@
         position: relative;
         background: transparent;
       }
-      
+
       .side-nav .menu-item:hover {
         background: #ffffff;
         color: #ff7e46;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(255, 126, 70, 0.3);
       }
-      
+
       .side-nav .menu-item:hover .ico {
         color: #ff7e46;
         background: rgba(255, 126, 70, 0.1);
@@ -475,102 +489,30 @@
 
       @media (max-width: 992px) {
         .side-nav {
-          position: fixed !important;
-          bottom: 20px !important;
+          position: fixed;
+          bottom: 20px;
           left: 50%;
           transform: translateX(-50%);
-          top: auto !important;
+          top: auto;
           flex-direction: row;
-          width: calc(100vw - 40px);
+          width: auto;
           max-width: calc(100vw - 40px);
-          padding: 6px 10px;
-          overflow-x: auto;
+          padding: 12px 16px;
+          overflow-x: hidden;
           overflow-y: hidden;
           gap: 8px;
-          border-radius: 18px;
+          border-radius: 24px;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
           z-index: 100;
-          justify-content: flex-start;
-          -webkit-overflow-scrolling: touch;
-          touch-action: pan-x;
-          scrollbar-width: thin;
-          scroll-snap-type: x mandatory;
-        }
-
-        /* 오른쪽 페이드아웃 효과 */
-        .side-nav::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          right: 0;
-          width: 50px;
-          height: 100%;
-          background: linear-gradient(to right, transparent, #ffe8d9);
-          pointer-events: none;
-          z-index: 1;
-          opacity: 1;
-          transition: opacity 0.3s ease;
-        }
-
-        /* 오른쪽 화살표 인디케이터 */
-        .side-nav::before {
-          content: '→';
-          position: absolute;
-          top: 50%;
-          right: 8px;
-          transform: translateY(-50%);
-          font-size: 18px;
-          color: rgba(255, 126, 70, 0.6);
-          pointer-events: none;
-          z-index: 2;
-          opacity: 1;
-          transition: opacity 0.3s ease;
-          animation: slideHintSide 2s ease-in-out infinite;
-        }
-
-        @keyframes slideHintSide {
-          0%, 100% {
-            transform: translateY(-50%) translateX(0);
-          }
-          50% {
-            transform: translateY(-50%) translateX(5px);
-          }
-        }
-
-        /* 인디케이터가 숨겨진 경우 */
-        .side-nav.hide-indicator::before,
-        .side-nav.hide-indicator::after {
-          opacity: 0 !important;
-          animation: none !important;
-        }
-
-        .side-nav::-webkit-scrollbar {
-          height: 4px;
-        }
-
-        .side-nav::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 2px;
-        }
-
-        .side-nav::-webkit-scrollbar-thumb {
-          background: rgba(255, 126, 70, 0.4);
-          border-radius: 2px;
-        }
-
-        .side-nav::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 126, 70, 0.6);
+          justify-content: space-between;
         }
 
         .side-nav .menu-item {
           flex-direction: column;
-          min-width: 50px;
-          padding: 4px 5px;
+          min-width: 0;
+          padding: 8px 6px;
           font-size: 8px;
-          flex: 0 0 50px;
-          flex-shrink: 0;
-          scroll-snap-align: start;
-          gap: 3px;
+          flex: 1 1 auto;
         }
 
         .side-nav .menu-item .ico {
@@ -591,99 +533,38 @@
 
         .main-content {
           padding-left: 0;
-          padding-bottom: 65px;
+          padding-bottom: 90px;
         }
       }
 
       @media (max-width: 360px) {
         .side-nav {
-          position: fixed !important;
-          bottom: 12px !important;
-          top: auto !important;
-          width: calc(100vw - 16px);
+          bottom: 12px;
           max-width: calc(100vw - 16px);
-          padding: 5px 8px;
-          gap: 6px;
-          border-radius: 14px;
-          overflow-x: auto;
-          overflow-y: hidden;
-          justify-content: flex-start;
-          -webkit-overflow-scrolling: touch;
-          touch-action: pan-x;
-          scrollbar-width: thin;
-          scroll-snap-type: x mandatory;
-        }
-
-        /* 오른쪽 페이드아웃 효과 */
-        .side-nav::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          right: 0;
-          width: 40px;
-          height: 100%;
-          background: linear-gradient(to right, transparent, #ffe8d9);
-          pointer-events: none;
-          z-index: 1;
-          opacity: 1;
-          transition: opacity 0.3s ease;
-        }
-
-        /* 오른쪽 화살표 인디케이터 */
-        .side-nav::before {
-          content: '→';
-          position: absolute;
-          top: 50%;
-          right: 6px;
-          transform: translateY(-50%);
-          font-size: 16px;
-          color: rgba(255, 126, 70, 0.6);
-          pointer-events: none;
-          z-index: 2;
-          animation: slideHintSide 2s ease-in-out infinite;
-          opacity: 1;
-          transition: opacity 0.3s ease;
-        }
-
-        /* 인디케이터가 숨겨진 경우 (360px 이하) */
-        .side-nav.hide-indicator::before,
-        .side-nav.hide-indicator::after {
-          opacity: 0 !important;
-          animation: none !important;
-        }
-
-        .side-nav::-webkit-scrollbar {
-          height: 3px;
-        }
-
-        .side-nav::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 2px;
-        }
-
-        .side-nav::-webkit-scrollbar-thumb {
-          background: rgba(255, 126, 70, 0.4);
-          border-radius: 2px;
+          padding: 8px 4px;
+          gap: 2px;
+          border-radius: 18px;
+          overflow-x: hidden;
+          justify-content: space-between;
         }
 
         .side-nav .menu-item {
-          min-width: 45px;
-          padding: 3px 4px;
-          font-size: 7px;
-          flex: 0 0 45px;
-          flex-shrink: 0;
+          min-width: 0;
+          padding: 4px 1px;
+          font-size: 6px;
+          flex: 1 1 calc((100% - 12px) / 7);
+          max-width: calc((100% - 12px) / 7);
           gap: 2px;
-          scroll-snap-align: start;
         }
 
         .side-nav .menu-item .ico {
-          width: 28px;
-          height: 28px;
-          font-size: 12px;
+          width: 22px;
+          height: 22px;
+          font-size: 10px;
         }
 
         .side-nav .menu-item span:not(.ico) {
-          font-size: 7px;
+          font-size: 6px;
           word-break: keep-all;
           line-height: 1.2;
           text-align: center;
@@ -704,7 +585,7 @@
         }
 
         .main-content {
-          padding-bottom: 55px;
+          padding-bottom: 70px;
         }
       }
 
@@ -1166,1039 +1047,1073 @@
         border-color: #ef4444;
         color: #dc2626;
       }
-  </style>
-</head>
-<body>
-  <header class="header">
-    <div class="header-inner">
-      <a href="/" class="logo-container">
-        <div class="logo-icon">
-          <i class="fa-solid fa-thumbtack"></i>
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a href="/" class="logo-container">
+          <div class="logo-icon">
+            <i class="fa-solid fa-thumbtack"></i>
+          </div>
+          <span class="logo-text">sajang pick</span>
+        </a>
+
+        <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
+
+        <div class="header-auth">
+          <div class="auth-buttons" id="authButtons">
+            <div class="auth-user" id="authUser" style="display: none">
+              <div class="auth-user__avatar" id="userAvatar">U</div>
+              <div class="auth-user__meta">
+                <a
+                  href="/mypage.html"
+                  class="auth-user__label"
+                  style="cursor: pointer; text-decoration: none"
+                  >나의 페이지</a
+                >
+                <a
+                  href="/mypage.html"
+                  class="auth-user__email"
+                  id="userEmail"
+                  style="cursor: pointer; text-decoration: none"
+                ></a>
+              </div>
+              <button class="auth-user__logout" id="logoutBtn" type="button">
+                로그아웃
+              </button>
+            </div>
+            <a
+              href="/login.html"
+              class="auth-btn auth-btn--primary"
+              id="loginBtn"
+            >
+              <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px"></i>
+              <span>로그인</span>
+            </a>
+            <a
+              href="/join.html"
+              class="auth-btn auth-btn--ghost"
+              id="signupBtn"
+            >
+              <i class="fa-solid fa-user-plus" style="margin-right: 8px"></i>
+              <span>회원가입</span>
+            </a>
+          </div>
         </div>
-        <span class="logo-text">sajang pick</span>
+      </div>
+    </header>
+
+    <aside class="side-nav" aria-label="사이드 네비게이션">
+      <a class="menu-item" href="/">
+        <span class="ico"><i class="fa-solid fa-house"></i></span>
+        <span>홈</span>
       </a>
-      
-      <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
-      
-      <div class="header-auth">
-        <div class="auth-buttons" id="authButtons">
-          <div class="auth-user" id="authUser" style="display: none;">
-            <div class="auth-user__avatar" id="userAvatar">U</div>
-            <div class="auth-user__meta">
-              <a href="/mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
-              <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
-            </div>
-            <button class="auth-user__logout" id="logoutBtn" type="button">
-              로그아웃
-            </button>
+      <a class="menu-item" href="/naver_search.html">
+        <span class="ico"><i class="fa-solid fa-key"></i></span>
+        <span>키워드</span>
+      </a>
+      <a class="menu-item active" href="/AI-Review.html">
+        <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
+        <span>리뷰</span>
+      </a>
+      <a class="menu-item" href="/Blog-Editor.html">
+        <span class="ico"><i class="fa-solid fa-blog"></i></span>
+        <span>블로그</span>
+      </a>
+      <a class="menu-item" href="/recipe-manager.html">
+        <span class="ico"><i class="fa-solid fa-utensils"></i></span>
+        <span>레시피</span>
+      </a>
+      <a class="menu-item" href="/shorts-editor.html">
+        <span class="ico"><i class="fa-solid fa-film"></i></span>
+        <span>영상</span>
+      </a>
+      <a class="menu-item" href="/sajangpick-book.html">
+        <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+        <span>전자책</span>
+      </a>
+      <a class="menu-item" href="/news-board.html">
+        <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
+        <span>정보</span>
+      </a>
+      <a class="menu-item" href="/policy-support.html">
+        <span class="ico"><i class="fa-solid fa-coins"></i></span>
+        <span>정책</span>
+      </a>
+    </aside>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="main-content">
+      <div class="container">
+        <!-- 헤더 섹션 -->
+        <div class="header-section">
+          <div class="page-header">
+            <h1>AI 리뷰 관리</h1>
+            <p>AI를 활용하여 고객 리뷰에 대한 스마트한 답글을 생성해보세요.</p>
           </div>
-          <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
-            <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px;"></i>
-            <span>로그인</span>
-          </a>
-          <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
-            <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i>
-            <span>회원가입</span>
-          </a>
         </div>
-      </div>
-    </div>
-  </header>
 
-  <aside class="side-nav" aria-label="사이드 네비게이션">
-    <a class="menu-item" href="./index.html">
-      <span class="ico"><i class="fa-solid fa-house"></i></span>
-      <span>홈</span>
-    </a>
-    <a class="menu-item" href="./naver_search.html">
-      <span class="ico"><i class="fa-solid fa-key"></i></span>
-      <span>키워드</span>
-    </a>
-    <a class="menu-item active" href="./AI-Review.html">
-      <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
-      <span>리뷰</span>
-    </a>
-    <a class="menu-item" href="./Blog-Editor.html">
-      <span class="ico"><i class="fa-solid fa-blog"></i></span>
-      <span>블로그</span>
-    </a>
-    <a class="menu-item" href="./recipe-manager.html">
-      <span class="ico"><i class="fa-solid fa-utensils"></i></span>
-      <span>레시피</span>
-    </a>
-    <a class="menu-item" href="./shorts-editor.html">
-      <span class="ico"><i class="fa-solid fa-film"></i></span>
-      <span>영상</span>
-    </a>
-    <a class="menu-item" href="./sajangpick-book.html">
-      <span class="ico"><i class="fa-solid fa-book-open"></i></span>
-      <span>전자책</span>
-    </a>
-    <a class="menu-item" href="./news-board.html">
-      <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
-      <span>정보</span>
-    </a>
-    <a class="menu-item" href="./policy-support.html">
-      <span class="ico"><i class="fa-solid fa-coins"></i></span>
-      <span>정책</span>
-    </a>
-  </aside>
-
-  <!-- 메인 컨텐츠 -->
-  <div class="main-content">
-
-    <div class="container">
-      <!-- 헤더 섹션 -->
-      <div class="header-section">
-        <div class="page-header">
-          <h1>AI 리뷰 관리</h1>
-          <p>AI를 활용하여 고객 리뷰에 대한 스마트한 답글을 생성해보세요.</p>
-        </div>
-      </div>
-
-      <div class="review-container">
-        <div class="review-content">
-          <div class="form-group">
-            <label for="reviewText">
-              <i class="fas fa-comment"></i>
-              고객 리뷰 내용
-            </label>
-            <textarea 
-              id="reviewText" 
-              class="textarea-field" 
-              placeholder="고객이 작성한 리뷰 내용을 입력하세요..."
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="placeUrl">
-              <i class="fas fa-link"></i>
-              네이버 플레이스 URL (선택사항)
-            </label>
-            <input 
-              type="text" 
-              id="placeUrl" 
-              class="input-field"
-              placeholder="https://place.map.naver.com/restaurant/..."
-            />
-          </div>
-
-          <!-- 가게 정보 저장/불러오기 안내 -->
-          <div style="background: var(--accent-color); border-radius: 10px; padding: 15px; margin-bottom: 20px; color: white;">
-            <p style="margin: 0; font-size: 14px; margin-bottom: 10px;">
-              💡 <strong>알림:</strong> 가게 정보를 한번 저장하면 다음부터 자동으로 불러와집니다!
-            </p>
-            <div style="display: flex; gap: 10px;">
-              <button type="button" id="loadStoreInfoBtn" class="btn" style="flex: 1; background: white; color: var(--accent-color); border: 2px solid white; font-size: 12px;">
-                📥 저장된 정보<br>불러오기
-              </button>
-              <button type="button" id="saveStoreInfoBtn" class="btn" style="flex: 1; background: transparent; color: white; border: 2px solid white; font-size: 12px;">
-                📌 가게 정보<br>저장하기
-              </button>
+        <div class="review-container">
+          <div class="review-content">
+            <div class="form-group">
+              <label for="reviewText">
+                <i class="fas fa-comment"></i>
+                고객 리뷰 내용
+              </label>
+              <textarea
+                id="reviewText"
+                class="textarea-field"
+                placeholder="고객이 작성한 리뷰 내용을 입력하세요..."
+              ></textarea>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="ownerTips">
-              <i class="fas fa-lightbulb"></i>
-              사장님 추천 포인트 (선택사항)
-            </label>
-            <textarea 
-              id="ownerTips" 
-              class="textarea-field" 
-              placeholder="강조하고 싶은 메뉴, 분위기, 특징 등을 자유롭게 작성해주세요.&#10;&#10;예시:&#10;- 시그니처 메뉴: 냉면, 갈비탕&#10;- 분위기: 가족 모임에 좋은 넓은 홀&#10;- 특징: 직접 만든 육수, 주차 가능&#10;- 추천: 고기와 냉면의 조합이 일품"
-            ></textarea>
-            <button type="button" id="aiPromoBtn" class="btn" style="margin-top: 10px; background: var(--accent-color); color: white; border: 2px solid var(--accent-color);">
+            <div class="form-group">
+              <label for="placeUrl">
+                <i class="fas fa-link"></i>
+                네이버 플레이스 URL (선택사항)
+              </label>
+              <input
+                type="text"
+                id="placeUrl"
+                class="input-field"
+                placeholder="https://place.map.naver.com/restaurant/..."
+              />
+            </div>
 
-               AI 홍보 포인트 자동 추천
-            </button>
-            <small style="color: var(--text-secondary); display: block; margin-top: 8px;">
-
-              <strong>💡 Tip:</strong> AI가 리뷰를 분석해서 답글에 추가하면 좋을 홍보 포인트를 추천해드립니다!
-            </small>
-
-            <!-- AI 추천 홍보 포인트 영역 -->
-            <div id="aiPromoArea" style="display: none; margin-top: 15px;">
-              <div style="background: white; border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px;">
-                <p style="margin: 0 0 10px 0; color: var(--accent-color); font-weight: 600;">
-                  🎯 AI 추천 홍보 포인트 (클릭해서 선택/해제)
-                </p>
-                <div id="aiPromoTags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            <!-- 추천 포인트 저장/불러오기 안내 -->
+            <div
+              style="
+                background: var(--accent-color);
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 20px;
+                color: white;
+              "
+            >
+              <p style="margin: 0; font-size: 14px; margin-bottom: 10px">
+                💡 <strong>알림:</strong> 추천 포인트를 한번 저장하면 다음부터
+                자동으로 불러와집니다!
+              </p>
+              <div style="display: flex; gap: 10px">
+                <button
+                  type="button"
+                  id="loadStoreInfoBtn"
+                  class="btn"
+                  style="
+                    flex: 1;
+                    background: white;
+                    color: var(--accent-color);
+                    border: 2px solid white;
+                    font-size: 12px;
+                  "
+                >
+                  📥 저장된 포인트<br />불러오기
+                </button>
+                <button
+                  type="button"
+                  id="saveStoreInfoBtn"
+                  class="btn"
+                  style="
+                    flex: 1;
+                    background: transparent;
+                    color: white;
+                    border: 2px solid white;
+                    font-size: 12px;
+                  "
+                >
+                  📌 추천 포인트<br />저장하기
+                </button>
               </div>
             </div>
-          </div>
 
-          <!-- 답글 스타일 선택 안내 -->
-          <div style="background: white; border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-            <p style="margin: 0 0 10px 0; color: var(--accent-color); font-weight: 600;">
-              <i class="fas fa-palette"></i> 답글 스타일을 선택하세요 (잠재 고객에게 보이는 홍보 효과를 고려)
-            </p>
-            <p style="margin: 0; color: var(--accent-color); font-size: 14px; opacity: 0.8;">
-              💡 리뷰 답글은 처음 방문을 고려하는 다른 사람들이 읽습니다!
-            </p>
-          </div>
+            <div class="form-group">
+              <label for="ownerTips">
+                <i class="fas fa-lightbulb"></i>
+                사장님 추천 포인트 (선택사항)
+              </label>
+              <textarea
+                id="ownerTips"
+                class="textarea-field"
+                placeholder="강조하고 싶은 메뉴, 분위기, 특징 등을 자유롭게 작성해주세요.&#10;&#10;예시:&#10;- 시그니처 메뉴: 냉면, 갈비탕&#10;- 분위기: 가족 모임에 좋은 넓은 홀&#10;- 특징: 직접 만든 육수, 주차 가능&#10;- 추천: 고기와 냉면의 조합이 일품"
+              ></textarea>
+            </div>
 
-          <div class="button-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-            <button class="btn btn-primary" id="replyPromoBtn">
+            <!-- 답글 스타일 선택 안내 -->
+            <div
+              style="
+                background: white;
+                border: 2px solid var(--accent-color);
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 20px;
+              "
+            >
+              <p
+                style="
+                  margin: 0 0 10px 0;
+                  color: var(--accent-color);
+                  font-weight: 600;
+                "
+              >
+                <i class="fas fa-palette"></i> 답글 스타일을 선택하세요 (잠재
+                고객에게 보이는 홍보 효과를 고려)
+              </p>
+              <p
+                style="
+                  margin: 0;
+                  color: var(--accent-color);
+                  font-size: 14px;
+                  opacity: 0.8;
+                "
+              >
+                💡 리뷰 답글은 처음 방문을 고려하는 다른 사람들이 읽습니다!
+              </p>
+            </div>
 
-               홍보형 (추천)
-            </button>
-            <button class="btn" id="replyProfessionalBtn">
+            <div
+              class="button-group"
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+              "
+            >
+              <button class="btn btn-primary" id="replyPromoBtn">
+                홍보형 (추천)
+              </button>
+              <button class="btn" id="replyProfessionalBtn">전문가형</button>
+              <button class="btn" id="replyFriendlyBtn">친근형</button>
+            </div>
 
-               전문가형
-            </button>
-            <button class="btn" id="replyFriendlyBtn">
+            <div
+              style="
+                background: white;
+                border: 2px solid var(--accent-color);
+                border-radius: 8px;
+                padding: 12px;
+                margin-top: 15px;
+                margin-bottom: 30px;
+              "
+            >
+              <p
+                style="
+                  margin: 0;
+                  color: var(--accent-color);
+                  font-size: 13px;
+                  line-height: 1.6;
+                "
+              >
+                <strong> 홍보형:</strong> 다른 메뉴, 주차, 예약 등 추가 정보를
+                적극 언급 (방문 유도 최대화)<br />
+                <strong> 전문가형:</strong> 재료, 조리법 설명으로 전문성과
+                신뢰감 강조<br />
+                <strong> 친근형:</strong> 따뜻하고 부드러운 톤으로 단골 고객
+                만들기
+              </p>
+            </div>
 
-               친근형
-            </button>
-          </div>
+            <!-- 식당 정보 상태 표시 영역 -->
+            <div
+              id="placeInfoStatus"
+              class="place-info-status hidden"
+              style="
+                display: none;
+                background: #f0fdf4;
+                border: 1px solid #22c55e;
+                border-radius: 8px;
+                padding: 12px;
+                margin: 15px 0;
+                color: #15803d;
+              "
+            >
+              <i class="fas fa-check-circle"></i>
+              <span id="placeInfoText">식당 정보를 분석하고 있습니다...</span>
+            </div>
 
-          <div style="background: white; border: 2px solid var(--accent-color); border-radius: 8px; padding: 12px; margin-top: 15px; margin-bottom: 30px;">
-            <p style="margin: 0; color: var(--accent-color); font-size: 13px; line-height: 1.6;">
-              <strong> 홍보형:</strong> 다른 메뉴, 주차, 예약 등 추가 정보를 적극 언급 (방문 유도 최대화)<br>
-              <strong> 전문가형:</strong> 재료, 조리법 설명으로 전문성과 신뢰감 강조<br>
-              <strong> 친근형:</strong> 따뜻하고 부드러운 톤으로 단골 고객 만들기
-            </p>
-          </div>
+            <div class="result-section">
+              <h3>
+                <i class="fas fa-comment-dots"></i>
+                생성된 답글
+              </h3>
+              <div id="reviewOutput" class="result-content"></div>
+            </div>
 
-          <!-- 식당 정보 상태 표시 영역 -->
-          <div id="placeInfoStatus" class="place-info-status hidden" style="display: none; background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 12px; margin: 15px 0; color: #15803d;">
-            <i class="fas fa-check-circle"></i>
-            <span id="placeInfoText">식당 정보를 분석하고 있습니다...</span>
-          </div>
-
-          <div class="result-section">
-            <h3>
-              <i class="fas fa-comment-dots"></i>
-              생성된 답글
-            </h3>
-            <div id="reviewOutput" class="result-content"></div>
-          </div>
-
-          <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 24px;">
-            <h4 style="color: var(--text-primary); margin-bottom: 12px;">
-              <i class="fas fa-info-circle"></i>
-              기능 안내
-            </h4>
-            <ul style="color: var(--text-secondary); font-size: 14px; line-height: 1.6; padding-left: 24px; list-style-position: outside;">
-              <li style="margin-bottom: 8px;">
-                <strong>네이버 플레이스 URL (선택):</strong> 식당의 플레이스 URL을 입력하면, 
-                식당 이름, 업종, 위치, 메뉴 등을 자동으로 파악하여 더욱 맞춤화된 답글을 생성합니다.
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong> 사장님 추천 포인트 (선택):</strong> 강조하고 싶은 메뉴, 분위기, 특징을 직접 입력하면
-                AI가 이를 우선 반영하여 답글을 작성합니다. 크롤링 정보보다 사장님의 의견이 우선됩니다!
-              </li>
-              <li style="margin-bottom: 8px;">
-                <strong> 답글 생성하기:</strong> 식당 정보와 사장님 추천 정보를 반영하여 전문적이고
-                공손한 답글을 자동으로 작성합니다. 새로운 고객들이 보는 답글이므로 자연스러운 홍보 효과도 있습니다!
-              </li>
-              <li style="margin-bottom: 8px;">
-                 <strong>Tip:</strong> 리뷰에서 고객이 궁금해하는 다른 메뉴가 있다면, 
-                AI가 식당 정보를 바탕으로 자동으로 추천해드립니다.
-              </li>
-              <li>생성된 답글은 자유롭게 수정하여 사용하실 수 있습니다.</li>
-            </ul>
+            <div
+              style="
+                background: #f8fafc;
+                padding: 20px;
+                border-radius: 12px;
+                border: 1px solid #e2e8f0;
+                margin-top: 24px;
+              "
+            >
+              <h4 style="color: var(--text-primary); margin-bottom: 12px">
+                <i class="fas fa-info-circle"></i>
+                기능 안내
+              </h4>
+              <ul
+                style="
+                  color: var(--text-secondary);
+                  font-size: 14px;
+                  line-height: 1.6;
+                  padding-left: 24px;
+                  list-style-position: outside;
+                "
+              >
+                <li style="margin-bottom: 8px">
+                  <strong>네이버 플레이스 URL (선택):</strong> 식당의 플레이스
+                  URL을 입력하면, 식당 이름, 업종, 위치, 메뉴 등을 자동으로
+                  파악하여 더욱 맞춤화된 답글을 생성합니다.
+                </li>
+                <li style="margin-bottom: 8px">
+                  <strong> 사장님 추천 포인트 (선택):</strong> 강조하고 싶은
+                  메뉴, 분위기, 특징을 직접 입력하면 AI가 이를 우선 반영하여
+                  답글을 작성합니다. 크롤링 정보보다 사장님의 의견이 우선됩니다!
+                </li>
+                <li style="margin-bottom: 8px">
+                  <strong> 답글 생성하기:</strong> 식당 정보와 사장님 추천
+                  정보를 반영하여 전문적이고 공손한 답글을 자동으로 작성합니다.
+                  새로운 고객들이 보는 답글이므로 자연스러운 홍보 효과도
+                  있습니다!
+                </li>
+                <li style="margin-bottom: 8px">
+                  <strong>Tip:</strong> 리뷰에서 고객이 궁금해하는 다른 메뉴가
+                  있다면, AI가 식당 정보를 바탕으로 자동으로 추천해드립니다.
+                </li>
+                <li>생성된 답글은 자유롭게 수정하여 사용하실 수 있습니다.</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
+      <script>
+        // 백엔드 서버 설정: 상대 경로(`/api`) 사용
+        console.log("Using backend URL:", "/api");
 
-  <script>
-      // 백엔드 서버 설정: 상대 경로(`/api`) 사용
-      console.log("Using backend URL:", "/api");
+        // DOM 요소
+        const placeUrl = document.getElementById("placeUrl");
+        const ownerTips = document.getElementById("ownerTips");
+        const reviewText = document.getElementById("reviewText");
+        const replyPromoBtn = document.getElementById("replyPromoBtn");
+        const replyProfessionalBtn = document.getElementById(
+          "replyProfessionalBtn"
+        );
+        const replyFriendlyBtn = document.getElementById("replyFriendlyBtn");
+        const reviewOutput = document.getElementById("reviewOutput");
+        const placeInfoStatus = document.getElementById("placeInfoStatus");
+        const placeInfoText = document.getElementById("placeInfoText");
+        const loadStoreInfoBtn = document.getElementById("loadStoreInfoBtn");
+        const saveStoreInfoBtn = document.getElementById("saveStoreInfoBtn");
 
-      // DOM 요소
-      const placeUrl = document.getElementById("placeUrl");
-      const ownerTips = document.getElementById("ownerTips");
-      const reviewText = document.getElementById("reviewText");
-      const replyPromoBtn = document.getElementById("replyPromoBtn");
-      const replyProfessionalBtn = document.getElementById("replyProfessionalBtn");
-      const replyFriendlyBtn = document.getElementById("replyFriendlyBtn");
-      const reviewOutput = document.getElementById("reviewOutput");
-      const placeInfoStatus = document.getElementById("placeInfoStatus");
-      const placeInfoText = document.getElementById("placeInfoText");
-      const loadStoreInfoBtn = document.getElementById("loadStoreInfoBtn");
-      const saveStoreInfoBtn = document.getElementById("saveStoreInfoBtn");
-      const aiPromoBtn = document.getElementById("aiPromoBtn");
-      const aiPromoArea = document.getElementById("aiPromoArea");
-      const aiPromoTags = document.getElementById("aiPromoTags");
+        // 크롤링된 식당 정보를 저장할 변수
+        let placeInfo = null;
 
-      // 크롤링된 식당 정보를 저장할 변수
-      let placeInfo = null;
-      
-      // 선택된 홍보 포인트를 저장할 변수
-      let selectedPromoPoints = [];
+        // 프로모션 데이터 전역 변수
+        let globalPromotionData = null;
+        let globalHasPromotion = false;
 
-      // 프로모션 데이터 전역 변수
-      let globalPromotionData = null;
-      let globalHasPromotion = false;
-
-      // 공통 유틸리티 함수
-      function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
-        if (!el) return;
-        el.dataset._originalText = el.dataset._originalText || el.textContent;
-        el.disabled = !!isLoading;
-        if (isLoading) {
-          el.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textWhenLoading}`;
-        } else {
-          el.textContent = el.dataset._originalText;
+        // 공통 유틸리티 함수
+        function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
+          if (!el) return;
+          el.dataset._originalText = el.dataset._originalText || el.textContent;
+          el.disabled = !!isLoading;
+          if (isLoading) {
+            el.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textWhenLoading}`;
+          } else {
+            el.textContent = el.dataset._originalText;
+          }
         }
-      }
 
-      // 식당 정보 상태 표시 함수
-      function showPlaceInfoStatus(message, status = "success") {
-        // status: "loading", "success", "warning"
-        placeInfoStatus.classList.remove("hidden", "loading", "warning");
-        placeInfoStatus.style.display = "block";
-        placeInfoText.textContent = message;
-        
-        const icon = placeInfoStatus.querySelector("i");
-        
-        if (status === "loading") {
-          placeInfoStatus.classList.add("loading");
-          placeInfoStatus.style.background = "#fef3c7";
-          placeInfoStatus.style.borderColor = "#f59e0b";
-          placeInfoStatus.style.color = "#92400e";
-          icon.className = "fas fa-spinner fa-spin";
-        } else if (status === "warning") {
-          placeInfoStatus.classList.add("warning");
-          placeInfoStatus.style.background = "#fef2f2";
-          placeInfoStatus.style.borderColor = "#ef4444";
-          placeInfoStatus.style.color = "#dc2626";
-          icon.className = "fas fa-exclamation-triangle";
-        } else {
-          placeInfoStatus.style.background = "#f0fdf4";
-          placeInfoStatus.style.borderColor = "#22c55e";
-          placeInfoStatus.style.color = "#15803d";
-          icon.className = "fas fa-check-circle";
+        // 식당 정보 상태 표시 함수
+        function showPlaceInfoStatus(message, status = "success") {
+          // status: "loading", "success", "warning"
+          placeInfoStatus.classList.remove("hidden", "loading", "warning");
+          placeInfoStatus.style.display = "block";
+          placeInfoText.textContent = message;
+
+          const icon = placeInfoStatus.querySelector("i");
+
+          if (status === "loading") {
+            placeInfoStatus.classList.add("loading");
+            placeInfoStatus.style.background = "#fef3c7";
+            placeInfoStatus.style.borderColor = "#f59e0b";
+            placeInfoStatus.style.color = "#92400e";
+            icon.className = "fas fa-spinner fa-spin";
+          } else if (status === "warning") {
+            placeInfoStatus.classList.add("warning");
+            placeInfoStatus.style.background = "#fef2f2";
+            placeInfoStatus.style.borderColor = "#ef4444";
+            placeInfoStatus.style.color = "#dc2626";
+            icon.className = "fas fa-exclamation-triangle";
+          } else {
+            placeInfoStatus.style.background = "#f0fdf4";
+            placeInfoStatus.style.borderColor = "#22c55e";
+            placeInfoStatus.style.color = "#15803d";
+            icon.className = "fas fa-check-circle";
+          }
         }
-      }
 
-      function hidePlaceInfoStatus() {
-        placeInfoStatus.style.display = "none";
-      }
-
-      // URL에서 place_id 추출 함수
-      function extractPlaceId(url) {
-        // URL 형식: https://m.place.naver.com/restaurant/1390003666
-        //          https://pcmap.place.naver.com/restaurant/1390003666
-        //          https://place.map.naver.com/restaurant/1390003666
-        const match = url.match(/\/restaurant\/(\d+)/);
-        if (match && match[1]) {
-          return match[1];
+        function hidePlaceInfoStatus() {
+          placeInfoStatus.style.display = "none";
         }
-        
-        // 숫자만 입력한 경우
-        if (/^\d+$/.test(url.trim())) {
-          return url.trim();
-        }
-        
-        return null;
-      }
 
-      // 플레이스 URL 크롤링 함수
-      async function crawlPlaceUrl(url) {
-        try {
-          // URL에서 place_id 추출
-          const placeId = extractPlaceId(url);
-          
-          if (!placeId) {
-            throw new Error("올바른 네이버 플레이스 URL이 아닙니다. URL을 확인해주세요.");
+        // URL에서 place_id 추출 함수
+        function extractPlaceId(url) {
+          // URL 형식: https://m.place.naver.com/restaurant/1390003666
+          //          https://pcmap.place.naver.com/restaurant/1390003666
+          //          https://place.map.naver.com/restaurant/1390003666
+          const match = url.match(/\/restaurant\/(\d+)/);
+          if (match && match[1]) {
+            return match[1];
           }
 
-          // 타임아웃 설정 (15초)
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
+          // 숫자만 입력한 경우
+          if (/^\d+$/.test(url.trim())) {
+            return url.trim();
+          }
 
+          return null;
+        }
+
+        // 플레이스 URL 크롤링 함수
+        async function crawlPlaceUrl(url) {
           try {
-            const res = await fetch(`/api/place-detail-crawl`, {
+            // URL에서 place_id 추출
+            const placeId = extractPlaceId(url);
+
+            if (!placeId) {
+              throw new Error(
+                "올바른 네이버 플레이스 URL이 아닙니다. URL을 확인해주세요."
+              );
+            }
+
+            // 타임아웃 설정 (15초)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            try {
+              const res = await fetch(`/api/place-detail-crawl`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ place_id: placeId }),
+                signal: controller.signal,
+              });
+
+              clearTimeout(timeoutId);
+
+              const data = await readJsonSafely(res);
+
+              if (!res.ok || data.success === false) {
+                throw new Error(data.error || "크롤링 실패");
+              }
+
+              return data.data || data;
+            } catch (fetchError) {
+              clearTimeout(timeoutId);
+              if (fetchError.name === "AbortError") {
+                throw new Error(
+                  "크롤링 시간이 초과되었습니다. URL 없이 진행합니다."
+                );
+              }
+              throw fetchError;
+            }
+          } catch (e) {
+            console.error("크롤링 오류:", e);
+            throw e;
+          }
+        }
+
+        async function readJsonSafely(res) {
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            try {
+              return await res.json();
+            } catch (_) {
+              return { error: "JSON 파싱 실패", status: res.status };
+            }
+          }
+          try {
+            const text = await res.text();
+            return text
+              ? { error: text, status: res.status }
+              : { status: res.status };
+          } catch (_) {
+            return {
+              error: "응답 본문을 읽을 수 없습니다.",
+              status: res.status,
+            };
+          }
+        }
+
+        function showOutput(data) {
+          reviewOutput.classList.remove("error");
+          try {
+            if (typeof data === "string") {
+              reviewOutput.textContent = data.trim();
+            } else {
+              reviewOutput.textContent = JSON.stringify(data, null, 2);
+            }
+          } catch (e) {
+            reviewOutput.textContent = String(data);
+          }
+        }
+
+        function showError(err) {
+          reviewOutput.classList.add("error");
+
+          // 에러 상세 정보를 콘솔에 출력
+          console.error("상세 에러 정보:", err);
+
+          let errorMessage = "오류가 발생했습니다.";
+
+          // 다양한 에러 형식에서 메시지 추출
+          if (err?.error) {
+            errorMessage = err.error;
+          } else if (err?.message) {
+            errorMessage = err.message;
+          } else if (err?.raw) {
+            errorMessage = err.raw;
+          } else if (err?.errorText) {
+            errorMessage = err.errorText;
+          } else if (typeof err === "string") {
+            errorMessage = err;
+          }
+
+          // TypeError: Failed to fetch 등의 네트워크 에러 처리
+          if (
+            errorMessage.includes("Failed to fetch") ||
+            errorMessage.includes("NetworkError")
+          ) {
+            errorMessage =
+              "서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.";
+          }
+
+          reviewOutput.textContent = errorMessage;
+        }
+
+        // 가게 정보 저장 기능
+        async function saveStoreInfo() {
+          try {
+            const userData = JSON.parse(
+              localStorage.getItem("userData") || "{}"
+            );
+            if (!userData.id) {
+              alert("⚠️ 로그인이 필요합니다.\n로그인 후 이용해주세요.");
+              return;
+            }
+
+            // 저장할 내용이 있는지 확인
+            const placeUrlValue = placeUrl.value.trim();
+            const ownerTipsValue = ownerTips.value.trim();
+
+            if (!placeUrlValue && !ownerTipsValue) {
+              alert(
+                "⚠️ 저장할 내용이 없습니다.\n네이버 플레이스 URL이나 사장님 추천 포인트를 입력해주세요."
+              );
+              return;
+            }
+
+            setLoading(saveStoreInfoBtn, true, "저장 중...");
+
+            const storeInfo = {
+              placeUrl: placeUrlValue,
+              companyName: "", // review.html에는 업체명 필드가 없으므로 빈 값
+              companyAddress: "",
+              businessHours: "",
+              phoneNumber: "",
+              mainMenu: "",
+              landmarks: "",
+              keywords: ownerTipsValue, // 사장님 추천 포인트를 keywords로 저장
+            };
+
+            const response = await fetch("/api/store-info", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ place_id: placeId }),
-              signal: controller.signal
+              body: JSON.stringify({ userId: userData.id, storeInfo }),
             });
 
-            clearTimeout(timeoutId);
+            if (!response.ok) {
+              throw new Error("저장 실패");
+            }
+
+            const result = await response.json();
+            if (result.success) {
+              alert(
+                '✅ 추천 포인트가 저장되었습니다!\n다음부터 "저장된 포인트 불러오기" 버튼으로 불러올 수 있습니다.'
+              );
+
+              // 저장 성공 후 버튼 시각적 피드백
+              saveStoreInfoBtn.style.background = "#22c55e";
+              saveStoreInfoBtn.style.borderColor = "white";
+              setTimeout(() => {
+                saveStoreInfoBtn.style.background = "transparent";
+                saveStoreInfoBtn.style.borderColor = "white";
+              }, 2000);
+            } else {
+              throw new Error(result.error || "저장 실패");
+            }
+          } catch (error) {
+            console.error("가게 정보 저장 오류:", error);
+            alert("❌ 추천 포인트 저장에 실패했습니다.\n" + error.message);
+          } finally {
+            setLoading(saveStoreInfoBtn, false);
+          }
+        }
+
+        // 가게 정보 불러오기 기능
+        async function loadStoreInfo() {
+          try {
+            const userData = JSON.parse(
+              localStorage.getItem("userData") || "{}"
+            );
+            if (!userData.id) {
+              alert("⚠️ 로그인이 필요합니다.\n로그인 후 이용해주세요.");
+              return;
+            }
+
+            setLoading(loadStoreInfoBtn, true, "불러오는 중...");
+
+            // 통합 정보 API 호출
+            const response = await fetch(
+              `/api/store-info-all?userId=${userData.id}`
+            );
+            if (!response.ok) {
+              throw new Error("조회 실패");
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+              const data = result.data;
+              let loadedCount = 0;
+
+              // 기본 정보가 있으면 설정
+              if (data.basic) {
+                if (data.basic.store_place_url) {
+                  placeUrl.value = data.basic.store_place_url;
+                  loadedCount++;
+                }
+                if (data.basic.store_keywords) {
+                  ownerTips.value = data.basic.store_keywords;
+                  loadedCount++;
+                }
+              }
+
+              if (loadedCount > 0) {
+                alert(
+                  `✅ 저장된 포인트를 불러왔습니다!\n\n📝 불러온 정보:\n${
+                    data.basic.store_place_url ? "- 네이버 플레이스 URL\n" : ""
+                  }${data.basic.store_keywords ? "- 사장님 추천 포인트" : ""}`
+                );
+
+                // 불러오기 성공 후 버튼 시각적 피드백
+                loadStoreInfoBtn.style.background = "#22c55e";
+                loadStoreInfoBtn.style.borderColor = "#22c55e";
+                loadStoreInfoBtn.style.color = "white";
+                setTimeout(() => {
+                  loadStoreInfoBtn.style.background = "white";
+                  loadStoreInfoBtn.style.borderColor = "white";
+                  loadStoreInfoBtn.style.color = "var(--accent-color)";
+                }, 2000);
+              } else {
+                alert(
+                  '💡 저장된 정보가 없습니다.\n먼저 정보를 입력하고 "추천 포인트 저장하기"를 눌러주세요.'
+                );
+              }
+            } else {
+              alert(
+                '💡 저장된 정보가 없습니다.\n먼저 정보를 입력하고 "추천 포인트 저장하기"를 눌러주세요.'
+              );
+            }
+          } catch (error) {
+            console.error("가게 정보 불러오기 오류:", error);
+            alert("❌ 정보 불러오기에 실패했습니다.\n" + error.message);
+          } finally {
+            setLoading(loadStoreInfoBtn, false);
+          }
+        }
+
+        // 답글 생성 공통 함수 (스타일별)
+        async function generateReply(style, buttonElement) {
+          const text = reviewText.value.trim();
+          const url = placeUrl.value.trim();
+          const tips = ownerTips.value.trim();
+
+          if (!text) {
+            showError({ message: "리뷰 원문을 입력하세요." });
+            return;
+          }
+
+          setLoading(buttonElement, true, "생성 중...");
+          reviewOutput.textContent = "";
+          hidePlaceInfoStatus();
+
+          try {
+            // 1단계: URL이 있고 아직 크롤링 안했으면 먼저 크롤링
+            if (url && !placeInfo) {
+              showPlaceInfoStatus(
+                "🔍 식당 정보 수집 중 (약 10~15초 소요)",
+                "loading"
+              );
+              try {
+                placeInfo = await crawlPlaceUrl(url);
+                showPlaceInfoStatus(
+                  "✅ 식당 정보 수집 완료! 답글 생성 중",
+                  "success"
+                );
+              } catch (crawlError) {
+                console.error("크롤링 실패:", crawlError);
+                if (crawlError.message.includes("시간이 초과")) {
+                  showPlaceInfoStatus(
+                    "⏱️ 시간 초과! 입력하신 정보로 답글 생성 중",
+                    "warning"
+                  );
+                } else {
+                  showPlaceInfoStatus(
+                    "⚠️ 식당 정보를 가져올 수 없습니다. 입력하신 정보로 답글 생성 중",
+                    "warning"
+                  );
+                }
+                placeInfo = null;
+              }
+            } else if (!url && !placeInfo) {
+              showPlaceInfoStatus("💭 답글 생성 중", "loading");
+            }
+
+            // 2단계: 답글 생성 (스타일 포함)
+            const requestBody = {
+              reviewText: text,
+              replyStyle: style, // 'promo', 'professional', 'friendly'
+            };
+
+            if (placeInfo) {
+              requestBody.placeInfo = placeInfo;
+            }
+
+            if (tips) {
+              requestBody.ownerTips = tips;
+            }
+
+            // 프로모션 정보 추가
+            if (globalHasPromotion && globalPromotionData) {
+              requestBody.promotionData = globalPromotionData;
+              requestBody.hasPromotion = true;
+            }
+
+            const replyController = new AbortController();
+            const replyTimeoutId = setTimeout(
+              () => replyController.abort(),
+              15000
+            );
+
+            let res;
+            try {
+              res = await fetch(`/api/generate-reply`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+                signal: replyController.signal,
+              });
+              clearTimeout(replyTimeoutId);
+            } catch (fetchError) {
+              clearTimeout(replyTimeoutId);
+
+              if (fetchError.name === "AbortError") {
+                throw new Error(
+                  "답글 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."
+                );
+              }
+
+              throw new Error(
+                "서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요."
+              );
+            }
 
             const data = await readJsonSafely(res);
 
             if (!res.ok || data.success === false) {
-              throw new Error(data.error || "크롤링 실패");
-            }
-
-            return data.data || data;
-          } catch (fetchError) {
-            clearTimeout(timeoutId);
-            if (fetchError.name === 'AbortError') {
-              throw new Error("크롤링 시간이 초과되었습니다. URL 없이 진행합니다.");
-            }
-            throw fetchError;
-          }
-        } catch (e) {
-          console.error("크롤링 오류:", e);
-          throw e;
-        }
-      }
-
-      async function readJsonSafely(res) {
-        const contentType = res.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          try {
-            return await res.json();
-          } catch (_) {
-            return { error: "JSON 파싱 실패", status: res.status };
-          }
-        }
-        try {
-          const text = await res.text();
-          return text
-            ? { error: text, status: res.status }
-            : { status: res.status };
-        } catch (_) {
-          return { error: "응답 본문을 읽을 수 없습니다.", status: res.status };
-        }
-      }
-
-      function showOutput(data) {
-        reviewOutput.classList.remove("error");
-        try {
-          if (typeof data === "string") {
-            reviewOutput.textContent = data.trim();
-          } else {
-            reviewOutput.textContent = JSON.stringify(data, null, 2);
-          }
-        } catch (e) {
-          reviewOutput.textContent = String(data);
-        }
-      }
-
-      function showError(err) {
-        reviewOutput.classList.add("error");
-        
-        // 에러 상세 정보를 콘솔에 출력
-        console.error("상세 에러 정보:", err);
-        
-        let errorMessage = "오류가 발생했습니다.";
-        
-        // 다양한 에러 형식에서 메시지 추출
-        if (err?.error) {
-          errorMessage = err.error;
-        } else if (err?.message) {
-          errorMessage = err.message;
-        } else if (err?.raw) {
-          errorMessage = err.raw;
-        } else if (err?.errorText) {
-          errorMessage = err.errorText;
-        } else if (typeof err === 'string') {
-          errorMessage = err;
-        }
-        
-        // TypeError: Failed to fetch 등의 네트워크 에러 처리
-        if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError")) {
-          errorMessage = "서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.";
-        }
-        
-        reviewOutput.textContent = errorMessage;
-      }
-
-      // 가게 정보 저장 기능
-      async function saveStoreInfo() {
-        try {
-          const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-          // if (!userData.id) {
-          //   alert('로그인이 필요합니다.');
-          //   return;
-          // } // 로그인 체크 비활성화
-
-          const storeInfo = {
-            placeUrl: placeUrl.value.trim(),
-            companyName: '', // review.html에는 업체명 필드가 없으므로 빈 값
-            companyAddress: '',
-            businessHours: '',
-            phoneNumber: '',
-            mainMenu: '',
-            landmarks: '',
-            keywords: ownerTips.value.trim() // 사장님 추천 포인트를 keywords로 저장
-          };
-
-          const response = await fetch('/api/store-info', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userData.id, storeInfo })
-          });
-
-          if (!response.ok) {
-            throw new Error('저장 실패');
-          }
-
-          const result = await response.json();
-          if (result.success) {
-            alert('✅ 가게 정보가 저장되었습니다!');
-          } else {
-            throw new Error(result.error || '저장 실패');
-          }
-        } catch (error) {
-          console.error('가게 정보 저장 오류:', error);
-          alert('❌ 가게 정보 저장에 실패했습니다.\n' + error.message);
-        }
-      }
-
-      // 가게 정보 불러오기 기능
-      async function loadStoreInfo() {
-        try {
-          const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-          // if (!userData.id) {
-          //   alert('로그인이 필요합니다.');
-          //   return;
-          // } // 로그인 체크 비활성화
-
-          // 통합 정보 API 호출
-          const response = await fetch(`/api/store-info-all?userId=${userData.id}`);
-          if (!response.ok) {
-            throw new Error('조회 실패');
-          }
-
-          const result = await response.json();
-          if (result.success && result.data) {
-            const data = result.data;
-            
-            // 기본 정보가 있으면 설정
-            if (data.basic) {
-              if (data.basic.place_url) placeUrl.value = data.basic.place_url;
-              if (data.basic.keywords) ownerTips.value = data.basic.keywords;
-            }
-            
-            alert('✅ 저장된 가게 정보를 불러왔습니다!');
-          } else {
-            alert('저장된 정보가 없습니다.');
-          }
-        } catch (error) {
-          console.error('가게 정보 불러오기 오류:', error);
-          alert('❌ 정보 불러오기에 실패했습니다.\n' + error.message);
-        }
-      }
-
-      // AI 홍보 포인트 추천 기능
-      async function generateAIPromoPoints() {
-        const reviewContent = reviewText.value.trim();
-        const placeUrlContent = placeUrl.value.trim();
-        
-        if (!reviewContent) {
-          alert('먼저 고객 리뷰를 입력해주세요.');
-          return;
-        }
-
-        setLoading(aiPromoBtn, true, "AI 분석 중...");
-
-        try {
-          const requestBody = {
-            reviewText: reviewContent
-          };
-
-          if (placeUrlContent) {
-            requestBody.placeUrl = placeUrlContent;
-          }
-
-          const res = await fetch('/api/ai-news-recommend', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-          });
-
-          const data = await readJsonSafely(res);
-
-          if (!res.ok || data.success === false) {
-            throw new Error(data.error || 'AI 추천 실패');
-          }
-
-          // 추천 포인트 표시
-          const recommendations = data.data?.recommendations || data.recommendations || [];
-          
-          if (recommendations.length > 0) {
-            displayAIPromoPoints(recommendations);
-            aiPromoArea.style.display = 'block';
-          } else {
-            alert('추천할 홍보 포인트를 찾을 수 없습니다.');
-          }
-
-        } catch (error) {
-          console.error('AI 홍보 포인트 생성 오류:', error);
-          alert('❌ AI 추천에 실패했습니다.\n' + error.message);
-        } finally {
-          setLoading(aiPromoBtn, false);
-        }
-      }
-
-      // AI 추천 홍보 포인트 표시
-      function displayAIPromoPoints(points) {
-        aiPromoTags.innerHTML = '';
-        selectedPromoPoints = [];
-
-        points.forEach((point, index) => {
-          const tag = document.createElement('div');
-          tag.style.cssText = `
-            display: inline-block;
-            padding: 8px 12px;
-            margin: 4px;
-            background: white;
-            border: 2px solid var(--accent-color);
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            color: var(--accent-color);
-          `;
-          tag.textContent = point;
-          tag.dataset.index = index;
-
-          tag.addEventListener('click', function() {
-            const isSelected = selectedPromoPoints.includes(point);
-            
-            if (isSelected) {
-              // 선택 해제
-              selectedPromoPoints = selectedPromoPoints.filter(p => p !== point);
-              tag.style.background = 'white';
-              tag.style.color = 'var(--accent-color)';
-            } else {
-              // 선택
-              selectedPromoPoints.push(point);
-              tag.style.background = 'var(--accent-color)';
-              tag.style.color = 'white';
-            }
-          });
-
-          aiPromoTags.appendChild(tag);
-        });
-      }
-
-      // 답글 생성 공통 함수 (스타일별)
-      async function generateReply(style, buttonElement) {
-        const text = reviewText.value.trim();
-        const url = placeUrl.value.trim();
-        const tips = ownerTips.value.trim();
-
-        if (!text) {
-          showError({ message: "리뷰 원문을 입력하세요." });
-          return;
-        }
-
-        setLoading(buttonElement, true, "생성 중...");
-        reviewOutput.textContent = "";
-        hidePlaceInfoStatus();
-
-        try {
-          // 1단계: URL이 있고 아직 크롤링 안했으면 먼저 크롤링
-          if (url && !placeInfo) {
-            showPlaceInfoStatus("🔍 식당 정보 수집 중 (약 10~15초 소요)", "loading");
-            try {
-              placeInfo = await crawlPlaceUrl(url);
-              showPlaceInfoStatus("✅ 식당 정보 수집 완료! 답글 생성 중", "success");
-            } catch (crawlError) {
-              console.error("크롤링 실패:", crawlError);
-              if (crawlError.message.includes("시간이 초과")) {
-                showPlaceInfoStatus("⏱️ 시간 초과! 입력하신 정보로 답글 생성 중", "warning");
+              if (res.status === 405) {
+                throw new Error("서버가 실행되지 않았습니다.");
+              } else if (res.status === 500) {
+                throw new Error(
+                  data.error ||
+                    "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+                );
+              } else if (res.status === 400) {
+                throw new Error(
+                  data.error || "입력 데이터가 올바르지 않습니다."
+                );
               } else {
-                showPlaceInfoStatus("⚠️ 식당 정보를 가져올 수 없습니다. 입력하신 정보로 답글 생성 중", "warning");
+                throw new Error(
+                  data.error || data.message || `서버 오류 (${res.status})`
+                );
               }
-              placeInfo = null;
             }
-          } else if (!url && !placeInfo) {
-            showPlaceInfoStatus("💭 답글 생성 중", "loading");
+
+            showOutput(data.data?.reply || data.reply || data);
+
+            // 성공 메시지 표시
+            const styleNames = {
+              promo: "홍보형",
+              professional: "전문가형",
+              friendly: "친근형",
+            };
+            const styleName = styleNames[style] || style;
+
+            const successMessage = `✅ ${styleName} 답글이 생성되었습니다!`;
+
+            showPlaceInfoStatus(successMessage, "success");
+            setTimeout(() => hidePlaceInfoStatus(), 5000);
+          } catch (e) {
+            console.error("답글 생성 오류:", e);
+            showError(e);
+            hidePlaceInfoStatus();
+          } finally {
+            setLoading(buttonElement, false);
           }
+        }
 
-          // 2단계: 답글 생성 (스타일 포함)
-          const requestBody = {
-            reviewText: text,
-            replyStyle: style // 'promo', 'professional', 'friendly'
-          };
+        // 3개의 답글 스타일 버튼 이벤트
+        replyPromoBtn.addEventListener("click", async () => {
+          await generateReply("promo", replyPromoBtn);
+        });
 
-          if (placeInfo) {
-            requestBody.placeInfo = placeInfo;
-          }
+        replyProfessionalBtn.addEventListener("click", async () => {
+          await generateReply("professional", replyProfessionalBtn);
+        });
 
-          if (tips) {
-            requestBody.ownerTips = tips;
-          }
+        replyFriendlyBtn.addEventListener("click", async () => {
+          await generateReply("friendly", replyFriendlyBtn);
+        });
 
-          // 선택된 홍보 포인트가 있으면 함께 전달
-          if (selectedPromoPoints.length > 0) {
-            requestBody.selectedPromoPoints = selectedPromoPoints;
-          }
+        // 가게 정보 저장/불러오기 버튼 이벤트
+        saveStoreInfoBtn.addEventListener("click", saveStoreInfo);
+        loadStoreInfoBtn.addEventListener("click", loadStoreInfo);
 
-          // 프로모션 정보 추가
-          if (globalHasPromotion && globalPromotionData) {
-            requestBody.promotionData = globalPromotionData;
-            requestBody.hasPromotion = true;
-          }
+        // 페이지 로드 시 초기화
+        window.addEventListener("load", function () {
+          reviewText.focus();
+          // ensureAuthenticated(); // 카카오톡 로그인 체크 비활성화
+        });
 
-          const replyController = new AbortController();
-          const replyTimeoutId = setTimeout(() => replyController.abort(), 15000);
-          
-          let res;
+        // 인증 UI 업데이트 함수
+        function getCurrentUser() {
           try {
-            res = await fetch(`/api/generate-reply`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(requestBody),
-              signal: replyController.signal
-            });
-            clearTimeout(replyTimeoutId);
-          } catch (fetchError) {
-            clearTimeout(replyTimeoutId);
-            
-            if (fetchError.name === 'AbortError') {
-              throw new Error("답글 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
-            }
-            
-            throw new Error("서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.");
+            const raw = localStorage.getItem("userData");
+            return raw ? JSON.parse(raw) : null;
+          } catch (error) {
+            console.warn("[auth] 사용자 정보를 읽을 수 없습니다:", error);
+            return null;
+          }
+        }
+
+        async function getActiveSession() {
+          if (!window.authState?.supabase) {
+            return null;
+          }
+          try {
+            const { data } = await window.authState.supabase.auth.getSession();
+            return data?.session ?? null;
+          } catch (error) {
+            console.error("세션 조회 실패:", error);
+            return null;
+          }
+        }
+
+        function renderLoggedOut() {
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+          const userEmailSpan = document.getElementById("userEmail");
+          const logoutBtn = document.getElementById("logoutBtn");
+          const authUser = document.getElementById("authUser");
+
+          if (authUser) authUser.style.display = "none";
+          if (loginBtn) loginBtn.style.display = "inline-flex";
+          if (signupBtn) signupBtn.style.display = "inline-flex";
+          if (userEmailSpan) {
+            userEmailSpan.textContent = "";
+            userEmailSpan.title = "";
+          }
+          if (logoutBtn) {
+            logoutBtn.style.display = "none";
+            logoutBtn.onclick = null;
+          }
+        }
+
+        function renderLoggedIn(user) {
+          const loginBtn = document.getElementById("loginBtn");
+          const signupBtn = document.getElementById("signupBtn");
+          const userEmailSpan = document.getElementById("userEmail");
+          const logoutBtn = document.getElementById("logoutBtn");
+          const authUser = document.getElementById("authUser");
+          const userAvatar = document.getElementById("userAvatar");
+
+          if (loginBtn) loginBtn.style.display = "none";
+          if (signupBtn) signupBtn.style.display = "none";
+          if (authUser) authUser.style.display = "flex";
+
+          if (userEmailSpan) {
+            const email = user.email || user.displayName || "마이페이지";
+            userEmailSpan.textContent = email;
+            userEmailSpan.title = `${email} (마이페이지로 이동)`;
           }
 
-          const data = await readJsonSafely(res);
-
-          if (!res.ok || data.success === false) {
-            if (res.status === 405) {
-              throw new Error("서버가 실행되지 않았습니다.");
-            } else if (res.status === 500) {
-              throw new Error(data.error || "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-            } else if (res.status === 400) {
-              throw new Error(data.error || "입력 데이터가 올바르지 않습니다.");
-            } else {
-              throw new Error(data.error || data.message || `서버 오류 (${res.status})`);
-            }
+          if (userAvatar) {
+            const base =
+              user.user_metadata?.full_name ||
+              user.displayName ||
+              user.email ||
+              user.app_metadata?.provider ||
+              "U";
+            const initial = (base.trim()[0] || "U").toUpperCase();
+            userAvatar.textContent = initial;
+            userAvatar.setAttribute("aria-label", `${base} 프로필`);
           }
 
-          showOutput(data.data?.reply || data.reply || data);
-          
-          // 성공 메시지 표시
-          const styleNames = {
-            'promo': '홍보형',
-            'professional': '전문가형',
-            'friendly': '친근형'
-          };
-          const styleName = styleNames[style] || style;
-          
-          let successMessage = `✅ ${styleName} 답글이 생성되었습니다!`;
-          if (selectedPromoPoints.length > 0) {
-            successMessage += ` (홍보 포인트 ${selectedPromoPoints.length}개 반영)`;
-          }
-          
-          showPlaceInfoStatus(successMessage, "success");
-          setTimeout(() => hidePlaceInfoStatus(), 5000);
-          
-        } catch (e) {
-          console.error("답글 생성 오류:", e);
-          showError(e);
-          hidePlaceInfoStatus();
-        } finally {
-          setLoading(buttonElement, false);
-        }
-      }
-
-      // 3개의 답글 스타일 버튼 이벤트
-      replyPromoBtn.addEventListener("click", async () => {
-        await generateReply('promo', replyPromoBtn);
-      });
-
-      replyProfessionalBtn.addEventListener("click", async () => {
-        await generateReply('professional', replyProfessionalBtn);
-      });
-
-      replyFriendlyBtn.addEventListener("click", async () => {
-        await generateReply('friendly', replyFriendlyBtn);
-      });
-
-      // 가게 정보 저장/불러오기 버튼 이벤트
-      saveStoreInfoBtn.addEventListener("click", saveStoreInfo);
-      loadStoreInfoBtn.addEventListener("click", loadStoreInfo);
-
-      // AI 홍보 포인트 추천 버튼 이벤트
-      aiPromoBtn.addEventListener("click", generateAIPromoPoints);
-
-      // 페이지 로드 시 초기화
-      window.addEventListener("load", function () {
-        reviewText.focus();
-        // ensureAuthenticated(); // 카카오톡 로그인 체크 비활성화
-      });
-
-      // 인증 UI 업데이트 함수
-      function getCurrentUser() {
-        try {
-          const raw = localStorage.getItem('userData');
-          return raw ? JSON.parse(raw) : null;
-        } catch (error) {
-          console.warn('[auth] 사용자 정보를 읽을 수 없습니다:', error);
-          return null;
-        }
-      }
-
-      async function getActiveSession() {
-        if (!window.authState?.supabase) {
-          return null;
-        }
-        try {
-          const { data } = await window.authState.supabase.auth.getSession();
-          return data?.session ?? null;
-        } catch (error) {
-          console.error("세션 조회 실패:", error);
-          return null;
-        }
-      }
-
-      function renderLoggedOut() {
-        const loginBtn = document.getElementById("loginBtn");
-        const signupBtn = document.getElementById("signupBtn");
-        const userEmailSpan = document.getElementById("userEmail");
-        const logoutBtn = document.getElementById("logoutBtn");
-        const authUser = document.getElementById("authUser");
-
-        if (authUser) authUser.style.display = "none";
-        if (loginBtn) loginBtn.style.display = "inline-flex";
-        if (signupBtn) signupBtn.style.display = "inline-flex";
-        if (userEmailSpan) {
-          userEmailSpan.textContent = "";
-          userEmailSpan.title = "";
-        }
-        if (logoutBtn) {
-          logoutBtn.style.display = "none";
-          logoutBtn.onclick = null;
-        }
-      }
-
-      function renderLoggedIn(user) {
-        const loginBtn = document.getElementById("loginBtn");
-        const signupBtn = document.getElementById("signupBtn");
-        const userEmailSpan = document.getElementById("userEmail");
-        const logoutBtn = document.getElementById("logoutBtn");
-        const authUser = document.getElementById("authUser");
-        const userAvatar = document.getElementById("userAvatar");
-
-        if (loginBtn) loginBtn.style.display = "none";
-        if (signupBtn) signupBtn.style.display = "none";
-        if (authUser) authUser.style.display = "flex";
-
-        if (userEmailSpan) {
-          const email = user.email || user.displayName || "마이페이지";
-          userEmailSpan.textContent = email;
-          userEmailSpan.title = `${email} (마이페이지로 이동)`;
-        }
-
-        if (userAvatar) {
-          const base =
-            user.user_metadata?.full_name ||
-            user.displayName ||
-            user.email ||
-            user.app_metadata?.provider ||
-            "U";
-          const initial = (base.trim()[0] || "U").toUpperCase();
-          userAvatar.textContent = initial;
-          userAvatar.setAttribute("aria-label", `${base} 프로필`);
-        }
-
-        if (logoutBtn) {
-          logoutBtn.style.display = "inline-flex";
-          logoutBtn.onclick = async function () {
-            if (!confirm("로그아웃 하시겠습니까?")) return;
-            try {
-              if (window.authState?.signOut) {
-                await window.authState.signOut();
+          if (logoutBtn) {
+            logoutBtn.style.display = "inline-flex";
+            logoutBtn.onclick = async function () {
+              if (!confirm("로그아웃 하시겠습니까?")) return;
+              try {
+                if (window.authState?.signOut) {
+                  await window.authState.signOut();
+                }
+              } finally {
+                localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("userData");
+                location.href = "login.html";
               }
-            } finally {
-              localStorage.removeItem("isLoggedIn");
-              localStorage.removeItem("userData");
-              location.href = "login.html";
-            }
-          };
+            };
+          }
         }
-      }
 
-      let authRenderToken = 0;
+        let authRenderToken = 0;
 
-      async function updateAuthUI() {
-        const currentToken = ++authRenderToken;
-        
-        // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
-        const storedUserData = getCurrentUser();
-        if (storedUserData && storedUserData.email) {
-          // localStorage에 사용자 정보가 있으면 즉시 로그인 상태로 표시
-          if (currentToken === authRenderToken) {
-            renderLoggedIn({
-              email: storedUserData.email,
-              displayName: storedUserData.displayName,
-              user_metadata: { full_name: storedUserData.displayName },
-              app_metadata: { provider: storedUserData.provider || 'kakao' }
-            });
+        async function updateAuthUI() {
+          const currentToken = ++authRenderToken;
+
+          // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
+          const storedUserData = getCurrentUser();
+          if (storedUserData && storedUserData.email) {
+            // localStorage에 사용자 정보가 있으면 즉시 로그인 상태로 표시
+            if (currentToken === authRenderToken) {
+              renderLoggedIn({
+                email: storedUserData.email,
+                displayName: storedUserData.displayName,
+                user_metadata: { full_name: storedUserData.displayName },
+                app_metadata: { provider: storedUserData.provider || "kakao" },
+              });
+            }
+          } else {
+            // localStorage에 사용자 정보가 없으면 로그아웃 상태로 표시
+            if (currentToken === authRenderToken) {
+              renderLoggedOut();
+            }
+          }
+
+          // Supabase 세션 확인 (auth-state.js가 로드된 경우)
+          if (window.authState?.supabase) {
+            try {
+              const session = await getActiveSession();
+              if (currentToken !== authRenderToken) return;
+
+              if (session?.user) {
+                renderLoggedIn(session.user);
+              } else if (!storedUserData) {
+                // 세션이 없고 localStorage에도 없으면 로그아웃 상태
+                renderLoggedOut();
+              }
+            } catch (error) {
+              console.error("인증 상태 확인 실패:", error);
+              // 에러 발생 시 localStorage 기반으로 표시
+              if (currentToken === authRenderToken && !storedUserData) {
+                renderLoggedOut();
+              }
+            }
+          }
+        }
+      </script>
+    </div>
+
+    <!-- 공통 인증 스크립트 -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
+      integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug"
+      crossorigin="anonymous"
+    ></script>
+    <script src="/assets/auth-state.js?v=202410"></script>
+    <script>
+      // 인증 상태 UI 업데이트 (즉시 실행 및 auth-state.js 로드 후 재실행)
+      async function initAuthUI() {
+        // 즉시 localStorage 기반으로 UI 업데이트 (빠른 초기 렌더링)
+        if (typeof updateAuthUI === "function") {
+          await updateAuthUI();
+        }
+
+        // auth-state.js가 로드될 때까지 대기
+        let waitCount = 0;
+        const maxWait = 200; // 20초 대기
+        while (!window.authState && waitCount < maxWait) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          waitCount++;
+        }
+
+        if (window.authState) {
+          try {
+            // Supabase 세션 동기화 후 UI 업데이트
+            if (window.authState?.syncSession) {
+              await window.authState.syncSession();
+            }
+            await updateAuthUI();
+
+            // 인증 상태 변경 이벤트 리스너 등록
+            window.addEventListener("auth:state-changed", updateAuthUI);
+          } catch (error) {
+            console.error("[auth] 인증 UI 업데이트 실패:", error);
+            // 에러 발생 시에도 localStorage 기반으로 UI 표시
+            if (typeof updateAuthUI === "function") {
+              await updateAuthUI();
+            }
           }
         } else {
-          // localStorage에 사용자 정보가 없으면 로그아웃 상태로 표시
-          if (currentToken === authRenderToken) {
-            renderLoggedOut();
-          }
-        }
-
-        // Supabase 세션 확인 (auth-state.js가 로드된 경우)
-        if (window.authState?.supabase) {
-          try {
-            const session = await getActiveSession();
-            if (currentToken !== authRenderToken) return;
-
-            if (session?.user) {
-              renderLoggedIn(session.user);
-            } else if (!storedUserData) {
-              // 세션이 없고 localStorage에도 없으면 로그아웃 상태
-              renderLoggedOut();
-            }
-          } catch (error) {
-            console.error("인증 상태 확인 실패:", error);
-            // 에러 발생 시 localStorage 기반으로 표시
-            if (currentToken === authRenderToken && !storedUserData) {
-              renderLoggedOut();
-            }
-          }
-        }
-      }
-
-
-    </script>
-  </div>
-
-  <!-- 공통 인증 스크립트 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
-  <script src="./assets/auth-state.js?v=202410"></script>
-  <script>
-    // 인증 상태 UI 업데이트 (즉시 실행 및 auth-state.js 로드 후 재실행)
-    async function initAuthUI() {
-      // 즉시 localStorage 기반으로 UI 업데이트 (빠른 초기 렌더링)
-      if (typeof updateAuthUI === 'function') {
-        await updateAuthUI();
-      }
-
-      // auth-state.js가 로드될 때까지 대기
-      let waitCount = 0;
-      const maxWait = 200; // 20초 대기
-      while (!window.authState && waitCount < maxWait) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        waitCount++;
-      }
-
-      if (window.authState) {
-        try {
-          // Supabase 세션 동기화 후 UI 업데이트
-          if (window.authState?.syncSession) {
-            await window.authState.syncSession();
-          }
-          await updateAuthUI();
-          
-          // 인증 상태 변경 이벤트 리스너 등록
-          window.addEventListener("auth:state-changed", updateAuthUI);
-        } catch (error) {
-          console.error('[auth] 인증 UI 업데이트 실패:', error);
-          // 에러 발생 시에도 localStorage 기반으로 UI 표시
-          if (typeof updateAuthUI === 'function') {
+          console.warn(
+            "[auth] auth-state.js를 로드할 수 없습니다. localStorage 기반으로 표시합니다."
+          );
+          // auth-state.js가 로드되지 않아도 localStorage 기반으로 UI 표시
+          if (typeof updateAuthUI === "function") {
             await updateAuthUI();
           }
         }
-      } else {
-        console.warn('[auth] auth-state.js를 로드할 수 없습니다. localStorage 기반으로 표시합니다.');
-        // auth-state.js가 로드되지 않아도 localStorage 기반으로 UI 표시
-        if (typeof updateAuthUI === 'function') {
-          await updateAuthUI();
+      }
+
+      function forceUpdateAuthUI() {
+        if (typeof updateAuthUI === "function") {
+          updateAuthUI();
         }
       }
-    }
 
-    function forceUpdateAuthUI() {
-      if (typeof updateAuthUI === 'function') {
-        updateAuthUI();
-      }
-    }
-
-    // DOMContentLoaded 시 즉시 실행
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initAuthUI);
-    } else {
-      initAuthUI();
-    }
-    
-    // 페이지 로드 완료 후 재확인
-    window.addEventListener('load', function() {
-      setTimeout(function() {
+      // DOMContentLoaded 시 즉시 실행
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initAuthUI);
+      } else {
         initAuthUI();
-      }, 100);
-    });
-    
-    // 인증 상태 변경 이벤트 리스너
-    window.addEventListener('auth:state-changed', function() {
-      if (typeof updateAuthUI === 'function') {
-        updateAuthUI();
       }
-    });
-
-    // 하단바 슬라이드 인디케이터 제어
-    (function() {
-      const sideNav = document.querySelector('.side-nav');
-      if (!sideNav) return;
-
-      function updateSideNavIndicator() {
-        // PC 화면에서는 인디케이터 숨기기 (절대 건들지 않음)
-        if (window.innerWidth > 992) {
-          sideNav.classList.add('hide-indicator');
-          return;
-        }
-
-        // 모바일 화면에서만 동작
-        const scrollLeft = Math.round(sideNav.scrollLeft);
-        const scrollWidth = sideNav.scrollWidth;
-        const clientWidth = sideNav.clientWidth;
-        
-        // 스크롤이 끝에 도달했는지 확인
-        const remainingScroll = scrollWidth - scrollLeft - clientWidth;
-        
-        if (remainingScroll <= 3 || scrollWidth <= clientWidth) {
-          // 스크롤이 끝에 도달하거나 스크롤이 필요 없으면 인디케이터 숨기기
-          sideNav.classList.add('hide-indicator');
-        } else {
-          // 스크롤 가능하면 인디케이터 보이기
-          sideNav.classList.remove('hide-indicator');
-        }
-      }
-
-      // DOM이 완전히 로드된 후 초기 상태 확인
-      function initIndicator() {
-        setTimeout(() => {
-          updateSideNavIndicator();
-        }, 300);
-      }
-
-      // 초기 상태 확인
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initIndicator);
-      } else {
-        initIndicator();
-      }
-
-      // 스크롤 이벤트 리스너
-      sideNav.addEventListener('scroll', updateSideNavIndicator, { passive: true });
-      
-      // 리사이즈 이벤트 리스너
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(updateSideNavIndicator, 150);
-      });
 
       // 페이지 로드 완료 후 재확인
-      window.addEventListener('load', () => {
-        setTimeout(updateSideNavIndicator, 500);
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          initAuthUI();
+        }, 100);
       });
 
-      // MutationObserver로 DOM 변경 감지 (동적 콘텐츠 대응)
-      const observer = new MutationObserver(() => {
-        setTimeout(updateSideNavIndicator, 100);
+      // 인증 상태 변경 이벤트 리스너
+      window.addEventListener("auth:state-changed", function () {
+        if (typeof updateAuthUI === "function") {
+          updateAuthUI();
+        }
       });
-      observer.observe(sideNav, { childList: true, subtree: true });
-    })();
-  </script>
-</body>
+    </script>
+  </body>
 </html>
