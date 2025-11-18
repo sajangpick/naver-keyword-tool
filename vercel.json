@@ -2,8 +2,6 @@
   "version": 2,
   "framework": null,
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "buildCommand": "echo 'Building static files...'",
-  "outputDirectory": ".",
   "trailingSlash": false,
   "rewrites": [
     {
