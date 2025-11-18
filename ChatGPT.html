@@ -1613,6 +1613,11 @@
             hideLoading(loadingId);
             addMessage(data.reply, "bot");
 
+            // 메시지 전송 성공 시 연결 상태 업데이트
+            isConnected = true;
+            statusDot.classList.remove("disconnected");
+            statusText.textContent = "연결됨";
+
             // 토큰 사용량 업데이트
             if (data.usage) {
               totalTokens += data.usage.total_tokens;
@@ -1624,6 +1629,11 @@
         } catch (error) {
           hideLoading(loadingId);
           console.error("채팅 오류:", error);
+          
+          // 에러 발생 시 연결 상태 업데이트
+          isConnected = false;
+          statusDot.classList.add("disconnected");
+          statusText.textContent = "연결 실패";
           
           // 네트워크 오류인지 확인
           if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -1862,7 +1872,7 @@
                 if (response.ok) {
                   isConnected = true;
                   statusDot.classList.remove("disconnected");
-                  statusText.textContent = "연결됨 (폴백)";
+                  statusText.textContent = "연결됨";
                   return;
                 }
               } catch (fallbackError) {
@@ -1871,12 +1881,12 @@
             }
           }
           
-          throw new Error("서버 응답 오류");
+          // health 엔드포인트가 실패해도 "연결 확인 중..."으로 유지
+          // 실제 메시지 전송이 성공하면 자동으로 "연결됨"으로 변경됨
+          console.log("Health 체크 실패, 실제 메시지 전송 시 연결 상태 확인됨");
         } catch (error) {
-          isConnected = false;
-          statusDot.classList.add("disconnected");
-          statusText.textContent = "연결 실패";
-          console.error("연결 상태 확인 실패:", error);
+          // 에러가 발생해도 "연결 확인 중..." 유지
+          console.debug("연결 상태 확인 중:", error);
         }
       }
 
@@ -1897,19 +1907,20 @@
         setInterval(checkConnection, 5 * 60 * 1000);
       });
 
-      // initialChatPrompt가 있으면 입력창에 채워넣고 포커스
+      // initialChatPrompt가 있으면 입력창에 채워넣고 자동으로 전송
       (function() {
         try {
           const saved = localStorage.getItem('initialChatPrompt');
           if (saved) {
             messageInput.value = saved;
-            // 한 박자 뒤에 포커스 및 커서 이동
-            setTimeout(() => {
-              messageInput.focus();
-              messageInput.selectionStart = messageInput.selectionEnd = messageInput.value.length;
-            }, 50);
             // 사용 후 제거
             localStorage.removeItem('initialChatPrompt');
+            
+            // 한 박자 뒤에 자동으로 전송
+            setTimeout(() => {
+              messageInput.focus();
+              sendMessage();
+            }, 300);
           }
         } catch (e) {
           console.debug('initialChatPrompt read error', e);

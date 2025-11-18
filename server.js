@@ -7,6 +7,7 @@ const path = require("path");
 const { spawn } = require("child_process");
 const helmet = require("helmet");
 const { createClient } = require("@supabase/supabase-js");
+const multer = require("multer");
 
 const app = express();
 app.set("trust proxy", true);
@@ -109,7 +110,7 @@ const corsOptions = {
   },
   credentials: !ALLOW_ALL,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "user-id"],
 };
 
 // 미들웨어 설정
@@ -205,6 +206,14 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Multer 설정 (파일 업로드용)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB 제한
+  }
+});
 
 // CSP report collection endpoint
 app.post(
@@ -315,7 +324,14 @@ function rateLimiter(req, res, next) {
   next();
 }
 
-app.use("/api/", rateLimiter);
+// Rate limiter 적용 (정책 조회 API는 제외)
+app.use("/api/", (req, res, next) => {
+  // 정책 조회 API는 rate limiter 제외 (관리자 페이지에서 자주 조회)
+  if (req.path.startsWith('/policy-support') && req.method === 'GET') {
+    return next();
+  }
+  rateLimiter(req, res, next);
+});
 app.use("/auth/", rateLimiter);
 // Periodic cleanup for rate limiter map (memory hygiene)
 setInterval(() => {
@@ -669,6 +685,7 @@ app.get("/api/admin/dashboard", adminDashboardHandler);
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
+app.post("/api/chatgpt", chatgptBlogHandler);  // 레시피 생성용 엔드포인트 추가
 
 // ==================== 뉴스 게시판 API ====================
 const newsBoardHandler = require("./api/news-board");
@@ -714,10 +731,19 @@ const fetchRealPolicyHandler = require("./api/fetch-real-policy-data");
 app.get("/api/fetch-real-policies", fetchRealPolicyHandler);
 app.post("/api/fetch-real-policies", fetchRealPolicyHandler);
 
+// API 테스트 엔드포인트 (디버깅용)
+const testPolicyApiHandler = require("./api/test-policy-api");
+app.get("/api/test-policy-api", testPolicyApiHandler);
+app.post("/api/test-policy-api", testPolicyApiHandler);
+
 // ==================== 레시피 관리 시스템 API ====================
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");
 app.use("/api/recipes", recipesRouter);
+
+// 레시피 이미지 API (Pexels)
+const recipeImageRouter = require("./api/recipe-image");
+app.use("/api/recipe-image", recipeImageRouter);
 
 // ==================== ADLOG 순위 추적 API ====================
 // 어드민 스크래핑 제어 API
@@ -754,6 +780,14 @@ app.post("/api/subscription/user-dashboard", userDashboardHandler);
 // 크론 작업 API (수동 실행용)
 const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
 app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
+
+// 정책 상태 자동 업데이트 크론 작업
+const policyStatusUpdateHandler = require("./api/cron/policy-status-update");
+app.get("/api/cron/policy-status-update", async (req, res) => {
+  const updateExpiredPolicies = require("./api/cron/policy-status-update");
+  const result = await updateExpiredPolicies();
+  res.json(result);
+});
 
 // ==================== 블로그 스타일 설정 API ====================
 const blogStyleHandler = require("./api/blog-style");
@@ -3071,6 +3105,73 @@ app.post("/api/store-info", async (req, res) => {
   }
 });
 
+// 통합 가게 정보 조회 (profiles + store_promotions)
+app.get("/api/store-info-all", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: "Supabase가 설정되지 않았습니다" });
+    }
+
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: "userId가 필요합니다" });
+    }
+
+    // profiles 정보 조회 (기본 정보)
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('store_place_url, store_name, store_address, store_business_hours, store_phone_number, store_main_menu, store_landmarks, store_keywords')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      devError('통합 정보 조회 - Profile 오류:', profileError);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+
+    // store_promotions 정보 조회 (심도 있는 정보)
+    const { data: promotionData } = await supabase
+      .from('store_promotions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    // 작성 개수 계산
+    let filledCount = 0;
+    if (promotionData) {
+      if (promotionData.signature_menu?.trim()) filledCount++;
+      if (promotionData.special_ingredients?.trim()) filledCount++;
+      if (promotionData.atmosphere_facilities?.trim()) filledCount++;
+      if (promotionData.owner_story?.trim()) filledCount++;
+      if (promotionData.recommended_situations?.trim()) filledCount++;
+      if (promotionData.sns_photo_points?.trim()) filledCount++;
+      if (promotionData.special_events?.trim()) filledCount++;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        basic: profileData,
+        promotion: promotionData || null
+      },
+      hasPromotion: !!promotionData,
+      filledCount: filledCount,
+      totalCount: 7
+    });
+
+  } catch (error) {
+    devError("통합 정보 조회 오류:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "서버 오류", 
+      details: error.message 
+    });
+  }
+});
+
 // 플레이스 크롤링 캐시 조회 (내 URL)
 app.get("/api/place-cache", async (req, res) => {
   try {
@@ -4084,6 +4185,353 @@ app.delete("/api/shorts/plan-history/:id", async (req, res) => {
   }
 });
 
+// ==================== Runway API 설정 ====================
+
+const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY || "key_8f7dd7e27cc2ed2a9bbb19893c6636fab1d008334adf301de3074d2f739f4e894440353d83e15c4bc272a78237bc201ceca2d9032ae168ae5bd97f98c1b5d2b7";
+
+// Runway SDK 초기화 (공식 SDK 사용)
+let RunwayML = null;
+let runwayClient = null;
+
+try {
+  RunwayML = require("@runwayml/sdk");
+  runwayClient = new RunwayML({
+    apiKey: RUNWAY_API_KEY,
+  });
+  devLog("✅ Runway SDK 초기화 성공");
+} catch (error) {
+  devError("❌ Runway SDK 초기화 실패:", error.message);
+  devLog("⚠️ Runway SDK가 설치되지 않았습니다. 'pnpm add @runwayml/sdk' 실행 필요");
+}
+
+// Runway API: 이미지에서 동영상 생성 (Gen-4 또는 Gen-3 모델 사용)
+async function generateVideoWithRunway(imageUrl, prompt, duration = 5) {
+  try {
+    devLog("Runway API 호출 시작:", { imageUrl, prompt, duration });
+
+    if (!runwayClient) {
+      throw new Error("Runway SDK가 초기화되지 않았습니다. @runwayml/sdk 패키지를 설치해주세요.");
+    }
+
+    // Gen-4 Image to Video 또는 Gen-3 모델 사용
+    // 공식 문서: https://docs.dev.runwayml.com/
+    const task = await runwayClient.imageToVideo
+      .create({
+        model: "gen4_aleph", // 또는 "gen3_alpha_turbo" 등 사용 가능한 모델
+        imageUrl: imageUrl,
+        promptText: prompt || "cinematic food video, slow motion, professional lighting",
+        duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
+        ratio: "9:16", // 쇼츠 형식 (세로)
+      })
+      .waitForTaskOutput(); // 작업 완료까지 자동 대기
+
+    if (!task || !task.output || task.output.length === 0) {
+      throw new Error("Runway API 응답에 영상 URL이 없습니다.");
+    }
+
+    const videoUrl = Array.isArray(task.output) ? task.output[0] : task.output;
+    devLog("Runway 영상 생성 완료:", videoUrl);
+    
+    return { videoUrl, jobId: task.id || null };
+  } catch (error) {
+    devError("Runway API 오류:", error);
+    
+    // SDK 오류인 경우 직접 HTTP API로 폴백 시도
+    if (error.message.includes("SDK") || error.message.includes("require")) {
+      devLog("SDK 사용 불가, HTTP API로 폴백 시도");
+      return await generateVideoWithRunwayHTTP(imageUrl, prompt, duration);
+    }
+    
+    throw new Error(`Runway 영상 생성 실패: ${error.message}`);
+  }
+}
+
+// HTTP API 폴백 함수 (SDK 사용 불가 시)
+async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
+  try {
+    devLog("Runway HTTP API 호출 시작 (폴백 모드)");
+
+    const RUNWAY_API_BASE = "https://api.runwayml.com/v1";
+
+    // Step 1: 이미지에서 동영상 생성 요청
+    const response = await axios.post(
+      `${RUNWAY_API_BASE}/image-to-video`,
+      {
+        image_url: imageUrl,
+        prompt: prompt || "cinematic food video, slow motion, professional lighting",
+        duration: Math.min(Math.max(duration, 3), 10),
+        aspect_ratio: "9:16",
+        watermark: false,
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${RUNWAY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      }
+    );
+
+    if (!response.data || !response.data.id) {
+      throw new Error("Runway API 응답에 job_id가 없습니다.");
+    }
+
+    const jobId = response.data.id;
+    devLog("Runway 작업 ID:", jobId);
+
+    // Step 2: Polling으로 상태 확인
+    let status = "pending";
+    let videoUrl = null;
+    let attempts = 0;
+    const maxAttempts = 60; // 최대 5분 대기 (5초 간격)
+
+    while (status !== "succeeded" && status !== "failed" && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // 5초 대기
+
+      const statusResponse = await axios.get(
+        `${RUNWAY_API_BASE}/image-to-video/${jobId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${RUNWAY_API_KEY}`,
+          },
+          timeout: 10000,
+        }
+      );
+
+      status = statusResponse.data.status || "pending";
+      devLog(`Runway 작업 상태 (시도 ${attempts + 1}/${maxAttempts}):`, status);
+
+      if (status === "succeeded" && statusResponse.data.output) {
+        videoUrl = Array.isArray(statusResponse.data.output)
+          ? statusResponse.data.output[0]
+          : statusResponse.data.output;
+        break;
+      }
+
+      if (status === "failed") {
+        throw new Error(statusResponse.data.error || "Runway 영상 생성 실패");
+      }
+
+      attempts++;
+    }
+
+    if (!videoUrl) {
+      throw new Error("영상 생성 시간이 초과되었습니다.");
+    }
+
+    devLog("Runway 영상 생성 완료 (HTTP):", videoUrl);
+    return { videoUrl, jobId };
+  } catch (error) {
+    devError("Runway HTTP API 오류:", error);
+    throw new Error(`Runway 영상 생성 실패: ${error.message}`);
+  }
+}
+
+// ==================== 쇼츠 영상 생성 API ====================
+
+app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
+  try {
+    const userId = req.headers["user-id"] || req.body.userId;
+    ensureUserId(userId);
+
+    // multer 에러 처리
+    if (req.fileValidationError) {
+      return res.status(400).json({
+        success: false,
+        error: req.fileValidationError,
+      });
+    }
+
+    try {
+      const {
+        style,
+        menuName,
+        menuFeatures = "",
+        menuPrice = "",
+        music = "auto",
+        duration = "10",
+      } = req.body;
+
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            error: "이미지 파일이 필요합니다.",
+          });
+        }
+
+        if (!menuName) {
+          return res.status(400).json({
+            success: false,
+            error: "메뉴명이 필요합니다.",
+          });
+        }
+
+        if (!style) {
+          return res.status(400).json({
+            success: false,
+            error: "영상 스타일이 필요합니다.",
+          });
+        }
+
+        // 이미지를 Supabase Storage에 업로드
+        const fileExt = req.file.originalname.split(".").pop();
+        const fileName = `${userId}/${Date.now()}.${fileExt}`;
+        const filePath = `shorts-images/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("uploads")
+          .upload(filePath, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          devError("이미지 업로드 실패:", uploadError);
+          // 업로드 실패해도 계속 진행 (임시)
+        }
+
+        // Public URL 생성
+        const { data: urlData } = supabase.storage
+          .from("uploads")
+          .getPublicUrl(filePath);
+        const imageUrl = urlData?.publicUrl || "";
+
+        // 스타일별 프롬프트 생성
+        const stylePrompts = {
+          luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
+          fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
+          chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
+          plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
+          simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
+        };
+
+        const prompt = `${stylePrompts[style] || stylePrompts.simple}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video.`;
+
+        // 영상 데이터베이스에 저장 (처리 중 상태)
+        const { data: videoData, error: dbError } = await supabase
+          .from("shorts_videos")
+          .insert({
+            user_id: userId,
+            title: menuName,
+            description: menuFeatures,
+            style: style,
+            duration_sec: parseInt(duration) || 10,
+            music_type: music,
+            menu_name: menuName,
+            menu_features: menuFeatures,
+            menu_price: menuPrice,
+            image_url: imageUrl,
+            status: "processing",
+          })
+          .select("*")
+          .single();
+
+        if (dbError) {
+          devError("영상 데이터 저장 실패:", dbError);
+          return res.status(500).json({
+            success: false,
+            error: "영상 데이터 저장 실패: " + dbError.message,
+          });
+        }
+
+        // Runway API로 영상 생성 (비동기)
+        generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5)
+          .then(async ({ videoUrl, jobId }) => {
+            // 영상 생성 완료로 업데이트
+            await supabase
+              .from("shorts_videos")
+              .update({
+                status: "completed",
+                video_url: videoUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", videoData.id);
+            
+            devLog("영상 생성 완료 및 DB 업데이트:", videoData.id);
+          })
+          .catch(async (error) => {
+            devError("Runway 영상 생성 실패:", error);
+            // 실패 상태로 업데이트
+            await supabase
+              .from("shorts_videos")
+              .update({
+                status: "failed",
+                error_message: error.message,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", videoData.id);
+          });
+
+      res.json({
+        success: true,
+        data: {
+          id: videoData.id,
+          status: "processing",
+          message: "영상 생성이 시작되었습니다. 잠시 후 마이페이지에서 확인하세요.",
+        },
+      });
+    } catch (error) {
+      devError("영상 생성 처리 실패:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "영상 생성 중 오류가 발생했습니다.",
+      });
+    }
+  } catch (error) {
+    devError("영상 생성 API 오류:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "영상 생성 API 오류",
+    });
+  }
+});
+
+// ==================== 쇼츠 영상 목록 조회 API ====================
+
+app.get("/api/shorts/videos", async (req, res) => {
+  try {
+    const userId = req.headers["user-id"] || req.query.userId;
+    ensureUserId(userId);
+
+    const { page = 1, limit = 20, status } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = supabase
+      .from("shorts_videos")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + parseInt(limit) - 1);
+
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    const { data: videos, error, count } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      data: videos || [],
+      pagination: {
+        total: count || 0,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil((count || 0) / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    devError("영상 목록 조회 실패:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "영상 목록을 불러오지 못했습니다.",
+    });
+  }
+});
+
 // ==================== 서버 시작 ====================
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
@@ -4102,14 +4550,16 @@ if (process.env.VERCEL) {
   try {
     const cron = require('node-cron');
     const { renewExpiredSubscriptions, notifyTokenExceeded, recordDailyStats } = require('./api/cron/subscription-renewal');
+    const updateExpiredPolicies = require('./api/cron/policy-status-update');
 
-    // 매일 자정에 구독 갱신
+    // 매일 자정에 구독 갱신 및 정책 상태 업데이트
     cron.schedule('0 0 * * *', async () => {
-      devLog('🔄 [CRON] 자정 구독 갱신 작업 시작...');
+      devLog('🔄 [CRON] 자정 구독 갱신 및 정책 상태 업데이트 작업 시작...');
       try {
         await renewExpiredSubscriptions();
         await recordDailyStats();
-        devLog('✅ [CRON] 구독 갱신 작업 완료');
+        const policyResult = await updateExpiredPolicies();
+        devLog('✅ [CRON] 구독 갱신 및 정책 상태 업데이트 작업 완료', policyResult);
       } catch (error) {
         devError('❌ [CRON] 구독 갱신 실패:', error);
       }

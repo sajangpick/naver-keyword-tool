@@ -1,0 +1,43 @@
+# 사장픽(Sajangpick) - 식당 사장님을 위한 AI 도구
+# 검색엔진 최적화 설정
+
+# 모든 검색엔진 허용
+User-agent: *
+Allow: /
+
+# 크롤링 제외 경로 (관리자, API, 민감 정보)
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /database/
+Disallow: /scripts/
+Disallow: /node_modules/
+Disallow: /*.json$
+Disallow: /*.sql$
+
+# 로그인/회원가입 페이지 제외 (검색 노출 불필요)
+Disallow: /login.html
+Disallow: /join.html
+
+# 결제 페이지 제외
+Disallow: /payment.html
+
+# 테스트 페이지 제외
+Disallow: /test-*.html
+
+# 사이트맵 위치
+Sitemap: https://www.sajangpick.co.kr/sitemap.xml
+
+# 크롤링 속도 조절 (1초 대기)
+Crawl-delay: 1
+
+# 네이버 검색봇
+User-agent: Yeti
+Allow: /
+Crawl-delay: 1
+
+# 구글 검색봇
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+

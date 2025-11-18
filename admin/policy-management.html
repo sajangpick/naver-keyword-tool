@@ -459,6 +459,16 @@
         color: var(--text-secondary);
       }
 
+      .stat-card.selected {
+        border: 2px solid var(--accent);
+        background: rgba(3, 199, 90, 0.05);
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+
       .help-text {
         font-size: 13px;
         color: var(--text-secondary);
@@ -476,19 +486,19 @@
       <div class="content">
         <!-- 통계 -->
         <div class="stats-container">
-          <div class="stat-card">
+          <div class="stat-card" id="statAll" onclick="filterByStatus('all')" style="cursor: pointer;">
             <div class="stat-value" id="totalCount">0</div>
             <div class="stat-label">전체 정책</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" id="statActive" onclick="filterByStatus('active')" style="cursor: pointer;">
             <div class="stat-value" id="activeCount">0</div>
             <div class="stat-label">진행중</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" id="statUpcoming" onclick="filterByStatus('upcoming')" style="cursor: pointer;">
             <div class="stat-value" id="upcomingCount">0</div>
             <div class="stat-label">예정</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" id="statEnded" onclick="filterByStatus('ended')" style="cursor: pointer;">
             <div class="stat-value" id="endedCount">0</div>
             <div class="stat-label">마감</div>
           </div>
@@ -502,6 +512,14 @@
           
           <button class="btn btn-primary" style="background: #ff6b6b;" onclick="fetchRealPolicies()">
             <i class="fas fa-download"></i> 실제 데이터 가져오기
+          </button>
+          
+          <button class="btn btn-primary" style="background: #4dabf7;" onclick="testApiConnection()">
+            <i class="fas fa-vial"></i> API 연결 테스트
+          </button>
+          
+          <button class="btn btn-primary" style="background: #9c88ff;" onclick="updatePolicyStatus()">
+            <i class="fas fa-sync-alt"></i> 정책 상태 업데이트
           </button>
 
           <div class="category-filter">
@@ -715,25 +733,46 @@
     <script src="/admin/assets/admin-utils.js"></script>
     
     <script>
-      const API_BASE = 'https://naver-keyword-tool.onrender.com';
+      // API 베이스 URL 설정 (로컬/프로덕션 자동 감지)
+      const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:5000'
+        : 'https://naver-keyword-tool.onrender.com';
+      
+      console.log('🔗 API 베이스 URL:', API_BASE);
 
       let currentPage = 1;
       let currentCategory = 'all';
+      let currentStatus = 'all';
       let editingPolicyId = null;
       let businessTypes = [];
       let targetAreas = [];
       let searchTags = [];
 
       // 페이지 로드 시 초기화
-      document.addEventListener('DOMContentLoaded', () => {
-        loadPolicies();
-        loadStatistics();
+      document.addEventListener('DOMContentLoaded', async () => {
+        // Supabase 세션이 준비될 때까지 약간 대기 (인증 체크 방지)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 초기 상태: 전체 정책 선택
+        document.getElementById('statAll')?.classList.add('selected');
+        
+        // 데이터 로드 (토큰 없이도 조회 가능)
+        try {
+          await loadPolicies();
+          await loadStatistics();
+        } catch (error) {
+          console.error('초기 데이터 로드 실패:', error);
+          // 에러가 발생해도 페이지는 계속 작동
+        }
 
         // 폼 제출
-        document.getElementById('policyForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          await savePolicy();
-        });
+        const policyForm = document.getElementById('policyForm');
+        if (policyForm) {
+          policyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await savePolicy();
+          });
+        }
 
         // 태그 입력 이벤트
         setupTagInput('businessTypeInput', 'businessTypeTags', businessTypes);
@@ -746,34 +785,64 @@
         currentPage = page;
         const policyList = document.getElementById('policyList');
         
+        if (!policyList) {
+          console.error('policyList 요소를 찾을 수 없습니다.');
+          return;
+        }
+        
         try {
+          // 로딩 표시
+          policyList.innerHTML = '<div class="loading">로딩 중...</div>';
+          
           const params = new URLSearchParams({
             page,
             limit: 10,
-            status: 'all' // 관리자는 모든 상태 조회
+            status: currentStatus  // 현재 선택된 상태 필터
           });
 
           if (currentCategory !== 'all') {
             params.append('category', currentCategory);
           }
 
+          console.log('📋 정책 목록 조회:', `${API_BASE}/api/policy-support?${params}`);
+          
           const response = await fetch(`${API_BASE}/api/policy-support?${params}`);
+          
+          // HTTP 상태 코드 확인
+          if (response.status === 429) {
+            const errorData = await response.json().catch(() => ({ error: '요청 한도를 초과했습니다.' }));
+            throw new Error(errorData.error || '요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
+          }
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: '서버 오류가 발생했습니다.' }));
+            throw new Error(errorData.error || `서버 오류 (${response.status})`);
+          }
+          
           const result = await response.json();
 
-          if (!result.success || !result.data) {
+          console.log('📋 API 응답:', result);
+
+          if (!result.success) {
             throw new Error(result.error || '정책을 불러올 수 없습니다.');
           }
 
-          if (result.data.length === 0) {
+          if (!result.data || result.data.length === 0) {
             policyList.innerHTML = `
               <div class="empty-state">
                 <div class="empty-state-icon">💰</div>
                 <div>등록된 정책이 없습니다</div>
               </div>
             `;
-            document.getElementById('pagination').innerHTML = '';
+            const paginationEl = document.getElementById('pagination');
+            if (paginationEl) {
+              paginationEl.innerHTML = '';
+            }
+            console.log('⚠️ 정책 데이터가 없습니다.');
             return;
           }
+
+          console.log(`✅ ${result.data.length}개의 정책을 불러왔습니다.`);
 
           // 정책 카드 생성
           policyList.innerHTML = result.data.map(policy => {
@@ -860,12 +929,22 @@
           const response = await fetch(`${API_BASE}/api/policy-support/categories`);
           const result = await response.json();
           
-          if (result.success && result.data) {
-            const total = Object.values(result.data).reduce((sum, count) => sum + count, 0);
+          if (result.success) {
+            // 전체 정책 수
+            const total = result.total || Object.values(result.data || {}).reduce((sum, count) => sum + count, 0);
             document.getElementById('totalCount').textContent = total;
             
-            // 상태별 카운트 (예시 - 실제로는 API에서 가져와야 함)
-            // 여기서는 임시로 표시
+            // 상태별 카운트
+            if (result.status) {
+              document.getElementById('activeCount').textContent = result.status.active || 0;
+              document.getElementById('upcomingCount').textContent = result.status.upcoming || 0;
+              document.getElementById('endedCount').textContent = result.status.ended || 0;
+            } else {
+              // API에서 상태별 통계가 없으면 0으로 표시
+              document.getElementById('activeCount').textContent = 0;
+              document.getElementById('upcomingCount').textContent = 0;
+              document.getElementById('endedCount').textContent = 0;
+            }
           }
         } catch (error) {
           console.error('Load statistics error:', error);
@@ -929,6 +1008,28 @@
         document.querySelectorAll('.category-btn').forEach(btn => {
           btn.classList.toggle('active', btn.dataset.category === category);
         });
+
+        loadPolicies(1);
+      }
+
+      // 상태 필터
+      function filterByStatus(status) {
+        currentStatus = status;
+        
+        // 통계 카드 선택 상태 업데이트
+        document.querySelectorAll('.stat-card').forEach(card => {
+          card.classList.remove('selected');
+        });
+        
+        if (status === 'all') {
+          document.getElementById('statAll')?.classList.add('selected');
+        } else if (status === 'active') {
+          document.getElementById('statActive')?.classList.add('selected');
+        } else if (status === 'upcoming') {
+          document.getElementById('statUpcoming')?.classList.add('selected');
+        } else if (status === 'ended') {
+          document.getElementById('statEnded')?.classList.add('selected');
+        }
 
         loadPolicies(1);
       }
@@ -1073,7 +1174,30 @@
         }
 
         try {
-          const token = localStorage.getItem('access_token');
+          // 인증 토큰 가져오기 (Supabase 세션 우선)
+          let token = null;
+          
+          try {
+            if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+              const supabase = await window.AdminBootstrap.getSupabaseClient();
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session?.access_token) {
+                token = session.access_token;
+              }
+            }
+          } catch (e) {
+            // 무시
+          }
+          
+          if (!token) {
+            token = localStorage.getItem('access_token');
+          }
+          
+          if (!token) {
+            alert('로그인이 필요합니다. 로그인 후 다시 시도해주세요.');
+            return;
+          }
+          
           const method = editingPolicyId ? 'PUT' : 'POST';
           
           const body = {
@@ -1142,7 +1266,30 @@
         }
 
         try {
-          const token = localStorage.getItem('access_token');
+          // 인증 토큰 가져오기 (Supabase 세션 우선)
+          let token = null;
+          
+          try {
+            if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+              const supabase = await window.AdminBootstrap.getSupabaseClient();
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session?.access_token) {
+                token = session.access_token;
+              }
+            }
+          } catch (e) {
+            // 무시
+          }
+          
+          if (!token) {
+            token = localStorage.getItem('access_token');
+          }
+          
+          if (!token) {
+            alert('로그인이 필요합니다. 로그인 후 다시 시도해주세요.');
+            return;
+          }
+          
           const response = await fetch(`${API_BASE}/api/policy-support?id=${id}`, {
             method: 'DELETE',
             headers: {
@@ -1173,9 +1320,130 @@
         }
       });
 
+      // 정책 상태 업데이트 (마감일이 지난 정책을 'ended'로 변경)
+      async function updatePolicyStatus() {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        
+        try {
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 상태 업데이트 중...';
+          btn.disabled = true;
+          
+          console.log('🔄 정책 상태 업데이트 시작...');
+          
+          const response = await fetch(`${API_BASE}/api/cron/policy-status-update`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const result = await response.json();
+          
+          console.log('✅ 정책 상태 업데이트 결과:', result);
+          
+          if (result.success) {
+            let message = `✅ 정책 상태 업데이트 완료!\n\n`;
+            message += `• 업데이트된 정책: ${result.updated || 0}개\n`;
+            message += `• 확인된 마감 정책: ${result.total || 0}개\n`;
+            
+            if (result.updated > 0) {
+              alert(message);
+              // 목록 및 통계 새로고침
+              await loadPolicies(currentPage);
+              await loadStatistics();
+            } else {
+              alert('✅ 마감일이 지난 정책이 없습니다. 모든 정책 상태가 최신입니다.');
+            }
+          } else {
+            alert(`❌ 정책 상태 업데이트 실패:\n${result.error || '알 수 없는 오류'}`);
+          }
+          
+        } catch (error) {
+          console.error('정책 상태 업데이트 에러:', error);
+          alert(`❌ 정책 상태 업데이트 중 오류 발생:\n${error.message}`);
+        } finally {
+          btn.innerHTML = '<i class="fas fa-sync-alt"></i> 정책 상태 업데이트';
+          btn.disabled = false;
+        }
+      }
+
+      // API 연결 테스트
+      async function testApiConnection() {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        
+        try {
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> API 테스트 중...';
+          btn.disabled = true;
+          
+          console.log('🧪 API 연결 테스트 시작...');
+          
+          const response = await fetch(`${API_BASE}/api/test-policy-api`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const result = await response.json();
+          
+          console.log('🧪 API 테스트 결과:', result);
+          
+          if (result.success) {
+            // 결과를 모달로 표시
+            let message = `✅ API 테스트 완료!\n\n`;
+            message += `📊 총 테스트: ${result.summary.total}개\n`;
+            message += `✅ 성공: ${result.summary.success}개\n`;
+            message += `❌ 실패: ${result.summary.failed}개\n\n`;
+            
+            if (result.summary.apiKeySet) {
+              message += `🔑 API 키: 설정됨 (길이: ${result.summary.apiKeyLength})\n`;
+            } else {
+              message += `⚠️ API 키: 환경변수에 설정되지 않음 (기본값 사용)\n`;
+            }
+            
+            message += `\n📋 상세 결과:\n`;
+            result.results.forEach((r, i) => {
+              message += `\n${i + 1}. ${r.name}\n`;
+              if (r.success) {
+                message += `   ✅ 성공: ${r.itemCount || 0}개 항목, ${r.duration}\n`;
+              } else {
+                message += `   ❌ 실패: HTTP ${r.status || 'N/A'}\n`;
+                if (r.errorCode) {
+                  message += `   에러 코드: ${r.errorCode}\n`;
+                  message += `   에러 메시지: ${r.errorMsg || r.error || '알 수 없음'}\n`;
+                } else if (r.error) {
+                  message += `   에러: ${r.error}\n`;
+                }
+              }
+            });
+            
+            // 실패한 경우 추가 안내
+            if (result.summary.failed > 0) {
+              message += `\n\n💡 해결 방법:\n`;
+              message += `1. API 키가 공공데이터포털에서 활성화되어 있는지 확인\n`;
+              message += `2. Render 서버의 환경변수에 PUBLIC_DATA_KEY가 설정되어 있는지 확인\n`;
+              message += `3. 일일 호출 한도가 초과되지 않았는지 확인\n`;
+            }
+            
+            alert(message);
+          } else {
+            alert(`❌ API 테스트 실패:\n${result.error || '알 수 없는 오류'}`);
+          }
+          
+        } catch (error) {
+          console.error('API 테스트 에러:', error);
+          alert(`❌ API 테스트 중 오류 발생:\n${error.message}`);
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      }
+
       // 실제 데이터 가져오기
       async function fetchRealPolicies() {
-        if (!confirm('실제 정부 정책 데이터를 가져오시겠습니까?\n\n현재 진행 중인 실제 정책들이 추가됩니다.')) {
+        if (!confirm('실제 정부 정책 데이터를 가져오시겠습니까?\n\n공공데이터포털에서 현재 신청 가능한 정책 데이터를 실시간으로 수집하여 추가합니다.')) {
           return;
         }
 
@@ -1184,146 +1452,271 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 데이터 수집 중...';
 
         try {
-          // 1. 미리 준비된 실제 데이터 추가
-          const realPolicies = [
-            {
-              title: '2024년 소상공인 정책자금 융자',
-              organization: '중소벤처기업부',
-              category: 'operation',
-              summary: '소상공인 경영안정 및 성장기반 조성을 위한 정책자금 지원',
-              description: '코로나19 및 고물가로 어려움을 겪는 소상공인에게 저금리 정책자금을 지원합니다. 운영자금, 시설자금 등 다양한 용도로 활용 가능합니다.',
-              support_amount: '최대 7천만원',
-              support_type: 'loan',
-              eligibility_criteria: '• 사업자등록 후 6개월 이상 영업 중인 소상공인\n• 상시근로자 10인 미만\n• 연매출 10억원 이하',
-              business_type: ['음식점', '카페', '소매업', '서비스업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-02',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.semas.or.kr',
-              contact_info: '소상공인시장진흥공단',
-              phone_number: '☎1357',
-              status: 'active',
-              is_featured: true
-            },
-            {
-              title: '소상공인 스마트상점 기술보급',
-              organization: '중소벤처기업부',
-              category: 'facility',
-              summary: '스마트 기술 도입으로 매출 증대 및 비용 절감 지원',
-              description: '키오스크, 테이블오더, POS시스템, 온라인몰 구축 등 스마트 기술 도입을 지원합니다.',
-              support_amount: '최대 1천만원 (자부담 10%)',
-              support_type: 'grant',
-              eligibility_criteria: '• 연매출 2억원 이하 소상공인\n• 스마트상점 육성 대상업종',
-              business_type: ['음식점', '카페', '소매업'],
-              target_area: ['전국'],
-              application_start_date: '2024-02-01',
-              application_end_date: '2024-11-30',
-              application_url: 'https://www.sbiz.or.kr/smartshop',
-              contact_info: '스마트상점 지원센터',
-              phone_number: '☎1357',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '백년가게 육성사업',
-              organization: '중소벤처기업부',
-              category: 'marketing',
-              summary: '업력 30년 이상 우수 소상공인 브랜드화 지원',
-              description: '오랜 역사와 전통을 가진 소상공인을 백년가게로 선정하여 브랜드 개발, 마케팅, 시설개선 등을 지원합니다.',
-              support_amount: '최대 3천만원',
-              support_type: 'grant',
-              eligibility_criteria: '• 업력 30년 이상\n• 3대째 이상 가업승계 또는 30년 이상 운영',
-              business_type: ['음식점', '제조업', '서비스업'],
-              target_area: ['전국'],
-              application_start_date: '2024-03-01',
-              application_end_date: '2024-11-30',
-              application_url: 'https://www.sbiz.or.kr/100year',
-              contact_info: '소상공인시장진흥공단',
-              phone_number: '☎1357',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '착한가격업소 인센티브 지원',
-              organization: '행정안전부',
-              category: 'operation',
-              summary: '물가안정 기여 착한가격업소 다양한 혜택 제공',
-              description: '착한가격업소로 지정된 업소에 상하수도료 감면, 쓰레기봉투 지원, 무료 광고 등 혜택을 제공합니다.',
-              support_amount: '연간 200만원 상당',
-              support_type: 'grant',
-              eligibility_criteria: '• 착한가격업소 지정 업체\n• 가격 동결 유지',
-              business_type: ['음식점', '이미용업', '세탁업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-01',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.goodprice.go.kr',
-              contact_info: '각 지자체 경제과',
-              phone_number: '☎120',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '노란우산 희망장려금',
-              organization: '중소기업중앙회',
-              category: 'other',
-              summary: '소상공인 노란우산공제 신규 가입 장려금 지원',
-              description: '소상공인의 폐업·노령 등에 대비한 사회안전망 구축을 위해 노란우산공제 신규 가입자에게 장려금을 지원합니다.',
-              support_amount: '월 1만원 × 12개월',
-              support_type: 'grant',
-              eligibility_criteria: '• 노란우산 신규 가입 소상공인\n• 연매출 3억원 이하',
-              business_type: ['음식점', '카페', '소매업', '서비스업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-01',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.8899.or.kr',
-              contact_info: '노란우산공제',
-              phone_number: '☎1666-9988',
-              status: 'active',
-              is_featured: false
-            },
-            {
-              title: '일자리 안정자금',
-              organization: '고용노동부',
-              category: 'employment',
-              summary: '최저임금 인상에 따른 소상공인 인건비 부담 완화',
-              description: '30인 미만 사업체의 월 평균보수 230만원 미만 노동자에 대한 인건비를 지원합니다.',
-              support_amount: '1인당 월 최대 30만원',
-              support_type: 'grant',
-              eligibility_criteria: '• 30인 미만 사업체\n• 최저임금 120% 미만 노동자 고용\n• 고용보험 가입',
-              business_type: ['음식점', '카페', '소매업', '서비스업', '제조업'],
-              target_area: ['전국'],
-              application_start_date: '2024-01-01',
-              application_end_date: '2024-12-31',
-              application_url: 'https://www.jobfunds.or.kr',
-              contact_info: '근로복지공단',
-              phone_number: '☎1588-0075',
-              status: 'active',
-              is_featured: true
-            }
-          ];
-
-          // 2. 서버에 저장
-          const token = localStorage.getItem('access_token');
+          // 1. 인증 토큰 가져오기 (선택적 - 없어도 진행 가능)
+          let token = null;
           
-          for (const policy of realPolicies) {
-            await fetch(`${API_BASE}/api/policy-support`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify(policy)
-            });
+          try {
+            // Supabase 세션에서 토큰 가져오기 (최대 1초 대기)
+            if (window.AdminBootstrap && typeof window.AdminBootstrap.getSupabaseClient === 'function') {
+              const supabase = await window.AdminBootstrap.getSupabaseClient();
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session?.access_token) {
+                token = session.access_token;
+                console.log('✅ Supabase 세션에서 토큰 가져옴');
+              }
+            }
+          } catch (e) {
+            // 무시하고 계속 진행
+          }
+          
+          // Supabase에서 가져오지 못한 경우 localStorage에서 시도
+          if (!token) {
+            token = localStorage.getItem('access_token');
+          }
+          
+          // 토큰이 없어도 진행 (로그인 없이 데이터 가져오기 가능)
+          if (!token) {
+            console.log('ℹ️ 인증 토큰 없이 진행 (공개 데이터 수집)');
+          }
+          
+          // 2. 실제 API에서 데이터 가져오기
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> API에서 데이터 수집 중...';
+          
+          const headers = {
+            'Content-Type': 'application/json'
+          };
+          
+          // 토큰이 있으면 헤더에 추가
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          const fetchResponse = await fetch(`${API_BASE}/api/fetch-real-policies`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ save: true })
+          });
+
+          const fetchResult = await fetchResponse.json();
+
+          if (!fetchResult.success) {
+            throw new Error(fetchResult.error || '데이터 수집에 실패했습니다.');
           }
 
-          alert(`✅ ${realPolicies.length}개의 실제 정책이 추가되었습니다!\n\n추가된 정책:\n• 소상공인 정책자금\n• 스마트상점 지원\n• 백년가게 육성\n• 착한가격업소\n• 노란우산 공제\n• 일자리 안정자금`);
+          const policies = fetchResult.data || [];
           
-          loadPolicies();
-          loadStatistics();
+          console.log(`📊 API에서 가져온 정책 수: ${policies.length}개`);
+          if (policies.length > 0) {
+            console.log(`📋 첫 번째 정책 샘플:`, policies[0]);
+            const sourceStats = policies.reduce((acc, p) => {
+              const source = p.source || 'unknown';
+              acc[source] = (acc[source] || 0) + 1;
+              return acc;
+            }, {});
+            console.log(`📊 소스별 통계:`, JSON.stringify(sourceStats, null, 2));
+            
+            // 내장 샘플 데이터인지 확인
+            const builtInTitles = [
+              '2024년 소상공인 정책자금 융자',
+              '소상공인 스마트상점 기술보급',
+              '백년가게 육성사업',
+              '착한가격업소 인센티브 지원',
+              '노란우산 희망장려금',
+              '일자리 안정자금'
+            ];
+            const builtInCount = policies.filter(p => builtInTitles.includes(p.title)).length;
+            if (builtInCount > 0) {
+              console.warn(`⚠️ 내장 샘플 데이터 ${builtInCount}개 포함됨. 실제 API 데이터는 ${policies.length - builtInCount}개입니다.`);
+            }
+          }
+          
+          if (policies.length === 0) {
+            alert('⚠️ 수집된 정책 데이터가 없습니다.\n\n서버 로그를 확인하거나 잠시 후 다시 시도해주세요.\n\n가능한 원인:\n1. API 키가 유효하지 않음\n2. API 응답 형식이 변경됨\n3. 필터링이 너무 엄격함');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
+            return;
+          }
+
+          // 2. 진행 상황 표시
+          let savedCount = 0;
+          let skippedCount = 0;
+          const errors = [];
+
+          btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 데이터 저장 중... (0/${policies.length})`;
+
+          // 3. 각 정책을 데이터베이스에 저장 (중복 체크)
+          for (let i = 0; i < policies.length; i++) {
+            const policy = policies[i];
+            
+            try {
+              btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 데이터 저장 중... (${i + 1}/${policies.length})`;
+              
+              // 필수 필드 확인
+              if (!policy.title || !policy.organization || !policy.category) {
+                skippedCount++;
+                continue;
+              }
+
+              // 내장 샘플 데이터는 건너뛰기 (이미 DB에 있을 가능성 높음)
+              const builtInTitles = [
+                '2024년 소상공인 정책자금 융자',
+                '소상공인 스마트상점 기술보급',
+                '백년가게 육성사업',
+                '착한가격업소 인센티브 지원',
+                '노란우산 희망장려금',
+                '일자리 안정자금'
+              ];
+              const isBuiltIn = builtInTitles.includes(policy.title);
+              
+              if (isBuiltIn) {
+                console.log(`⏭️ 내장 샘플 데이터 건너뜀: "${policy.title}"`);
+                skippedCount++;
+                continue;
+              }
+              
+              // 중복 체크를 위해 기존 정책 조회 (토큰 없이도 가능)
+              // 제목 정규화 (공백, 특수문자 제거하여 비교)
+              const normalizeTitle = (title) => {
+                if (!title) return '';
+                return title.replace(/\s+/g, '').replace(/[^\w가-힣]/g, '').toLowerCase();
+              };
+              
+              let existing = null;
+              try {
+                const checkResponse = await fetch(`${API_BASE}/api/policy-support?search=${encodeURIComponent(policy.title)}&limit=10`);
+                const checkResult = await checkResponse.json();
+                if (checkResult.success && checkResult.data && Array.isArray(checkResult.data)) {
+                  const normalizedNewTitle = normalizeTitle(policy.title);
+                  // 정규화된 제목으로 비교 - 완전 일치만 중복으로 판단
+                  existing = checkResult.data.find(p => {
+                    const normalizedExistingTitle = normalizeTitle(p.title);
+                    return normalizedExistingTitle === normalizedNewTitle;
+                  });
+                }
+              } catch (e) {
+                console.warn('중복 체크 실패:', e);
+                // 중복 체크 실패해도 계속 진행 (새 정책으로 저장)
+              }
+              
+              if (existing) {
+                console.log(`⏭️ 중복 건너뜀: "${policy.title}" (기존: "${existing.title}")`);
+                skippedCount++;
+                continue;
+              }
+
+              // 정책 저장 (토큰이 없어도 가능하도록 수정)
+              const saveHeaders = {
+                'Content-Type': 'application/json'
+              };
+              
+              // 토큰이 있으면 헤더에 추가
+              if (token) {
+                saveHeaders['Authorization'] = `Bearer ${token}`;
+              }
+
+              const saveResponse = await fetch(`${API_BASE}/api/policy-support`, {
+                method: 'POST',
+                headers: saveHeaders,
+                body: JSON.stringify({
+                  ...policy,
+                  // 기본값 설정
+                  business_type: policy.business_type || ['음식점', '카페', '소매업', '서비스업'],
+                  target_area: policy.target_area || ['전국'],
+                  status: policy.status || 'active',
+                  is_featured: policy.is_featured || false,
+                  tags: policy.tags || []
+                })
+              });
+
+              // 응답 상태 확인
+              let saveResult;
+              try {
+                const responseText = await saveResponse.text();
+                if (!responseText) {
+                  skippedCount++;
+                  errors.push(`${policy.title}: 빈 응답`);
+                  continue;
+                }
+                saveResult = JSON.parse(responseText);
+              } catch (e) {
+                // JSON 파싱 실패 시
+                skippedCount++;
+                errors.push(`${policy.title}: 응답 파싱 실패 (${saveResponse.status})`);
+                console.error(`응답 파싱 실패 - ${policy.title}:`, e, saveResponse.status);
+                continue;
+              }
+              
+              // 401 에러인 경우
+              if (saveResponse.status === 401) {
+                skippedCount++;
+                const errorMsg = saveResult?.error || '인증이 필요합니다';
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.warn(`401 에러 - ${policy.title}:`, saveResult);
+                continue;
+              }
+              
+              // 400번대 에러
+              if (saveResponse.status >= 400 && saveResponse.status < 500) {
+                skippedCount++;
+                const errorMsg = saveResult?.error || `HTTP ${saveResponse.status} 에러`;
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.warn(`${saveResponse.status} 에러 - ${policy.title}:`, saveResult);
+                continue;
+              }
+              
+              // 500번대 서버 에러
+              if (saveResponse.status >= 500) {
+                skippedCount++;
+                const errorMsg = saveResult?.error || '서버 오류';
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.error(`서버 오류 - ${policy.title}:`, saveResult);
+                continue;
+              }
+              
+              // 200번대 성공 응답
+              if (saveResponse.ok && saveResult.success) {
+                savedCount++;
+                console.log(`✅ 저장 성공: ${policy.title}`);
+              } else {
+                skippedCount++;
+                const errorMsg = saveResult?.error || '저장 실패 (알 수 없는 오류)';
+                errors.push(`${policy.title}: ${errorMsg}`);
+                console.warn(`저장 실패 - ${policy.title}:`, saveResult);
+              }
+              
+            } catch (error) {
+              skippedCount++;
+              errors.push(`${policy.title}: ${error.message}`);
+            }
+          }
+
+          // 4. 결과 표시
+          let message = `✅ 데이터 수집 완료!\n\n`;
+          message += `• 새로 추가: ${savedCount}개\n`;
+          message += `• 건너뜀 (중복/오류): ${skippedCount}개\n`;
+          message += `• 총 수집: ${policies.length}개\n`;
+          
+          if (errors.length > 0) {
+            message += `\n⚠️ 오류 상세:\n${errors.slice(0, 10).join('\n')}`;
+            if (errors.length > 10) {
+              message += `\n... 외 ${errors.length - 10}개 오류 (콘솔 확인)`;
+            }
+            console.error('📋 저장 오류 전체 목록:', errors);
+          }
+
+          alert(message);
+          
+          // 5. 목록 및 통계 새로고침
+          await loadPolicies();
+          await loadStatistics();
+          
+          // 버튼 상태 복원
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
 
         } catch (error) {
           console.error('Fetch real policies error:', error);
-          alert('데이터 가져오기 실패: ' + error.message);
+          alert('❌ 데이터 가져오기 실패: ' + error.message + '\n\n콘솔에서 자세한 오류를 확인하세요.');
         } finally {
           btn.disabled = false;
           btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
@@ -1331,4 +1724,6 @@
       }
     </script>
   </body>
+</html>
+
 </html>

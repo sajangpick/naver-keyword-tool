@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://cdn.jsdelivr.net wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>AI 쇼츠 영상 생성 - 사장픽</title>
@@ -1314,12 +1314,13 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .progress-icon i {
@@ -1624,6 +1625,10 @@
                     <div class="step-number">3</div>
                     <span class="step-label">콘텐츠 입력</span>
                 </div>
+                <div class="step-item" id="step4-indicator">
+                    <div class="step-number">4</div>
+                    <span class="step-label">영상 확인</span>
+                </div>
             </div>
 
             <!-- Step 1: 샘플 영상 -->
@@ -1892,6 +1897,77 @@
                 ※ 하루 생성 가능 횟수는 최고등급 기준 최대 3회이며, 길이가 길수록 AI 처리 비용이 증가할 수 있습니다.
             </p>
         </div>
+
+        <!-- Step 4: 영상 확인 -->
+        <div class="content-section" id="step4-content">
+            <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; text-align: center;">
+                생성된 영상 확인
+            </h2>
+            
+            <div id="videoResultContainer" style="display: none;">
+                <div class="video-preview-container" style="max-width: 600px; margin: 0 auto 24px; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                    <div class="video-wrapper" style="position: relative; width: 100%; padding-bottom: 177.78%; background: #000; border-radius: 12px; overflow: hidden;">
+                        <video id="generatedVideo" controls style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
+                            브라우저가 비디오 태그를 지원하지 않습니다.
+                        </video>
+                    </div>
+                    <div class="video-info" style="margin-top: 20px;">
+                        <h3 id="videoTitle" style="font-size: 18px; font-weight: 700; margin-bottom: 8px;"></h3>
+                        <p id="videoDescription" style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;"></p>
+                        <div class="video-meta" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
+                            <span id="videoStyle" style="padding: 6px 12px; background: var(--secondary); border-radius: 8px; font-size: 12px; font-weight: 600;"></span>
+                            <span id="videoDuration" style="padding: 6px 12px; background: var(--secondary); border-radius: 8px; font-size: 12px; font-weight: 600;"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-actions" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; max-width: 600px; margin: 0 auto;">
+                    <button class="btn btn-primary" onclick="downloadVideo()" style="flex: 1; min-width: 150px;">
+                        <i class="fa-solid fa-download"></i>
+                        영상 다운로드
+                    </button>
+                    <button class="btn btn-secondary" onclick="shareVideo()" style="flex: 1; min-width: 150px;">
+                        <i class="fa-solid fa-share"></i>
+                        공유하기
+                    </button>
+                    <button class="btn btn-secondary" onclick="goToStep(1)" style="flex: 1; min-width: 150px;">
+                        <i class="fa-solid fa-plus"></i>
+                        새 영상 만들기
+                    </button>
+                </div>
+
+                <div style="text-align: center; margin-top: 24px;">
+                    <button class="btn btn-ghost" onclick="window.location.href='/mypage.html#shorts'">
+                        <i class="fa-solid fa-list"></i>
+                        마이페이지에서 전체 영상 보기
+                    </button>
+                </div>
+            </div>
+
+            <div id="videoLoadingContainer" style="text-align: center; padding: 60px 20px;">
+                <div class="loading-spinner" style="width: 60px; height: 60px; border: 4px solid var(--secondary); border-top-color: var(--accent-color); border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
+                <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 8px;">영상을 불러오는 중...</p>
+                <p style="font-size: 14px; color: var(--text-secondary);">잠시만 기다려주세요.</p>
+            </div>
+
+            <div id="videoErrorContainer" style="display: none; text-align: center; padding: 60px 20px;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px;">영상을 불러올 수 없습니다</h3>
+                <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
+                    영상이 아직 생성 중이거나 오류가 발생했을 수 있습니다.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="checkVideoStatus()">
+                        <i class="fa-solid fa-refresh"></i>
+                        다시 확인
+                    </button>
+                    <button class="btn btn-secondary" onclick="goToStep(1)">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        처음으로
+                    </button>
+                </div>
+            </div>
+        </div>
         </div> <!-- selfMode -->
 
         <!-- 전문가 의뢰 모드 -->
@@ -2128,6 +2204,8 @@
         let selectedStyle = null;
         let selectedMusic = 'auto';
         let uploadedImage = null;
+        let currentVideoId = null;
+        let videoStatusCheckInterval = null;
         const styleDurations = {
             luxury: 15,
             fast: 10,
@@ -2138,7 +2216,12 @@
         let planHistory = [];
         let currentPlanEntryId = null;
         const currentUser = getCurrentUser();
-        const API_BASE = '';
+        // API 베이스 URL 설정
+        // 프로덕션: 빈 문자열 (vercel.json의 rewrites 사용)
+        // 로컬 개발: 'http://localhost:3003' 또는 빈 문자열
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3003' 
+            : '';
 
         function getCurrentUser() {
             try {
@@ -2344,14 +2427,57 @@
             formData.append('duration', document.getElementById('videoDuration').value);
 
             try {
-                await simulateVideoGeneration();
+                const userId = getCurrentUserId();
+                if (!userId) {
+                    alert('로그인이 필요합니다.');
+                    hideProgressModal();
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/api/shorts/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'user-id': userId
+                    },
+                    body: formData
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonError) {
+                    const text = await response.text();
+                    console.error('응답 파싱 실패:', text);
+                    throw new Error(`서버 응답 오류 (${response.status}): ${text.substring(0, 100)}`);
+                }
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`);
+                }
+
                 hideProgressModal();
-                alert('영상이 성공적으로 생성되었습니다! 마이페이지에서 확인하세요.');
-                window.location.href = '/mypage.html#shorts';
+                
+                // 생성된 영상 정보 저장
+                if (result.data && result.data.id) {
+                    currentVideoId = result.data.id;
+                    // Step 4로 이동하여 영상 확인
+                    goToStep(4);
+                    // 영상 상태 확인 시작
+                    checkVideoStatus();
+                } else {
+                    alert('영상이 성공적으로 생성되었습니다! 마이페이지에서 확인하세요.');
+                    window.location.href = '/mypage.html#shorts';
+                }
             } catch (error) {
                 console.error('영상 생성 실패:', error);
                 hideProgressModal();
-                alert('영상 생성에 실패했습니다. 다시 시도해주세요.');
+                
+                // 404 오류인 경우 서버 연결 문제로 안내
+                if (error.message && error.message.includes('404') || error.message.includes('경로를 찾을 수 없습니다')) {
+                    alert('서버에 연결할 수 없습니다.\n\n로컬에서 테스트하는 경우:\n1. 서버가 실행 중인지 확인하세요 (node server.js)\n2. http://localhost:3003/shorts-editor.html 로 접속하세요\n\n프로덕션 환경인 경우:\nRender 서버에 최신 코드가 배포되었는지 확인하세요.');
+                } else {
+                    alert('영상 생성에 실패했습니다: ' + error.message);
+                }
             }
         }
 
@@ -2388,6 +2514,211 @@
                     clearInterval(interval);
                 }
             }, 500);
+        }
+
+        // 영상 상태 확인
+        async function checkVideoStatus() {
+            if (!currentVideoId) {
+                // video_id가 없으면 URL 파라미터에서 가져오기 시도
+                const urlParams = new URLSearchParams(window.location.search);
+                const videoId = urlParams.get('video_id');
+                if (videoId) {
+                    currentVideoId = videoId;
+                } else {
+                    showVideoError();
+                    return;
+                }
+            }
+
+            const userId = getCurrentUserId();
+            if (!userId) {
+                showVideoError();
+                return;
+            }
+
+            try {
+                // 로딩 상태 표시
+                document.getElementById('videoLoadingContainer').style.display = 'block';
+                document.getElementById('videoResultContainer').style.display = 'none';
+                document.getElementById('videoErrorContainer').style.display = 'none';
+
+                const response = await fetch(`${API_BASE}/api/shorts/videos?userId=${encodeURIComponent(userId)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'user-id': userId
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('영상 목록을 불러올 수 없습니다.');
+                }
+
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    throw new Error('영상 데이터를 찾을 수 없습니다.');
+                }
+
+                // 현재 영상 찾기
+                const video = result.data.find(v => v.id === currentVideoId || v.video_id === currentVideoId);
+
+                if (!video) {
+                    // 영상을 찾을 수 없으면 폴링 계속
+                    if (!videoStatusCheckInterval) {
+                        videoStatusCheckInterval = setInterval(checkVideoStatus, 5000);
+                    }
+                    return;
+                }
+
+                // 폴링 중지
+                if (videoStatusCheckInterval) {
+                    clearInterval(videoStatusCheckInterval);
+                    videoStatusCheckInterval = null;
+                }
+
+                // 영상 상태에 따라 처리
+                if (video.status === 'completed' && video.video_url) {
+                    showVideoResult(video);
+                } else if (video.status === 'processing') {
+                    // 아직 생성 중이면 5초 후 다시 확인
+                    if (!videoStatusCheckInterval) {
+                        videoStatusCheckInterval = setInterval(checkVideoStatus, 5000);
+                    }
+                } else if (video.status === 'failed') {
+                    showVideoError(video.error_message || '영상 생성에 실패했습니다.');
+                } else {
+                    // 상태가 불명확하면 계속 확인
+                    if (!videoStatusCheckInterval) {
+                        videoStatusCheckInterval = setInterval(checkVideoStatus, 5000);
+                    }
+                }
+            } catch (error) {
+                console.error('영상 상태 확인 실패:', error);
+                showVideoError(error.message);
+            }
+        }
+
+        // 영상 결과 표시
+        function showVideoResult(video) {
+            document.getElementById('videoLoadingContainer').style.display = 'none';
+            document.getElementById('videoResultContainer').style.display = 'block';
+            document.getElementById('videoErrorContainer').style.display = 'none';
+
+            const videoElement = document.getElementById('generatedVideo');
+            videoElement.src = video.video_url;
+            videoElement.load();
+
+            // 영상 정보 표시
+            document.getElementById('videoTitle').textContent = video.menu_name || video.title || '생성된 영상';
+            document.getElementById('videoDescription').textContent = video.menu_features || video.description || '';
+
+            // 스타일 이름 변환
+            const styleNames = {
+                'luxury': '럭셔리',
+                'fast': '빠른 리듬',
+                'chef': '셰프의 손',
+                'plating': '플레이팅',
+                'simple': '심플 클래식'
+            };
+            const styleName = styleNames[video.style] || video.style || '';
+            if (styleName) {
+                document.getElementById('videoStyle').textContent = styleName;
+                document.getElementById('videoStyle').style.display = 'inline-block';
+            } else {
+                document.getElementById('videoStyle').style.display = 'none';
+            }
+
+            if (video.duration_sec) {
+                document.getElementById('videoDuration').textContent = `${video.duration_sec}초`;
+                document.getElementById('videoDuration').style.display = 'inline-block';
+            } else {
+                document.getElementById('videoDuration').style.display = 'none';
+            }
+        }
+
+        // 영상 오류 표시
+        function showVideoError(message) {
+            document.getElementById('videoLoadingContainer').style.display = 'none';
+            document.getElementById('videoResultContainer').style.display = 'none';
+            document.getElementById('videoErrorContainer').style.display = 'block';
+
+            if (message) {
+                const errorText = document.querySelector('#videoErrorContainer p');
+                if (errorText) {
+                    errorText.textContent = message;
+                }
+            }
+        }
+
+        // 영상 다운로드
+        function downloadVideo() {
+            const videoElement = document.getElementById('generatedVideo');
+            if (!videoElement || !videoElement.src) {
+                alert('다운로드할 영상이 없습니다.');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = videoElement.src;
+            link.download = `shorts-video-${currentVideoId || Date.now()}.mp4`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 영상 공유
+        async function shareVideo() {
+            const videoElement = document.getElementById('generatedVideo');
+            if (!videoElement || !videoElement.src) {
+                alert('공유할 영상이 없습니다.');
+                return;
+            }
+
+            // Web Share API 사용 시도
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: document.getElementById('videoTitle').textContent || '생성된 쇼츠 영상',
+                        text: '사장픽으로 만든 AI 쇼츠 영상을 확인해보세요!',
+                        url: window.location.href
+                    });
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        // 공유 취소가 아닌 경우에만 클립보드 복사
+                        copyVideoLink();
+                    }
+                }
+            } else {
+                // Web Share API가 없으면 링크 복사
+                copyVideoLink();
+            }
+        }
+
+        // 영상 링크 복사
+        function copyVideoLink() {
+            const videoElement = document.getElementById('generatedVideo');
+            if (!videoElement || !videoElement.src) {
+                alert('복사할 링크가 없습니다.');
+                return;
+            }
+
+            navigator.clipboard.writeText(videoElement.src).then(() => {
+                alert('영상 링크가 클립보드에 복사되었습니다.');
+            }).catch(() => {
+                // 클립보드 API가 없으면 수동 복사 안내
+                const textarea = document.createElement('textarea');
+                textarea.value = videoElement.src;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('영상 링크가 클립보드에 복사되었습니다.');
+                } catch (error) {
+                    alert('링크 복사에 실패했습니다. 수동으로 복사해주세요: ' + videoElement.src);
+                }
+                document.body.removeChild(textarea);
+            });
         }
 
         // API 시뮬레이션 (실제 구현 시 제거)
@@ -2674,15 +3005,39 @@
 
         async function fetchPlanHistory() {
             const userId = getCurrentUserId();
-            if (!userId) return;
+            if (!userId) {
+                planHistory = [];
+                renderPlanHistory();
+                return;
+            }
             try {
                 const response = await fetch(
-                    `${API_BASE}/api/shorts/plan-history?userId=${encodeURIComponent(userId)}`
+                    `${API_BASE}/api/shorts/plan-history?userId=${encodeURIComponent(userId)}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'user-id': userId
+                        }
+                    }
                 );
+                
+                if (!response.ok) {
+                    // 404나 다른 오류는 조용히 처리 (초안이 없는 경우일 수 있음)
+                    if (response.status === 404) {
+                        planHistory = [];
+                        renderPlanHistory();
+                        return;
+                    }
+                    const errorText = await response.text();
+                    throw new Error(`서버 응답 오류 (${response.status}): ${errorText.substring(0, 100)}`);
+                }
+                
                 const data = await response.json();
-                if (!response.ok || data.success === false) {
+                if (!data.success) {
                     throw new Error(data.error || '저장된 초안을 불러오지 못했습니다.');
                 }
+                
                 const previousId = currentPlanEntryId;
                 planHistory = (data.items || []).map(mapHistoryEntry).filter(Boolean);
                 if (!planHistory.some((item) => item.id === previousId)) {
@@ -2690,7 +3045,10 @@
                 }
                 renderPlanHistory();
             } catch (error) {
-                console.error('초안 히스토리를 불러오지 못했습니다:', error);
+                // 오류 발생 시 조용히 처리 (초안이 없거나 서버 문제일 수 있음)
+                console.warn('초안 히스토리를 불러오지 못했습니다 (계속 진행):', error.message);
+                planHistory = [];
+                renderPlanHistory();
             }
         }
 
