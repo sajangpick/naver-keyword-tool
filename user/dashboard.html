@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>대시보드 - 사장픽</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/assets/common.css" />
+    
+    <style>
+      :root {
+        --accent: #3490dc;
+        --danger: #ef4444;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --panel: #ffffff;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        background: #f9fafb;
+        color: #111827;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .header {
+        margin-bottom: 32px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .header-subtitle {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s;
+      }
+
+      .card:hover {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+      }
+
+      .card-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .card-unit {
+        font-size: 16px;
+        color: var(--muted);
+        font-weight: 400;
+      }
+
+      .card-meta {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .card.accent {
+        background: linear-gradient(135deg, var(--accent) 0%, #2563eb 100%);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .card.accent .card-title {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .card.accent .card-value {
+        color: white;
+      }
+
+      .card.accent .card-unit {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .card.accent .card-meta {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .card.success {
+        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        border-color: var(--success);
+        color: white;
+      }
+
+      .card.success .card-title,
+      .card.success .card-value,
+      .card.success .card-unit,
+      .card.success .card-meta {
+        color: white;
+      }
+
+      .card.danger {
+        background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        border-color: var(--danger);
+        color: white;
+      }
+
+      .card.danger .card-title,
+      .card.danger .card-value,
+      .card.danger .card-unit,
+      .card.danger .card-meta {
+        color: white;
+      }
+
+      .card.warning {
+        background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+        border-color: var(--warning);
+        color: white;
+      }
+
+      .card.warning .card-title,
+      .card.warning .card-value,
+      .card.warning .card-unit,
+      .card.warning .card-meta {
+        color: white;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 12px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 4px;
+        transition: width 0.3s;
+      }
+
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+
+      .section-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        background: #fafafa;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .section-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section-body {
+        padding: 24px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .membership-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        background: var(--accent);
+        color: white;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+
+      .info-item {
+        padding: 16px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+
+      .info-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .info-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .timeline {
+        position: relative;
+        padding-left: 32px;
+      }
+
+      .timeline-item {
+        margin-bottom: 24px;
+        position: relative;
+      }
+
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -32px;
+        top: 6px;
+        width: 12px;
+        height: 12px;
+        background: var(--accent);
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--border);
+      }
+
+      .timeline-item:last-child::after {
+        content: '';
+        position: absolute;
+        left: -26px;
+        top: 20px;
+        width: 2px;
+        height: calc(100% + 24px);
+        background: var(--border);
+      }
+
+      .loading {
+        text-align: center;
+        padding: 60px 24px;
+        color: var(--muted);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 24px;
+      }
+
+      .empty-state i {
+        font-size: 48px;
+        color: var(--muted);
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .status-badge.active {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .status-badge.warning {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .status-badge.critical {
+        background: #fee2e2;
+        color: #7f1d1d;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 16px;
+        }
+
+        .header h1 {
+          font-size: 22px;
+        }
+
+        .card-value {
+          font-size: 24px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 헤더 -->
+    <div id="header"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="container">
+      <!-- 페이지 타이틀 -->
+      <div class="header">
+        <h1>
+          <i class="fas fa-chart-line" style="color: var(--accent);"></i>
+          내 대시보드
+        </h1>
+        <div class="header-subtitle">토큰 사용량과 구독 상태를 확인하세요</div>
+      </div>
+
+      <!-- 로딩 상태 -->
+      <div id="loadingState" class="loading" style="display: none;">
+        <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+      </div>
+
+      <!-- 메인 콘텐츠 (로드 후 표시) -->
+      <div id="mainContent" style="display: none;">
+        
+        <!-- 토큰 카드 섹션 -->
+        <div class="grid">
+          <!-- 현재 토큰 -->
+          <div class="card accent">
+            <div class="card-title">현재 사용 가능 토큰</div>
+            <div class="card-value">
+              <span id="currentTokens">0</span>
+              <span class="card-unit">토큰</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="tokenProgressBar" style="width: 100%;"></div>
+            </div>
+            <div class="card-meta" id="tokenProgress">사용률: 0%</div>
+          </div>
+
+          <!-- 이번 달 사용량 -->
+          <div class="card">
+            <div class="card-title">이번 달 사용량</div>
+            <div class="card-value">
+              <span id="usedTokens">0</span>
+              <span class="card-unit">/ <span id="totalTokens">0</span></span>
+            </div>
+            <div class="card-meta" id="usageStatus">정상 사용 중</div>
+          </div>
+
+          <!-- 다음 갱신일 -->
+          <div class="card success">
+            <div class="card-title">다음 갱신일</div>
+            <div class="card-value" id="renewalDate">-</div>
+            <div class="card-meta" id="daysLeft">계산 중...</div>
+          </div>
+
+          <!-- 현재 구독 등급 -->
+          <div class="card">
+            <div class="card-title">현재 구독 등급</div>
+            <div class="card-value">
+              <span id="membershipLevel">-</span>
+            </div>
+            <div class="card-meta">
+              월 가격: <span id="monthlyPrice">-</span>원
+            </div>
+          </div>
+        </div>
+
+        <!-- 구독 정보 섹션 -->
+        <div class="section">
+          <div class="section-header">
+            <h2>
+              <i class="fas fa-credit-card" style="color: var(--accent);"></i>
+              구독 정보
+            </h2>
+            <button class="btn primary" onclick="window.location.href='/mypage.html'">
+              <i class="fas fa-cog"></i> 관리
+            </button>
+          </div>
+          <div class="section-body">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">가입 날짜</div>
+                <div class="info-value" id="subscriptionStart">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">마지막 갱신</div>
+                <div class="info-value" id="lastRenewalDate">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">구독 상태</div>
+                <div class="info-value">
+                  <span class="status-badge active" id="subscriptionStatus">활성</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">사용자 타입</div>
+                <div class="info-value" id="userType">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 토큰 사용 현황 -->
+        <div class="section">
+          <div class="section-header">
+            <h2>
+              <i class="fas fa-coins" style="color: var(--accent);"></i>
+              토큰 사용 현황
+            </h2>
+          </div>
+          <div class="section-body">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">총 할당 토큰</div>
+                <div class="info-value" id="allocatedTokens">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">사용한 토큰</div>
+                <div class="info-value" id="consumedTokens">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">남은 토큰</div>
+                <div class="info-value" id="remainingTokens" style="color: var(--success);">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">초과 여부</div>
+                <div class="info-value" id="overageStatus">정상</div>
+              </div>
+            </div>
+
+            <!-- 상세 사용 내역 -->
+            <div style="margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border);">
+              <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">
+                <i class="fas fa-list"></i> 토큰 사용 내역
+              </h3>
+              <div id="usageHistory"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 주의사항 -->
+        <div class="section">
+          <div class="section-header">
+            <h2>
+              <i class="fas fa-info-circle" style="color: var(--warning);"></i>
+              중요 안내사항
+            </h2>
+          </div>
+          <div class="section-body">
+            <ul style="list-style: none; padding: 0;">
+              <li style="margin-bottom: 12px; padding-left: 24px; position: relative;">
+                <i class="fas fa-check" style="position: absolute; left: 0; color: var(--success);"></i>
+                <strong>토큰 갱신:</strong> 매월 구독 시작일을 기준으로 토큰이 자동 갱신됩니다.
+              </li>
+              <li style="margin-bottom: 12px; padding-left: 24px; position: relative;">
+                <i class="fas fa-check" style="position: absolute; left: 0; color: var(--success);"></i>
+                <strong>미사용 토큰:</strong> 매월 미사용 토큰은 소멸되며 이월되지 않습니다.
+              </li>
+              <li style="margin-bottom: 12px; padding-left: 24px; position: relative;">
+                <i class="fas fa-check" style="position: absolute; left: 0; color: var(--warning);"></i>
+                <strong>한도 초과:</strong> 토큰 한도를 초과하면 즉시 사용이 중지되며, 업그레이드 요청을 통해 추가 토큰을 받을 수 있습니다.
+              </li>
+              <li style="margin-bottom: 0; padding-left: 24px; position: relative;">
+                <i class="fas fa-check" style="position: absolute; left: 0; color: var(--success);"></i>
+                <strong>자동 결제:</strong> 구독료는 매월 구독 시작일에 자동으로 청구됩니다.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/assets/common-header.js" defer></script>
+
+    <script>
+      let supabase;
+      let currentUser;
+
+      window.addEventListener('load', async function() {
+        try {
+          // Supabase 초기화
+          const SUPABASE_URL = window.NEXT_PUBLIC_SUPABASE_URL;
+          const SUPABASE_ANON_KEY = window.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+          
+          if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.error('Supabase 환경변수 미설정');
+            return;
+          }
+
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+          // 사용자 정보 조회
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            window.location.href = '/login.html';
+            return;
+          }
+
+          currentUser = user;
+          await loadDashboard();
+        } catch (error) {
+          console.error('❌ 대시보드 로드 실패:', error);
+        }
+      });
+
+      async function loadDashboard() {
+        try {
+          document.getElementById('loadingState').style.display = 'block';
+          document.getElementById('mainContent').style.display = 'none';
+
+          // 사용자 프로필 조회
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('kakao_id', currentUser.user_metadata?.kakao_id || currentUser.id)
+            .single();
+
+          if (!profile) {
+            console.error('프로필을 찾을 수 없습니다');
+            return;
+          }
+
+          // 구독 사이클 조회
+          const { data: cycle } = await supabase
+            .from('subscription_cycle')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          // 토큰 사용량 조회
+          const { data: usage } = await supabase
+            .from('token_usage')
+            .select('input_tokens, output_tokens, created_at')
+            .eq('user_id', profile.id)
+            .gte('created_at', cycle?.cycle_start_date || new Date().toISOString().split('T')[0]);
+
+          // 데이터 계산
+          const totalUsed = usage?.reduce((sum, u) => sum + (u.input_tokens || 0) + (u.output_tokens || 0), 0) || 0;
+          const remaining = (cycle?.token_limit || 0) - totalUsed;
+          const usagePercent = cycle?.token_limit > 0 ? Math.round((totalUsed / cycle.token_limit) * 100) : 0;
+
+          // 갱신일 계산
+          const cycleStart = new Date(cycle?.cycle_start_date);
+          const nextRenewal = new Date(cycleStart);
+          nextRenewal.setMonth(nextRenewal.getMonth() + 1);
+          const daysUntilRenewal = Math.ceil((nextRenewal - new Date()) / (1000 * 60 * 60 * 24));
+
+          // UI 업데이트
+          document.getElementById('currentTokens').textContent = Math.max(remaining, 0).toLocaleString();
+          document.getElementById('usedTokens').textContent = totalUsed.toLocaleString();
+          document.getElementById('totalTokens').textContent = (cycle?.token_limit || 0).toLocaleString();
+          document.getElementById('tokenProgress').textContent = `사용률: ${usagePercent}%`;
+          document.getElementById('tokenProgressBar').style.width = `${Math.min(usagePercent, 100)}%`;
+
+          const renewalDateStr = nextRenewal.toLocaleDateString('ko-KR');
+          document.getElementById('renewalDate').textContent = renewalDateStr;
+          document.getElementById('daysLeft').textContent = `${daysUntilRenewal}일 후 갱신`;
+
+          // 멤버십 정보
+          const levelText = {
+            'seed': '씨앗',
+            'power': '파워',
+            'big_power': '빅파워',
+            'premium': '프리미엄',
+            'elite': '엘리트',
+            'expert': '전문가',
+            'master': '마스터'
+          };
+
+          document.getElementById('membershipLevel').textContent = levelText[profile.membership_level] || profile.membership_level;
+          document.getElementById('monthlyPrice').textContent = cycle?.monthly_price || '-';
+          document.getElementById('subscriptionStart').textContent = new Date(profile.created_at).toLocaleDateString('ko-KR');
+          document.getElementById('lastRenewalDate').textContent = new Date(cycle?.cycle_start_date).toLocaleDateString('ko-KR');
+
+          const userTypeText = {
+            'owner': '식당 대표',
+            'agency': '대행사',
+            'admin': '관리자'
+          };
+          document.getElementById('userType').textContent = userTypeText[profile.user_type] || profile.user_type;
+
+          // 토큰 현황
+          document.getElementById('allocatedTokens').textContent = (cycle?.token_limit || 0).toLocaleString();
+          document.getElementById('consumedTokens').textContent = totalUsed.toLocaleString();
+          document.getElementById('remainingTokens').textContent = Math.max(remaining, 0).toLocaleString();
+
+          // 상태 표시
+          if (remaining < 0) {
+            document.getElementById('overageStatus').innerHTML = '<span class="status-badge critical">초과</span>';
+            document.getElementById('usageStatus').textContent = '⚠️ 토큰 초과 - 사용 중지됨';
+          } else if (usagePercent > 80) {
+            document.getElementById('overageStatus').innerHTML = '<span class="status-badge warning">거의 소진</span>';
+            document.getElementById('usageStatus').textContent = '⚠️ 토큰 80% 이상 사용됨';
+          } else {
+            document.getElementById('overageStatus').innerHTML = '<span class="status-badge active">정상</span>';
+            document.getElementById('usageStatus').textContent = '✅ 정상 사용 중';
+          }
+
+          // 사용 내역 표시 (최근 10개)
+          const recentUsage = (usage || []).slice(0, 10);
+          if (recentUsage.length > 0) {
+            document.getElementById('usageHistory').innerHTML = recentUsage.map(u => `
+              <div class="timeline-item">
+                <strong>${new Date(u.created_at).toLocaleDateString('ko-KR')} ${new Date(u.created_at).toLocaleTimeString('ko-KR')}</strong>
+                <br>
+                <span style="color: var(--muted); font-size: 13px;">
+                  입력: ${u.input_tokens.toLocaleString()} 토큰 | 출력: ${u.output_tokens.toLocaleString()} 토큰
+                </span>
+              </div>
+            `).join('');
+          } else {
+            document.getElementById('usageHistory').innerHTML = '<p style="color: var(--muted); text-align: center; padding: 24px;">아직 사용 내역이 없습니다</p>';
+          }
+
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('mainContent').style.display = 'block';
+        } catch (error) {
+          console.error('❌ 대시보드 데이터 로드 실패:', error);
+          document.getElementById('loadingState').innerHTML = `<div style="color: var(--danger);">❌ 오류 발생: ${error.message}</div>`;
+        }
+      }
+    </script>
+  </body>
+</html>

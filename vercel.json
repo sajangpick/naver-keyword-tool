@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "framework": null,
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://naver-keyword-tool.onrender.com/auth/:path*"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/review-monitoring",
+      "schedule": "0 9,14,20 * * *"
+    },
+    {
+      "path": "/api/cron/keep-alive",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

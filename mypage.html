@@ -1,0 +1,2441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <title>마이페이지 - 사장픽</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: linear-gradient(135deg, #03c75a 0%, #02a84a 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 10px;
+      text-align: center;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .page-subtitle {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .profile-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius: 25px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 2px solid #f0f4ff;
+    }
+
+    .profile-avatar-large {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #03c75a, #02a84a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+      box-shadow: 0 15px 40px rgba(3, 199, 90, 0.4);
+    }
+
+    .profile-info {
+      flex: 1;
+    }
+
+    .profile-name {
+      font-size: 28px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .profile-email {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .profile-badges {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge.owner {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge.agency {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge.admin {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge.seed, .badge.power, .badge.big_power, .badge.premium {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge.elite, .badge.expert, .badge.master, .badge.platinum {
+      background: #fce7f3;
+      color: #9f1239;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 25px;
+    }
+
+    .section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .section:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title i {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(45deg, #03c75a, #02a84a);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #03c75a, #02a84a);
+      color: white;
+      padding: 20px 15px;
+      border-radius: 18px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .activity-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      padding: 15px;
+      border-radius: 12px;
+      background: #f8f9ff;
+      margin-bottom: 12px;
+      border-left: 3px solid #03c75a;
+      transition: all 0.3s ease;
+    }
+
+    .activity-item:hover {
+      transform: translateX(8px);
+      box-shadow: 0 8px 25px rgba(3, 199, 90, 0.1);
+    }
+
+    .activity-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .activity-content {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .activity-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: #999;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e8ecff;
+      border-radius: 12px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: #f8f9ff;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #03c75a;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #03c75a, #02a84a);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(3, 199, 90, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(45deg, #6b7280, #4b5563);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(107, 114, 128, 0.4);
+    }
+
+    .btn-danger {
+      background: linear-gradient(45deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e5e7eb;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border: 1px solid #fecaca;
+    }
+
+    .usage-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .usage-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #03c75a, #02a84a);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .usage-bar-fill.warning {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+
+    .usage-bar-fill.danger {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #9ca3af;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      opacity: 0.3;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    /* 토큰 정보 스타일 */
+    .token-status-card {
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .token-plan {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .plan-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .plan-badge {
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .token-meter {
+      margin-bottom: 20px;
+    }
+
+    .meter-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .meter-label {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .meter-value {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .meter-bar {
+      width: 100%;
+      height: 20px;
+      background: #e0e7ff;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .meter-percent {
+      text-align: right;
+      margin-top: 5px;
+      font-size: 14px;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .token-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .token-stat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: white;
+      border-radius: 10px;
+    }
+
+    .token-stat i {
+      font-size: 20px;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      display: block;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .token-usage-history {
+      margin-top: 25px;
+    }
+
+    .usage-list {
+      background: white;
+      border: 1px solid #e0e7ff;
+      border-radius: 10px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .usage-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f4ff;
+    }
+
+    .usage-item:last-child {
+      border-bottom: none;
+    }
+
+    .usage-api {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .usage-tokens {
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .usage-time {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .btn-upgrade {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: transform 0.2s;
+    }
+
+    .btn-upgrade:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 12px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .page-subtitle {
+        font-size: 14px;
+        margin-bottom: 30px;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .profile-section {
+        padding: 24px 16px;
+        border-radius: 20px;
+      }
+
+      .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding-bottom: 20px;
+      }
+
+      .profile-header > div:last-child {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+      }
+
+      .profile-header > div:last-child button {
+        width: 100%;
+      }
+
+      .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        font-size: 28px;
+      }
+
+      .profile-name {
+        font-size: 22px;
+      }
+
+      .profile-email {
+        font-size: 14px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .stat-card {
+        padding: 16px 12px;
+      }
+
+      .stat-number {
+        font-size: 20px;
+      }
+
+      .section {
+        padding: 20px 16px;
+        border-radius: 16px;
+      }
+
+      .section-title {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+
+      .section-title i {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      .form-input {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        font-size: 13px;
+      }
+
+      .token-status-card {
+        padding: 20px 16px;
+      }
+
+      .plan-name {
+        font-size: 20px;
+      }
+
+      .token-stats {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 16px 10px;
+      }
+
+      .page-title {
+        font-size: 20px;
+      }
+
+      .profile-section {
+        padding: 20px 12px;
+      }
+
+      .profile-avatar-large {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+      }
+
+      .profile-name {
+        font-size: 18px;
+      }
+
+      .section {
+        padding: 16px 12px;
+      }
+
+      .form-input {
+        padding: 10px;
+        font-size: 13px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        font-size: 12px;
+      }
+    }
+
+    /* 리뷰 모니터링 토글 스타일 */
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-label:hover {
+      background: #f5f5f5;
+    }
+
+    .toggle-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .toggle-text {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="page-title">마이페이지</h1>
+    <p class="page-subtitle">내 정보 및 서비스 이용 현황</p>
+
+    <!-- 로딩 상태 -->
+    <div id="loadingContainer" class="loading">
+      <div class="spinner"></div>
+      <p style="margin-top: 16px">로딩 중...</p>
+    </div>
+
+    <!-- 에러 상태 -->
+    <div id="errorContainer" style="display: none;"></div>
+
+    <!-- 메인 컨텐츠 -->
+    <div id="mainContent" style="display: none;">
+      <!-- 프로필 헤더 -->
+      <section class="profile-section">
+        <div class="profile-header">
+          <div class="profile-avatar-large" id="profileAvatar">-</div>
+          <div class="profile-info">
+            <h2 class="profile-name" id="profileName">-</h2>
+            <p class="profile-email" id="profileEmail">-</p>
+            <div class="profile-badges">
+              <span class="badge" id="userTypeBadge">-</span>
+              <span class="badge" id="levelBadge">-</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; align-self: center;">
+            <button class="btn btn-secondary" onclick="location.href='/'" style="height: fit-content;">
+              <i class="fas fa-home"></i> 홈으로
+            </button>
+            <button class="btn btn-danger" id="logoutBtn" style="height: fit-content;">
+              <i class="fas fa-right-from-bracket"></i> 로그아웃
+            </button>
+          </div>
+        </div>
+
+        <!-- 이번 달 사용량 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="reviewUsage">0 / 0</div>
+            <div class="stat-label">리뷰 답글 (이번 달)</div>
+            <div class="usage-bar">
+              <div class="usage-bar-fill" id="reviewBar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="blogUsage">0 / 0</div>
+            <div class="stat-label">블로그 포스팅 (이번 달)</div>
+            <div class="usage-bar">
+              <div class="usage-bar-fill" id="blogBar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 컨텐츠 그리드 -->
+      <div class="content-grid">
+        <!-- 0. 토큰 정보 -->
+        <section class="section" id="tokenSection">
+          <h3 class="section-title">
+            <i class="fas fa-coins"></i>
+            내 토큰 정보
+          </h3>
+          
+          <!-- 토큰 현황 카드 -->
+          <div class="token-status-card">
+            <div class="token-plan">
+              <span class="plan-name" id="currentPlan">씨앗</span>
+              <span class="plan-badge" id="planBadge">무료</span>
+            </div>
+            
+            <div class="token-meter">
+              <div class="meter-info">
+                <span class="meter-label">이번 달 사용량</span>
+                <span class="meter-value">
+                  <span id="tokensUsed">0</span> / <span id="tokensLimit">100</span> 토큰
+                </span>
+              </div>
+              <div class="meter-bar">
+                <div class="meter-fill" id="tokenMeterFill" style="width: 0%"></div>
+              </div>
+              <div class="meter-percent" id="usagePercent">0%</div>
+            </div>
+            
+            <div class="token-stats">
+              <div class="token-stat">
+                <i class="fas fa-battery-three-quarters"></i>
+                <div>
+                  <span class="stat-label">남은 토큰</span>
+                  <span class="stat-value" id="tokensRemaining">100</span>
+                </div>
+              </div>
+              <div class="token-stat">
+                <i class="fas fa-calendar-alt"></i>
+                <div>
+                  <span class="stat-label">갱신일까지</span>
+                  <span class="stat-value" id="daysLeft">30일</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 최근 사용 내역 -->
+          <div class="token-usage-history">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">
+              <i class="fas fa-history"></i> 최근 사용 내역
+            </h4>
+            <div id="recentUsageList" class="usage-list">
+              <div style="text-align: center; color: #999; padding: 20px;">
+                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+              </div>
+            </div>
+          </div>
+          
+          <!-- 업그레이드 버튼 -->
+          <div id="upgradeSection" style="display: none;">
+            <button class="btn btn-upgrade" onclick="goToUpgrade()">
+              <i class="fas fa-rocket"></i> 더 많은 토큰이 필요하신가요? 업그레이드 하기
+            </button>
+          </div>
+        </section>
+
+        <!-- 1. 내 가게 정보 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-store"></i>
+            내 가게 정보
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            블로그 작성 시 자동으로 입력됩니다
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">플레이스 URL</label>
+            <input type="text" class="form-input" id="editStoreUrl" placeholder="https://map.naver.com/...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">가게 이름</label>
+            <input type="text" class="form-input" id="editStoreName" placeholder="예: 동흥안가">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">가게 주소</label>
+            <input type="text" class="form-input" id="editStoreAddress" placeholder="예: 부산광역시 해운대구 우동 1394-84">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">영업시간</label>
+            <input type="text" class="form-input" id="editStoreHours" placeholder="예: 11:30-22:00 (매일)">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">가게 전화번호</label>
+            <input type="tel" class="form-input" id="editStorePhone" placeholder="예: 010-1234-5678 또는 051-123-4567">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">대표메뉴</label>
+            <textarea class="form-input" id="editStoreMenu" placeholder="예: 삼겹살, 목살, 갈비" rows="2"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">주변 랜드마크</label>
+            <input type="text" class="form-input" id="editStoreLandmarks" placeholder="예: 해운대해수욕장, 센텀시티">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">키워드</label>
+            <input type="text" class="form-input" id="editStoreKeywords" placeholder="예: 30년전통, 신선한고기">
+          </div>
+
+          <button class="btn btn-primary" onclick="saveStoreInfo()">
+            <i class="fas fa-save"></i> 가게 정보 저장
+          </button>
+        </section>
+
+        <!-- 2. 리뷰 모니터링 (NEW!) -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-bell"></i>
+            리뷰 자동 모니터링
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            네이버 플레이스 리뷰를 자동으로 수집하고, 긴급 리뷰(1-2점)가 등록되면 즉시 카카오톡으로 알림을 받습니다!
+          </p>
+
+          <!-- 모니터링 상태 -->
+          <div id="monitoringStatus" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #4caf50; border-radius: 15px; padding: 20px; margin-bottom: 25px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 5px 0; color: #2e7d32; font-size: 16px;">
+                  <i class="fas fa-check-circle"></i> 모니터링 활성화됨
+                </h4>
+                <p style="margin: 0; color: #558b2f; font-size: 13px;">
+                  마지막 크롤링: <span id="lastCrawled">-</span>
+                </p>
+              </div>
+              <button class="btn" style="background: #fff; color: #4caf50; border: 2px solid #4caf50;" onclick="toggleMonitoring(false)">
+                <i class="fas fa-pause"></i> 일시 정지
+              </button>
+            </div>
+          </div>
+
+          <div id="monitoringInactive" style="background: #ffebee; border: 2px solid #f44336; border-radius: 15px; padding: 20px; margin-bottom: 25px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 5px 0; color: #c62828; font-size: 16px;">
+                  <i class="fas fa-pause-circle"></i> 모니터링 비활성화됨
+                </h4>
+                <p style="margin: 0; color: #d32f2f; font-size: 13px;">
+                  알림을 받으려면 모니터링을 활성화하세요
+                </p>
+              </div>
+              <button class="btn btn-primary" onclick="toggleMonitoring(true)">
+                <i class="fas fa-play"></i> 활성화하기
+              </button>
+            </div>
+          </div>
+
+          <!-- 알림 설정 -->
+          <div style="background: #f5f5f5; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 15px 0; color: #333; font-size: 15px;">
+              <i class="fas fa-cog"></i> 알림 설정
+            </h4>
+
+            <label class="toggle-label">
+              <input type="checkbox" id="alertLowRating" checked>
+              <span class="toggle-text">
+                <i class="fas fa-exclamation-triangle" style="color: #f44336;"></i>
+                저평점 리뷰 알림 (1-2점)
+              </span>
+            </label>
+
+            <label class="toggle-label">
+              <input type="checkbox" id="alertHighRating" checked>
+              <span class="toggle-text">
+                <i class="fas fa-star" style="color: #ffc107;"></i>
+                고평점 리뷰 알림 (5점)
+              </span>
+            </label>
+
+            <label class="toggle-label">
+              <input type="checkbox" id="alertKeywords">
+              <span class="toggle-text">
+                <i class="fas fa-search" style="color: #2196f3;"></i>
+                키워드 감지 알림
+              </span>
+            </label>
+
+            <div id="keywordsInput" style="display: none; margin-top: 10px; margin-left: 30px;">
+              <label class="form-label" style="font-size: 13px; color: #666;">감지할 키워드 (쉼표로 구분)</label>
+              <input type="text" class="form-input" id="alertKeywordsList" placeholder="예: 불친절, 위생, 맛없, 불결">
+              <small style="color: #999; font-size: 12px;">이 단어가 리뷰에 포함되면 즉시 알림을 받습니다</small>
+            </div>
+          </div>
+
+          <!-- 최근 리뷰 -->
+          <div style="background: #f9f9f9; border-radius: 12px; padding: 20px;">
+            <h4 style="margin: 0 0 15px 0; color: #333; font-size: 15px;">
+              <i class="fas fa-list"></i> 최근 리뷰
+            </h4>
+            <div id="recentReviews">
+              <p style="color: #999; text-align: center; padding: 20px;">
+                플레이스 URL을 입력하고 저장하면 자동으로 리뷰를 수집합니다
+              </p>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="margin-top: 15px;" onclick="saveMonitoringSettings()">
+            <i class="fas fa-save"></i> 모니터링 설정 저장
+          </button>
+        </section>
+
+        <!-- 3. 내 가게 알리기 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-bullhorn"></i>
+            내 가게 알리기
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            가게를 심도 있게 설명하는 공간입니다. 자세히 쓸수록 AI가 활용할 정보가 많아져서 더 풍부한 블로그/답글을 생성할 수 있습니다!
+          </p>
+
+          <!-- 작성 현황 -->
+          <div id="promotionStatus" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #2196F3; border-radius: 15px; padding: 20px; margin-bottom: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <h4 style="margin: 0; color: #1976D2; font-size: 16px;">작성 현황</h4>
+              <span id="promotionCount" style="font-size: 18px; font-weight: 700; color: #1565C0;">0 / 7 항목</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.6); border-radius: 10px; height: 12px; overflow: hidden;">
+              <div id="promotionBar" style="background: linear-gradient(90deg, #2196F3, #1976D2); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+            </div>
+          </div>
+
+          <!-- 안내 -->
+          <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+            <p style="margin: 0; color: #856404; font-size: 13px; line-height: 1.6;">
+              💡 <strong>차이점:</strong><br>
+              • <strong>기본 정보:</strong> 팩트 (이름, 주소, 메뉴)<br>
+              • <strong>내 가게 알리기:</strong> 스토리, 철학, 자랑거리 (심도 있게)<br><br>
+              예) 기본 메뉴: "갈비" → 심도 있게: "30년 전통 비법 양념장으로 72시간 숙성한 LA갈비..."
+            </p>
+          </div>
+
+          <!-- 1. 시그니처 메뉴 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>1️⃣ 시그니처 메뉴</span>
+              <span id="sigStatus" style="margin-left: 10px; font-size: 12px; color: #999;">✅</span>
+            </label>
+            <textarea class="form-input" id="signatureMenu" placeholder="예: 30년 전통 비법 양념장으로 72시간 숙성한 LA갈비. 할머니가 매일 새벽 5시에 직접 만드시는 양념입니다..." rows="3"></textarea>
+            <small style="color: #999; font-size: 12px;">기본 메뉴와 다르게 스토리를 담아 작성해주세요</small>
+          </div>
+
+          <!-- 2. 재료/조리법 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>2️⃣ 재료/조리법의 특별함</span>
+              <span id="ingStatus" style="margin-left: 10px; font-size: 12px; color: #999;">□</span>
+            </label>
+            <textarea class="form-input" id="specialIngredients" placeholder="예: 국내산 1등급 한우만 사용. 매일 새벽 직접 만드는 사골 육수. 화학 조미료 일절 사용 안 함. 20년 경력 조리사가 직접 조리..." rows="3"></textarea>
+          </div>
+
+          <!-- 3. 분위기/편의시설 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>3️⃣ 분위기/편의시설</span>
+              <span id="atmStatus" style="margin-left: 10px; font-size: 12px; color: #999;">□</span>
+            </label>
+            <textarea class="form-input" id="atmosphereFacilities" placeholder="예: 2층 독립 룸 4개 (각 10-20명 수용), 건물 지하 주차장 50대 가능, 아이 놀이방 별도 운영, 한옥 정원이 보이는 통유리 창가석..." rows="3"></textarea>
+          </div>
+
+          <!-- 4. 사장님 이야기 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>4️⃣ 사장님/셰프 이야기</span>
+              <span id="storyStatus" style="margin-left: 10px; font-size: 12px; color: #999;">□</span>
+            </label>
+            <textarea class="form-input" id="ownerStory" placeholder="예: 한식 조리 기능장 출신. 20년간 서울 유명 호텔에서 근무하다가 고향에 내려와 아버지의 가업을 잇고 있습니다..." rows="3"></textarea>
+          </div>
+
+          <!-- 5. 추천 상황 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>5️⃣ 추천 상황/고객층</span>
+              <span id="situStatus" style="margin-left: 10px; font-size: 12px; color: #999;">□</span>
+            </label>
+            <textarea class="form-input" id="recommendedSituations" placeholder="예: 가족 모임 (룸 있음), 회식 (단체 20명까지), 돌잔치 (별도 공간 제공), 데이트 (분위기 좋은 창가석), 점심 특선 메뉴 있음 (직장인 추천)..." rows="2"></textarea>
+          </div>
+
+          <!-- 6. SNS 포인트 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>6️⃣ SNS/인스타 포인트</span>
+              <span id="snsStatus" style="margin-left: 10px; font-size: 12px; color: #999;">□</span>
+            </label>
+            <textarea class="form-input" id="snsPhotoPoints" placeholder="예: 한옥 정원이 보이는 통유리 창가석, 예쁜 도자기 그릇, 계절마다 바뀌는 꽃 장식, 인생샷 명소로 유명..." rows="2"></textarea>
+          </div>
+
+          <!-- 7. 이벤트/특별 서비스 -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>7️⃣ 이벤트/특별 서비스</span>
+              <span id="eventStatus" style="margin-left: 10px; font-size: 12px; color: #999;">□</span>
+            </label>
+            <textarea class="form-input" id="specialEvents" placeholder="예: 생일 축하 케이크 무료 제공, 예약 고객 디저트 서비스, 단골 고객 적립 시스템..." rows="2"></textarea>
+          </div>
+
+          <button class="btn btn-primary" onclick="savePromotion()">
+            <i class="fas fa-save"></i> 내 가게 알리기 저장
+          </button>
+        </section>
+
+        <!-- 3. 블로그 스타일 설정 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-palette"></i>
+            블로그 스타일 설정
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            AI가 나만의 스타일로 블로그를 작성합니다
+          </p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+              <label for="blogTone">말투</label>
+              <select id="blogTone" class="form-control">
+                <option value="friendly">친근한</option>
+                <option value="formal">격식 있는</option>
+                <option value="casual">캐주얼한</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogFormality">격식</label>
+              <select id="blogFormality" class="form-control">
+                <option value="polite">존댓말</option>
+                <option value="semi-formal">존댓말/반말 혼용</option>
+                <option value="informal">반말</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogEmojiUsage">이모티콘 사용</label>
+              <select id="blogEmojiUsage" class="form-control">
+                <option value="none">사용 안 함</option>
+                <option value="minimal">최소한</option>
+                <option value="moderate">적당히</option>
+                <option value="frequent">자주 사용</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogPersonality">성격</label>
+              <select id="blogPersonality" class="form-control">
+                <option value="warm">따뜻한</option>
+                <option value="professional">프로페셔널한</option>
+                <option value="humorous">유머러스한</option>
+                <option value="enthusiastic">열정적인</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogExpertiseLevel">전문성</label>
+              <select id="blogExpertiseLevel" class="form-control">
+                <option value="beginner">초보자 관점</option>
+                <option value="intermediate">중급자 관점</option>
+                <option value="expert">전문가 관점</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogContentLength">글 길이</label>
+              <select id="blogContentLength" class="form-control">
+                <option value="brief">간결하게</option>
+                <option value="moderate">적당하게</option>
+                <option value="detailed">상세하게</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label for="blogWritingStyle">글쓰기 스타일</label>
+              <select id="blogWritingStyle" class="form-control">
+                <option value="storytelling">스토리텔링 중심</option>
+                <option value="informative">정보 전달 중심</option>
+                <option value="conversational">대화체 중심</option>
+                <option value="analytical">분석적 중심</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin: 15px 0;">
+            <p style="margin: 0; color: #856404; font-size: 14px;">
+              💡 <strong>팁:</strong> 이 설정은 블로그 작성 시 기본 톤앤매너로 사용됩니다. 매번 랜덤하게 다른 관점(단골 고객, 첫 방문, 미식가 등)이 적용되어 다양한 블로그를 생성합니다.
+            </p>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveBlogStyle()">
+            <i class="fas fa-save"></i> 블로그 스타일 저장
+          </button>
+        </section>
+
+        <!-- 3. 최근 리뷰 답글 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-comment-dots"></i>
+            최근 리뷰 답글 (10개)
+          </h3>
+          <div id="recentReviews" class="activity-list">
+            <div class="loading">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. 최근 블로그 포스팅 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-blog"></i>
+            최근 블로그 포스팅 (10개)
+          </h3>
+          <div id="recentBlogs" class="activity-list">
+            <div class="loading">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3-1. 내 쇼츠 영상 -->
+        <section class="section" id="shortsSection">
+          <h3 class="section-title">
+            <i class="fas fa-video"></i>
+            내 쇼츠 영상
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+            AI로 생성한 쇼츠 영상을 확인하세요
+          </p>
+          <div id="shortsVideos" class="activity-list">
+            <div class="loading">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. 회원정보 수정 -->
+        <section class="section">
+          <h3 class="section-title">
+            <i class="fas fa-user-edit"></i>
+            회원정보 수정
+          </h3>
+
+          <div class="form-group">
+            <label class="form-label">이름</label>
+            <input type="text" class="form-input" id="editName" placeholder="이름을 입력하세요">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">비즈니스명 (상호명)</label>
+            <input type="text" class="form-input" id="editBusinessName" placeholder="상호명을 입력하세요">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">전화번호</label>
+            <input type="tel" class="form-input" id="editPhone" placeholder="010-0000-0000">
+          </div>
+
+          <button class="btn btn-primary" onclick="saveProfile()">
+            <i class="fas fa-save"></i> 정보 저장
+          </button>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공통 인증 스크립트 -->
+  <script src="/assets/auth-state.js?v=202410" defer></script>
+
+  <script>
+    // Supabase 클라이언트
+    let supabase;
+    let currentUser = null;
+
+    // 등급 한글명
+    const LEVEL_NAMES = {
+      seed: '씨앗',
+      power: '파워',
+      big_power: '빅파워',
+      premium: '프리미엄',
+      elite: '엘리트',
+      expert: '전문가',
+      master: '마스터',
+      platinum: '플래티넘',
+      admin: '관리자'
+    };
+
+    // 사용량 제한
+    const LIMITS = {
+      owner: {
+        seed: { review: 10, blog: 2 },
+        power: { review: 50, blog: 10 },
+        big_power: { review: 200, blog: 30 },
+        premium: { review: null, blog: 100 }
+      },
+      agency: {
+        elite: { review: 100, blog: 50 },
+        expert: { review: 500, blog: 200 },
+        master: { review: 2000, blog: 500 },
+        platinum: { review: null, blog: null }
+      },
+      admin: {
+        admin: { review: null, blog: null }
+      }
+    };
+
+    // Supabase 초기화 (auth-state.js에서 안전하게 가져옴)
+    async function initSupabase() {
+      try {
+        // auth-state.js가 로드될 때까지 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        supabase = window.authState.supabase;
+        
+        // ✅ 전역 변수로도 저장 (다른 스크립트에서 사용 가능)
+        window.supabaseClient = supabase;
+        
+        console.log('✅ Supabase 초기화 완료');
+      } catch (error) {
+        console.error('❌ Supabase 초기화 실패:', error);
+        showError('Supabase 초기화 실패. 관리자에게 문의하세요.');
+      }
+    }
+
+    // 페이지 초기화
+    async function initPage() {
+      try {
+        await initSupabase();
+        
+        // 로그인 확인 (Supabase 세션 기반)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          showError('로그인이 필요합니다.');
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 2000);
+          return;
+        }
+
+        const user = session.user;
+        
+        // UUID 형식 검증 (정규식: 8-4-4-4-12)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        if (!user || !user.id || !uuidRegex.test(user.id)) {
+          console.error('❌ 유효하지 않은 사용자 ID:', user?.id);
+          showError('로그인 정보가 유효하지 않습니다. 다시 로그인해주세요.');
+          
+          // 세션 정리
+          await supabase.auth.signOut();
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('userData');
+          
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 2000);
+          return;
+        }
+
+        // ⚡ 모든 데이터를 병렬로 로드 (빠름!)
+        await Promise.all([
+          loadUserProfile(user.id),
+          loadRecentReviews(user.id),
+          loadRecentBlogs(user.id),
+          loadTokenInfo(user.id),  // 토큰 정보 추가
+          loadShortsVideos(user.id)  // 쇼츠 영상 목록 추가
+        ]);
+
+        // 추가 데이터 로드 (블로그 관련)
+        await Promise.all([
+          loadStoreInfo(),
+          loadPromotion(),
+          loadBlogStyle()
+        ]);
+
+        // 실시간 작성 현황 리스너 설정
+        setupPromotionListeners();
+
+      } catch (error) {
+        console.error('❌ 페이지 초기화 실패:', error);
+        showError('페이지 로드 실패: ' + error.message);
+      }
+    }
+
+    // 사용자 프로필 로드
+    async function loadUserProfile(userId) {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (error) throw new Error(error.message);
+        if (!profile) throw new Error('프로필을 찾을 수 없습니다.');
+
+        currentUser = profile;
+
+        // UI 업데이트
+        const avatar = (profile.name || profile.email || 'U').charAt(0).toUpperCase();
+        document.getElementById('profileAvatar').textContent = avatar;
+        document.getElementById('profileName').textContent = profile.name || '이름 없음';
+        document.getElementById('profileEmail').textContent = profile.email || '이메일 없음';
+
+        // 회원 유형 뱃지
+        const userTypeText = profile.user_type === 'owner' ? '식당 대표' :
+                            profile.user_type === 'agency' ? '대행사/블로거' : '관리자';
+        const userTypeBadge = document.getElementById('userTypeBadge');
+        userTypeBadge.textContent = userTypeText;
+        userTypeBadge.className = `badge ${profile.user_type}`;
+
+        // 등급 뱃지
+        const levelText = LEVEL_NAMES[profile.membership_level] || profile.membership_level;
+        const levelBadge = document.getElementById('levelBadge');
+        levelBadge.textContent = levelText;
+        levelBadge.className = `badge ${profile.membership_level}`;
+
+        // 사용량 표시
+        updateUsageStats(profile);
+
+        // 폼 필드 채우기
+        document.getElementById('editName').value = profile.name || '';
+        document.getElementById('editBusinessName').value = profile.business_name || '';
+        document.getElementById('editPhone').value = profile.phone || '';
+
+        // ⚡ 메인 컨텐츠 먼저 표시 (빠른 렌더링)
+        document.getElementById('loadingContainer').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+
+        // 가게 정보는 백그라운드에서 로드 (await 제거)
+        loadStoreInfo();
+        loadBlogStyle();
+
+      } catch (error) {
+        console.error('❌ 프로필 로드 실패:', error);
+        showError('프로필 로드 실패: ' + error.message);
+      }
+    }
+
+    // 사용량 통계 업데이트
+    function updateUsageStats(profile) {
+      const limits = LIMITS[profile.user_type]?.[profile.membership_level];
+      if (!limits) return;
+
+      const reviewUsage = profile.monthly_review_count || 0;
+      const blogUsage = profile.monthly_blog_count || 0;
+      const reviewLimit = limits.review;
+      const blogLimit = limits.blog;
+
+      // 리뷰 답글
+      document.getElementById('reviewUsage').textContent = 
+        `${reviewUsage} / ${reviewLimit || '무제한'}`;
+      
+      if (reviewLimit) {
+        const reviewPercent = Math.min((reviewUsage / reviewLimit * 100), 100);
+        const reviewBar = document.getElementById('reviewBar');
+        reviewBar.style.width = reviewPercent + '%';
+        reviewBar.className = 'usage-bar-fill';
+        if (reviewPercent >= 90) reviewBar.classList.add('danger');
+        else if (reviewPercent >= 70) reviewBar.classList.add('warning');
+      } else {
+        document.getElementById('reviewBar').style.width = '0%';
+      }
+
+      // 블로그 포스팅
+      document.getElementById('blogUsage').textContent = 
+        `${blogUsage} / ${blogLimit || '무제한'}`;
+      
+      if (blogLimit) {
+        const blogPercent = Math.min((blogUsage / blogLimit * 100), 100);
+        const blogBar = document.getElementById('blogBar');
+        blogBar.style.width = blogPercent + '%';
+        blogBar.className = 'usage-bar-fill';
+        if (blogPercent >= 90) blogBar.classList.add('danger');
+        else if (blogPercent >= 70) blogBar.classList.add('warning');
+      } else {
+        document.getElementById('blogBar').style.width = '0%';
+      }
+    }
+
+    // 최근 리뷰 답글 로드
+    async function loadRecentReviews(userId) {
+      const container = document.getElementById('recentReviews');
+      
+      try {
+        const { data: reviews, error } = await supabase
+          .from('review_responses')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw new Error(error.message);
+
+        if (!reviews || reviews.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <div>작성한 리뷰 답글이 없습니다</div>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = reviews.map(review => `
+          <div class="activity-item">
+            <div class="activity-title">
+              리뷰 답글 생성
+            </div>
+            <div class="activity-content">
+              ${(review.customer_review || '').substring(0, 80)}${review.customer_review && review.customer_review.length > 80 ? '...' : ''}
+            </div>
+            <div class="activity-meta">
+              <span><i class="fas fa-clock"></i> ${new Date(review.created_at).toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</span>
+              ${review.ai_response ? '<span><i class="fas fa-check-circle"></i> 답글 생성됨</span>' : ''}
+            </div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('❌ 리뷰 로드 실패:', error);
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>리뷰 내역을 불러오는 중 오류가 발생했습니다</div>
+          </div>
+        `;
+      }
+    }
+
+    // 최근 블로그 포스팅 로드
+    async function loadRecentBlogs(userId) {
+      const container = document.getElementById('recentBlogs');
+      
+      try {
+        const { data: blogs, error } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw new Error(error.message);
+
+        if (!blogs || blogs.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <div>작성한 블로그 포스팅이 없습니다</div>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = blogs.map(blog => {
+          const statusText = blog.status === 'published' ? '발행됨' :
+                            blog.status === 'scheduled' ? '예약됨' : '임시저장';
+          const statusIcon = blog.status === 'published' ? 'check-circle' :
+                            blog.status === 'scheduled' ? 'clock' : 'save';
+
+          return `
+            <div class="activity-item">
+              <div class="activity-title">
+                ${blog.blog_title || '제목 없음'}
+              </div>
+              <div class="activity-content">
+                ${blog.blog_content ? blog.blog_content.substring(0, 80) + '...' : '-'}
+              </div>
+              <div class="activity-meta">
+                <span><i class="fas fa-clock"></i> ${new Date(blog.created_at).toLocaleString('ko-KR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+                <span><i class="fas fa-${statusIcon}"></i> ${statusText}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('❌ 블로그 로드 실패:', error);
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>블로그 내역을 불러오는 중 오류가 발생했습니다</div>
+          </div>
+        `;
+      }
+    }
+
+    // 프로필 저장
+    async function saveProfile() {
+      if (!currentUser) {
+        alert('사용자 정보를 불러오지 못했습니다.');
+        return;
+      }
+
+      const name = document.getElementById('editName').value.trim();
+      const businessName = document.getElementById('editBusinessName').value.trim();
+      const phone = document.getElementById('editPhone').value.trim();
+
+      if (!name) {
+        alert('이름은 필수 입력사항입니다.');
+        return;
+      }
+
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            name: name,
+            business_name: businessName,
+            phone: phone,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentUser.id);
+
+        if (error) throw new Error(error.message);
+
+        alert('프로필이 저장되었습니다.');
+        
+        // 프로필 다시 로드
+        await loadUserProfile(currentUser.id);
+
+      } catch (error) {
+        console.error('❌ 프로필 저장 실패:', error);
+        alert('프로필 저장 실패: ' + error.message);
+      }
+    }
+
+    // 가게 정보 저장
+    async function saveStoreInfo() {
+      if (!currentUser) {
+        alert('사용자 정보를 불러오지 못했습니다.');
+        return;
+      }
+
+      const storeInfo = {
+        placeUrl: document.getElementById('editStoreUrl').value.trim(),
+        companyName: document.getElementById('editStoreName').value.trim(),
+        companyAddress: document.getElementById('editStoreAddress').value.trim(),
+        businessHours: document.getElementById('editStoreHours').value.trim(),
+        phoneNumber: document.getElementById('editStorePhone').value.trim(),
+        mainMenu: document.getElementById('editStoreMenu').value.trim(),
+        landmarks: document.getElementById('editStoreLandmarks').value.trim(),
+        keywords: document.getElementById('editStoreKeywords').value.trim(),
+      };
+
+      try {
+        const response = await fetch('/api/store-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, storeInfo })
+        });
+
+        if (!response.ok) throw new Error('저장 실패');
+
+        const result = await response.json();
+        if (result.success) {
+          let message = '✅ 가게 정보가 저장되었습니다!\n블로그 작성 시 자동으로 입력됩니다.';
+          
+          // 크롤링 결과 표시
+          if (result.crawlResult) {
+            if (result.crawlResult.fromCache) {
+              message += '\n\n🔄 캐시된 플레이스 정보를 사용했습니다.';
+            } else {
+              message += '\n\n🆕 플레이스를 새로 크롤링했습니다!';
+            }
+            
+            // 자동으로 입력된 정보 다시 로드
+            await loadStoreInfo();
+          }
+          
+          alert(message);
+        } else {
+          throw new Error(result.error || '저장 실패');
+        }
+
+      } catch (error) {
+        console.error('❌ 가게 정보 저장 실패:', error);
+        alert('가게 정보 저장 실패: ' + error.message);
+      }
+    }
+
+    // 토큰 정보 로드
+    async function loadTokenInfo(userId) {
+      try {
+        // 서버 API를 통해 토큰 정보 가져오기
+        const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('토큰 정보 로드 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const { profile, cycle, recentUsage } = result.data;
+          
+          // 플랜 정보 표시
+          const planNames = {
+            'seed': '씨앗',
+            'power': '파워',
+            'bigpower': '빅파워',
+            'premium': '프리미엄',
+            'elite': '엘리트',
+            'expert': '전문가',
+            'master': '마스터'
+          };
+          
+          const planBadges = {
+            'seed': '무료',
+            'power': '베이직',
+            'bigpower': '프로',
+            'premium': 'VIP',
+            'elite': '엘리트',
+            'expert': '전문가',
+            'master': '마스터'
+          };
+          
+          document.getElementById('currentPlan').textContent = 
+            planNames[profile.membership_level] || '씨앗';
+          document.getElementById('planBadge').textContent = 
+            planBadges[profile.membership_level] || '무료';
+          
+          if (cycle) {
+            // 토큰 사용량 표시
+            const tokensUsed = cycle.tokens_used || 0;
+            const tokensLimit = cycle.monthly_token_limit || 100;
+            const tokensRemaining = cycle.tokens_remaining || tokensLimit;
+            const usagePercent = tokensLimit > 0 ? 
+              Math.round((tokensUsed / tokensLimit) * 100) : 0;
+            
+            document.getElementById('tokensUsed').textContent = tokensUsed;
+            document.getElementById('tokensLimit').textContent = tokensLimit;
+            document.getElementById('tokensRemaining').textContent = tokensRemaining;
+            document.getElementById('usagePercent').textContent = usagePercent + '%';
+            document.getElementById('daysLeft').textContent = 
+              cycle.days_remaining ? `${cycle.days_remaining}일` : '30일';
+            
+            // 미터 바 업데이트
+            const meterFill = document.getElementById('tokenMeterFill');
+            if (meterFill) {
+              meterFill.style.width = Math.min(usagePercent, 100) + '%';
+              
+              // 사용량에 따른 색상 변경
+              if (usagePercent >= 90) {
+                meterFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+              } else if (usagePercent >= 70) {
+                meterFill.style.background = 'linear-gradient(90deg, #f59e0b, #ea580c)';
+              }
+            }
+            
+            // 80% 이상 사용시 업그레이드 버튼 표시
+            if (usagePercent >= 80) {
+              const upgradeSection = document.getElementById('upgradeSection');
+              if (upgradeSection) {
+                upgradeSection.style.display = 'block';
+              }
+            }
+          }
+          
+          // 최근 사용 내역 표시
+          if (recentUsage && recentUsage.length > 0) {
+            const usageList = document.getElementById('recentUsageList');
+            if (usageList) {
+              usageList.innerHTML = recentUsage.slice(0, 5).map(usage => {
+                const apiLabels = {
+                  'chatgpt': 'ChatGPT',
+                  'blog': '블로그 작성',
+                  'reply': '리뷰 답글',
+                  'claude': 'Claude',
+                  'news': '뉴스 추천'
+                };
+                
+                const timeAgo = getTimeAgo(new Date(usage.used_at));
+                
+                return `
+                  <div class="usage-item">
+                    <div>
+                      <span class="usage-api">${apiLabels[usage.api_type] || usage.api_type}</span>
+                      <span class="usage-time">${timeAgo}</span>
+                    </div>
+                    <span class="usage-tokens">-${usage.tokens_used} 토큰</span>
+                  </div>
+                `;
+              }).join('');
+              
+              if (recentUsage.length === 0) {
+                usageList.innerHTML = `
+                  <div style="text-align: center; color: #999; padding: 20px;">
+                    <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
+                  </div>
+                `;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ 토큰 정보 로드 실패:', error);
+        
+        // 기본값 표시
+        document.getElementById('currentPlan').textContent = '씨앗';
+        document.getElementById('planBadge').textContent = '무료';
+        document.getElementById('tokensUsed').textContent = '0';
+        document.getElementById('tokensLimit').textContent = '100';
+        document.getElementById('tokensRemaining').textContent = '100';
+        document.getElementById('usagePercent').textContent = '0%';
+      }
+    }
+    
+    // 시간 표시 헬퍼 함수
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diff = Math.floor((now - date) / 1000); // 초 단위
+      
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+      if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
+      return date.toLocaleDateString('ko-KR');
+    }
+    
+    // 업그레이드 페이지로 이동
+    function goToUpgrade() {
+      window.location.href = '/payment.html?plan=power';
+    }
+    
+    // 토큰 정보 새로고침
+    async function refreshTokenInfo() {
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await loadTokenInfo(session.user.id);
+      }
+    }
+
+    // 가게 정보 로드
+    async function loadStoreInfo() {
+      if (!currentUser) return;
+
+      try {
+        const response = await fetch(`/api/store-info?userId=${currentUser.id}`);
+        if (!response.ok) return;
+
+        const result = await response.json();
+        if (!result.success || !result.data) return;
+
+        const data = result.data;
+        
+        // ✅ "미입력" 문자열 필터링 함수
+        function cleanValue(value) {
+          if (!value || typeof value !== 'string') return '';
+          const trimmed = value.trim();
+          // "미입력", "정보 없음" 등의 문자열 제거
+          if (trimmed.includes('미입력') || trimmed.includes('정보 없음')) return '';
+          return trimmed;
+        }
+        
+        // 폼에 자동 입력 (정제된 값만 입력)
+        const cleanedData = {
+          storeUrl: cleanValue(data.store_place_url),
+          storeName: cleanValue(data.store_name),
+          storeAddress: cleanValue(data.store_address),
+          storeHours: cleanValue(data.store_business_hours),
+          storePhone: cleanValue(data.store_phone_number),
+          storeMenu: cleanValue(data.store_main_menu),
+          storeLandmarks: cleanValue(data.store_landmarks),
+          storeKeywords: cleanValue(data.store_keywords)
+        };
+        
+        console.log('✅ 가게 정보 로드 완료 (정제됨):', cleanedData);
+        
+        // 빈 문자열이 아닌 경우만 입력
+        if (cleanedData.storeUrl) document.getElementById('editStoreUrl').value = cleanedData.storeUrl;
+        if (cleanedData.storeName) document.getElementById('editStoreName').value = cleanedData.storeName;
+        if (cleanedData.storeAddress) document.getElementById('editStoreAddress').value = cleanedData.storeAddress;
+        if (cleanedData.storeHours) document.getElementById('editStoreHours').value = cleanedData.storeHours;
+        if (cleanedData.storePhone) document.getElementById('editStorePhone').value = cleanedData.storePhone;
+        if (cleanedData.storeMenu) document.getElementById('editStoreMenu').value = cleanedData.storeMenu;
+        if (cleanedData.storeLandmarks) document.getElementById('editStoreLandmarks').value = cleanedData.storeLandmarks;
+        if (cleanedData.storeKeywords) document.getElementById('editStoreKeywords').value = cleanedData.storeKeywords;
+
+        // 리뷰 모니터링 설정도 로드
+        loadMonitoringSettings();
+      } catch (error) {
+        console.error('가게 정보 로드 오류:', error);
+      }
+    }
+
+    // ==================== 리뷰 모니터링 기능 ====================
+
+    // 키워드 입력 토글
+    document.getElementById('alertKeywords')?.addEventListener('change', function(e) {
+      document.getElementById('keywordsInput').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    // 모니터링 활성화/비활성화 토글
+    async function toggleMonitoring(enable) {
+      if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      try {
+        const storeUrl = document.getElementById('editStoreUrl').value;
+        if (!storeUrl) {
+          alert('플레이스 URL을 먼저 입력해주세요.');
+          return;
+        }
+
+        // API 호출 (준비중)
+        // TODO: API 구현 후 연동
+        
+        // 임시로 localStorage에 저장
+        localStorage.setItem('monitoring_enabled', enable);
+
+        // UI 업데이트
+        document.getElementById('monitoringStatus').style.display = enable ? 'block' : 'none';
+        document.getElementById('monitoringInactive').style.display = enable ? 'none' : 'block';
+
+        alert(enable ? '✅ 리뷰 모니터링이 활성화되었습니다!' : '⏸️ 리뷰 모니터링이 일시 정지되었습니다.');
+      } catch (error) {
+        console.error('모니터링 토글 오류:', error);
+        alert('설정 변경 실패: ' + error.message);
+      }
+    }
+
+    // 모니터링 설정 저장
+    async function saveMonitoringSettings() {
+      if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      try {
+        const storeUrl = document.getElementById('editStoreUrl').value;
+        if (!storeUrl) {
+          alert('먼저 "내 가게 정보"에서 플레이스 URL을 입력하고 저장해주세요.');
+          return;
+        }
+
+        // 설정 수집
+        const storeName = document.getElementById('editStoreName').value;
+        const settings = {
+          action: 'create_monitoring',
+          userId: currentUser.id,
+          placeUrl: storeUrl,
+          placeName: storeName || '내 가게',
+          alertLowRating: document.getElementById('alertLowRating').checked,
+          alertHighRating: document.getElementById('alertHighRating').checked,
+          alertKeywords: document.getElementById('alertKeywords').checked,
+          keywordsList: document.getElementById('alertKeywordsList').value
+        };
+
+        // API 호출
+        const response = await fetch('/api/review-monitoring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || '설정 저장 실패');
+        }
+
+        alert(`✅ 리뷰 모니터링 설정이 저장되었습니다!
+
+${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업데이트되었습니다!'}
+
+자동으로 리뷰를 수집하고, 긴급 리뷰 발생 시 카카오톡으로 알림을 받습니다.`);
+
+        // 모니터링 활성화 UI 업데이트
+        document.getElementById('monitoringStatus').style.display = 'block';
+        document.getElementById('monitoringInactive').style.display = 'none';
+        document.getElementById('lastCrawled').textContent = '방금 전';
+
+        // 최근 리뷰 로드
+        await loadRecentReviews();
+
+      } catch (error) {
+        console.error('모니터링 설정 저장 오류:', error);
+        alert('설정 저장 실패: ' + error.message);
+      }
+    }
+
+    // 모니터링 설정 로드
+    async function loadMonitoringSettings() {
+      if (!currentUser) return;
+
+      try {
+        // API 호출 (준비중)
+        // TODO: API 구현 후 연동
+
+        // 임시로 localStorage에서 로드
+        const saved = localStorage.getItem('review_monitoring_settings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          
+          document.getElementById('alertLowRating').checked = settings.alertLowRating !== false;
+          document.getElementById('alertHighRating').checked = settings.alertHighRating !== false;
+          document.getElementById('alertKeywords').checked = settings.alertKeywords || false;
+          document.getElementById('alertKeywordsList').value = settings.keywordsList || '';
+          
+          if (settings.alertKeywords) {
+            document.getElementById('keywordsInput').style.display = 'block';
+          }
+        }
+
+        // 모니터링 활성화 상태 확인
+        const enabled = localStorage.getItem('monitoring_enabled') === 'true';
+        document.getElementById('monitoringStatus').style.display = enabled ? 'block' : 'none';
+        document.getElementById('monitoringInactive').style.display = enabled ? 'none' : 'block';
+
+        // 최근 리뷰 로드
+        loadRecentReviews();
+
+      } catch (error) {
+        console.error('모니터링 설정 로드 오류:', error);
+      }
+    }
+
+    // 최근 리뷰 로드
+    async function loadRecentReviews() {
+      if (!currentUser) return;
+
+      try {
+        // API 호출 (준비중)
+        // TODO: API 구현 후 연동
+
+        // 임시 데이터
+        const recentReviewsDiv = document.getElementById('recentReviews');
+        recentReviewsDiv.innerHTML = `
+          <p style="color: #999; text-align: center; padding: 20px;">
+            크롤링 시스템 개발 중입니다.<br>
+            곧 자동으로 리뷰를 수집하고 표시합니다!
+          </p>
+        `;
+
+      } catch (error) {
+        console.error('최근 리뷰 로드 오류:', error);
+      }
+    }
+
+    // 내 가게 알리기 저장
+    async function savePromotion() {
+      if (!currentUser) {
+        alert('사용자 정보를 불러오지 못했습니다.');
+        return;
+      }
+
+      const promotionData = {
+        signature_menu: document.getElementById('signatureMenu').value.trim(),
+        special_ingredients: document.getElementById('specialIngredients').value.trim(),
+        atmosphere_facilities: document.getElementById('atmosphereFacilities').value.trim(),
+        owner_story: document.getElementById('ownerStory').value.trim(),
+        recommended_situations: document.getElementById('recommendedSituations').value.trim(),
+        sns_photo_points: document.getElementById('snsPhotoPoints').value.trim(),
+        special_events: document.getElementById('specialEvents').value.trim()
+      };
+
+      try {
+        const response = await fetch('/api/store-promotion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, promotionData })
+        });
+
+        if (!response.ok) throw new Error('저장 실패');
+
+        const result = await response.json();
+        if (result.success) {
+          alert(`✅ 저장 완료!\n\n작성 현황: ${result.filledCount} / ${result.totalCount} 항목\n\n💡 자세히 쓸수록 AI가 더 풍부한 블로그/답글을 생성합니다!`);
+          
+          // 상태 업데이트
+          updatePromotionStatus(result.filledCount, result.totalCount);
+        } else {
+          throw new Error(result.error || '저장 실패');
+        }
+
+      } catch (error) {
+        console.error('❌ 내 가게 알리기 저장 실패:', error);
+        alert('저장 실패: ' + error.message);
+      }
+    }
+
+    // 내 가게 알리기 로드
+    async function loadPromotion() {
+      if (!currentUser) return;
+
+      try {
+        const response = await fetch(`/api/store-promotion?userId=${currentUser.id}`);
+        if (!response.ok) return;
+
+        const result = await response.json();
+        if (!result.success) return;
+
+        const data = result.data;
+        
+        if (data) {
+          // 폼에 자동 입력
+          if (data.signature_menu) document.getElementById('signatureMenu').value = data.signature_menu;
+          if (data.special_ingredients) document.getElementById('specialIngredients').value = data.special_ingredients;
+          if (data.atmosphere_facilities) document.getElementById('atmosphereFacilities').value = data.atmosphere_facilities;
+          if (data.owner_story) document.getElementById('ownerStory').value = data.owner_story;
+          if (data.recommended_situations) document.getElementById('recommendedSituations').value = data.recommended_situations;
+          if (data.sns_photo_points) document.getElementById('snsPhotoPoints').value = data.sns_photo_points;
+          if (data.special_events) document.getElementById('specialEvents').value = data.special_events;
+        }
+
+        // 작성 현황 업데이트
+        updatePromotionStatus(result.filledCount || 0, result.totalCount || 7);
+        
+        console.log('✅ 내 가게 알리기 로드 완료:', result.filledCount, '/ 7');
+      } catch (error) {
+        console.error('내 가게 알리기 로드 오류:', error);
+      }
+    }
+
+    // 작성 현황 업데이트
+    function updatePromotionStatus(filled, total) {
+      const percentage = Math.round((filled / total) * 100);
+      
+      document.getElementById('promotionCount').textContent = `${filled} / ${total} 항목`;
+      document.getElementById('promotionBar').style.width = `${percentage}%`;
+      
+      // 각 항목 체크 표시
+      const fields = [
+        { id: 'sigStatus', elementId: 'signatureMenu' },
+        { id: 'ingStatus', elementId: 'specialIngredients' },
+        { id: 'atmStatus', elementId: 'atmosphereFacilities' },
+        { id: 'storyStatus', elementId: 'ownerStory' },
+        { id: 'situStatus', elementId: 'recommendedSituations' },
+        { id: 'snsStatus', elementId: 'snsPhotoPoints' },
+        { id: 'eventStatus', elementId: 'specialEvents' }
+      ];
+
+      fields.forEach(field => {
+        const value = document.getElementById(field.elementId).value.trim();
+        const statusEl = document.getElementById(field.id);
+        if (statusEl) {
+          statusEl.textContent = value ? '✅' : '□';
+          statusEl.style.color = value ? '#4CAF50' : '#999';
+        }
+      });
+    }
+
+    // 실시간 작성 현황 업데이트
+    function setupPromotionListeners() {
+      const textareas = [
+        'signatureMenu', 'specialIngredients', 'atmosphereFacilities',
+        'ownerStory', 'recommendedSituations', 'snsPhotoPoints', 'specialEvents'
+      ];
+
+      textareas.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', () => {
+            const filled = textareas.filter(tid => 
+              document.getElementById(tid).value.trim().length > 0
+            ).length;
+            updatePromotionStatus(filled, 7);
+          });
+        }
+      });
+    }
+
+    // 블로그 스타일 로드
+    async function loadBlogStyle() {
+      if (!currentUser) return;
+
+      try {
+        const response = await fetch(`/api/blog-style?userId=${currentUser.id}`);
+        if (!response.ok) return;
+
+        const result = await response.json();
+        if (!result.success || !result.data) return;
+
+        const style = result.data;
+
+        // 폼 필드 자동 입력
+        if (style.tone) document.getElementById('blogTone').value = style.tone;
+        if (style.formality) document.getElementById('blogFormality').value = style.formality;
+        if (style.emoji_usage) document.getElementById('blogEmojiUsage').value = style.emoji_usage;
+        if (style.personality) document.getElementById('blogPersonality').value = style.personality;
+        if (style.expertise_level) document.getElementById('blogExpertiseLevel').value = style.expertise_level;
+        if (style.content_length) document.getElementById('blogContentLength').value = style.content_length;
+        if (style.writing_style) document.getElementById('blogWritingStyle').value = style.writing_style;
+
+        console.log('✅ 블로그 스타일 로드 완료');
+      } catch (error) {
+        console.error('블로그 스타일 로드 오류:', error);
+      }
+    }
+
+    // 블로그 스타일 저장
+    async function saveBlogStyle() {
+      if (!currentUser) {
+        alert('사용자 정보를 불러오지 못했습니다.');
+        return;
+      }
+
+      try {
+        const blogStyle = {
+          tone: document.getElementById('blogTone').value,
+          formality: document.getElementById('blogFormality').value,
+          emoji_usage: document.getElementById('blogEmojiUsage').value,
+          personality: document.getElementById('blogPersonality').value,
+          expertise_level: document.getElementById('blogExpertiseLevel').value,
+          content_length: document.getElementById('blogContentLength').value,
+          writing_style: document.getElementById('blogWritingStyle').value
+        };
+
+        const response = await fetch('/api/blog-style', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId: currentUser.id, 
+            blogStyle 
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('저장 실패');
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          alert('✅ 블로그 스타일이 저장되었습니다!\n다음 블로그 작성 시부터 이 스타일로 작성됩니다.');
+        } else {
+          throw new Error(result.error || '저장 실패');
+        }
+
+      } catch (error) {
+        console.error('❌ 블로그 스타일 저장 실패:', error);
+        alert('블로그 스타일 저장 실패: ' + error.message);
+      }
+    }
+
+    // 쇼츠 영상 목록 로드
+    async function loadShortsVideos(userId) {
+      const container = document.getElementById('shortsVideos');
+      if (!container) return;
+      
+      try {
+        // Supabase 세션에서 userId 가져오기
+        if (!userId && supabase) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            userId = session.user.id;
+          }
+        }
+
+        if (!userId) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>로그인이 필요합니다</div>
+            </div>
+          `;
+          return;
+        }
+
+        const response = await fetch(`/api/shorts/videos?userId=${encodeURIComponent(userId)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API 응답 오류:', response.status, errorText);
+          throw new Error(`영상 목록 로드 실패 (${response.status})`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data || result.data.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-video"></i>
+              <div>생성한 영상이 없습니다</div>
+              <button class="btn btn-primary" onclick="location.href='/shorts-editor.html'" style="margin-top: 16px;">
+                <i class="fas fa-plus"></i> 영상 만들기
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = result.data.map(video => {
+          const statusText = {
+            'processing': '생성 중...',
+            'completed': '완료',
+            'failed': '실패'
+          }[video.status] || video.status;
+
+          const statusColor = {
+            'processing': '#ff9800',
+            'completed': '#4caf50',
+            'failed': '#f44336'
+          }[video.status] || '#666';
+
+          const styleNames = {
+            'luxury': '럭셔리',
+            'fast': '빠른 리듬',
+            'chef': '셰프의 손',
+            'plating': '플레이팅',
+            'simple': '심플 클래식'
+          };
+
+          return `
+            <div class="activity-item">
+              <div class="activity-title">
+                ${video.menu_name || video.title || '제목 없음'}
+                <span style="margin-left: 8px; font-size: 12px; color: ${statusColor}; font-weight: 600;">
+                  ${statusText}
+                </span>
+              </div>
+              <div class="activity-content">
+                ${video.menu_features ? video.menu_features.substring(0, 80) + '...' : '설명 없음'}
+                ${video.menu_price ? ` · ${video.menu_price}` : ''}
+                ${video.style ? ` · ${styleNames[video.style] || video.style}` : ''}
+                ${video.duration_sec ? ` · ${video.duration_sec}초` : ''}
+              </div>
+              ${video.image_url ? `
+                <div style="margin-top: 12px;">
+                  <img src="${video.image_url}" alt="영상 썸네일" 
+                    style="max-width: 200px; max-height: 150px; border-radius: 8px; object-fit: cover;">
+                </div>
+              ` : ''}
+              <div class="activity-meta">
+                <span><i class="fas fa-clock"></i> ${new Date(video.created_at).toLocaleString('ko-KR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+                ${video.status === 'completed' && video.video_url ? `
+                  <a href="${video.video_url}" target="_blank" style="color: #03c75a; text-decoration: none;">
+                    <i class="fas fa-play"></i> 영상 보기
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // #shorts 해시가 있으면 해당 섹션으로 스크롤
+        if (window.location.hash === '#shorts') {
+          setTimeout(() => {
+            const section = document.getElementById('shortsSection');
+            if (section) {
+              section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 500);
+        }
+
+      } catch (error) {
+        console.error('❌ 쇼츠 영상 로드 실패:', error);
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>영상 목록을 불러오는 중 오류가 발생했습니다</div>
+          </div>
+        `;
+      }
+    }
+
+    // 에러 표시
+    function showError(message) {
+      document.getElementById('loadingContainer').style.display = 'none';
+      const container = document.getElementById('errorContainer');
+      container.innerHTML = `
+        <div class="error">
+          <i class="fas fa-exclamation-triangle"></i> ${message}
+        </div>
+      `;
+      container.style.display = 'block';
+    }
+
+    // 페이지 로드 시 초기화
+    // 로그아웃 버튼 이벤트
+    function setupLogoutButton() {
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function() {
+          if (!confirm('로그아웃 하시겠습니까?')) return;
+          
+          try {
+            // Supabase 로그아웃
+            if (supabase) {
+              await supabase.auth.signOut();
+            }
+            
+            // 로컬 스토리지 정리
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userData');
+            
+            // 로그인 페이지로 이동
+            alert('로그아웃 되었습니다.');
+            window.location.href = '/login.html';
+          } catch (error) {
+            console.error('로그아웃 오류:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+          }
+        });
+      }
+    }
+
+    window.addEventListener('load', function() {
+      initPage();
+      setupLogoutButton();
+    });
+  </script>
+
+  <!-- 추적 및 모니터링 스크립트 -->
+  <script src="/assets/analytics.js"></script>
+  <script src="/assets/error-logger.js"></script>
+  <script src="/assets/performance-tracker.js"></script>
+</body>
+</html>
