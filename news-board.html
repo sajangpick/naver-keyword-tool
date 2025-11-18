@@ -407,30 +407,102 @@
 
     @media (max-width: 992px) {
       .side-nav {
-        position: fixed;
-        bottom: 20px;
+        position: fixed !important;
+        bottom: 20px !important;
         left: 50%;
         transform: translateX(-50%);
-        top: auto;
+        top: auto !important;
         flex-direction: row;
-        width: auto;
+        width: calc(100vw - 40px);
         max-width: calc(100vw - 40px);
-        padding: 12px 16px;
-        overflow-x: hidden;
+        padding: 6px 10px;
+        overflow-x: auto;
         overflow-y: hidden;
         gap: 8px;
-        border-radius: 24px;
+        border-radius: 18px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         z-index: 100;
-        justify-content: space-between;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        scrollbar-width: thin;
+        scroll-snap-type: x mandatory;
+      }
+
+      /* 오른쪽 페이드아웃 효과 */
+      .side-nav::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50px;
+        height: 100%;
+        background: linear-gradient(to right, transparent, #ffe8d9);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+      }
+
+      /* 오른쪽 화살표 인디케이터 */
+      .side-nav::before {
+        content: '→';
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: rgba(255, 126, 70, 0.6);
+        pointer-events: none;
+        z-index: 2;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+        animation: slideHintSide 2s ease-in-out infinite;
+      }
+
+      @keyframes slideHintSide {
+        0%, 100% {
+          transform: translateY(-50%) translateX(0);
+        }
+        50% {
+          transform: translateY(-50%) translateX(5px);
+        }
+      }
+
+      /* 인디케이터가 숨겨진 경우 */
+      .side-nav.hide-indicator::before,
+      .side-nav.hide-indicator::after {
+        opacity: 0 !important;
+        animation: none !important;
+      }
+
+      .side-nav::-webkit-scrollbar {
+        height: 4px;
+      }
+
+      .side-nav::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 2px;
+      }
+
+      .side-nav::-webkit-scrollbar-thumb {
+        background: rgba(255, 126, 70, 0.4);
+        border-radius: 2px;
+      }
+
+      .side-nav::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 126, 70, 0.6);
       }
 
       .side-nav .menu-item {
         flex-direction: column;
-        min-width: 0;
-        padding: 8px 6px;
+        min-width: 50px;
+        padding: 4px 5px;
         font-size: 8px;
-        flex: 1 1 auto;
+        flex: 0 0 50px;
+        flex-shrink: 0;
+        scroll-snap-align: start;
+        gap: 3px;
       }
 
       .side-nav .menu-item .ico {
@@ -451,38 +523,99 @@
 
       .main-content {
         padding-left: 0;
-        padding-bottom: 90px;
+        padding-bottom: 65px;
       }
     }
 
     @media (max-width: 360px) {
       .side-nav {
-        bottom: 12px;
+        position: fixed !important;
+        bottom: 12px !important;
+        top: auto !important;
+        width: calc(100vw - 16px);
         max-width: calc(100vw - 16px);
-        padding: 8px 4px;
-        gap: 2px;
-        border-radius: 18px;
-        overflow-x: hidden;
-        justify-content: space-between;
+        padding: 5px 8px;
+        gap: 6px;
+        border-radius: 14px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        scrollbar-width: thin;
+        scroll-snap-type: x mandatory;
+      }
+
+      /* 오른쪽 페이드아웃 효과 */
+      .side-nav::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40px;
+        height: 100%;
+        background: linear-gradient(to right, transparent, #ffe8d9);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+      }
+
+      /* 오른쪽 화살표 인디케이터 */
+      .side-nav::before {
+        content: '→';
+        position: absolute;
+        top: 50%;
+        right: 6px;
+        transform: translateY(-50%);
+        font-size: 16px;
+        color: rgba(255, 126, 70, 0.6);
+        pointer-events: none;
+        z-index: 2;
+        animation: slideHintSide 2s ease-in-out infinite;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+      }
+
+      /* 인디케이터가 숨겨진 경우 (360px 이하) */
+      .side-nav.hide-indicator::before,
+      .side-nav.hide-indicator::after {
+        opacity: 0 !important;
+        animation: none !important;
+      }
+
+      .side-nav::-webkit-scrollbar {
+        height: 3px;
+      }
+
+      .side-nav::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 2px;
+      }
+
+      .side-nav::-webkit-scrollbar-thumb {
+        background: rgba(255, 126, 70, 0.4);
+        border-radius: 2px;
       }
 
       .side-nav .menu-item {
-        min-width: 0;
-        padding: 4px 1px;
-        font-size: 6px;
-        flex: 1 1 calc((100% - 12px) / 7);
-        max-width: calc((100% - 12px) / 7);
+        min-width: 45px;
+        padding: 3px 4px;
+        font-size: 7px;
+        flex: 0 0 45px;
+        flex-shrink: 0;
         gap: 2px;
+        scroll-snap-align: start;
       }
 
       .side-nav .menu-item .ico {
-        width: 22px;
-        height: 22px;
-        font-size: 10px;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
       }
 
       .side-nav .menu-item span:not(.ico) {
-        font-size: 6px;
+        font-size: 7px;
         word-break: keep-all;
         line-height: 1.2;
         text-align: center;
@@ -503,7 +636,7 @@
       }
 
       .main-content {
-        padding-bottom: 70px;
+        padding-bottom: 55px;
       }
     }
 
@@ -1359,39 +1492,39 @@
     </header>
 
     <aside class="side-nav" aria-label="사이드 네비게이션">
-      <a class="menu-item" href="/">
+      <a class="menu-item" href="./index.html">
         <span class="ico"><i class="fa-solid fa-house"></i></span>
         <span>홈</span>
       </a>
-      <a class="menu-item" href="/naver_search.html">
+      <a class="menu-item" href="./naver_search.html">
         <span class="ico"><i class="fa-solid fa-key"></i></span>
         <span>키워드</span>
       </a>
-      <a class="menu-item" href="/AI-Review.html">
+      <a class="menu-item" href="./AI-Review.html">
         <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
         <span>리뷰</span>
       </a>
-      <a class="menu-item" href="/Blog-Editor.html">
+      <a class="menu-item" href="./Blog-Editor.html">
         <span class="ico"><i class="fa-solid fa-blog"></i></span>
         <span>블로그</span>
       </a>
-      <a class="menu-item" href="/recipe-manager.html">
+      <a class="menu-item" href="./recipe-manager.html">
         <span class="ico"><i class="fa-solid fa-utensils"></i></span>
         <span>레시피</span>
       </a>
-      <a class="menu-item" href="/shorts-editor.html">
+      <a class="menu-item" href="./shorts-editor.html">
         <span class="ico"><i class="fa-solid fa-film"></i></span>
         <span>영상</span>
       </a>
-      <a class="menu-item" href="/sajangpick-book.html">
+      <a class="menu-item" href="./sajangpick-book.html">
         <span class="ico"><i class="fa-solid fa-book-open"></i></span>
         <span>전자책</span>
       </a>
-      <a class="menu-item active" href="/news-board.html">
+      <a class="menu-item active" href="./news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
         <span>정보</span>
       </a>
-      <a class="menu-item" href="/policy-support.html">
+      <a class="menu-item" href="./policy-support.html">
         <span class="ico"><i class="fa-solid fa-coins"></i></span>
         <span>정책</span>
       </a>
@@ -1899,7 +2032,7 @@
       }
     });
 
-    // 로그인 상태 확인 및 UI 업데이트 (Supabase 세션 기반)
+    // 로그인 상태 확인 및 UI 업데이트 (localStorage 우선, Supabase 세션 확인)
     async function updateAuthUI() {
       const loginBtn = document.getElementById("loginBtn");
       const signupBtn = document.getElementById("signupBtn");
@@ -1908,52 +2041,112 @@
       const authUser = document.getElementById("authUser");
       const userAvatar = document.getElementById("userAvatar");
 
-      // Supabase 세션 확인
-      let session = null;
-      if (window.authState?.supabase) {
+      let currentUser = null;
+
+      // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
+      const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+      const rawUser = localStorage.getItem("userData");
+      
+      if (isLoggedIn && rawUser) {
         try {
-          const { data } = await window.authState.supabase.auth.getSession();
-          session = data?.session;
+          currentUser = JSON.parse(rawUser);
+          console.log('[news-board] localStorage 사용자 정보:', { email: currentUser.email });
+          
+          // 즉시 UI 업데이트
+          if (loginBtn) loginBtn.style.display = "none";
+          if (signupBtn) signupBtn.style.display = "none";
+          if (authUser) authUser.style.display = "flex";
+          if (userEmailSpan) {
+            userEmailSpan.textContent = currentUser.email || "마이페이지";
+            userEmailSpan.title = currentUser.email ? `${currentUser.email} (마이페이지로 이동)` : "클릭하여 마이페이지로 이동";
+          }
+          if (userAvatar) {
+            const base = currentUser.displayName || currentUser.email || "U";
+            userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
+          }
+          if (logoutBtn) {
+            logoutBtn.style.display = "inline-flex";
+            logoutBtn.onclick = async function () {
+              if (!confirm("로그아웃 하시겠습니까?")) return;
+              try {
+                if (window.authState?.signOut) {
+                  await window.authState.signOut();
+                }
+              } finally {
+                localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("userData");
+                location.href = "./login.html";
+              }
+            };
+          }
         } catch (error) {
-          console.error("세션 확인 오류:", error);
+          console.error("[news-board] userData 파싱 오류:", error);
+          currentUser = null;
         }
       }
 
-      if (session?.user) {
-        const user = session.user;
-
-        // 로그인 버튼 숨기기
-        if (loginBtn) loginBtn.style.display = "none";
-        if (signupBtn) signupBtn.style.display = "none";
-
-        // 사용자 정보 표시
-        if (authUser) authUser.style.display = "flex";
-        if (userEmailSpan) {
-          const email = user.email || "마이페이지";
-          userEmailSpan.textContent = email;
-          userEmailSpan.title = `${email} (마이페이지로 이동)`;
-        }
-        if (userAvatar) {
-          const base = user.user_metadata?.full_name || user.email || "U";
-          userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
-        }
-        if (logoutBtn) {
-          logoutBtn.style.display = "inline-flex";
-          logoutBtn.onclick = async function () {
-            if (!confirm("로그아웃 하시겠습니까?")) return;
-            try {
-              if (window.authState?.signOut) {
-                await window.authState.signOut();
-              }
-            } finally {
-              localStorage.removeItem("isLoggedIn");
-              localStorage.removeItem("userData");
-              location.href = "/login.html";
+      // Supabase 세션 확인 (auth-state.js가 로드된 경우)
+      if (window.authState?.supabase) {
+        try {
+          const { data } = await window.authState.supabase.auth.getSession();
+          const session = data?.session;
+          
+          if (session?.user) {
+            // Supabase 세션이 있으면 Supabase 사용자 정보 사용
+            currentUser = {
+              email: session.user.email,
+              displayName: session.user.user_metadata?.full_name || session.user.email,
+              id: session.user.id
+            };
+            
+            console.log('[news-board] Supabase 세션 확인됨:', { email: currentUser.email });
+            
+            // UI 업데이트
+            if (loginBtn) loginBtn.style.display = "none";
+            if (signupBtn) signupBtn.style.display = "none";
+            if (authUser) authUser.style.display = "flex";
+            if (userEmailSpan) {
+              userEmailSpan.textContent = currentUser.email || "마이페이지";
+              userEmailSpan.title = currentUser.email ? `${currentUser.email} (마이페이지로 이동)` : "클릭하여 마이페이지로 이동";
             }
-          };
+            if (userAvatar) {
+              const base = currentUser.displayName || currentUser.email || "U";
+              userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
+            }
+            if (logoutBtn) {
+              logoutBtn.style.display = "inline-flex";
+              logoutBtn.onclick = async function () {
+                if (!confirm("로그아웃 하시겠습니까?")) return;
+                try {
+                  if (window.authState?.signOut) {
+                    await window.authState.signOut();
+                  }
+                } finally {
+                  localStorage.removeItem("isLoggedIn");
+                  localStorage.removeItem("userData");
+                  location.href = "./login.html";
+                }
+              };
+            }
+          } else if (!isLoggedIn || !rawUser) {
+            // 세션이 없고 localStorage에도 없으면 로그아웃 상태
+            if (authUser) authUser.style.display = "none";
+            if (loginBtn) loginBtn.style.display = "inline-flex";
+            if (signupBtn) signupBtn.style.display = "inline-flex";
+            if (logoutBtn) logoutBtn.style.display = "none";
+          }
+        } catch (error) {
+          console.error("[news-board] Supabase 세션 확인 오류:", error);
+          // 에러 발생 시 localStorage 기반으로 유지
+          if (!currentUser) {
+            if (authUser) authUser.style.display = "none";
+            if (loginBtn) loginBtn.style.display = "inline-flex";
+            if (signupBtn) signupBtn.style.display = "inline-flex";
+            if (logoutBtn) logoutBtn.style.display = "none";
+          }
         }
-      } else {
-        // 로그인하지 않은 상태
+      } else if (!currentUser) {
+        // auth-state.js가 없고 localStorage에도 없으면 로그아웃 상태
         if (authUser) authUser.style.display = "none";
         if (loginBtn) loginBtn.style.display = "inline-flex";
         if (signupBtn) signupBtn.style.display = "inline-flex";
@@ -1996,19 +2189,97 @@
     (async function() {
       initMobileMenu();
       
-      while (!window.authState?.supabase) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      // 즉시 localStorage 기반으로 UI 업데이트 (빠른 초기 렌더링)
       await updateAuthUI();
-      window.addEventListener("auth:state-changed", updateAuthUI);
-      if (window.authState?.syncSession) {
-        window.authState.syncSession();
+      
+      // auth-state.js가 로드될 때까지 대기 후 재실행
+      let waitCount = 0;
+      const maxWait = 50; // 5초 대기
+      const checkAuthState = setInterval(() => {
+        if (window.authState?.supabase) {
+          clearInterval(checkAuthState);
+          updateAuthUI();
+          window.addEventListener("auth:state-changed", updateAuthUI);
+          if (window.authState?.syncSession) {
+            window.authState.syncSession();
+          }
+        } else if (waitCount >= maxWait) {
+          clearInterval(checkAuthState);
+          // auth-state.js가 로드되지 않아도 localStorage 기반으로 표시
+          window.addEventListener("auth:state-changed", updateAuthUI);
+        }
+        waitCount++;
+      }, 100);
+    })();
+
+    // 하단바 슬라이드 인디케이터 제어
+    (function() {
+      const sideNav = document.querySelector('.side-nav');
+      if (!sideNav) return;
+
+      function updateSideNavIndicator() {
+        // PC 화면에서는 인디케이터 숨기기 (절대 건들지 않음)
+        if (window.innerWidth > 992) {
+          sideNav.classList.add('hide-indicator');
+          return;
+        }
+
+        // 모바일 화면에서만 동작
+        const scrollLeft = Math.round(sideNav.scrollLeft);
+        const scrollWidth = sideNav.scrollWidth;
+        const clientWidth = sideNav.clientWidth;
+        
+        // 스크롤이 끝에 도달했는지 확인
+        const remainingScroll = scrollWidth - scrollLeft - clientWidth;
+        
+        if (remainingScroll <= 3 || scrollWidth <= clientWidth) {
+          // 스크롤이 끝에 도달하거나 스크롤이 필요 없으면 인디케이터 숨기기
+          sideNav.classList.add('hide-indicator');
+        } else {
+          // 스크롤 가능하면 인디케이터 보이기
+          sideNav.classList.remove('hide-indicator');
+        }
       }
+
+      // DOM이 완전히 로드된 후 초기 상태 확인
+      function initIndicator() {
+        setTimeout(() => {
+          updateSideNavIndicator();
+        }, 300);
+      }
+
+      // 초기 상태 확인
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initIndicator);
+      } else {
+        initIndicator();
+      }
+
+      // 스크롤 이벤트 리스너
+      sideNav.addEventListener('scroll', updateSideNavIndicator, { passive: true });
+      
+      // 리사이즈 이벤트 리스너
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(updateSideNavIndicator, 150);
+      });
+
+      // 페이지 로드 완료 후 재확인
+      window.addEventListener('load', () => {
+        setTimeout(updateSideNavIndicator, 500);
+      });
+
+      // MutationObserver로 DOM 변경 감지 (동적 콘텐츠 대응)
+      const observer = new MutationObserver(() => {
+        setTimeout(updateSideNavIndicator, 100);
+      });
+      observer.observe(sideNav, { childList: true, subtree: true });
     })();
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
-  <script src="/assets/auth-state.js?v=202410"></script>
+  <script src="./assets/auth-state.js?v=202410"></script>
 </body>
 </html>
 
