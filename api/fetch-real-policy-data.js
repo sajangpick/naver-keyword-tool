@@ -259,6 +259,8 @@ async function fetchRealPolicies() {
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
+            let totalCount = null; // 전체 개수 (첫 페이지에서 확인)
+            let totalPages = null; // 전체 페이지 수
             const maxPages = 100; // 최대 100페이지까지 순회 (충분히 큰 값)
             const perPage = 50; // 페이지당 50개씩 가져오기
             
@@ -350,36 +352,18 @@ async function fetchRealPolicies() {
                       }
                     }
                     
-                    // 페이지네이션 정보 확인
-                    const totalCount = response.data.totalCount || 
-                                      response.data.response?.body?.totalCount ||
-                                      response.data.response?.body?.totalCount ||
-                                      response.data.total ||
-                                      response.data.count ||
-                                      (response.data.response?.body ? parseInt(response.data.response.body.totalCount) : null);
-                    
-                    const currentCount = Array.isArray(data) ? data.length : (data ? 1 : 0);
-                    
-                    // 공공데이터포털 XML 응답의 경우 totalCount 확인
-                    if (endpoint.type === 'xml' && typeof response.data === 'string') {
-                      const totalMatch = response.data.match(/<totalCount>(\d+)<\/totalCount>/i) || 
-                                        response.data.match(/<totalCount>(\d+)<\/totalCount>/i);
-                      if (totalMatch) {
-                        const xmlTotalCount = parseInt(totalMatch[1]);
-                        const xmlTotalPages = Math.ceil(xmlTotalCount / perPage);
-                        if (currentPage >= xmlTotalPages) {
-                          hasMorePages = false;
-                          console.log(`📄 XML 총 ${xmlTotalCount}개 중 ${allData.length}개 수집 완료 (${xmlTotalPages}페이지)`);
-                        }
-                      }
-                    }
-                    
-                    // 총 개수가 있고 현재 페이지가 마지막 페이지인지 확인
-                    if (totalCount) {
-                      const totalPages = Math.ceil(totalCount / perPage);
-                      if (currentPage >= totalPages) {
-                        hasMorePages = false;
-                        console.log(`📄 총 ${totalCount}개 중 ${allData.length}개 수집 완료 (${totalPages}페이지)`);
+                    // 페이지네이션 정보 확인 (JSON 응답)
+                    if (currentPage === 1) {
+                      const jsonTotalCount = response.data.totalCount || 
+                                            response.data.response?.body?.totalCount ||
+                                            response.data.total ||
+                                            response.data.count ||
+                                            (response.data.response?.body ? parseInt(response.data.response.body.totalCount) : null);
+                      
+                      if (jsonTotalCount && totalCount === null) {
+                        totalCount = parseInt(jsonTotalCount);
+                        totalPages = Math.ceil(totalCount / perPage);
+                        console.log(`📊 총 데이터 개수: ${totalCount}개, 예상 페이지 수: ${totalPages}페이지`);
                       }
                     }
                   }
@@ -427,8 +411,14 @@ async function fetchRealPolicies() {
                     continue;
                   }
                   
-                  // XML 샘플 로그 (첫 페이지만)
+                  // XML에서 totalCount 먼저 추출 (첫 페이지만)
                   if (currentPage === 1) {
+                    const totalMatch = response.data.match(/<totalCount>(\d+)<\/totalCount>/i);
+                    if (totalMatch) {
+                      totalCount = parseInt(totalMatch[1]);
+                      totalPages = Math.ceil(totalCount / perPage);
+                      console.log(`📊 총 데이터 개수: ${totalCount}개, 예상 페이지 수: ${totalPages}페이지`);
+                    }
                     console.log(`📄 XML 응답 샘플 (처음 500자): ${response.data.substring(0, 500)}`);
                   }
                   
@@ -462,17 +452,25 @@ async function fetchRealPolicies() {
                 if (Array.isArray(data) && data.length > 0) {
                   allData = allData.concat(data);
                   // 모든 페이지 로그 출력 (50개씩이므로 로그가 많지 않음)
-                  console.log(`✅ ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 수집 (누적: ${allData.length}개)`);
+                  console.log(`✅ ${endpoint.type.toUpperCase()} 페이지 ${currentPage}: ${data.length}개 항목 수집 (누적: ${allData.length}개${totalCount ? ` / 총 ${totalCount}개` : ''})`);
                   
                   // 첫 번째 항목 샘플 출력 (첫 페이지만)
                   if (currentPage === 1 && data.length > 0) {
                     console.log(`📋 첫 번째 항목 샘플:`, JSON.stringify(data[0], null, 2).substring(0, 300));
                   }
                   
-                  // 데이터가 perPage보다 적으면 마지막 페이지
-                  if (data.length < perPage) {
-                    hasMorePages = false;
-                    console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
+                  // totalCount가 있으면 정확히 그만큼만 순회
+                  if (totalCount !== null && totalPages !== null) {
+                    if (currentPage >= totalPages) {
+                      hasMorePages = false;
+                      console.log(`📄 모든 페이지 수집 완료: ${allData.length}개 항목 (총 ${totalCount}개 중)`);
+                    }
+                  } else {
+                    // totalCount가 없으면 데이터가 perPage보다 적으면 마지막 페이지
+                    if (data.length < perPage) {
+                      hasMorePages = false;
+                      console.log(`📄 마지막 페이지 도달: ${allData.length}개 항목 수집 완료`);
+                    }
                   }
                 } else {
                   console.warn(`⚠️ 페이지 ${currentPage}: 데이터가 비어있거나 배열이 아님 (타입: ${typeof data}, 길이: ${Array.isArray(data) ? data.length : 'N/A'})`);

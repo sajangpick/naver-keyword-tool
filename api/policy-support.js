@@ -49,17 +49,17 @@ module.exports = async (req, res) => {
     });
   }
 
-  // GET: 카테고리별 정책 수 조회
+  // GET: 카테고리별 정책 수 조회 + 상태별 통계
   if (req.method === 'GET' && isCategories) {
     try {
-      const { data, error } = await supabase
+      // 전체 정책 조회 (상태 필터 없이)
+      const { data: allData, error: allError } = await supabase
         .from('policy_supports')
-        .select('category')
-        .eq('status', 'active');
+        .select('category, status');
 
-      if (error) throw error;
+      if (allError) throw allError;
 
-      // 카테고리별 집계
+      // 카테고리별 집계 (전체)
       const categoryCounts = {
         startup: 0,
         operation: 0,
@@ -70,15 +70,30 @@ module.exports = async (req, res) => {
         other: 0
       };
 
-      data.forEach(item => {
+      // 상태별 집계
+      const statusCounts = {
+        active: 0,
+        upcoming: 0,
+        ended: 0
+      };
+
+      allData.forEach(item => {
+        // 카테고리별 카운트
         if (categoryCounts.hasOwnProperty(item.category)) {
           categoryCounts[item.category]++;
+        }
+        
+        // 상태별 카운트
+        if (statusCounts.hasOwnProperty(item.status)) {
+          statusCounts[item.status]++;
         }
       });
 
       return res.status(200).json({
         success: true,
-        data: categoryCounts
+        data: categoryCounts,
+        status: statusCounts,
+        total: allData.length
       });
 
     } catch (error) {

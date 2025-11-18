@@ -899,12 +899,22 @@
           const response = await fetch(`${API_BASE}/api/policy-support/categories`);
           const result = await response.json();
           
-          if (result.success && result.data) {
-            const total = Object.values(result.data).reduce((sum, count) => sum + count, 0);
+          if (result.success) {
+            // 전체 정책 수
+            const total = result.total || Object.values(result.data || {}).reduce((sum, count) => sum + count, 0);
             document.getElementById('totalCount').textContent = total;
             
-            // 상태별 카운트 (예시 - 실제로는 API에서 가져와야 함)
-            // 여기서는 임시로 표시
+            // 상태별 카운트
+            if (result.status) {
+              document.getElementById('activeCount').textContent = result.status.active || 0;
+              document.getElementById('upcomingCount').textContent = result.status.upcoming || 0;
+              document.getElementById('endedCount').textContent = result.status.ended || 0;
+            } else {
+              // API에서 상태별 통계가 없으면 0으로 표시
+              document.getElementById('activeCount').textContent = 0;
+              document.getElementById('upcomingCount').textContent = 0;
+              document.getElementById('endedCount').textContent = 0;
+            }
           }
         } catch (error) {
           console.error('Load statistics error:', error);
