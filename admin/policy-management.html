@@ -807,6 +807,18 @@
           console.log('📋 정책 목록 조회:', `${API_BASE}/api/policy-support?${params}`);
           
           const response = await fetch(`${API_BASE}/api/policy-support?${params}`);
+          
+          // HTTP 상태 코드 확인
+          if (response.status === 429) {
+            const errorData = await response.json().catch(() => ({ error: '요청 한도를 초과했습니다.' }));
+            throw new Error(errorData.error || '요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
+          }
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: '서버 오류가 발생했습니다.' }));
+            throw new Error(errorData.error || `서버 오류 (${response.status})`);
+          }
+          
           const result = await response.json();
 
           console.log('📋 API 응답:', result);

@@ -324,7 +324,14 @@ function rateLimiter(req, res, next) {
   next();
 }
 
-app.use("/api/", rateLimiter);
+// Rate limiter 적용 (정책 조회 API는 제외)
+app.use("/api/", (req, res, next) => {
+  // 정책 조회 API는 rate limiter 제외 (관리자 페이지에서 자주 조회)
+  if (req.path.startsWith('/policy-support') && req.method === 'GET') {
+    return next();
+  }
+  rateLimiter(req, res, next);
+});
 app.use("/auth/", rateLimiter);
 // Periodic cleanup for rate limiter map (memory hygiene)
 setInterval(() => {
