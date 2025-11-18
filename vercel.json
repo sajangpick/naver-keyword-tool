@@ -2,7 +2,6 @@
   "version": 2,
   "framework": null,
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
     {
