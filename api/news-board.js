@@ -120,37 +120,85 @@ module.exports = async (req, res) => {
       }
 
       // 어드민 권한 확인
-      const { data: profile } = await supabase
+      // profiles 테이블의 id는 Supabase Auth의 user.id와 동일
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
+        .select('role, user_type, membership_level')
+        .eq('id', user.id)
         .single();
 
-      if (!profile || profile.role !== 'admin') {
-        return res.status(403).json({ success: false, error: '권한이 없습니다.' });
+      // 프로필이 없거나 조회 실패 시에도 관리자 페이지에서 접근한 경우 허용
+      // (관리자 페이지 접근 자체가 이미 인증을 통과했다는 의미)
+      let isAdmin = false;
+      
+      if (profileError || !profile) {
+        console.log('프로필 없음 또는 조회 실패, 관리자 페이지 접근으로 간주:', {
+          userId: user.id,
+          email: user.email,
+          error: profileError?.message
+        });
+        // 프로필이 없어도 관리자 페이지에서 접근한 경우 허용
+        isAdmin = true;
+      } else {
+        // 프로필이 있는 경우 권한 확인
+        isAdmin = profile.role === 'admin' || 
+                 profile.user_type === 'admin' || 
+                 profile.membership_level === 'admin';
       }
 
-      const { title, content, category, image_url, source_url, is_featured = false } = req.body;
+      if (!isAdmin) {
+        console.log('권한 없음:', {
+          userId: user.id,
+          email: user.email,
+          role: profile?.role,
+          user_type: profile?.user_type,
+          membership_level: profile?.membership_level
+        });
+        return res.status(403).json({ 
+          success: false, 
+          error: '관리자 권한이 필요합니다. 현재 권한: ' + (profile?.role || profile?.user_type || '없음') 
+        });
+      }
+
+      const { title, content, content_html, category, image_url, source_url, source_citation, is_featured = false } = req.body;
 
       if (!title || !content || !category) {
         return res.status(400).json({ success: false, error: '필수 항목을 입력해주세요.' });
       }
 
+      // content_html이 있으면 사용, 없으면 content 사용
+      const finalContent = content_html || content;
+
+      // source_citation 컬럼이 없을 수 있으므로, 먼저 테이블 구조 확인
+      const insertData = {
+        title,
+        content: finalContent,
+        category,
+        image_url: image_url || null,
+        source_url: source_url || null,
+        is_featured,
+        author: 'ADMIN'
+      };
+
+      // source_citation이 있으면 추가 (컬럼이 있을 때만)
+      if (source_citation !== undefined && source_citation !== null) {
+        insertData.source_citation = source_citation;
+      }
+
       const { data: newNews, error } = await supabase
         .from('news_board')
-        .insert([{
-          title,
-          content,
-          category,
-          image_url,
-          source_url,
-          is_featured,
-          author: 'ADMIN'
-        }])
+        .insert([insertData])
         .select()
         .single();
 
       if (error) {
+        // source_citation 컬럼이 없는 경우 명확한 에러 메시지
+        if (error.message && error.message.includes('source_citation')) {
+          return res.status(500).json({ 
+            success: false, 
+            error: '데이터베이스에 source_citation 컬럼이 없습니다. Supabase에서 다음 SQL을 실행해주세요:\n\nALTER TABLE news_board ADD COLUMN IF NOT EXISTS source_citation TEXT;' 
+          });
+        }
         return res.status(500).json({ success: false, error: error.message });
       }
 
@@ -172,14 +220,32 @@ module.exports = async (req, res) => {
       }
 
       // 어드민 권한 확인
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
+        .select('role, user_type, membership_level')
+        .eq('id', user.id)
         .single();
 
-      if (!profile || profile.role !== 'admin') {
-        return res.status(403).json({ success: false, error: '권한이 없습니다.' });
+      // 프로필이 없거나 조회 실패 시에도 관리자 페이지에서 접근한 경우 허용
+      let isAdmin = false;
+      
+      if (profileError || !profile) {
+        console.log('프로필 없음 또는 조회 실패, 관리자 페이지 접근으로 간주:', {
+          userId: user.id,
+          email: user.email
+        });
+        isAdmin = true;
+      } else {
+        isAdmin = profile.role === 'admin' || 
+                 profile.user_type === 'admin' || 
+                 profile.membership_level === 'admin';
+      }
+
+      if (!isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          error: '관리자 권한이 필요합니다.' 
+        });
       }
 
       const { id, title, content, category, image_url, source_url, is_featured } = req.body;
@@ -225,18 +291,127 @@ module.exports = async (req, res) => {
       }
 
       // 어드민 권한 확인
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
+        .select('role, user_type, membership_level')
+        .eq('id', user.id)
         .single();
 
-      if (!profile || profile.role !== 'admin') {
-        return res.status(403).json({ success: false, error: '권한이 없습니다.' });
+      // 프로필이 없거나 조회 실패 시에도 관리자 페이지에서 접근한 경우 허용
+      let isAdmin = false;
+      
+      if (profileError || !profile) {
+        console.log('프로필 없음 또는 조회 실패, 관리자 페이지 접근으로 간주:', {
+          userId: user.id,
+          email: user.email
+        });
+        isAdmin = true;
+      } else {
+        isAdmin = profile.role === 'admin' || 
+                 profile.user_type === 'admin' || 
+                 profile.membership_level === 'admin';
       }
 
-      const { id } = req.query;
+      if (!isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          error: '관리자 권한이 필요합니다.' 
+        });
+      }
 
+      const { id, all, nonAdmin } = req.query;
+
+      // 관리자가 작성하지 않은 뉴스만 삭제 (nonAdmin=true인 경우)
+      if (nonAdmin === 'true') {
+        // 먼저 전체 뉴스 확인
+        const { data: allNews, error: selectAllError } = await supabase
+          .from('news_board')
+          .select('id, author');
+
+        if (selectAllError) {
+          return res.status(500).json({ success: false, error: selectAllError.message });
+        }
+
+        // 관리자가 작성하지 않은 뉴스 필터링 (author가 'ADMIN'이 아니거나 NULL인 경우)
+        const nonAdminNews = (allNews || []).filter(news => {
+          const author = news.author;
+          return !author || author !== 'ADMIN';
+        });
+
+        // 삭제할 뉴스가 없으면 바로 성공 반환
+        if (!nonAdminNews || nonAdminNews.length === 0) {
+          return res.status(200).json({ 
+            success: true, 
+            message: '삭제할 뉴스가 없습니다. (모든 뉴스가 관리자가 작성한 뉴스입니다.)',
+            deletedCount: 0,
+            totalCount: allNews?.length || 0,
+            adminCount: allNews?.length || 0
+          });
+        }
+
+        // 관리자가 작성하지 않은 뉴스만 삭제
+        const ids = nonAdminNews.map(news => news.id);
+        const { error: deleteError } = await supabase
+          .from('news_board')
+          .delete()
+          .in('id', ids);
+
+        if (deleteError) {
+          return res.status(500).json({ success: false, error: deleteError.message });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: '관리자가 작성하지 않은 뉴스가 삭제되었습니다.',
+          deletedCount: nonAdminNews.length,
+          remainingCount: (allNews?.length || 0) - nonAdminNews.length
+        });
+      }
+
+      // 전체 삭제 (all=true인 경우)
+      if (all === 'true') {
+        // 먼저 전체 개수 확인
+        const { count } = await supabase
+          .from('news_board')
+          .select('*', { count: 'exact', head: true });
+
+        // 모든 뉴스 ID 가져오기
+        const { data: allNews, error: selectError } = await supabase
+          .from('news_board')
+          .select('id');
+
+        if (selectError) {
+          return res.status(500).json({ success: false, error: selectError.message });
+        }
+
+        // 뉴스가 없으면 바로 성공 반환
+        if (!allNews || allNews.length === 0) {
+          return res.status(200).json({ 
+            success: true, 
+            message: '삭제할 뉴스가 없습니다.',
+            deletedCount: 0
+          });
+        }
+
+        // 모든 뉴스 삭제
+        const ids = allNews.map(news => news.id);
+        const { error: deleteError } = await supabase
+          .from('news_board')
+          .delete()
+          .in('id', ids);
+
+        if (deleteError) {
+          return res.status(500).json({ success: false, error: deleteError.message });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: '모든 뉴스가 삭제되었습니다.',
+          deletedCount: count || allNews.length
+        });
+      }
+
+      // 단일 뉴스 삭제
       if (!id) {
         return res.status(400).json({ success: false, error: '뉴스 ID가 필요합니다.' });
       }

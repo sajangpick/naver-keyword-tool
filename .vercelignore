@@ -1,5 +1,0 @@
-# 개발 파일만 제외
-node_modules/
-*.log
-.env
-.env.local

@@ -43,6 +43,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
+# 공공데이터포털 API (정책지원금 데이터 수집용)
+PUBLIC_DATA_KEY=your-public-data-api-key
+
 # Auth / JWT
 # 반드시 충분히 긴 랜덤 문자열로 설정하고 환경별(.env, .env.production)로 분리하세요.
 JWT_SECRET=
