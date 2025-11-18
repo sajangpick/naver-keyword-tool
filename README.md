@@ -1,0 +1,244 @@
+# 사장픽 프론트엔드 (Vercel)
+
+---
+
+## 🤖🔴 새 AI님, 여기부터 읽으세요! START HERE! 🔴🤖
+
+### 📌 당신이 새 AI라면, 이 3단계를 반드시 따르세요:
+
+```
+1️⃣ 먼저 이것만 읽기 (30초)
+   👉 docs/AI_START_HERE.md
+   
+2️⃣ 작업 시작 전 체크리스트
+   ✅ AI_LOG.md 최근 10줄만 확인 (전체 읽지 마세요!)
+   ✅ 사용자 요청 정확히 파악
+   ✅ 필요한 파일만 grep으로 검색
+   
+3️⃣ 작업 완료 후
+   ✅ AI_LOG.md에 간단히 기록
+   ✅ 중요 변경사항은 이 README.md 업데이트
+```
+
+### ⚡ 새 AI가 가장 많이 하는 실수:
+- ❌ AI_LOG.md 전체 읽기 (1200줄 → 메모리 폭발!)
+- ❌ 모든 문서 미리 읽기 (불필요!)
+- ❌ vercel.json 수정 (사이트 중단!)
+- ✅ **올바른 방법: 필요한 정보만 검색하세요!**
+
+---
+
+## 🚨🚨🚨 먼저 읽으세요! 🚨🚨🚨
+
+### ⛔ 중요 경고 (AI / 개발자 / 직원 모두)
+
+**잘못된 수정으로 전체 사이트가 중단될 수 있습니다!**
+
+👉 **[CRITICAL_WARNINGS.md](./CRITICAL_WARNINGS.md)** 필독! (2분)
+
+**절대 삭제/수정 금지:**
+- ❌ `vercel.json` (API 프록시 설정)
+- ❌ `api/` 폴더 (모든 API 기능)
+- ❌ `.env` 파일 (환경변수)
+- ❌ Render 서버 종료
+
+**배포 구조 변경 제안 금지:**
+- ❌ "Vercel Functions로 통합하자" → 이미 실패함 (2025-10-22)
+- ❌ "Render 제거하자" → 사이트 중단됨
+
+---
+
+## 🎯 새 AI를 위한 빠른 시작 가이드
+
+### 🚀 30초 안에 프로젝트 파악하기:
+```javascript
+// 이 프로젝트는:
+{
+  "이름": "사장픽 (sajang pick)",
+  "목적": "식당 사장님들을 위한 AI 도구 모음",
+  "기술스택": {
+    "프론트": "HTML + Vanilla JS (정적 파일)",
+    "백엔드": "Express.js (Render 배포)",
+    "데이터베이스": "Supabase",
+    "배포": "Vercel (프론트) + Render (API)",
+    "AI": "OpenAI GPT-4"
+  },
+  "주요기능": [
+    "네이버 플레이스 크롤링",
+    "AI 블로그 생성",
+    "리뷰 관리",
+    "카카오 로그인"
+  ]
+}
+```
+
+### 🔥 새 AI가 반드시 알아야 할 것:
+1. **vercel.json 절대 수정 금지** → API 프록시 설정
+2. **Render 서버 필수** → 백엔드 API 담당
+3. **localhost 하드코딩 제거됨** → 모두 프로덕션 URL 사용
+4. **console.log 조건부 처리** → devLog() 함수 사용
+
+---
+
+> 🤖 **AI 작업 시작 전 필독**: `@docs/AI_START_HERE.md` (30초, 메모리 효율)
+
+## 📚 문서 구조
+
+### 🚀 새 AI 필독 (순서대로!)
+1. **[docs/AI_START_HERE.md](docs/AI_START_HERE.md)** ⚡ **30초, 프로젝트 핵심 정보**
+2. **[docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md)** ⚡ **1분, 작업 순서 필수!**
+3. **사용자에게 확인 보고** ← 이거 안 하면 작업 금지!
+
+### 📋 작업별 가이드 (필요시 검색)
+- **[docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md)** - Vercel 배포
+- **[docs/KAKAO_LOGIN_GUIDE.md](docs/KAKAO_LOGIN_GUIDE.md)** - 카카오 로그인 (Supabase)
+- **[docs/CRAWLING_GUIDE.md](docs/CRAWLING_GUIDE.md)** - 네이버 플레이스 크롤링 (Python)
+- **[docs/SUBSCRIPTION_SYSTEM_GUIDE.md](docs/SUBSCRIPTION_SYSTEM_GUIDE.md)** - 🎯 **TokenFlow** 시스템 (완성!)
+- **[docs/SUBSCRIPTION_DEPLOYMENT_GUIDE.md](docs/SUBSCRIPTION_DEPLOYMENT_GUIDE.md)** - TokenFlow 배포 방법
+
+### 📖 참고 문서
+- **[docs/AI_LOG.md](docs/AI_LOG.md)** - 작업 이력 (완료 후 기록용)
+- **[docs/env.example.md](docs/env.example.md)** - 환경변수
+- **[docs/archive/](docs/archive/)** - 구식 문서
+
+---
+
+## ⚡ AI 작업 원칙
+
+```
+✅ 해야 할 것:
+- AI_START_HERE.md만 읽고 시작 (30초)
+- 필요한 정보는 grep/검색으로 찾기
+- 작업 완료 후 AI_LOG.md에 간단히 기록
+
+❌ 하지 말 것:
+- AI_LOG.md 전체 읽기 (1200줄, 메모리 낭비!)
+- 모든 가이드 문서 미리 읽기
+- 작업 전 과도한 컨텍스트 로드
+```
+
+> 💡 **효율성**: 필요한 정보만 검색 → 메모리 절약 → 작업 성능 향상!
+
+## 💻 로컬 개발 환경 설정 (협업자 필독!)
+
+### ⚠️ 중요: HTML 파일을 직접 열지 마세요!
+
+**문제점:**
+- `index.html` 파일을 더블클릭해서 열면 (`file://` 프로토콜)
+- 브라우저 보안 정책 때문에 다른 페이지로 이동이 안 됩니다
+- API 호출도 제대로 작동하지 않습니다
+
+**해결 방법:**
+로컬 개발 서버를 실행해야 합니다!
+
+### 🚀 로컬 서버 시작하기 (초간단!)
+
+#### 방법 1: 배치 파일 사용 (가장 쉬움! ⭐)
+
+1. **`서버시작.bat`** 파일을 더블클릭하세요
+2. 서버가 자동으로 시작되고 브라우저가 열립니다
+3. `http://localhost:3003` 으로 접속됩니다
+
+**서버 종료:**
+- 서버 창에서 `Ctrl + C`를 누르면 됩니다
+
+#### 방법 2: 명령어로 실행
+
+```bash
+# 1. 프로젝트 폴더로 이동
+cd naver-keyword-tool-main
+
+# 2. 의존성 설치 (처음 한 번만)
+pnpm install
+
+# 3. 서버 시작
+pnpm start
+# 또는
+node server.js
+```
+
+**접속 주소:**
+- 메인 페이지: `http://localhost:3003`
+- 다른 페이지: `http://localhost:3003/파일명.html` (예: `http://localhost:3003/login.html`)
+
+### 📋 협업 시 주의사항
+
+1. **항상 서버를 실행한 후 작업하세요**
+   - HTML 파일을 직접 열면 다른 페이지로 이동이 안 됩니다
+   - 서버를 실행하면 모든 기능이 정상 작동합니다
+
+2. **서버 포트 확인**
+   - 기본 포트: `3003`
+   - 다른 사람이 이미 사용 중이면 포트가 변경될 수 있습니다
+   - 서버 시작 메시지에서 포트 번호를 확인하세요
+
+3. **환경변수 설정**
+   - `.env` 파일이 필요할 수 있습니다
+   - 처음 설정하는 경우 `docs/env.example.md` 참고
+
+### ❓ 문제 해결
+
+**Q: 서버가 시작되지 않아요**
+- Node.js가 설치되어 있는지 확인하세요 (`node --version`)
+- `pnpm install`을 먼저 실행했는지 확인하세요
+
+**Q: 포트가 이미 사용 중이라고 나와요**
+- 다른 서버가 실행 중일 수 있습니다
+- 서버 창을 찾아서 종료하거나, 다른 포트를 사용하세요
+
+**Q: 브라우저가 자동으로 안 열려요**
+- 수동으로 `http://localhost:3003`을 입력해서 접속하세요
+
+---
+
+## ⚡ 빠른 배포 가이드
+
+### 🌐 Vercel 배포 (프로덕션)
+
+1. **GitHub 연동 배포** (추천 ⭐)
+   ```bash
+   git push origin main
+   # → Vercel이 자동으로 감지하고 배포!
+   ```
+
+2. **수동 배포** (CLI 사용)
+   ```bash
+   pnpm dlx vercel deploy --prod
+   ```
+
+3. **처음 배포하는 경우**
+   - 👉 **[docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md)** 참고
+   - Vercel 계정 연동
+   - 환경변수 설정 필수!
+
+### 📝 배포 체크리스트
+
+- ✅ GitHub에 코드 푸시 완료
+- ✅ Vercel 프로젝트 연결
+- ✅ 환경변수 설정 ([템플릿](docs/env.example.md) 참고)
+- ✅ 배포 후 "실시간 목록 수집" 기능 테스트
+
+---
+
+## 🏗️ 아키텍처
+
+- **정적 배포**: Vercel (Framework: Other, Build/Output 비움)
+- **API**: 
+  - 기본: Render → 프록시(`vercel.json`)로 연결
+  - 크롤링: Vercel Functions (`api/rank-list-crawl.js`)
+  - 점진적으로 Vercel Functions로 전체 이전 예정
+
+## 반드시 지켜주세요
+
+1. 모든 변경은 `docs/AI_LOG.md`에 기록 (새 AI/기여자도 해당 문서부터 읽기)
+2. 모바일(≤768px) 헤더 레이아웃 가이드 준수
+3. 캐시 이슈 시 URL에 `?v=YYYYMMDD` 쿼리 추가로 확인
+
+## 디렉터리
+
+- 루트: 정적 HTML들(`index.html`, `ChatGPT.html`, …)
+- `docs/`: 운영 문서 및 작업 로그
+
+## 문의
+
+- 배포 오류는 Vercel Dashboard → Deployments → Build/Runtime Logs 확인

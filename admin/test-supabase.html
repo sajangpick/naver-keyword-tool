@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase 연결 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase 데이터 테스트</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Supabase 연결
+        const SUPABASE_URL = 'https://ptuzlubgggbgsophfcna.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXpsdWJnZ2diZ3NvcGhmY25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0MjEzMzQsImV4cCI6MjA3NTk5NzMzNH0.NaMMH7vVpcrFAi9IOQ0o_HF6rQ7dOdiAXAkxu6r84CE';
+        
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            let html = '<h2>연결 테스트 결과:</h2>';
+            
+            try {
+                // 1. 식당 데이터
+                const { data: restaurants, error: e1, count: c1 } = await supabaseClient
+                    .from('adlog_restaurants')
+                    .select('*', { count: 'exact' });
+                
+                html += `<p>✅ 식당 데이터: ${restaurants ? restaurants.length : 0}개</p>`;
+                if (restaurants && restaurants.length > 0) {
+                    html += '<ul>';
+                    restaurants.slice(0, 5).forEach(r => {
+                        html += `<li>${r.place_name} (ID: ${r.place_id})</li>`;
+                    });
+                    html += '</ul>';
+                }
+                if (e1) html += `<p style="color:red">오류: ${e1.message}</p>`;
+                
+                // 2. 키워드 데이터
+                const { data: keywords, error: e2 } = await supabaseClient
+                    .from('tracking_keywords')
+                    .select('*');
+                
+                html += `<p>✅ 키워드 데이터: ${keywords ? keywords.length : 0}개</p>`;
+                if (keywords && keywords.length > 0) {
+                    html += '<ul>';
+                    keywords.slice(0, 5).forEach(k => {
+                        html += `<li>${k.keyword}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                if (e2) html += `<p style="color:red">오류: ${e2.message}</p>`;
+                
+                // 3. 오늘 순위
+                const today = new Date().toISOString().split('T')[0];
+                const { data: rankings, error: e3 } = await supabaseClient
+                    .from('daily_rankings')
+                    .select('*')
+                    .eq('search_date', today);
+                
+                html += `<p>✅ 오늘 순위 데이터: ${rankings ? rankings.length : 0}개</p>`;
+                if (e3) html += `<p style="color:red">오류: ${e3.message}</p>`;
+                
+            } catch (error) {
+                html += `<p style="color:red">전체 오류: ${error.message}</p>`;
+            }
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        // 페이지 로드 시 실행
+        window.onload = testConnection;
+    </script>
+</body>
+</html>

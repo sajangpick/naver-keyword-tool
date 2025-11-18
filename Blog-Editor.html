@@ -1,0 +1,3020 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <title>AI 블로그 생성기 - 사장픽</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" />
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <style>
+      :root {
+        --accent-color: #ff7b54;
+        --bg-color: #fff7f0;
+        --text-primary: #201a17;
+        --text-secondary: #7a6a60;
+        --primary-green: var(--accent-color);
+        --primary-white: #FFFFFF;
+        --naver-green: var(--accent-color);
+        --naver-green-50: rgba(255, 123, 84, 0.1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      a:hover, a:focus, a:active, a:visited {
+        text-decoration: none;
+      }
+
+      body {
+        font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        background: var(--bg-color);
+        color: var(--text-primary);
+      }
+      @media (max-width: 768px) {
+        body {
+          padding-top: 0px;
+          padding-left: 0px;
+          padding-right: 0px;
+        }
+      }
+
+      @media (max-width: 992px) {
+        .header {
+          display: none;
+        }
+      }
+
+      .header.header-hidden {
+        transform: translateY(-100%);
+      }
+
+      .header-inner {
+        max-width: 100%;
+        margin: 0;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        position: relative;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 12px;
+        color: var(--text-primary);
+        cursor: pointer;
+        flex: 0 0 auto;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      
+      .logo-text {
+        letter-spacing: -0.03em;
+        text-transform: lowercase;
+        font-size: 12px;
+      }
+
+      .header-slogan {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin: 0;
+        white-space: nowrap;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+      }
+
+      .header-auth {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+      }
+
+      @media (max-width: 768px) {
+        .header-inner {
+          padding: 12px 16px;
+          flex-wrap: wrap;
+        }
+        
+        .header-slogan {
+          font-size: 12px;
+          position: static;
+          transform: none;
+          order: 3;
+          width: 100%;
+          text-align: center;
+          margin-top: 8px;
+        }
+        
+        .logo-container {
+          order: 1;
+          gap: 8px;
+        }
+        
+        .header-auth {
+          order: 2;
+        }
+
+        .logo-icon {
+          width: 26px;
+          height: 26px;
+          font-size: 13px;
+        }
+
+        .logo-text {
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header-inner {
+          padding: 10px 12px;
+          gap: 12px;
+        }
+        
+        .header-slogan {
+          display: none;
+        }
+
+        .logo-container {
+          gap: 6px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .header-inner {
+          padding: 8px 6px 8px 8px;
+          gap: 0;
+          min-height: auto;
+          flex-wrap: nowrap;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .logo-container {
+          gap: 4px;
+          flex: 0 1 auto;
+          min-width: 0;
+          margin-right: auto;
+        }
+
+        .logo-icon {
+          width: 19px;
+          height: 19px;
+          font-size: 10px;
+          flex-shrink: 0;
+        }
+
+        .logo-text {
+          font-size: 11px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
+        }
+
+        .header-slogan {
+          display: none;
+        }
+
+        .header-auth {
+          flex-shrink: 0;
+          margin-left: auto;
+          margin-right: 0;
+        }
+
+        .auth-buttons {
+          gap: 2px;
+          flex-wrap: nowrap;
+          justify-content: flex-end;
+        }
+
+        .auth-btn {
+          height: 28px;
+          padding: 0 6px;
+          font-size: 9px;
+          min-width: auto;
+          flex-shrink: 0;
+        }
+
+        .auth-btn i {
+          font-size: 9px;
+          margin-right: 2px;
+        }
+
+        .auth-btn span {
+          font-size: 9px;
+          white-space: nowrap;
+        }
+
+        .auth-btn--ghost {
+          display: none;
+        }
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .header-menu-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: none;
+        background: rgba(255, 126, 70, 0.15);
+        color: var(--accent-color);
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+      }
+
+      .header-menu-btn:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 126, 70, 0.25);
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 12px;
+        color: var(--text-primary);
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      
+      .logo-text {
+        letter-spacing: -0.03em;
+        text-transform: lowercase;
+        font-size: 12px;
+      }
+      @media (max-width: 768px) {
+        .logo-icon {
+          width: 26px;
+          height: 26px;
+          font-size: 13px;
+        }
+
+        .logo-text {
+          font-size: 12px;
+        }
+      }
+
+      /* 사이드바 스타일 - 새로운 디자인 */
+      .side-nav {
+        background: #ffe8d9;
+        border-radius: 18px;
+        padding: 18px 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        align-items: center;
+        position: fixed;
+        left: 20px;
+        top: 120px;
+        width: 66px;
+        height: auto;
+        max-height: calc(100vh - 160px);
+        overflow-y: auto;
+        z-index: 40;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+      }
+
+      .side-nav .menu-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding: 9px 6px;
+        color: #5a5a5a;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 9px;
+        border-radius: 11px;
+        transition: all 0.3s ease;
+        width: 43px;
+        position: relative;
+        background: transparent;
+      }
+      
+      .side-nav .menu-item:hover {
+        background: #ffffff;
+        color: #ff7e46;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 126, 70, 0.3);
+      }
+      
+      .side-nav .menu-item:hover .ico {
+        color: #ff7e46;
+        background: rgba(255, 126, 70, 0.1);
+      }
+
+      .side-nav .menu-item.active {
+        background: #ffffff;
+        color: #ff7e46;
+      }
+
+      .side-nav .menu-item.active .ico {
+        color: #ff7e46;
+        background: rgba(255, 126, 70, 0.1);
+      }
+
+      .side-nav .ico {
+        width: 29px;
+        height: 29px;
+        border-radius: 7px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        color: #5a5a5a;
+        font-size: 13px;
+        transition: all 0.3s ease;
+      }
+
+      /* 기존 사이드바 숨김 */
+      .sidebar {
+        display: none;
+      }
+
+      .sidebar-header {
+        padding: 20px 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        text-decoration: none;
+        color: inherit;
+        transition: opacity 0.3s ease;
+      }
+
+      .sidebar-logo:hover {
+        opacity: 0.8;
+      }
+
+      .sidebar-logo-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent-color);
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .sidebar-logo-text {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--text-primary);
+      }
+
+      .sidebar-menu {
+        padding: 16px 0;
+      }
+
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+      }
+
+      .sidebar-item:hover {
+        background: rgba(255, 126, 70, 0.1);
+        color: var(--accent-color);
+        border-left-color: var(--accent-color);
+      }
+
+      .sidebar-item.active {
+        background: rgba(255, 126, 70, 0.15);
+        color: var(--accent-color);
+        border-left-color: var(--accent-color);
+        font-weight: 700;
+      }
+
+      .sidebar-item i {
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+      }
+
+      /* 메인 컨텐츠 영역 */
+      .main-content {
+        margin-left: 0;
+        padding-left: 100px;
+        min-height: 100vh;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 12px 8px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .container {
+          padding: 12px 8px;
+        }
+      }
+
+      @media (max-width: 992px) {
+        .side-nav {
+          position: fixed !important;
+          bottom: 20px !important;
+          left: 50%;
+          transform: translateX(-50%);
+          top: auto !important;
+          flex-direction: row;
+          width: calc(100vw - 40px);
+          max-width: calc(100vw - 40px);
+          padding: 6px 10px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          gap: 8px;
+          border-radius: 18px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+          justify-content: flex-start;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-x;
+          scrollbar-width: thin;
+          scroll-snap-type: x mandatory;
+        }
+
+        /* 오른쪽 페이드아웃 효과 */
+        .side-nav::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 50px;
+          height: 100%;
+          background: linear-gradient(to right, transparent, #ffe8d9);
+          pointer-events: none;
+          z-index: 1;
+          opacity: 1;
+          transition: opacity 0.3s ease;
+        }
+
+        /* 오른쪽 화살표 인디케이터 */
+        .side-nav::before {
+          content: '→';
+          position: absolute;
+          top: 50%;
+          right: 8px;
+          transform: translateY(-50%);
+          font-size: 18px;
+          color: rgba(255, 126, 70, 0.6);
+          pointer-events: none;
+          z-index: 2;
+          opacity: 1;
+          transition: opacity 0.3s ease;
+          animation: slideHintSide 2s ease-in-out infinite;
+        }
+
+        @keyframes slideHintSide {
+          0%, 100% {
+            transform: translateY(-50%) translateX(0);
+          }
+          50% {
+            transform: translateY(-50%) translateX(5px);
+          }
+        }
+
+        /* 인디케이터가 숨겨진 경우 */
+        .side-nav.hide-indicator::before,
+        .side-nav.hide-indicator::after {
+          opacity: 0 !important;
+          animation: none !important;
+        }
+
+        .side-nav::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .side-nav::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 2px;
+        }
+
+        .side-nav::-webkit-scrollbar-thumb {
+          background: rgba(255, 126, 70, 0.4);
+          border-radius: 2px;
+        }
+
+        .side-nav::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 126, 70, 0.6);
+        }
+
+        .side-nav .menu-item {
+          flex-direction: column;
+          min-width: 50px;
+          padding: 4px 5px;
+          font-size: 8px;
+          flex: 0 0 50px;
+          flex-shrink: 0;
+          scroll-snap-align: start;
+          gap: 3px;
+        }
+
+        .side-nav .menu-item .ico {
+          width: 32px;
+          height: 32px;
+          font-size: 14px;
+        }
+
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: #ff7e46;
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: #ff7e46;
+          background: rgba(255, 126, 70, 0.1);
+        }
+
+        .main-content {
+          padding-left: 0;
+          padding-bottom: 65px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .side-nav {
+          position: fixed !important;
+          bottom: 12px !important;
+          top: auto !important;
+          width: calc(100vw - 16px);
+          max-width: calc(100vw - 16px);
+          padding: 5px 8px;
+          gap: 6px;
+          border-radius: 14px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          justify-content: flex-start;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-x;
+          scrollbar-width: thin;
+          scroll-snap-type: x mandatory;
+        }
+
+        /* 오른쪽 페이드아웃 효과 */
+        .side-nav::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 40px;
+          height: 100%;
+          background: linear-gradient(to right, transparent, #ffe8d9);
+          pointer-events: none;
+          z-index: 1;
+          opacity: 1;
+          transition: opacity 0.3s ease;
+        }
+
+        /* 오른쪽 화살표 인디케이터 */
+        .side-nav::before {
+          content: '→';
+          position: absolute;
+          top: 50%;
+          right: 6px;
+          transform: translateY(-50%);
+          font-size: 16px;
+          color: rgba(255, 126, 70, 0.6);
+          pointer-events: none;
+          z-index: 2;
+          animation: slideHintSide 2s ease-in-out infinite;
+          opacity: 1;
+          transition: opacity 0.3s ease;
+        }
+
+        /* 인디케이터가 숨겨진 경우 (360px 이하) */
+        .side-nav.hide-indicator::before,
+        .side-nav.hide-indicator::after {
+          opacity: 0 !important;
+          animation: none !important;
+        }
+
+        .side-nav::-webkit-scrollbar {
+          height: 3px;
+        }
+
+        .side-nav::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 2px;
+        }
+
+        .side-nav::-webkit-scrollbar-thumb {
+          background: rgba(255, 126, 70, 0.4);
+          border-radius: 2px;
+        }
+
+        .side-nav .menu-item {
+          min-width: 45px;
+          padding: 3px 4px;
+          font-size: 7px;
+          flex: 0 0 45px;
+          flex-shrink: 0;
+          gap: 2px;
+          scroll-snap-align: start;
+        }
+
+        .side-nav .menu-item .ico {
+          width: 28px;
+          height: 28px;
+          font-size: 12px;
+        }
+
+        .side-nav .menu-item span:not(.ico) {
+          font-size: 7px;
+          word-break: keep-all;
+          line-height: 1.2;
+          text-align: center;
+        }
+
+        .side-nav .menu-item:hover .ico {
+          background: #ffffff;
+        }
+
+        .side-nav .menu-item.active {
+          background: #ffffff;
+          color: #ff7e46;
+        }
+
+        .side-nav .menu-item.active .ico {
+          color: #ff7e46;
+          background: rgba(255, 126, 70, 0.1);
+        }
+
+        .main-content {
+          padding-bottom: 55px;
+        }
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .header-auth {
+        display: flex;
+        align-items: center;
+      }
+      .home-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 50px;
+        padding: 0 32px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 16px;
+        gap: 8px;
+        border: none;
+        background: var(--accent-color);
+        color: var(--primary-white);
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      .home-btn:hover {
+        background: var(--accent-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 123, 84, 0.3);
+      }
+
+      .auth-buttons {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .auth-user {
+        display: none;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+        border-radius: 16px;
+        background: rgba(255, 123, 84, 0.12);
+        color: var(--text-primary);
+      }
+      .auth-user__avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-color);
+        color: #fff;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+      .auth-user__meta {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+      .auth-user__label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-decoration: none;
+      }
+      .auth-user__email {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: color 0.2s ease;
+        text-decoration: none;
+      }
+      .auth-user__email:hover {
+        color: var(--accent-color);
+      }
+      .auth-user__logout {
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        color: var(--text-primary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .auth-user__logout:hover {
+        background: rgba(255, 126, 70, 0.12);
+        transform: translateY(-2px);
+      }
+      .auth-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 44px;
+        padding: 0 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: #fff;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+      }
+
+      .auth-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      }
+
+      .auth-btn--primary {
+        background: transparent;
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
+      }
+
+      .auth-btn--primary:hover {
+        background: var(--accent-color);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(255, 126, 70, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .auth-btn--ghost {
+        background: transparent;
+        color: var(--text-secondary);
+      }
+
+      .auth-btn--ghost:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+      }
+      @media (max-width: 768px) {
+        .auth-user {
+          padding: 4px 8px;
+          gap: 6px;
+        }
+        .auth-user__avatar {
+          width: 24px;
+          height: 24px;
+          font-size: 10px;
+        }
+        .auth-user__label {
+          font-size: 8px;
+          white-space: nowrap;
+        }
+        .auth-user__email {
+          font-size: 9px;
+          white-space: nowrap;
+        }
+        .auth-user__logout {
+          height: 24px;
+          padding: 0 8px;
+          font-size: 9px;
+        }
+        .auth-btn {
+          height: 28px;
+          padding: 0 12px;
+          font-size: 11px;
+        }
+        .home-btn {
+          height: 28px;
+          padding: 0 12px;
+          font-size: 11px;
+        }
+      }
+
+      /* Hide old nav elements */
+      .nav-container, .nav-menu, .top-nav, .user-actions {
+        display: none !important;
+      }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 5px;
+            background: transparent;
+        }
+
+        @media (max-width: 768px) {
+          .container {
+            padding: 12px 8px;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .container {
+            padding: 12px 8px;
+          }
+        }
+
+        /* 페이지 헤더 섹션 - 통일된 스타일 */
+        .header-section {
+            background: #ffe8d9;
+            border-radius: 20px 20px 0 0;
+            padding: 8px 20px 8px 20px;
+            margin-bottom: 0;
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-header {
+            margin-bottom: 0;
+            text-align: center;
+            width: 100%;
+        }
+
+        .page-header h1 {
+            font-size: 12pt;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+
+        .page-header p {
+            font-size: 8pt;
+            color: var(--text-secondary);
+            line-height: 1.3;
+            margin: 0;
+        }
+
+
+        @media (max-width: 768px) {
+          .header-section {
+            padding: 8px 12px 8px 12px;
+            border-radius: 16px 16px 0 0;
+            min-height: 56px;
+          }
+
+          .page-header {
+            margin-bottom: 0;
+          }
+
+          .page-header h1 {
+            font-size: 12pt;
+            margin-bottom: 2px;
+            line-height: 1.2;
+          }
+
+          .page-header p {
+            font-size: 8pt;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .header-section {
+            padding: 8px 8px 8px 8px;
+            border-radius: 12px 12px 0 0;
+            min-height: 56px;
+          }
+
+          .page-header {
+            margin-bottom: 0;
+          }
+
+          .page-header h1 {
+            font-size: 12pt;
+            margin-bottom: 2px;
+            line-height: 1.2;
+          }
+
+          .page-header p {
+            font-size: 8pt;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+          }
+        }
+
+        /* AI 블로그 컨테이너 스타일 */
+        .form-section {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 40px;
+            margin-top: 0;
+        }
+
+        .review-content {
+            padding: 36px;
+        }
+
+        @media (max-width: 768px) {
+          .review-content {
+            padding: 24px 16px;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .review-content {
+            padding: 20px 12px;
+          }
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group label i {
+            margin-right: 8px;
+            color: var(--accent-color);
+        }
+
+        .input-field,
+        .form-group input[type="text"],
+        .form-group input[type="tel"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: #fff;
+        }
+
+        .input-field:focus,
+        .form-group input[type="text"]:focus,
+        .form-group input[type="tel"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(255, 126, 70, 0.15);
+        }
+
+        .textarea-field {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* 버튼 그룹 */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            border: 2px solid var(--accent-color);
+            background: white;
+            color: var(--accent-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 126, 70, 0.25);
+        }
+
+        .btn.btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn.btn-primary:hover {
+            background: #e66a42;
+            box-shadow: 0 8px 20px rgba(255, 126, 70, 0.35);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn.loading::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+      .result-section {
+            display: none;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 40px;
+            margin-top: 0;
+        }
+        
+        .result-content {
+            padding: 36px;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .step-indicator {
+        display: flex;
+        justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 15px 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        font-weight: 600;
+            font-size: 0.9rem;
+            color: #495057;
+        transition: all 0.3s ease;
+      }
+
+        .step.active {
+            background: var(--accent-color);
+        color: white;
+      }
+
+        .loading {
+            text-align: center;
+            padding: 20px 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+        margin-bottom: 20px;
+      }
+
+        .success {
+            background: rgba(255, 123, 84, 0.15);
+            color: #c75a2a;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 123, 84, 0.3);
+            font-size: 0.85rem;
+        }
+        
+        .success strong {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .topic-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+        .topic-card:hover {
+            border-color: var(--accent-color);
+            background: rgba(255, 123, 84, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .topic-card h3 {
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 1rem;
+        }
+
+        .topic-card p {
+            color: #666;
+            margin-bottom: 6px;
+            line-height: 1.4;
+            font-size: 0.85rem;
+        }
+
+        .topic-card .keywords {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .blog-content {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #blogTopics {
+            margin-top: 8px;
+        }
+        
+        #blogTopics h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            color: #333;
+        }
+        
+        #blogTopics p {
+            font-size: 0.85rem;
+            margin: 6px 0 12px 0;
+            color: #666;
+        }
+        
+        #blogContent h3 {
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        
+        .angle-info-box {
+            font-size: 0.875rem;
+        }
+        
+        .angle-info-box strong {
+            font-size: 0.875rem;
+        }
+        
+        .angle-info-box small {
+            font-size: 0.8rem;
+        }
+
+        /* AI 키워드 버튼 스타일 */
+        .ai-keyword-btn {
+            margin-top: 8px;
+            padding: 10px 20px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .ai-keyword-btn:hover {
+            background: #e66a42;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 126, 70, 0.4);
+        }
+
+        .ai-keyword-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 키워드 태그 스타일 */
+        .keyword-tag {
+            display: inline-block;
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid var(--accent-color);
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            color: var(--accent-color);
+        }
+
+        .keyword-tag:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(255, 126, 70, 0.2);
+            background: rgba(255, 126, 70, 0.05);
+        }
+
+        .keyword-tag.selected {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* 탭 스타일링 */
+        .tab-navigation {
+            display: flex;
+            background: rgba(255, 126, 70, 0.08);
+            border-radius: 12px;
+            margin: 0 0 20px 0;
+            padding: 6px;
+            border: 1px solid rgba(255, 126, 70, 0.15);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 126, 70, 0.1);
+            color: var(--accent-color);
+        }
+
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 126, 70, 0.25);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+            @media (max-width: 768px) {
+            input[type="text"], input[type="number"], textarea, select {
+                font-size: 0.77rem !important;
+                padding: 10px !important;
+            }
+            button {
+                font-size: 11px;
+                padding: 9px 14px;
+            }
+            /* 저장/불러오기 버튼은 가로로 정렬 유지 - 먼저 예외 처리 */
+            .store-buttons-container {
+                flex-direction: row !important;
+                display: flex !important;
+            }
+            .store-buttons-container .btn,
+            .store-buttons-container .btn.btn-primary,
+            .store-buttons-container button.btn,
+            .store-buttons-container #loadStoreInfoBtn,
+            .store-buttons-container #saveStoreInfoBtn {
+                width: auto !important;
+                flex: 1 !important;
+                max-width: none !important;
+                min-width: 0 !important;
+            }
+            .btn {
+                width: 100%;
+                justify-content: center;
+                padding: 10px 16px !important;
+                font-size: 11px !important;
+                min-height: 40px;
+                border-radius: 10px;
+                gap: 4px;
+            }
+            /* 저장/불러오기 버튼은 가로로 정렬 유지 - 다시 한번 강제 */
+            .store-buttons-container .btn,
+            .store-buttons-container .btn.btn-primary,
+            .store-buttons-container button.btn,
+            .store-buttons-container #loadStoreInfoBtn,
+            .store-buttons-container #saveStoreInfoBtn {
+                width: auto !important;
+                flex: 1 !important;
+                max-width: none !important;
+                min-width: 0 !important;
+            }
+            .btn i {
+                font-size: 13px;
+            }
+            label {
+                font-size: 0.9rem;
+            }
+            p, small, .form-group label {
+                font-size: 0.88rem;
+            }
+
+            .step-indicator {
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+
+            .step {
+                font-size: 0.85rem;
+                padding: 10px 8px;
+                color: #495057;
+                background: #f8f9fa;
+            }
+            
+            .step.active {
+                color: white;
+                background: var(--accent-color);
+            }
+            
+            .loading {
+                padding: 12px 20px;
+            }
+            
+            .spinner {
+                margin: 0 auto 8px;
+            }
+            
+            .result-section {
+                padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+            }
+            
+            .result-content {
+                padding: 24px 16px;
+            }
+            
+            .success {
+                padding: 10px 12px;
+                margin-bottom: 6px;
+                font-size: 0.8rem;
+            }
+            
+            .success strong {
+                font-size: 0.8rem;
+                font-weight: 600;
+            }
+            
+            .topic-card {
+                padding: 10px 12px;
+                margin-bottom: 6px;
+            }
+            
+            .topic-card h3 {
+                font-size: 0.9rem;
+                margin-bottom: 4px;
+            }
+            
+            .topic-card p {
+                font-size: 0.8rem;
+                margin-bottom: 4px;
+            }
+            
+            .topic-card .keywords {
+                font-size: 0.75rem;
+            }
+            
+            #blogTopics h3 {
+                font-size: 1rem;
+                margin-bottom: 4px;
+            }
+            
+            #blogTopics p {
+                font-size: 0.8rem;
+                margin: 4px 0 8px 0;
+            }
+            
+            #blogContent h3 {
+                font-size: 0.875rem;
+                margin-bottom: 12px;
+            }
+            
+            .angle-info-box {
+                font-size: 0.8rem;
+            }
+            
+            .angle-info-box strong {
+                font-size: 0.8rem;
+            }
+            
+            .angle-info-box small {
+                font-size: 0.75rem;
+            }
+            
+            .blog-content {
+                padding: 16px 12px;
+                font-size: 0.8rem;
+                line-height: 1.6;
+            }
+            .ai-keyword-btn {
+                padding: 9px 14px;
+                font-size: 11px;
+            }
+            .tab-btn {
+                font-size: 11px;
+                padding: 10px 14px;
+            }
+            .button-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .form-group {
+                margin-bottom: 20px;
+            }
+            .form-group label {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            /* 저장/불러오기 버튼은 가로로 정렬 유지 */
+            .store-buttons-container {
+                flex-direction: row !important;
+                display: flex !important;
+            }
+            .store-buttons-container .btn,
+            .store-buttons-container .btn.btn-primary,
+            .store-buttons-container button.btn,
+            .store-buttons-container #loadStoreInfoBtn,
+            .store-buttons-container #saveStoreInfoBtn {
+                width: auto !important;
+                flex: 1 1 auto !important;
+                max-width: none !important;
+                min-width: 0 !important;
+            }
+        }
+    </style>
+  </head>
+  <body>
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo-container">
+        <div class="logo-icon">
+          <i class="fa-solid fa-thumbtack"></i>
+        </div>
+        <span class="logo-text">sajang pick</span>
+      </a>
+      
+      <h1 class="header-slogan">센스있는 사장님들의 선택</h1>
+      
+      <div class="header-auth">
+        <div class="auth-buttons" id="authButtons">
+          <div class="auth-user" id="authUser" style="display: none;">
+            <div class="auth-user__avatar" id="userAvatar">U</div>
+            <div class="auth-user__meta">
+              <a href="/mypage.html" class="auth-user__label" style="cursor: pointer; text-decoration: none;">나의 페이지</a>
+              <a href="/mypage.html" class="auth-user__email" id="userEmail" style="cursor: pointer; text-decoration: none;"></a>
+            </div>
+            <button class="auth-user__logout" id="logoutBtn" type="button">
+              로그아웃
+            </button>
+          </div>
+          <a href="/login.html" class="auth-btn auth-btn--primary" id="loginBtn">
+            <i class="fa-solid fa-sign-in-alt" style="margin-right: 8px;"></i>
+            <span>로그인</span>
+          </a>
+          <a href="/join.html" class="auth-btn auth-btn--ghost" id="signupBtn">
+            <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i>
+            <span>회원가입</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <aside class="side-nav" aria-label="사이드 네비게이션">
+    <a class="menu-item" href="./index.html">
+      <span class="ico"><i class="fa-solid fa-house"></i></span>
+      <span>홈</span>
+    </a>
+    <a class="menu-item" href="./naver_search.html">
+      <span class="ico"><i class="fa-solid fa-key"></i></span>
+      <span>키워드</span>
+    </a>
+    <a class="menu-item" href="./AI-Review.html">
+      <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
+      <span>리뷰</span>
+    </a>
+    <a class="menu-item active" href="./Blog-Editor.html">
+      <span class="ico"><i class="fa-solid fa-blog"></i></span>
+      <span>블로그</span>
+    </a>
+    <a class="menu-item" href="./recipe-manager.html">
+      <span class="ico"><i class="fa-solid fa-utensils"></i></span>
+      <span>레시피</span>
+    </a>
+    <a class="menu-item" href="./shorts-editor.html">
+      <span class="ico"><i class="fa-solid fa-film"></i></span>
+      <span>영상</span>
+    </a>
+    <a class="menu-item" href="./sajangpick-book.html">
+      <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+      <span>전자책</span>
+    </a>
+    <a class="menu-item" href="./news-board.html">
+      <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
+      <span>정보</span>
+    </a>
+    <a class="menu-item" href="./policy-support.html">
+      <span class="ico"><i class="fa-solid fa-coins"></i></span>
+      <span>정책</span>
+    </a>
+  </aside>
+
+  <div class="main-content">
+    <div class="container">
+        <!-- 헤더 섹션 (타이틀만) -->
+        <div class="header-section">
+            <div class="page-header">
+                <h1>AI 블로그 생성기</h1>
+                <p>AI를 활용하여 고품질 블로그 콘텐츠를 자동으로 생성해보세요.</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="review-content">
+                <!-- 탭 네비게이션 (설명 아래) -->
+                <div class="tab-navigation" style="margin-bottom: 24px;">
+                    <button class="tab-btn active" data-tab="our-store">우리매장</button>
+                    <button class="tab-btn" data-tab="review-team">체험단리뷰</button>
+                </div>
+
+                <!-- 우리매장 탭 -->
+                <div class="tab-content active" id="our-store-tab">
+                    <!-- 안내 문구 -->
+                    <div style="background: var(--primary-white); border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: var(--accent-color); font-size: 14px; margin-bottom: 10px;">
+                        💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
+                    </p>
+                    <div class="store-buttons-container" style="display: flex !important; flex-direction: row !important; gap: 10px; align-items: stretch;">
+                        <button type="button" id="loadStoreInfoBtn" class="btn btn-primary" style="flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; max-width: none !important; font-size: 12px;">
+                            📥 저장된 정보<br>불러오기
+                        </button>
+                        <button type="button" id="saveStoreInfoBtn" class="btn" style="flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; max-width: none !important; font-size: 12px;">
+                            📌 가게 정보<br>저장하기
+                        </button>
+                    </div>
+                </div>
+
+          <form id="blogForm">
+            <div class="form-group">
+                    <label for="companyName">업체명</label>
+              <input
+                type="text"
+                        id="companyName" 
+                        name="companyName" 
+                        placeholder="예: 해운대국밥"
+              />
+                    <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
+            </div>
+
+            <div class="form-group">
+                    <label for="companyAddress">업체주소</label>
+              <input
+                type="text"
+                        id="companyAddress" 
+                        name="companyAddress" 
+                        placeholder="예: 부산광역시 해운대구 우동 999-1"
+                    />
+                    <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
+            </div>
+
+            <div class="form-group">
+                    <label for="businessHours">영업시간</label>
+              <input
+                type="text"
+                id="businessHours"
+                name="businessHours"
+                        placeholder="예: 11:30-22:00 (매일, 15:00-17:00 브레이크타임)"
+              />
+                    <small style="color: #666; font-size: 12px;">영업시간과 휴무일을 입력해주세요</small>
+            </div>
+
+            <div class="form-group">
+                    <label for="phoneNumber">전화번호</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                        placeholder="예: 010-1234-5678 또는 051-123-4567"
+              />
+                    <small style="color: #666; font-size: 12px;">가게 전화번호를 입력해주세요 (블로그 글에 포함됩니다)</small>
+            </div>
+
+            <div class="form-group">
+                    <label for="mainMenu">대표메뉴</label>
+                    <textarea 
+                        id="mainMenu" 
+                        name="mainMenu" 
+                        placeholder="예: 삼겹살, 목살, 갈비"
+                    ></textarea>
+                    <small style="color: #666; font-size: 12px;">가게의 대표 메뉴들을 입력해주세요 (쉼표로 구분)</small>
+              </div>
+
+                <div class="form-group">
+                    <label for="landmarks">주변 랜드마크</label>
+                    <input 
+                        type="text" 
+                        id="landmarks" 
+                        name="landmarks" 
+                        placeholder="예: 해운대해수욕장, 센텀시티, 해운대역"
+                    />
+                    <small style="color: #666; font-size: 12px;">주변 유명한 장소나 랜드마크를 입력해주세요 (쉼표로 구분)</small>
+            </div>
+
+            <div class="form-group">
+                    <label for="keywords">키워드</label>
+                  <input
+                        type="text" 
+                        id="keywords" 
+                        name="keywords" 
+                        placeholder="예: 30년전통, 신선한고기, 가족식당, 부산맛집"
+                    />
+                    <button type="button" id="aiKeywordBtn" class="ai-keyword-btn">
+                        🤖 AI 키워드 추천받기
+                    </button>
+                    <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
+                    
+                    <!-- AI 추천 키워드 영역 -->
+                    <div id="aiKeywordArea" style="display: none; margin-top: 15px;">
+                            <div style="background: var(--primary-white); border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px;">
+                                <p style="margin: 0 0 10px 0; color: var(--accent-color); font-weight: 600;">
+                                🎯 AI 추천 키워드 (클릭해서 선택/해제)
+                            </p>
+                            <div id="aiKeywordTags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                    <button type="submit" class="btn btn-primary" id="generateBtn" style="width: 100%;">
+                        블로그 생성하기
+                    </button>
+            </form>
+            </div>
+
+                <!-- 체험단리뷰 탭 -->
+                <div class="tab-content" id="review-team-tab">
+                    <!-- 안내 문구 -->
+                    <div style="background: var(--primary-white); border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: var(--accent-color); font-size: 14px;">
+                        💡 <strong>알림:</strong> 빈칸이 없을수록 블로그 질이 좋아집니다! 가능한 모든 정보를 입력해주세요.
+                    </p>
+                </div>
+
+                <form id="reviewTeamForm">
+                    <div class="form-group">
+                        <label for="companyName2">업체명</label>
+                  <input
+                            type="text" 
+                            id="companyName2" 
+                            name="companyName" 
+                            placeholder="예: 동흥안가"
+                  />
+                        <small style="color: #666; font-size: 12px;">가게의 정확한 상호명을 입력해주세요</small>
+                </div>
+
+                    <div class="form-group">
+                        <label for="companyAddress2">업체주소</label>
+                  <input
+                            type="text" 
+                            id="companyAddress2" 
+                            name="companyAddress" 
+                            placeholder="예: 부산광역시 해운대구 우동 1394-84"
+                  />
+                        <small style="color: #666; font-size: 12px;">가게의 정확한 주소를 입력해주세요</small>
+                </div>
+
+                    <div class="form-group">
+                        <label for="businessHours2">영업시간</label>
+                  <input
+                            type="text" 
+                            id="businessHours2" 
+                            name="businessHours" 
+                            placeholder="예: 11:30-22:00 (매일, 15:00-17:00 브레이크타임)"
+                  />
+                        <small style="color: #666; font-size: 12px;">영업시간과 휴무일을 입력해주세요</small>
+                </div>
+
+                    <div class="form-group">
+                        <label for="phoneNumber2">전화번호</label>
+                        <input
+                            type="tel"
+                            id="phoneNumber2"
+                            name="phoneNumber"
+                            placeholder="예: 010-1234-5678 또는 051-123-4567"
+                        />
+                        <small style="color: #666; font-size: 12px;">가게 전화번호를 입력해주세요 (블로그 글에 포함됩니다)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mainMenu2">대표메뉴</label>
+                        <textarea 
+                            id="mainMenu2" 
+                            name="mainMenu" 
+                            placeholder="예: 삼겹살, 목살, 갈비"
+                        ></textarea>
+                        <small style="color: #666; font-size: 12px;">가게의 대표 메뉴들을 입력해주세요 (쉼표로 구분)</small>
+              </div>
+
+                    <div class="form-group">
+                        <label for="landmarks2">주변 랜드마크</label>
+                        <input 
+                            type="text" 
+                            id="landmarks2" 
+                            name="landmarks" 
+                            placeholder="예: 해운대해수욕장, 센텀시티, 해운대역"
+                        />
+                        <small style="color: #666; font-size: 12px;">주변 유명한 장소나 랜드마크를 입력해주세요 (쉼표로 구분)</small>
+            </div>
+
+            <div class="form-group">
+                        <label for="keywords2">키워드</label>
+                <input
+                            type="text" 
+                            id="keywords2" 
+                            name="keywords" 
+                            placeholder="예: 30년전통, 신선한고기, 가족식당, 부산맛집"
+                        />
+                        <button type="button" id="aiKeywordBtn2" class="ai-keyword-btn">
+                            🤖 AI 키워드 추천받기
+                        </button>
+                        <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
+                        
+                        <!-- AI 추천 키워드 영역 -->
+                        <div id="aiKeywordArea2" style="display: none; margin-top: 15px;">
+                            <div style="background: var(--primary-white); border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px;">
+                                <p style="margin: 0 0 10px 0; color: var(--accent-color); font-weight: 600;">
+                                    🎯 AI 추천 키워드 (클릭해서 선택/해제)
+                                </p>
+                                <div id="aiKeywordTags2" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                            </div>
+                        </div>
+              </div>
+
+                    <div class="form-group">
+                        <label for="existingBlog2">기존 블로그 글 (선택사항)</label>
+                        <textarea 
+                            id="existingBlog2" 
+                            name="existingBlog" 
+                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 체험단 리뷰를 작성합니다. (선택사항: 입력하지 않아도 생성 가능)"
+                        ></textarea>
+                        <small style="color: #666; font-size: 12px;">💡 선택사항: 기존 블로그 글을 입력하면 그 스타일을 참고하고, 없으면 기본 스타일로 작성합니다</small>
+            </div>
+
+                        <button type="submit" class="btn btn-primary" id="generateReviewTeamBtn" style="width: 100%;">
+                            체험단 리뷰 생성하기
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+          </form>
+        </div>
+          </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="result-content">
+                <div class="step-indicator">
+                    <div class="step" id="step1">1. 가게 정보 분석</div>
+                    <div class="step" id="step2">2. 메뉴 분석</div>
+                    <div class="step" id="step3">3. 주제 추천</div>
+                    <div class="step" id="step4">4. 글 생성</div>
+                </div>
+
+                <div id="loadingDiv" class="loading">
+                    <div class="spinner"></div>
+                    <p>AI가 가게 정보를 분석하고 있습니다...</p>
+                </div>
+
+                <div id="errorDiv" class="error" style="display: none;">
+                    <strong>오류가 발생했습니다:</strong>
+                    <p id="errorMessage"></p>
+                </div>
+
+                <div id="successDiv" class="success" style="display: none;">
+                    <strong>블로그가 성공적으로 생성되었습니다!</strong>
+                </div>
+
+                <div id="blogTopics" style="display: none;">
+                    <h3>추천 블로그 주제 (5개) - 클릭하여 선택</h3>
+                    <p>마음에 드는 주제를 클릭하시면 해당 주제로 블로그 글을 생성합니다</p>
+                    <div id="topicsList"></div>
+                </div>
+
+                <div id="blogContent" style="display: none;">
+                    <h3>생성된 블로그 글</h3>
+                    <div id="blogText" class="blog-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+    <script src="./assets/auth-state.js?v=202410"></script>
+    <script>
+      // DOM 요소들
+        const blogForm = document.getElementById('blogForm');
+        const reviewTeamForm = document.getElementById('reviewTeamForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const generateReviewTeamBtn = document.getElementById('generateReviewTeamBtn');
+        const resultSection = document.getElementById('resultSection');
+        const loadingDiv = document.getElementById('loadingDiv');
+        const errorDiv = document.getElementById('errorDiv');
+        const successDiv = document.getElementById('successDiv');
+        const blogTopics = document.getElementById('blogTopics');
+        const topicsList = document.getElementById('topicsList');
+        const blogContent = document.getElementById('blogContent');
+        const blogText = document.getElementById('blogText');
+
+        // 전역 변수: 프로모션 데이터
+        let globalPromotionData = null;
+        let globalHasPromotion = false;
+
+        // 인증 확인 (Supabase 세션 기반)
+        async function ensureAuthenticated() {
+            // 🔧 개발 환경 체크 (프로덕션에서는 항상 인증 필요)
+            const isDevelopment = true; // 인증 비활성화 모드
+            if (isDevelopment) {
+                console.log('🔧 개발 모드: 인증 건너뛰기');
+                // 개발용 임시 사용자 데이터 설정
+                if (!localStorage.getItem('userData')) {
+                    localStorage.setItem('userData', JSON.stringify({
+                        id: 'dev-user-001',
+                        name: '개발자',
+                        email: 'dev@test.com'
+                    }));
+                }
+                localStorage.setItem('isLoggedIn', 'true');
+                return true;
+            }
+
+            // Supabase 세션 확인
+            if (window.authState?.supabase) {
+                try {
+                    const { data: { session } } = await window.authState.supabase.auth.getSession();
+                    if (session?.user) {
+                        // 세션이 유효하면 사용자 정보 저장
+                        localStorage.setItem('userData', JSON.stringify({
+                            id: session.user.id,
+                            email: session.user.email,
+                            name: session.user.user_metadata?.full_name || session.user.email
+                        }));
+                        return true;
+                    }
+                } catch (error) {
+                    console.warn("세션 확인 실패:", error);
+                }
+            }
+            
+            // 세션이 없으면 로그인 페이지로 리다이렉트
+            const current = window.location.pathname + window.location.search + window.location.hash;
+            window.location.replace(`login.html?redirect=${encodeURIComponent(current)}`);
+            return false;
+        }
+
+        // 프로모션 정보 알림 표시
+        function showPromotionNotification(filledCount, totalCount) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: linear-gradient(135deg, #2196F3, #1976D2);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+                z-index: 9999;
+                font-size: 14px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-bullhorn"></i>
+                    <div>
+                        <div style="font-weight: 700;">내 가게 알리기 자동 적용!</div>
+                        <div style="font-size: 12px; opacity: 0.9;">작성 항목: ${filledCount} / ${totalCount}</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            // 3초 후 자동 제거
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // 페이지 로드 시 인증 확인
+        window.addEventListener('load', async function() {
+            await ensureAuthenticated();
+            await loadStoreInfo(); // 통합 가게 정보 로드 (기본 + 프로모션)
+        });
+
+        // 통합 가게 정보 자동 입력 (기본 정보 + 프로모션 정보)
+        async function loadStoreInfo() {
+            try {
+                // 로그인 확인
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (!userData.id) {
+                    console.log('로그인되지 않음');
+                    return;
+                }
+
+                // 통합 정보 API 호출
+                const response = await fetch(`/api/store-info-all?userId=${userData.id}`);
+                if (!response.ok) {
+                    console.error('가게 정보 조회 실패:', response.statusText);
+                    return;
+                }
+
+                const result = await response.json();
+                if (!result.success || !result.data) {
+                    console.log('저장된 가게 정보 없음');
+                    return;
+                }
+
+                const data = result.data.basic; // 기본 정보
+                
+                // ✅ "미입력", "정보 없음" 문자열 필터링 함수
+                function cleanValue(value) {
+                    if (!value || typeof value !== 'string') return '';
+                    const trimmed = value.trim();
+                    // "미입력", "정보 없음" 등의 문자열 제거
+                    if (trimmed.includes('미입력') || trimmed.includes('정보 없음')) return '';
+                    return trimmed;
+                }
+                
+                // 프로모션 정보 전역 변수에 저장
+                globalPromotionData = result.data.promotion;
+                globalHasPromotion = result.hasPromotion;
+
+                // 프로모션 정보 알림
+                if (globalHasPromotion && globalPromotionData) {
+                    showPromotionNotification(result.filledCount, result.totalCount);
+                }
+                
+                // 정제된 데이터
+                const cleanedData = {
+                    name: cleanValue(data.store_name),
+                    address: cleanValue(data.store_address),
+                    hours: cleanValue(data.store_business_hours),
+                    phone: cleanValue(data.store_phone_number),
+                    menu: cleanValue(data.store_main_menu),
+                    landmarks: cleanValue(data.store_landmarks),
+                    keywords: cleanValue(data.store_keywords)
+                };
+                
+                console.log('✅ 가게 정보 로드 완료 (정제됨):', cleanedData);
+                
+                // 우리매장 탭 자동 입력 (정제된 값만)
+                if (cleanedData.name) document.getElementById('companyName').value = cleanedData.name;
+                if (cleanedData.address) document.getElementById('companyAddress').value = cleanedData.address;
+                if (cleanedData.hours) document.getElementById('businessHours').value = cleanedData.hours;
+                if (cleanedData.phone) document.getElementById('phoneNumber').value = cleanedData.phone;
+                if (cleanedData.menu) document.getElementById('mainMenu').value = cleanedData.menu;
+                if (cleanedData.landmarks) document.getElementById('landmarks').value = cleanedData.landmarks;
+                if (cleanedData.keywords) document.getElementById('keywords').value = cleanedData.keywords;
+
+                // 체험단리뷰 탭 자동 입력 (정제된 값만)
+                if (cleanedData.name) document.getElementById('companyName2').value = cleanedData.name;
+                if (cleanedData.address) document.getElementById('companyAddress2').value = cleanedData.address;
+                if (cleanedData.hours) document.getElementById('businessHours2').value = cleanedData.hours;
+                if (cleanedData.phone) document.getElementById('phoneNumber2').value = cleanedData.phone;
+                if (cleanedData.menu) document.getElementById('mainMenu2').value = cleanedData.menu;
+                if (cleanedData.landmarks) document.getElementById('landmarks2').value = cleanedData.landmarks;
+                if (cleanedData.keywords) document.getElementById('keywords2').value = cleanedData.keywords;
+
+                console.log('✅ 가게 정보 자동 입력 완료');
+            } catch (error) {
+                console.error('가게 정보 로드 오류:', error);
+            }
+        }
+
+
+        // AI 키워드 추천 함수
+        async function recommendKeywords(tabNumber = '') {
+            const btnId = tabNumber ? `aiKeywordBtn${tabNumber}` : 'aiKeywordBtn';
+            const areaId = tabNumber ? `aiKeywordArea${tabNumber}` : 'aiKeywordArea';
+            const tagsId = tabNumber ? `aiKeywordTags${tabNumber}` : 'aiKeywordTags';
+            const companyNameId = tabNumber ? `companyName${tabNumber}` : 'companyName';
+            const companyAddressId = tabNumber ? `companyAddress${tabNumber}` : 'companyAddress';
+            const mainMenuId = tabNumber ? `mainMenu${tabNumber}` : 'mainMenu';
+            const landmarksId = tabNumber ? `landmarks${tabNumber}` : 'landmarks';
+            const keywordsId = tabNumber ? `keywords${tabNumber}` : 'keywords';
+
+            const btn = document.getElementById(btnId);
+            const area = document.getElementById(areaId);
+            const tagsContainer = document.getElementById(tagsId);
+            const keywordsInput = document.getElementById(keywordsId);
+
+            // 현재 입력된 정보 수집
+            const companyName = document.getElementById(companyNameId).value.trim();
+            const companyAddress = document.getElementById(companyAddressId).value.trim();
+            const mainMenu = document.getElementById(mainMenuId).value.trim();
+            const landmarks = document.getElementById(landmarksId).value.trim();
+
+            // 최소한 업체명만 입력되어 있으면 OK
+            if (!companyName) {
+                alert('최소한 업체명은 입력해주세요.');
+                return;
+            }
+
+            try {
+                // 버튼 비활성화
+                btn.disabled = true;
+                btn.textContent = '🤖 AI 분석 중...';
+
+                // API 호출
+                const response = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'recommend-keywords',
+                        data: {
+                            companyName,
+                            companyAddress,
+                            mainMenu,
+                            landmarks
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('키워드 추천 실패');
+                }
+
+                const result = await response.json();
+                const keywords = result.data.keywords || [];
+
+                if (keywords.length === 0) {
+                    throw new Error('추천된 키워드가 없습니다');
+                }
+
+                // 키워드 태그 생성
+                tagsContainer.innerHTML = '';
+                keywords.forEach(keyword => {
+                    const tag = document.createElement('span');
+                    tag.className = 'keyword-tag';
+                    tag.textContent = keyword;
+                    tag.dataset.keyword = keyword;
+                    
+                    // 클릭 이벤트 (선택/해제 토글)
+                    tag.addEventListener('click', function() {
+                        this.classList.toggle('selected');
+                        updateKeywordsInput(tagsId, keywordsId);
+                    });
+
+                    tagsContainer.appendChild(tag);
+                });
+
+                // 추천 영역 표시
+                area.style.display = 'block';
+
+            } catch (error) {
+                console.error('키워드 추천 오류:', error);
+                alert('❌ 키워드 추천에 실패했습니다.\n' + error.message);
+            } finally {
+                // 버튼 복구
+                btn.disabled = false;
+                btn.textContent = '🤖 AI 키워드 추천받기';
+            }
+        }
+
+        // 선택된 키워드를 input에 반영
+        function updateKeywordsInput(tagsId, keywordsId) {
+            const tagsContainer = document.getElementById(tagsId);
+            const keywordsInput = document.getElementById(keywordsId);
+            
+            const selectedTags = tagsContainer.querySelectorAll('.keyword-tag.selected');
+            const selectedKeywords = Array.from(selectedTags).map(tag => tag.dataset.keyword);
+            
+            keywordsInput.value = selectedKeywords.join(', ');
+        }
+
+        // AI 키워드 추천 버튼 이벤트 (우리매장 탭)
+        document.getElementById('aiKeywordBtn').addEventListener('click', async function() {
+            await recommendKeywords('');
+        });
+
+        // AI 키워드 추천 버튼 이벤트 (체험단리뷰 탭)
+        document.getElementById('aiKeywordBtn2').addEventListener('click', async function() {
+            await recommendKeywords('2');
+        });
+
+        // 가게 정보 불러오기 버튼 이벤트
+        document.getElementById('loadStoreInfoBtn').addEventListener('click', async function() {
+            try {
+                // 로그인 확인
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (!userData.id) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                }
+
+                // 버튼 비활성화
+                this.disabled = true;
+                this.textContent = '불러오는 중...';
+
+                // 가게 정보 불러오기
+                await loadStoreInfo();
+                alert('✅ 저장된 정보를 불러왔습니다!');
+
+            } catch (error) {
+                console.error('가게 정보 불러오기 오류:', error);
+                alert('❌ 가게 정보 불러오기에 실패했습니다.\n' + error.message);
+            } finally {
+                // 버튼 복구
+                this.disabled = false;
+                this.textContent = '📥 저장된 정보 불러오기';
+            }
+        });
+
+        // 가게 정보 저장 버튼 이벤트
+        document.getElementById('saveStoreInfoBtn').addEventListener('click', async function() {
+            try {
+                // 로그인 확인
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (!userData.id) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                }
+
+                // 현재 입력된 정보 수집
+                const storeInfo = {
+                    companyName: document.getElementById('companyName').value,
+                    companyAddress: document.getElementById('companyAddress').value,
+                    businessHours: document.getElementById('businessHours').value,
+                    phoneNumber: document.getElementById('phoneNumber').value,
+                    mainMenu: document.getElementById('mainMenu').value,
+                    landmarks: document.getElementById('landmarks').value,
+                    keywords: document.getElementById('keywords').value,
+                };
+
+                // 저장 버튼 비활성화
+                this.disabled = true;
+                this.textContent = '저장 중...';
+
+                // API 호출
+                const response = await fetch('/api/store-info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userData.id, storeInfo })
+                });
+
+                if (!response.ok) {
+                    throw new Error('저장 실패');
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ 가게 정보가 저장되었습니다!\n"📥 저장된 정보 불러오기" 버튼으로 언제든 불러올 수 있습니다.');
+                } else {
+                    throw new Error(result.error || '저장 실패');
+                }
+
+            } catch (error) {
+                console.error('가게 정보 저장 오류:', error);
+                alert('❌ 가게 정보 저장에 실패했습니다.\n' + error.message);
+            } finally {
+                // 버튼 복구
+                this.disabled = false;
+                this.textContent = '📌 가게 정보 저장하기';
+            }
+        });
+
+        // 탭 기능
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.getAttribute('data-tab');
+                
+                // 모든 탭 버튼과 콘텐츠에서 active 클래스 제거
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // 선택된 탭 활성화
+                btn.classList.add('active');
+                document.getElementById(targetTab + '-tab').classList.add('active');
+                
+                // 결과 섹션 숨기기
+                resultSection.classList.remove('show');
+            });
+        });
+
+        // 단계 표시 업데이트 (4단계)
+        function updateStep(step) {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((el, index) => {
+          if (index < step) {
+                    el.classList.add('active');
+          } else if (index === step) {
+                    el.classList.add('active');
+          } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        // 로딩 표시
+        function showLoading(message) {
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            blogTopics.style.display = 'none';
+            blogContent.style.display = 'none';
+            loadingDiv.querySelector('p').textContent = message;
+        }
+
+        // 오류 표시
+        function showError(message) {
+            loadingDiv.style.display = 'none';
+            errorDiv.style.display = 'block';
+            successDiv.style.display = 'none';
+            blogTopics.style.display = 'none';
+            blogContent.style.display = 'none';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // 성공 표시
+        function showSuccess() {
+            loadingDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'block';
+        }
+
+        // 주제 표시
+        function showTopics(topics) {
+            blogTopics.style.display = 'block';
+            topicsList.innerHTML = '';
+            
+            topics.forEach((topic, index) => {
+                const topicCard = document.createElement('div');
+                topicCard.className = 'topic-card';
+                topicCard.innerHTML = `
+                    <h3>${topic.title}</h3>
+                    <p>${topic.description}</p>
+                    <div class="keywords">키워드: ${topic.keywords}</div>
+                `;
+                topicCard.addEventListener('click', () => selectTopic(topic));
+                topicsList.appendChild(topicCard);
+            });
+        }
+
+        // 주제 선택
+        async function selectTopic(topic) {
+            try {
+                showLoading("선택된 주제로 블로그 글을 생성하고 있습니다...");
+                updateStep(3); // 4단계: 글 생성
+
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
+                const generateResponse = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'generate',
+                        data: {
+                            userId: userId,  // 사용자 ID 추가
+                            placeInfo: globalPlaceInfo,
+                            menuAnalysis: globalMenuAnalysis,
+                            selectedTopic: topic,
+                            promotionData: globalPromotionData,  // 프로모션 정보 추가
+                            hasPromotion: globalHasPromotion
+                        }
+                    })
+                });
+
+                const generateText = await generateResponse.text();
+                console.log('생성 응답:', generateText);
+
+                if (!generateResponse.ok) {
+                    try {
+                        const errorData = JSON.parse(generateText);
+                        throw new Error(errorData.error || '블로그 생성 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${generateText.substring(0, 200)}`);
+                    }
+                }
+
+                const generateResult = JSON.parse(generateText);
+                if (!generateResult.success) {
+                    throw new Error(generateResult.error || '블로그 생성 실패');
+                }
+
+                const blogContentText = generateResult.data;
+                const metadata = generateResult.metadata || {};
+                
+                console.log('생성된 블로그:', blogContentText);
+                console.log('글쓰기 앵글:', metadata.writingAngle);
+                
+                showSuccess();
+                
+                // 앵글 정보 표시
+                if (metadata.writingAngle) {
+                    const angleInfo = document.createElement('div');
+                    angleInfo.className = 'angle-info-box';
+                    angleInfo.style.cssText = 'background: #e7f3ff; border: 1px solid #2196F3; border-radius: 10px; padding: 15px; margin-bottom: 20px; color: #1976D2;';
+                    angleInfo.innerHTML = `<strong>📝 글쓰기 관점:</strong> ${metadata.writingAngle}<br><small>이 관점으로 글이 작성되었습니다. 다음에는 다른 관점으로 작성됩니다!</small>`;
+                    blogContent.insertBefore(angleInfo, blogText);
+                }
+                
+                blogContent.style.display = 'block';
+                blogText.textContent = blogContentText;
+
+            } catch (error) {
+                console.error("Blog generation error:", error);
+                showError("블로그 생성 중 오류가 발생했습니다: " + error.message);
+            }
+        }
+
+        // 전역 변수로 저장
+        let globalPlaceInfo = null;
+        let globalMenuAnalysis = null;
+
+        // 우리매장 폼 제출 이벤트
+      blogForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+            const companyName = formData.get("companyName");
+            const companyAddress = formData.get("companyAddress");
+            const businessHours = formData.get("businessHours");
+            const phoneNumber = formData.get("phoneNumber") || "";
+            const mainMenu = formData.get("mainMenu") || "";
+            const landmarks = formData.get("landmarks") || "";
+            const keywords = formData.get("keywords") || "";
+
+        // 최소한 업체명만 입력되어 있으면 OK
+            if (!companyName) {
+                alert("최소한 업체명은 입력해주세요. 더 많은 정보를 입력할수록 블로그 질이 좋아집니다!");
+          return;
+        }
+
+        try {
+          generateBtn.disabled = true;
+                generateBtn.textContent = "분석 중...";
+                resultSection.classList.add('show');
+                
+                // Step 1: 가게 정보 구조화
+                showLoading("가게 정보를 분석하고 있습니다...");
+                updateStep(0);
+
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
+                const crawlResponse = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'crawl',
+                        data: {
+                            userId,
+                            placeUrl: null,  // 플레이스 URL 사용 안 함
+                            companyName,
+                            companyAddress,
+                            businessHours,
+                            phone: phoneNumber,
+                            mainMenu,
+                            landmarks,
+                            keywords
+                        }
+                    })
+                });
+
+                const crawlText = await crawlResponse.text();
+                console.log('크롤링 응답:', crawlText);
+
+                if (!crawlResponse.ok) {
+                    try {
+                        const errorData = JSON.parse(crawlText);
+                        throw new Error(errorData.error || '가게 정보 분석 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${crawlText.substring(0, 200)}`);
+                    }
+                }
+
+                const crawlResult = JSON.parse(crawlText);
+                if (!crawlResult.success) {
+                    throw new Error(crawlResult.error || '가게 정보 분석 실패');
+                }
+
+                globalPlaceInfo = crawlResult.data;
+                console.log('가게 정보:', globalPlaceInfo);
+
+                // Step 2: 메뉴 분석
+                showLoading("대표 메뉴를 분석하고 있습니다...");
+                updateStep(1);
+
+                const analyzeResponse = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'analyze',
+                        data: { 
+                            userId,
+                            placeInfo: globalPlaceInfo 
+                        }
+                    })
+                });
+
+                const analyzeText = await analyzeResponse.text();
+                console.log('분석 응답:', analyzeText);
+
+                if (!analyzeResponse.ok) {
+                    try {
+                        const errorData = JSON.parse(analyzeText);
+                        throw new Error(errorData.error || '메뉴 분석 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${analyzeText.substring(0, 200)}`);
+                    }
+                }
+
+                const analyzeResult = JSON.parse(analyzeText);
+                if (!analyzeResult.success) {
+                    throw new Error(analyzeResult.error || '메뉴 분석 실패');
+                }
+
+                globalMenuAnalysis = analyzeResult.data;
+                console.log('메뉴 분석:', globalMenuAnalysis);
+
+                // Step 3: 주제 추천
+                showLoading("블로그 주제를 추천하고 있습니다...");
+                updateStep(2);
+
+                const recommendResponse = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'recommend',
+                        data: {
+                            userId,
+                            placeInfo: globalPlaceInfo,
+                            menuAnalysis: globalMenuAnalysis
+                        }
+                    })
+                });
+
+                const recommendText = await recommendResponse.text();
+                console.log('추천 응답:', recommendText);
+
+                if (!recommendResponse.ok) {
+                    try {
+                        const errorData = JSON.parse(recommendText);
+                        throw new Error(errorData.error || '주제 추천 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${recommendText.substring(0, 200)}`);
+                    }
+                }
+
+                const recommendResult = JSON.parse(recommendText);
+                if (!recommendResult.success) {
+                    throw new Error(recommendResult.error || '주제 추천 실패');
+                }
+
+                const topics = recommendResult.data.topics;
+                console.log('추천 주제:', topics);
+
+                showSuccess();
+                showTopics(topics);
+                
+            } catch (error) {
+                console.error("Analysis error:", error);
+                showError("분석 중 오류가 발생했습니다: " + error.message);
+                } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = "블로그 생성하기";
+            }
+        });
+
+        // 체험단 리뷰 폼 제출
+        reviewTeamForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const companyName = formData.get("companyName");
+            const companyAddress = formData.get("companyAddress") || "";
+            const businessHours = formData.get("businessHours") || "";
+            const phoneNumber = formData.get("phoneNumber") || "";
+            const mainMenu = formData.get("mainMenu") || "";
+            const landmarks = formData.get("landmarks") || "";
+            const keywords = formData.get("keywords") || "";
+            const existingBlog = formData.get("existingBlog") || "";
+
+            // 최소한 업체명만 입력되어 있으면 OK
+            if (!companyName) {
+                alert("최소한 업체명은 입력해주세요. 더 많은 정보를 입력할수록 블로그 질이 좋아집니다!");
+                return;
+            }
+
+            // 기존 블로그 글은 선택사항 (입력하면 스타일 참고, 없으면 기본 스타일로 생성)
+
+            try {
+                generateReviewTeamBtn.disabled = true;
+                generateReviewTeamBtn.textContent = "생성 중...";
+                resultSection.classList.add('show');
+                
+                showLoading("체험단 리뷰를 생성하고 있습니다...");
+
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
+                const response = await fetch('/api/chatgpt-blog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        step: 'generate-review-team',
+                        data: {
+                            userId: userId,
+                            storeInfo: {
+                                companyName,
+                                companyAddress,
+                                businessHours,
+                                phoneNumber,
+                                mainMenu,
+                                landmarks,
+                                keywords
+                            },
+                            existingBlog: existingBlog,
+                            promotionData: globalPromotionData,  // 프로모션 정보 추가
+                            hasPromotion: globalHasPromotion
+                        }
+                    })
+                });
+
+                // 응답 텍스트를 먼저 받아서 확인
+                const responseText = await response.text();
+                console.log('체험단 리뷰 응답:', responseText);
+
+                if (!response.ok) {
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        throw new Error(errorData.error || '체험단 리뷰 생성 실패');
+                    } catch (parseError) {
+                        throw new Error(`서버 오류: ${responseText.substring(0, 200)}`);
+                    }
+                }
+
+                const result = JSON.parse(responseText);
+                if (!result.success) {
+                    throw new Error(result.error || '체험단 리뷰 생성 실패');
+                }
+
+                const blogContentText = result.data;
+                console.log('생성된 체험단 리뷰:', blogContentText);
+                
+                showSuccess();
+                blogContent.style.display = 'block';
+                blogText.textContent = blogContentText;
+                blogTopics.style.display = 'none';
+
+            } catch (error) {
+                console.error("체험단 리뷰 생성 오류:", error);
+                showError("체험단 리뷰 생성 중 오류가 발생했습니다: " + error.message);
+            } finally {
+                generateReviewTeamBtn.disabled = false;
+                generateReviewTeamBtn.textContent = "체험단 리뷰 생성하기";
+            }
+        });
+    </script>
+
+    <!-- 추적 및 모니터링 스크립트 -->
+    <script src="/assets/analytics.js"></script>
+    <script src="/assets/error-logger.js"></script>
+    <script src="/assets/performance-tracker.js"></script>
+
+    <script>
+      // 로그인 상태 확인 및 UI 업데이트 함수들
+      async function getActiveSession() {
+        if (!window.authState?.supabase) {
+          return null;
+        }
+        try {
+          const { data } = await window.authState.supabase.auth.getSession();
+          return data?.session ?? null;
+        } catch (error) {
+          console.error("세션 조회 실패:", error);
+          return null;
+        }
+      }
+
+      function getCurrentUser() {
+        try {
+          const raw = localStorage.getItem('userData');
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          console.warn('[auth] 사용자 정보를 읽을 수 없습니다:', error);
+          return null;
+        }
+      }
+
+      function renderLoggedOut() {
+        const loginBtn = document.getElementById("loginBtn");
+        const signupBtn = document.getElementById("signupBtn");
+        const userEmailSpan = document.getElementById("userEmail");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+
+        if (authUser) authUser.style.display = "none";
+        if (loginBtn) loginBtn.style.display = "inline-flex";
+        if (signupBtn) signupBtn.style.display = "inline-flex";
+        if (userEmailSpan) {
+          userEmailSpan.textContent = "";
+          userEmailSpan.title = "";
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = "none";
+          logoutBtn.onclick = null;
+        }
+      }
+
+      function renderLoggedIn(user) {
+        const loginBtn = document.getElementById("loginBtn");
+        const signupBtn = document.getElementById("signupBtn");
+        const userEmailSpan = document.getElementById("userEmail");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const authUser = document.getElementById("authUser");
+        const userAvatar = document.getElementById("userAvatar");
+
+        if (loginBtn) loginBtn.style.display = "none";
+        if (signupBtn) signupBtn.style.display = "none";
+        if (authUser) authUser.style.display = "flex";
+
+        if (userEmailSpan) {
+          const email = user.email || user.displayName || "마이페이지";
+          userEmailSpan.textContent = email;
+          userEmailSpan.title = `${email} (마이페이지로 이동)`;
+        }
+
+        if (userAvatar) {
+          const base =
+            user.user_metadata?.full_name ||
+            user.displayName ||
+            user.email ||
+            user.app_metadata?.provider ||
+            "U";
+          const initial = (base.trim()[0] || "U").toUpperCase();
+          userAvatar.textContent = initial;
+          userAvatar.setAttribute("aria-label", `${base} 프로필`);
+        }
+
+        if (logoutBtn) {
+          logoutBtn.style.display = "inline-flex";
+          logoutBtn.onclick = async function () {
+            if (!confirm("로그아웃 하시겠습니까?")) return;
+            try {
+              if (window.authState?.signOut) {
+                await window.authState.signOut();
+              }
+            } finally {
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("userData");
+              location.href = "/login.html";
+            }
+          };
+        }
+      }
+
+      let authRenderToken = 0;
+
+      async function updateAuthUI() {
+        const currentToken = ++authRenderToken;
+        
+        // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
+        const storedUserData = getCurrentUser();
+        if (storedUserData && storedUserData.email) {
+          // localStorage에 사용자 정보가 있으면 즉시 로그인 상태로 표시
+          if (currentToken === authRenderToken) {
+            renderLoggedIn({
+              email: storedUserData.email,
+              displayName: storedUserData.displayName,
+              user_metadata: { full_name: storedUserData.displayName },
+              app_metadata: { provider: storedUserData.provider || 'kakao' }
+            });
+          }
+        } else {
+          // localStorage에 사용자 정보가 없으면 로그아웃 상태로 표시
+          if (currentToken === authRenderToken) {
+            renderLoggedOut();
+          }
+        }
+
+        // Supabase 세션 확인 (auth-state.js가 로드된 경우)
+        if (window.authState?.supabase) {
+          try {
+            const session = await getActiveSession();
+            if (currentToken !== authRenderToken) return;
+
+            if (session?.user) {
+              renderLoggedIn(session.user);
+            } else if (!storedUserData) {
+              // 세션이 없고 localStorage에도 없으면 로그아웃 상태
+              renderLoggedOut();
+            }
+          } catch (error) {
+            console.error("인증 상태 확인 실패:", error);
+            // 에러 발생 시 localStorage 기반으로 표시
+            if (currentToken === authRenderToken && !storedUserData) {
+              renderLoggedOut();
+            }
+          }
+        }
+      }
+
+      // 인증 상태 UI 업데이트 (즉시 실행 및 auth-state.js 로드 후 재실행)
+      async function initAuthUI() {
+        // 즉시 localStorage 기반으로 UI 업데이트 (빠른 초기 렌더링)
+        if (typeof updateAuthUI === 'function') {
+          await updateAuthUI();
+        }
+
+        // auth-state.js가 로드될 때까지 대기
+        let waitCount = 0;
+        const maxWait = 200; // 20초 대기
+        while (!window.authState && waitCount < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waitCount++;
+        }
+
+        if (window.authState) {
+          try {
+            // Supabase 세션 동기화 후 UI 업데이트
+            if (window.authState?.syncSession) {
+              await window.authState.syncSession();
+            }
+            await updateAuthUI();
+            
+            // 인증 상태 변경 이벤트 리스너 등록
+            window.addEventListener("auth:state-changed", updateAuthUI);
+          } catch (error) {
+            console.error('[auth] 인증 UI 업데이트 실패:', error);
+            // 에러 발생 시에도 localStorage 기반으로 UI 표시
+            if (typeof updateAuthUI === 'function') {
+              await updateAuthUI();
+            }
+          }
+        } else {
+          console.warn('[auth] auth-state.js를 로드할 수 없습니다. localStorage 기반으로 표시합니다.');
+          // auth-state.js가 로드되지 않아도 localStorage 기반으로 UI 표시
+          if (typeof updateAuthUI === 'function') {
+            await updateAuthUI();
+          }
+        }
+      }
+
+      function forceUpdateAuthUI() {
+        if (typeof updateAuthUI === 'function') {
+          updateAuthUI();
+        }
+      }
+
+      // DOMContentLoaded 시 즉시 실행
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAuthUI);
+      } else {
+        initAuthUI();
+      }
+      
+      // 페이지 로드 완료 후 재확인
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          initAuthUI();
+        }, 100);
+      });
+      
+      // 인증 상태 변경 이벤트 리스너
+      window.addEventListener('auth:state-changed', function() {
+        if (typeof updateAuthUI === 'function') {
+          updateAuthUI();
+        }
+      });
+
+      // 하단바 슬라이드 인디케이터 제어
+      (function() {
+        const sideNav = document.querySelector('.side-nav');
+        if (!sideNav) return;
+
+        function updateSideNavIndicator() {
+          // PC 화면에서는 인디케이터 숨기기 (절대 건들지 않음)
+          if (window.innerWidth > 992) {
+            sideNav.classList.add('hide-indicator');
+            return;
+          }
+
+          // 모바일 화면에서만 동작
+          const scrollLeft = Math.round(sideNav.scrollLeft);
+          const scrollWidth = sideNav.scrollWidth;
+          const clientWidth = sideNav.clientWidth;
+          
+          // 스크롤이 끝에 도달했는지 확인
+          const remainingScroll = scrollWidth - scrollLeft - clientWidth;
+          
+          if (remainingScroll <= 3 || scrollWidth <= clientWidth) {
+            // 스크롤이 끝에 도달하거나 스크롤이 필요 없으면 인디케이터 숨기기
+            sideNav.classList.add('hide-indicator');
+          } else {
+            // 스크롤 가능하면 인디케이터 보이기
+            sideNav.classList.remove('hide-indicator');
+          }
+        }
+
+        // DOM이 완전히 로드된 후 초기 상태 확인
+        function initIndicator() {
+          setTimeout(() => {
+            updateSideNavIndicator();
+          }, 300);
+        }
+
+        // 초기 상태 확인
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initIndicator);
+        } else {
+          initIndicator();
+        }
+
+        // 스크롤 이벤트 리스너
+        sideNav.addEventListener('scroll', updateSideNavIndicator, { passive: true });
+        
+        // 리사이즈 이벤트 리스너
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(updateSideNavIndicator, 150);
+        });
+
+        // 페이지 로드 완료 후 재확인
+        window.addEventListener('load', () => {
+          setTimeout(updateSideNavIndicator, 500);
+        });
+
+        // MutationObserver로 DOM 변경 감지 (동적 콘텐츠 대응)
+        const observer = new MutationObserver(() => {
+          setTimeout(updateSideNavIndicator, 100);
+        });
+        observer.observe(sideNav, { childList: true, subtree: true });
+      })();
+    </script>
+  </body>
+</html>

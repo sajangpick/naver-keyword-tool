@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com http://127.0.0.1:* http://localhost:*; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <title>로그인 - 사장픽</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+    <style>
+      :root {
+        --naver-green: #03c75a;
+        --naver-green-dark: #02b14f;
+        --bg: #f7f9fb;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Noto Sans KR", Arial, sans-serif;
+        background: var(--bg);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .login-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        width: 100%;
+        max-width: 400px;
+        position: relative;
+      }
+
+      .back-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .logo {
+        text-align: center;
+        font-size: 32px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 40px;
+        font-size: 14px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #6c5ce7;
+      }
+
+      .form-input.valid {
+        border-color: #00b894;
+      }
+
+      .form-input.invalid {
+        border-color: #e17055;
+      }
+
+      .validation-message {
+        font-size: 12px;
+        margin-top: 5px;
+        min-height: 18px;
+      }
+
+      .validation-message.valid {
+        color: #00b894;
+      }
+
+      .validation-message.invalid {
+        color: #e17055;
+      }
+
+      .login-btn {
+        width: 100%;
+        background: var(--naver-green);
+        color: white;
+        padding: 15px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 20px;
+      }
+
+      .login-btn:hover {
+        background: var(--naver-green-dark);
+        transform: translateY(-2px);
+      }
+
+      .login-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .divider {
+        text-align: center;
+        margin: 30px 0;
+        position: relative;
+        color: #666;
+      }
+
+      .divider::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e1e5e9;
+      }
+
+      .divider span {
+        background: white;
+        padding: 0 20px;
+      }
+
+      .social-login {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .google-btn,
+      .kakao-btn {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        background: white;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s;
+      }
+
+      .google-btn:hover {
+        border-color: #db4437;
+        color: #db4437;
+      }
+
+      .kakao-btn {
+        background: transparent;
+        border-color: #e1e5e9;
+        color: #6b7280;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1.5px;
+      }
+
+      .kakao-btn:hover {
+        background: transparent;
+        color: #374151;
+        text-decoration-thickness: 2px;
+      }
+
+      .forgot-password {
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .forgot-password a {
+        color: var(--naver-green);
+        text-decoration: none;
+        font-size: 14px;
+      }
+
+      .signup-link {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e1e5e9;
+        color: #666;
+      }
+
+      .signup-link a {
+        color: var(--naver-green);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .error-message {
+        background: #fee;
+        color: #c33;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
+      }
+
+      .success-message {
+        background: #efe;
+        color: #3a3;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--naver-green);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+
+        .login-container {
+          margin: 10px;
+          padding: 30px 20px;
+          border-radius: 16px;
+        }
+
+        .logo {
+          font-size: 24px;
+          margin-bottom: 8px;
+        }
+
+        .subtitle {
+          font-size: 12px;
+          margin-bottom: 30px;
+        }
+
+        .back-btn {
+          font-size: 20px;
+          top: 15px;
+          left: 15px;
+        }
+
+        .form-input {
+          padding: 12px;
+          font-size: 14px;
+        }
+
+        .login-btn {
+          padding: 12px;
+          font-size: 14px;
+        }
+
+        .kakao-btn {
+          padding: 12px;
+          font-size: 14px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        body {
+          padding: 5px;
+        }
+
+        .login-container {
+          margin: 5px;
+          padding: 20px 15px;
+          border-radius: 12px;
+        }
+
+        .logo {
+          font-size: 20px;
+          margin-bottom: 6px;
+        }
+
+        .subtitle {
+          font-size: 11px;
+          margin-bottom: 24px;
+        }
+
+        .back-btn {
+          font-size: 18px;
+          top: 12px;
+          left: 12px;
+        }
+
+        .form-input {
+          padding: 10px;
+          font-size: 13px;
+        }
+
+        .login-btn {
+          padding: 10px;
+          font-size: 13px;
+        }
+
+        .kakao-btn {
+          padding: 10px;
+          font-size: 13px;
+        }
+
+        .signup-link {
+          margin-top: 20px;
+          padding-top: 15px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <button class="back-btn" onclick="location.href='index.html'">←</button>
+
+      <div class="logo">사장픽</div>
+      <div class="subtitle">체험단 플랫폼에 오신 것을 환영합니다</div>
+
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+
+      <!-- 이메일 로그인 -->
+      <!-- 카카오 로그인 -->
+      <div class="social-login">
+        <button class="kakao-btn" id="kakaoLogin">
+          <span>💬</span>
+          카카오톡 아이디로 로그인
+        </button>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>로그인 중...</p>
+      </div>
+
+      <!-- 부가 로그인 방식 제거 -->
+
+      <div class="signup-link">
+        계정이 없으신가요? <a href="join.html">회원가입</a>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+    <script>
+      // ⚠️ 중요: Live Server 대신 Express 서버를 사용하세요!
+      // Express 서버 실행 방법:
+      // 1. 터미널에서 프로젝트 폴더로 이동
+      // 2. 'node server.js' 실행
+      // 3. 브라우저에서 http://localhost:3003/login.html 접속
+      //
+      // Live Server를 사용하는 경우 아래 주석을 해제하고 .env 파일의 값을 입력하세요:
+      // window.SUPABASE_URL = 'https://your-project.supabase.co';
+      // window.SUPABASE_ANON_KEY = 'your-anon-key';
+    </script>
+    <script src="/assets/auth-state.js?v=202410" defer></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const redirectTarget = params.get("redirect");
+
+      function resolveRedirectTarget() {
+        if (!redirectTarget) return "index.html";
+        if (!redirectTarget.startsWith("/")) return "index.html";
+        if (redirectTarget === "/login.html") return "index.html";
+        return redirectTarget;
+      }
+
+      // 이미 로그인된 경우 지정된 페이지로 이동 (Supabase 세션 기반)
+      (async function checkAlreadyLoggedIn() {
+        // Supabase 초기화 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        try {
+          const { data: { session } } = await window.authState.supabase.auth.getSession();
+          if (session) {
+            window.location.replace(resolveRedirectTarget());
+          }
+        } catch (error) {
+          console.error("세션 확인 오류:", error);
+        }
+      })();
+
+      // Supabase 객체 참조 (서버에서 안전하게 가져온 auth-state.js에서 초기화)
+      let supabase = null;
+      (async function initSupabase() {
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        supabase = window.authState.supabase;
+      })();
+
+      function setLoggedInFromSession(session) {
+        if (!session) return;
+        const user = session.user || {};
+        const userData = {
+          id: user.id || "",
+          email: user.email || "",
+          displayName: user.user_metadata?.full_name || user.user_metadata?.name || "",
+          photoURL: user.user_metadata?.avatar_url || "",
+          provider: (user.app_metadata?.provider || "kakao"),
+          loginTime: new Date().toISOString(),
+        };
+        localStorage.setItem("userData", JSON.stringify(userData));
+        localStorage.setItem("isLoggedIn", "true");
+      }
+
+      function redirectAfterLogin() {
+        window.location.replace(resolveRedirectTarget());
+      }
+
+      // 페이지 로드 시 Supabase 세션 확인 및 상태 변화 감지
+      (async () => {
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const supabaseClient = window.authState.supabase;
+        
+        try {
+          // 카카오 로그인 콜백인 경우 로딩 표시
+          const hashParams = new URLSearchParams(window.location.hash.slice(1));
+          if (hashParams.has('access_token')) {
+            showLoading();
+          }
+          
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (session) {
+            setLoggedInFromSession(session);
+            redirectAfterLogin();
+          } else {
+            hideLoading();
+          }
+        } catch (error) {
+          console.error('세션 확인 오류:', error);
+          hideLoading();
+        }
+        
+        // 로그인 상태 변화 감지
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          console.log('Auth state changed:', event, session ? '세션 있음' : '세션 없음');
+          
+          if (event === "SIGNED_IN" && session) {
+            showLoading();
+            setLoggedInFromSession(session);
+            redirectAfterLogin();
+          } else if (event === "SIGNED_OUT") {
+            hideLoading();
+          }
+        });
+      })();
+
+      // DOM elements
+      const errorMessage = document.getElementById("errorMessage");
+      const successMessage = document.getElementById("successMessage");
+      const loading = document.getElementById("loading");
+
+      // Show error message
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = "block";
+        successMessage.style.display = "none";
+      }
+
+      // Show success message
+      function showSuccess(message) {
+        successMessage.textContent = message;
+        successMessage.style.display = "block";
+        errorMessage.style.display = "none";
+      }
+
+      // Hide messages
+      function hideMessages() {
+        errorMessage.style.display = "none";
+        successMessage.style.display = "none";
+      }
+
+      // Show loading
+      function showLoading() {
+        loading.style.display = "block";
+      }
+
+      // Hide loading
+      function hideLoading() {
+        loading.style.display = "none";
+      }
+
+      // Kakao 로그인 (Supabase OAuth 방식)
+      const kakaoLoginBtn = document.getElementById("kakaoLogin");
+      if (kakaoLoginBtn) {
+        kakaoLoginBtn.addEventListener("click", async () => {
+          try {
+            showLoading();
+            hideMessages();
+            
+            // Supabase 객체 대기
+            while (!supabase) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // Supabase OAuth를 사용한 카카오 로그인
+            const { data, error } = await supabase.auth.signInWithOAuth({
+              provider: 'kakao',
+              options: {
+                redirectTo:
+                  window.location.origin +
+                  window.location.pathname +
+                  window.location.search
+              }
+            });
+
+            if (error) {
+              hideLoading();
+              showError('로그인 실패: ' + error.message);
+              console.error('카카오 로그인 오류:', error);
+            }
+            // 성공 시 자동으로 카카오 페이지로 리다이렉트됨
+          } catch (err) {
+            hideLoading();
+            showError('로그인 중 오류가 발생했습니다.');
+            console.error('로그인 오류:', err);
+          }
+        });
+      }
+    </script>
+
+    <!-- 추적 및 모니터링 스크립트 -->
+    <script src="/assets/analytics.js"></script>
+    <script src="/assets/error-logger.js"></script>
+    <script src="/assets/performance-tracker.js"></script>
+  </body>
+</html>

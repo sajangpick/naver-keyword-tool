@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Function Calling 테스트</title>
+  <style>
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    h2 {
+      color: #666;
+      margin-top: 0;
+    }
+    .test-case {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #007bff;
+      border-radius: 4px;
+    }
+    .test-case h3 {
+      margin-top: 0;
+      color: #007bff;
+    }
+    .test-case p {
+      margin: 5px 0;
+    }
+    .test-button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px 0;
+    }
+    .test-button:hover {
+      background: #0056b3;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #e9ecef;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .result.success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    .result.error {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+    .loading {
+      color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 ChatGPT Function Calling 테스트</h1>
+  
+  <div class="test-section">
+    <h2>테스트 개요</h2>
+    <p>이 페이지는 ChatGPT API의 Function Calling 기능을 테스트합니다.</p>
+    <p><strong>테스트할 기능:</strong></p>
+    <ul>
+      <li>뉴스 검색 기능</li>
+      <li>레시피 검색 기능</li>
+      <li>정책 지원금 검색 기능</li>
+    </ul>
+  </div>
+
+  <!-- 뉴스 검색 테스트 -->
+  <div class="test-section">
+    <h2>1. 뉴스 검색 테스트</h2>
+    <div class="test-case">
+      <h3>테스트 케이스 1: 소상공인 뉴스 검색</h3>
+      <p><strong>질문:</strong> "최근 소상공인 지원금에 대한 뉴스를 알려줘"</p>
+      <button class="test-button" onclick="testNewsSearch()">테스트 실행</button>
+      <div id="news-result" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- 레시피 검색 테스트 -->
+  <div class="test-section">
+    <h2>2. 레시피 검색 테스트</h2>
+    <div class="test-case">
+      <h3>테스트 케이스 1: 레시피 검색</h3>
+      <p><strong>질문:</strong> "김치찌개 레시피 알려줘"</p>
+      <button class="test-button" onclick="testRecipeSearch()">테스트 실행</button>
+      <div id="recipe-result" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- 정책 검색 테스트 -->
+  <div class="test-section">
+    <h2>3. 정책 지원금 검색 테스트</h2>
+    <div class="test-case">
+      <h3>테스트 케이스 1: 정책 지원금 검색</h3>
+      <p><strong>질문:</strong> "창업 지원금 정책이 있나요?"</p>
+      <button class="test-button" onclick="testPolicySearch()">테스트 실행</button>
+      <div id="policy-result" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- 종합 테스트 -->
+  <div class="test-section">
+    <h2>4. 종합 테스트</h2>
+    <div class="test-case">
+      <h3>테스트 케이스 1: 일반 대화 (함수 호출 불필요)</h3>
+      <p><strong>질문:</strong> "점심메뉴 추천해줘"</p>
+      <button class="test-button" onclick="testGeneralChat()">테스트 실행</button>
+      <div id="general-result" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // API 기본 URL 결정
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const API_BASE = isLocalhost ? 'http://localhost:3003' : '';
+    const FALLBACK_API_BASE = 'https://naver-keyword-tool.onrender.com';
+
+    async function callChatAPI(message) {
+      const apiUrl = API_BASE ? `${API_BASE}/api/chat` : `/api/chat`;
+      
+      try {
+        let response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message }),
+        });
+
+        if (!response.ok && !API_BASE && FALLBACK_API_BASE) {
+          // 폴백 서버 시도
+          response = await fetch(`${FALLBACK_API_BASE}/api/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message }),
+          });
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    function showResult(elementId, data, isError = false) {
+      const resultDiv = document.getElementById(elementId);
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result ' + (isError ? 'error' : 'success');
+      
+      if (isError) {
+        resultDiv.textContent = `❌ 오류: ${data.message || data}`;
+      } else {
+        const metadata = data.metadata || {};
+        const functionCalls = metadata.function_calls_used || 0;
+        
+        resultDiv.textContent = 
+          `✅ 성공!\n\n` +
+          `답변:\n${data.reply}\n\n` +
+          `함수 호출 횟수: ${functionCalls}\n` +
+          `토큰 사용량: ${data.usage?.total_tokens || 'N/A'}\n` +
+          `모델: ${metadata.model || 'N/A'}\n` +
+          `서버: ${metadata.server || 'N/A'}`;
+      }
+    }
+
+    async function testNewsSearch() {
+      const resultDiv = document.getElementById('news-result');
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result loading';
+      resultDiv.textContent = '⏳ 테스트 실행 중...';
+      
+      try {
+        const data = await callChatAPI('최근 소상공인 지원금에 대한 뉴스를 알려줘');
+        showResult('news-result', data);
+      } catch (error) {
+        showResult('news-result', error, true);
+      }
+    }
+
+    async function testRecipeSearch() {
+      const resultDiv = document.getElementById('recipe-result');
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result loading';
+      resultDiv.textContent = '⏳ 테스트 실행 중...';
+      
+      try {
+        const data = await callChatAPI('김치찌개 레시피 알려줘');
+        showResult('recipe-result', data);
+      } catch (error) {
+        showResult('recipe-result', error, true);
+      }
+    }
+
+    async function testPolicySearch() {
+      const resultDiv = document.getElementById('policy-result');
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result loading';
+      resultDiv.textContent = '⏳ 테스트 실행 중...';
+      
+      try {
+        const data = await callChatAPI('창업 지원금 정책이 있나요?');
+        showResult('policy-result', data);
+      } catch (error) {
+        showResult('policy-result', error, true);
+      }
+    }
+
+    async function testGeneralChat() {
+      const resultDiv = document.getElementById('general-result');
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result loading';
+      resultDiv.textContent = '⏳ 테스트 실행 중...';
+      
+      try {
+        const data = await callChatAPI('점심메뉴 추천해줘');
+        showResult('general-result', data);
+      } catch (error) {
+        showResult('general-result', error, true);
+      }
+    }
+  </script>
+</body>
+</html>
+

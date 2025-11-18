@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <!-- 메인 페이지 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- 로그인/회원가입 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/login.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.sajangpick.co.kr/join.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 마이페이지 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/mypage.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- 네이버 검색 분석 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/naver_search.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- 블로그 에디터 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/Blog-Editor.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- ChatGPT AI 비서 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/ChatGPT.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- 숏츠 에디터 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/shorts-editor.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- AI 리뷰 분석 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/AI-Review.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 레시피 관리 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/recipe-manager.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 뉴스 게시판 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/news-board.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 정책 지원금 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/policy-support.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- 전자책 다운로드 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/sajangpick-book.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- 결제 페이지 -->
+  <url>
+    <loc>https://www.sajangpick.co.kr/payment.html</loc>
+    <lastmod>2025-11-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+</urlset>
+
