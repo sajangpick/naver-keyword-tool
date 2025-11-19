@@ -225,29 +225,26 @@ async function fetchRealPolicies() {
         // 엔드포인트: https://apis.data.go.kr/B552735/kisedKstartupService01
         // 서비스 메서드: getAnnouncementInformation01, getBusinessInformation01
         const apiEndpoints = [
-          // K-Startup 사업공고 정보 조회 (우선순위 1) - 실제 작동하는 메서드
+          // K-Startup 사업공고 정보 조회 (모집중 공고 전체 수집)
           {
             url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'k-startup',
-            priority: 1,
-            note: 'K-Startup 사업공고 정보 조회'
+            note: 'K-Startup 사업공고 정보 조회 (모집중 공고 전체 수집)'
           },
-          // K-Startup 사업 정보 조회 (우선순위 2) - 사업 상세 정보
+          // K-Startup 사업 정보 조회 - 사업 상세 정보
           {
             url: `https://apis.data.go.kr/B552735/kisedKstartupService01/getBusinessInformation01?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'k-startup',
-            priority: 2,
             note: 'K-Startup 사업 정보 조회'
           },
-          // 중소벤처기업부 사업공고 목록 조회 (백업)
+          // 중소벤처기업부 사업공고 목록 조회 - 275건 전체 수집
           {
             url: `https://apis.data.go.kr/1421000/mssBizService_v2/getBizPblancList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=1`,
             type: 'xml',
             source: 'mss-biz',
-            priority: 4,
-            note: '중소벤처기업부 사업공고 목록'
+            note: '중소벤처기업부 사업공고 목록 (275건 전체 수집)'
           },
           // 중소기업 지원사업 정보 (JSON) - 여러 페이지 순회
           {
@@ -261,11 +258,19 @@ async function fetchRealPolicies() {
             type: 'xml',
             source: 'bizinfo'
           },
-          // 기업마당 지원사업 검색 API - 여러 페이지 순회
+          // 기업마당 지원사업 검색 API - 전체 공고 수집 (target 필터 제거)
+          {
+            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000`,
+            type: 'json',
+            source: 'bizinfo',
+            note: '기업마당 지원사업 전체 공고 (1738건 전체 수집)'
+          },
+          // 기업마당 지원사업 검색 API - 소상공인 대상 (추가)
           {
             url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&target=소상공인`,
             type: 'json',
-            source: 'bizinfo'
+            source: 'bizinfo',
+            note: '기업마당 소상공인 대상 공고'
           },
           // 공공데이터포털 - 중소기업 정책자금 정보 - 여러 페이지 순회
           {
@@ -299,9 +304,7 @@ async function fetchRealPolicies() {
           }
         ];
         
-        // 우선순위에 따라 정렬 (priority가 낮을수록 먼저 실행)
-        apiEndpoints.sort((a, b) => (a.priority || 999) - (b.priority || 999));
-        console.log('📋 정렬된 API 엔드포인트:', apiEndpoints.map(e => `${e.source} (${e.type})`).join(', '));
+        console.log('📋 API 엔드포인트:', apiEndpoints.map(e => `${e.source} (${e.type})`).join(', '));
         
         let totalApiCalls = 0;
         let successfulApiCalls = 0;
@@ -315,7 +318,7 @@ async function fetchRealPolicies() {
             let allData = [];
             let currentPage = 1;
             let hasMorePages = true;
-            const maxPages = 10; // 최대 10페이지까지 (한 번에 50개씩)
+            const maxPages = 100; // 최대 100페이지까지 (한 번에 50개씩 = 최대 5,000개)
             const perPage = 50; // 페이지당 50개씩만 가져오기
             
             console.log(`🔄 ${endpoint.source} 엔드포인트: 여러 페이지 순회 시작 (최대 ${maxPages}페이지)`);
@@ -416,16 +419,29 @@ async function fetchRealPolicies() {
                     
                     const currentCount = Array.isArray(data) ? data.length : (data ? 1 : 0);
                     
-                    // 공공데이터포털 XML 응답의 경우 totalCount 확인
+                    // 공공데이터포털 XML 응답의 경우 totalCount 확인 (중소벤처기업부 API 포함)
                     if (endpoint.type === 'xml' && typeof response.data === 'string') {
+                      // 다양한 XML 형식 지원
                       const totalMatch = response.data.match(/<totalCount>(\d+)<\/totalCount>/i) || 
-                                        response.data.match(/<totalCount>(\d+)<\/totalCount>/i);
+                                        response.data.match(/<totalCount>(\d+)<\/totalCount>/i) ||
+                                        response.data.match(/<totalCount>(\d+)<\/totalCount>/i) ||
+                                        response.data.match(/totalCount[^>]*>(\d+)</i);
                       if (totalMatch) {
                         const xmlTotalCount = parseInt(totalMatch[1]);
                         const xmlTotalPages = Math.ceil(xmlTotalCount / perPage);
+                        console.log(`📊 XML totalCount 발견: ${xmlTotalCount}개 (총 ${xmlTotalPages}페이지)`);
+                        
+                        // 현재 페이지가 마지막 페이지인지 확인
                         if (currentPage >= xmlTotalPages) {
                           hasMorePages = false;
                           console.log(`📄 XML 총 ${xmlTotalCount}개 중 ${allData.length}개 수집 완료 (${xmlTotalPages}페이지)`);
+                        } else {
+                          console.log(`📄 XML 진행 중: ${allData.length}개 수집 (${currentPage}/${xmlTotalPages}페이지)`);
+                        }
+                      } else {
+                        // totalCount를 찾지 못한 경우에도 로그 출력
+                        if (currentPage === 1) {
+                          console.log(`⚠️ XML totalCount를 찾지 못함. 데이터가 없을 때까지 계속 수집합니다.`);
                         }
                       }
                     }
@@ -635,7 +651,40 @@ async function fetchRealPolicies() {
                   }
                 }
                 
-                // 모든 정책 포함 (필터링 최소화)
+                // 모든 공고 가져오기 (시작일 미래, 마감일 미래 모두 포함)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // 마감일 확인: 마감일이 지난 공고만 제외
+                if (normalizedEnd) {
+                  const endDate = new Date(normalizedEnd);
+                  endDate.setHours(23, 59, 59, 999); // 마감일 하루 종료 시각까지
+                  
+                  // 마감일이 지난 공고만 제외 (나머지는 모두 포함)
+                  if (endDate < today) {
+                    if (index < 3) {
+                      console.log(`⚠️ 항목 ${index + 1}: 마감일 지남 (${normalizedEnd}), 건너뜀`);
+                    }
+                    filteredCount++;
+                    return;
+                  }
+                  
+                  // 마감일이 지나지 않았으면 모두 포함 (시작일이 미래여도 포함)
+                } else {
+                  // 마감일이 없는 경우는 상시 모집으로 간주하여 포함
+                }
+                
+                // 상태 확인: 'active'인 공고만 포함
+                const policyStatus = getStatus(normalizedEnd);
+                if (policyStatus !== 'active') {
+                  if (index < 3) {
+                    console.log(`⚠️ 항목 ${index + 1}: 신청 불가능한 상태 (${policyStatus}), 건너뜀`);
+                  }
+                  filteredCount++;
+                  return;
+                }
+                
+                // 현재 신청 가능한 정책만 포함
                 if (title) {
                   if (policies.length < 10 || policies.length % 10 === 0) {
                     console.log(`✅ 정책 추가: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
@@ -668,7 +717,7 @@ async function fetchRealPolicies() {
                                 item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null,
                     website_url: item.website_url || item['detl_pg_url'] || item['biz_gdnc_url'] || 
                                item['홈페이지'] || item.website || item.홈페이지 || item['homepage'] || null,
-                    status: getStatus(normalizedEnd),
+                    status: 'active', // 이미 필터링했으므로 항상 'active'
                     is_featured: false,
                     tags: ['실제데이터', '공공데이터포털', endpoint.source || 'k-startup'],
                     source: endpoint.source || 'bizinfo'
