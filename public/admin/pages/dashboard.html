@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>대시보드 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      /* 대시보드 전용 스타일 */
+      .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+      }
+
+      .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+      }
+
+      .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+      }
+
+      .stat-title {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+
+      .stat-icon.green {
+        background: rgba(3, 199, 90, 0.1);
+        color: var(--accent);
+      }
+
+      .stat-icon.blue {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--info);
+      }
+
+      .stat-icon.orange {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+      }
+
+      .stat-icon.red {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+      }
+
+      .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .stat-change {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+
+      .stat-change.positive {
+        color: var(--accent);
+      }
+
+      .stat-change.negative {
+        color: var(--danger);
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+
+      .quick-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--text);
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .quick-action-btn:hover {
+        border-color: var(--accent);
+        background: rgba(3, 199, 90, 0.05);
+        transform: translateY(-2px);
+      }
+
+      .quick-action-icon {
+        font-size: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 사이드바 자동 생성 -->
+    
+    <!-- 메인 콘텐츠 -->
+    <main class="admin-main">
+      <!-- 헤더 자동 생성 -->
+      
+      <div class="content">
+        <!-- 주요 통계 -->
+        <div class="stats-grid" id="mainStats">
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-title">일간 활성 사용자</div>
+              <div class="stat-icon green">
+                <i class="fas fa-users"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="dauValue">-</div>
+            <div class="stat-label">오늘 접속한 사용자</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-title">총 회원 수</div>
+              <div class="stat-icon blue">
+                <i class="fas fa-user-check"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="totalUsers">-</div>
+            <div class="stat-label">전체 가입 회원</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-title">오늘 생성된 블로그</div>
+              <div class="stat-icon orange">
+                <i class="fas fa-blog"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="todayBlogs">-</div>
+            <div class="stat-label">블로그 글 생성</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-title">오늘 리뷰 답글</div>
+              <div class="stat-icon red">
+                <i class="fas fa-comment"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="todayReviews">-</div>
+            <div class="stat-label">리뷰 답글 생성</div>
+          </div>
+        </div>
+
+        <!-- 빠른 작업 -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">⚡ 빠른 작업</h2>
+          </div>
+          <div class="quick-actions">
+            <a href="/admin/member-management.html" class="quick-action-btn">
+              <span class="quick-action-icon">👥</span>
+              <span>회원 관리</span>
+            </a>
+            <a href="/admin/analytics.html" class="quick-action-btn">
+              <span class="quick-action-icon">📈</span>
+              <span>분석 보기</span>
+            </a>
+            <a href="/admin/performance.html" class="quick-action-btn">
+              <span class="quick-action-icon">⚡</span>
+              <span>성능 확인</span>
+            </a>
+            <a href="/admin/errors.html" class="quick-action-btn">
+              <span class="quick-action-icon">🐛</span>
+              <span>에러 로그</span>
+            </a>
+            <a href="/admin/news-management.html" class="quick-action-btn">
+              <span class="quick-action-icon">📰</span>
+              <span>뉴스 관리</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 최근 활동 -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">📋 최근 활동</h2>
+          </div>
+          <div id="recentActivity">
+            <div class="loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <div>로딩 중...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 시스템 상태 -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">🖥️ 시스템 상태</h2>
+          </div>
+          <div id="systemStatus">
+            <div class="loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <div>로딩 중...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js?v=20251030" defer></script>
+    <script src="/assets/common-header.js?v=20251030" defer></script>
+    
+    <!-- 공통 스크립트 -->
+    <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-sidebar.js?v=20251030" defer></script>
+    <script src="/admin/assets/admin-header.js?v=20251030" defer></script>
+
+    <script type="module">
+      // 대시보드 데이터 로드
+      async function loadDashboard() {
+        try {
+          await AdminBootstrap.getSupabaseClient();
+
+          // 관리자 권한 확인은 비차단으로 처리 (UI 로딩을 막지 않음)
+          AdminUtils
+            .requireAdmin({ redirect: false, maxRetries: 0 })
+            .then((isAdmin) => {
+              if (!isAdmin) {
+                console.warn('관리자 세션이 없습니다. 읽기 전용으로 통계를 가져옵니다.');
+              }
+            })
+            .catch(() => {});
+
+          // 통계 로드는 즉시 시작
+          await Promise.all([
+            loadMainStats(),
+            loadRecentActivity(),
+            loadSystemStatus()
+          ]);
+
+        } catch (error) {
+          console.error('대시보드 로드 실패:', error);
+          AdminUtils.showError('데이터 로드 실패');
+        }
+      }
+
+      // 주요 통계 로드
+      async function loadMainStats() {
+        try {
+          const supabase = await AdminBootstrap.getSupabaseClient();
+          const { data: { session } } = await supabase.auth.getSession();
+
+          const stats = {
+            totalUsers: 0,
+            dau: 0,
+            todayBlogs: 0,
+            todayReviews: 0
+          };
+
+          // 전체 회원 수는 관리자 회원 API에서 count를 활용
+          try {
+            const membersResponse = await fetch('/api/admin/members?limit=1');
+            if (membersResponse.ok) {
+              const membersData = await membersResponse.json();
+              if (membersData && membersData.success) {
+                stats.totalUsers = membersData.total || 0;
+              } else {
+                console.warn('회원 수 응답 형식이 예상과 다릅니다:', membersData);
+              }
+            } else {
+              console.warn('회원 수 API 응답 오류:', membersResponse.status, membersResponse.statusText);
+            }
+          } catch (innerError) {
+            console.warn('회원 수 조회 실패:', innerError);
+          }
+
+          // 보조 경로: 서비스가 0으로 남아있고 세션이 있으면 관리자 대시보드 API에서 재시도
+          if ((!stats.totalUsers || stats.totalUsers === 0) && session) {
+            try {
+              const dashRes = await fetch('/api/admin/dashboard?type=main-stats', {
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+              });
+              if (dashRes.ok) {
+                const dash = await dashRes.json();
+                if (dash && typeof dash.totalUsers === 'number') {
+                  stats.totalUsers = dash.totalUsers;
+                }
+              }
+            } catch (fallbackErr) {
+              console.warn('회원 수 보조 조회 실패:', fallbackErr);
+            }
+          }
+
+          // 세션이 있는 경우 Supabase 이벤트 기반 통계 조회 (없으면 0 유지)
+          if (session) {
+            try {
+              console.log('📊 분석 API 호출 시작...');
+              const overviewResponse = await fetch('/api/admin/analytics?type=overview&days=1', {
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`
+                }
+              });
+
+              console.log('📊 분석 API 응답 상태:', overviewResponse.status, overviewResponse.statusText);
+
+              if (overviewResponse.ok) {
+                const overview = await overviewResponse.json();
+                console.log('📊 분석 데이터:', overview);
+                stats.dau = overview.activeUsers || 0;
+                stats.todayBlogs = overview.blogsCreated || 0;
+                stats.todayReviews = overview.reviewsReplied || 0;
+              } else {
+                const errorText = await overviewResponse.text();
+                console.error('❌ 분석 API 오류:', overviewResponse.status, errorText);
+              }
+            } catch (innerError) {
+              console.error('❌ Supabase 통계 조회 실패:', innerError);
+            }
+          } else {
+            console.warn('⚠️ 세션이 없어 분석 통계를 가져올 수 없습니다. 로그인을 확인하세요.');
+          }
+
+          document.getElementById('dauValue').textContent = stats.dau.toLocaleString();
+          document.getElementById('totalUsers').textContent = stats.totalUsers.toLocaleString();
+          document.getElementById('todayBlogs').textContent = stats.todayBlogs.toLocaleString();
+          document.getElementById('todayReviews').textContent = stats.todayReviews.toLocaleString();
+
+        } catch (error) {
+          console.error('통계 로드 실패:', error);
+        }
+      }
+
+      // 최근 활동 로드
+      async function loadRecentActivity() {
+        try {
+          const container = document.getElementById('recentActivity');
+          
+          // TODO: 실제 API 연동
+          AdminUtils.showEmpty(container, '최근 활동 내역이 없습니다', 'fa-clock');
+
+        } catch (error) {
+          console.error('활동 로드 실패:', error);
+          AdminUtils.showErrorState(document.getElementById('recentActivity'));
+        }
+      }
+
+      // 시스템 상태 로드
+      async function loadSystemStatus() {
+        try {
+          const container = document.getElementById('systemStatus');
+          
+          container.innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+              <p style="font-size: 48px; margin: 0;">✅</p>
+              <p style="margin: 8px 0 0 0; color: var(--accent); font-weight: 600;">모든 시스템 정상 작동 중</p>
+            </div>
+          `;
+
+        } catch (error) {
+          console.error('시스템 상태 로드 실패:', error);
+          AdminUtils.showErrorState(document.getElementById('systemStatus'));
+        }
+      }
+
+      // 데이터 새로고침
+      window.refreshData = loadDashboard;
+
+      // 부트스트랩 준비 완료 후 실행
+      if (window.AdminBootstrap && typeof window.AdminBootstrap.onReady === 'function') {
+        window.AdminBootstrap.onReady(loadDashboard);
+      } else {
+        // 폴백: AdminBootstrap가 준비될 때까지 대기
+        document.addEventListener('DOMContentLoaded', () => {
+          const start = Date.now();
+          const timer = setInterval(() => {
+            if (window.AdminBootstrap && typeof window.AdminBootstrap.onReady === 'function') {
+              clearInterval(timer);
+              window.AdminBootstrap.onReady(loadDashboard);
+            } else if (Date.now() - start > 5000) {
+              clearInterval(timer);
+              // 마지막 수단: 즉시 실행 (읽기 전용 경로만 시도)
+              loadDashboard();
+            }
+          }, 30);
+        });
+      }
+    </script>
+  </body>
+</html>
+

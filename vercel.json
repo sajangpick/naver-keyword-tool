@@ -37,6 +37,11 @@
       "source": "/admin/",
       "destination": "/admin/pages/dashboard.html",
       "permanent": false
+    },
+    {
+      "source": "/admin/pages/:path*",
+      "destination": "/admin/pages/:path*",
+      "permanent": false
     }
   ],
   "crons": [

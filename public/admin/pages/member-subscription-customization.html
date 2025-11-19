@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>회원 맞춤 설정 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(52, 144, 220, 0.1);
+      }
+
+      .input-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .input-group input {
+        flex: 1;
+      }
+
+      .input-unit {
+        color: #6b7280;
+        font-weight: 600;
+        min-width: 50px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+        width: 100%;
+      }
+
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      .btn-group .btn {
+        flex: 1;
+      }
+
+      .member-info {
+        background: #f0f9ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .member-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e40af;
+      }
+
+      .member-info p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: #1e40af;
+      }
+
+      .info-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+
+      .section-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 24px 0;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+
+      .error {
+        padding: 16px;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        color: #dc2626;
+        margin-bottom: 16px;
+      }
+
+      .success {
+        padding: 16px;
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        color: #16a34a;
+        margin-bottom: 16px;
+      }
+
+      .search-results {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-top: 8px;
+      }
+
+      .search-result-item {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .search-result-item:hover {
+        background: #f9fafb;
+      }
+
+      .search-result-item:last-child {
+        border-bottom: none;
+      }
+
+      .result-name {
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .result-email {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .result-type {
+        display: inline-block;
+        padding: 2px 8px;
+        background: var(--accent);
+        color: white;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 4px;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+      }
+
+      .form-section {
+        margin-bottom: 32px;
+      }
+
+      /* 등급별 탭 스타일 */
+      .level-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 20px;
+        background: #f5f5f5;
+        border-radius: 12px;
+        padding: 4px;
+        overflow-x: auto;
+        flex-wrap: wrap;
+      }
+
+      .level-tab {
+        padding: 8px 16px;
+        background: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: #6b7280;
+        transition: all 0.2s;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .level-tab:hover {
+        background: white;
+      }
+
+      .level-tab.active {
+        background: white;
+        color: var(--accent);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .level-tab .badge {
+        background: #e5e5e5;
+        color: #666;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .level-tab.active .badge {
+        background: var(--accent);
+        color: white;
+      }
+
+      /* 회원 유형별 등급 탭 색상 */
+      .level-tab.owner-color {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde047 100%);
+        border-color: #fbbf24;
+        color: #854d0e;
+      }
+
+      .level-tab.agency-color {
+        background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+        border-color: #a78bfa;
+        color: #5b21b6;
+      }
+
+      .level-tab.manager-color {
+        background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+        border-color: #60a5fa;
+        color: #1e3a8a;
+      }
+
+      .level-tab.admin-color {
+        background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+        border-color: #f87171;
+        color: #991b1b;
+      }
+
+      .level-tab.owner-color.active,
+      .level-tab.agency-color.active,
+      .level-tab.manager-color.active,
+      .level-tab.admin-color.active {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transform: translateY(-2px);
+        border-width: 2px;
+      }
+
+      .level-tab.owner-color .badge,
+      .level-tab.agency-color .badge,
+      .level-tab.manager-color .badge,
+      .level-tab.admin-color .badge {
+        background: rgba(0, 0, 0, 0.15);
+        color: inherit;
+      }
+
+      .level-tab.owner-color.active .badge,
+      .level-tab.agency-color.active .badge,
+      .level-tab.manager-color.active .badge,
+      .level-tab.admin-color.active .badge {
+        background: rgba(0, 0, 0, 0.25);
+        color: inherit;
+      }
+
+      /* 회원 테이블 */
+      .members-table-container {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+
+      .members-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .members-table thead {
+        background: #f9fafb;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .members-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        white-space: nowrap;
+      }
+
+      .members-table tbody tr {
+        border-bottom: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .members-table tbody tr:hover {
+        background: #f9fafb;
+      }
+
+      .members-table tbody tr.selected {
+        background: #f0f9ff;
+        border-left: 3px solid var(--accent);
+      }
+
+      .members-table td {
+        padding: 12px 16px;
+        font-size: 14px;
+        color: #374151;
+      }
+
+      .member-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .member-avatar-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        background: white;
+        border-top: 1px solid var(--border);
+      }
+
+      .pagination-info {
+        font-size: 14px;
+        color: #6b7280;
+      }
+
+      .pagination-controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .pagination-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      .pagination-btn:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: var(--accent);
+      }
+
+      .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .pagination-btn.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+
+      .member-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+      }
+
+      .member-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        border-color: var(--accent);
+      }
+
+      .member-card.selected {
+        border-color: var(--accent);
+        border-width: 2px;
+        background: #f0f9ff;
+      }
+
+      .member-card-header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .member-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .member-info {
+        flex: 1;
+        margin-left: 12px;
+      }
+
+      .member-name {
+        font-weight: 700;
+        color: #111827;
+        font-size: 15px;
+        margin-bottom: 2px;
+      }
+
+      .member-email {
+        color: #6b7280;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .member-badges {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+      }
+
+      .member-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .member-badge.level {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .member-badge.type {
+        font-weight: 700;
+        font-size: 12px;
+        padding: 5px 12px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .member-badge.type.owner {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde047 100%);
+        color: #854d0e;
+        border: 1px solid #fbbf24;
+      }
+
+      .member-badge.type.agency {
+        background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+        color: #5b21b6;
+        border: 1px solid #a78bfa;
+      }
+
+      .member-badge.type.manager {
+        background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+        color: #1e3a8a;
+        border: 1px solid #60a5fa;
+      }
+
+      .member-badge.type.admin {
+        background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+        color: #991b1b;
+        border: 1px solid #f87171;
+      }
+
+      .member-badge.custom {
+        background: #fce7f3;
+        color: #831843;
+      }
+
+      /* 회원 유형 필터 스타일 */
+      .type-filter {
+        transition: all 0.2s;
+        opacity: 0.7;
+      }
+
+      .type-filter:hover {
+        opacity: 1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .type-filter.active {
+        opacity: 1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transform: scale(1.05);
+      }
+
+      .member-stats {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #f3f4f6;
+        font-size: 12px;
+      }
+
+      .member-stat {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #6b7280;
+      }
+
+      .member-stat i {
+        color: var(--accent);
+        font-size: 10px;
+      }
+
+      /* 빠른 검색 */
+      .quick-search {
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      .quick-search input {
+        width: 100%;
+        padding: 12px 16px 12px 44px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 14px;
+        background: white;
+      }
+
+      .quick-search i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+      }
+
+      .search-clear {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #e5e5e5;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 12px;
+      }
+
+      .search-clear:hover {
+        background: #d4d4d4;
+      }
+
+      /* 통계 카드 */
+      .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 16px;
+        color: white;
+      }
+
+      .stat-card.seed {
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+      }
+
+      .stat-card.power {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      }
+
+      .stat-card.big-power {
+        background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+      }
+
+      .stat-card.premium {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      }
+
+      .stat-label {
+        font-size: 12px;
+        opacity: 0.9;
+        margin-bottom: 4px;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      /* 로딩 스켈레톤 */
+      .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+      }
+
+      @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      .no-members {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+
+      .no-members i {
+        font-size: 48px;
+        color: #d1d5db;
+        margin-bottom: 12px;
+      }
+
+      /* 모바일 반응형 */
+      @media (max-width: 768px) {
+        .container {
+          padding: 12px;
+        }
+
+        .members-table th,
+        .members-table td {
+          padding: 8px;
+          font-size: 12px;
+        }
+
+        .member-avatar-sm {
+          width: 28px;
+          height: 28px;
+          font-size: 12px;
+        }
+
+        .member-badge {
+          font-size: 11px;
+          padding: 3px 8px;
+        }
+
+        .member-badge.type {
+          font-size: 11px;
+          padding: 4px 8px;
+          white-space: nowrap;
+        }
+
+        .pagination {
+          flex-direction: column;
+          gap: 12px;
+          align-items: stretch;
+        }
+
+        .pagination-controls {
+          justify-content: center;
+        }
+
+        /* 모바일에서 이메일 열 숨김 */
+        .members-table th:nth-child(2),
+        .members-table td:nth-child(2) {
+          display: none;
+        }
+
+        .level-tabs {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .level-tab {
+          font-size: 12px;
+          padding: 6px 12px;
+        }
+
+        /* 모바일에서 유형 범례 세로 배치 */
+        .member-type-legend {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          gap: 8px !important;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .members-table th,
+        .members-table td {
+          padding: 6px 4px;
+          font-size: 11px;
+        }
+
+        .member-badge.type {
+          font-size: 10px;
+          padding: 3px 6px;
+        }
+
+        h1 {
+          font-size: 20px !important;
+        }
+
+        .subtitle {
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body class="admin-body">
+    <!-- 사이드바 -->
+    <div id="admin-sidebar"></div>
+
+    <!-- 헤더 -->
+    <div id="header"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+      <div class="container">
+        <!-- 페이지 타이틀 -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
+            <i class="fas fa-user-edit" style="color: var(--accent);"></i>
+            회원 맞춤 설정
+          </h1>
+        </div>
+        <div class="subtitle">특정 회원의 가격과 토큰 한도를 맞춤으로 설정합니다</div>
+
+        <!-- 상태 메시지 -->
+        <div id="statusMessage" style="display: none;"></div>
+
+        <!-- 회원 목록 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-users" style="color: var(--accent);"></i>
+              회원 목록
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="font-size: 14px; color: #6b7280;">전체 회원</span>
+              <span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 12px; font-size: 13px; font-weight: 700;" id="totalMemberCount">0</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- 빠른 검색 -->
+            <div class="quick-search">
+              <i class="fas fa-search"></i>
+              <input 
+                type="text" 
+                id="quickSearchInput" 
+                placeholder="이름, 이메일, 유형으로 빠른 검색..."
+                onkeyup="quickSearch()"
+              />
+              <button class="search-clear" id="searchClear" onclick="clearSearch()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+
+            <!-- 회원 유형 필터 -->
+            <div class="member-type-legend" style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; padding: 12px; background: #f9fafb; border-radius: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 13px; font-weight: 700; color: #374151;">회원 유형:</span>
+                <span class="member-badge type-filter active" style="font-size: 11px; cursor: pointer; background: #e5e7eb; color: #374151; border: 1px solid #9ca3af;" onclick="filterByUserType('all')" id="filter-all">
+                  ✨ 전체
+                </span>
+                <span class="member-badge type owner type-filter" style="font-size: 11px; cursor: pointer;" onclick="filterByUserType('owner')" id="filter-owner">
+                  🍽️ 식당 대표
+                </span>
+                <span class="member-badge type agency type-filter" style="font-size: 11px; cursor: pointer;" onclick="filterByUserType('agency')" id="filter-agency">
+                  🏢 대행사
+                </span>
+                <span class="member-badge type manager type-filter" style="font-size: 11px; cursor: pointer;" onclick="filterByUserType('manager')" id="filter-manager">
+                  👔 매니저
+                </span>
+                <span class="member-badge type admin type-filter" style="font-size: 11px; cursor: pointer;" onclick="filterByUserType('admin')" id="filter-admin">
+                  👑 관리자
+                </span>
+              </div>
+            </div>
+
+            <div class="level-tabs" id="levelTabs">
+              <button class="level-tab active" onclick="filterByLevel('all')">
+                전체 <span class="badge" id="count-all">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('seed')">
+                🌱 씨앗 <span class="badge" id="count-seed">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('power')">
+                ⚡ 파워 <span class="badge" id="count-power">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('big_power')">
+                💪 빅파워 <span class="badge" id="count-big_power">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('premium')">
+                ⭐ 프리미엄 <span class="badge" id="count-premium">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('elite')">
+                🏆 엘리트 <span class="badge" id="count-elite">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('expert')">
+                🎯 전문가 <span class="badge" id="count-expert">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('master')">
+                👑 마스터 <span class="badge" id="count-master">0</span>
+              </button>
+              <button class="level-tab" onclick="filterByLevel('platinum')">
+                💎 플래티넘 <span class="badge" id="count-platinum">0</span>
+              </button>
+            </div>
+
+            <!-- 회원 테이블 -->
+            <div class="members-table-container">
+              <table class="members-table">
+                <thead>
+                  <tr>
+                    <th>회원명</th>
+                    <th>이메일</th>
+                    <th>유형</th>
+                    <th>등급</th>
+                    <th>맞춤설정</th>
+                    <th>가입일</th>
+                  </tr>
+                </thead>
+                <tbody id="membersTableBody">
+                  <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px;">
+                      <i class="fas fa-spinner fa-spin"></i> 회원 목록을 불러오는 중...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="pagination">
+                <div class="pagination-info">
+                  <span id="paginationInfo">0명 중 0-0명 표시</span>
+                </div>
+                <div class="pagination-controls">
+                  <button class="pagination-btn" id="prevPageBtn" onclick="changePage(-1)" disabled>
+                    <i class="fas fa-chevron-left"></i> 이전
+                  </button>
+                  <span id="pageNumbers"></span>
+                  <button class="pagination-btn" id="nextPageBtn" onclick="changePage(1)" disabled>
+                    다음 <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 맞춤 설정 -->
+        <section class="card" id="customizationCard" style="display: none;">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-cog" style="color: var(--accent);"></i>
+              맞춤 설정
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- 회원 정보 -->
+            <div class="member-info">
+              <h3>선택된 회원</h3>
+              <p><strong>이름:</strong> <span id="memberName">-</span></p>
+              <p><strong>이메일:</strong> <span id="memberEmail">-</span></p>
+              <p><strong>회원 유형:</strong> <span id="memberType">-</span></p>
+              <p><strong>등급:</strong> <span id="memberLevel">-</span></p>
+            </div>
+
+            <!-- 맞춤 가격 섹션 -->
+            <div class="form-section">
+              <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-tag" style="color: var(--accent);"></i>
+                맞춤 가격 설정
+              </h3>
+              
+              <div class="form-group">
+                <label>맞춤 가격 (원)</label>
+                <div class="input-group">
+                  <input type="number" id="customPrice" placeholder="가격을 입력하세요 (공백 시 기본 가격 적용)" min="0" />
+                  <span class="input-unit">원</span>
+                </div>
+                <div class="info-text">값을 입력하면 해당 회원에게 맞춤 가격이 적용됩니다. 공백으로 두면 기본 등급별 가격이 적용됩니다.</div>
+              </div>
+
+              <div class="form-group">
+                <label>할인/인상 사유</label>
+                <textarea 
+                  id="discountReason" 
+                  placeholder="예: VIP 할인, 프로모션, 신규 가입자 등"
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- 맞춤 토큰 섹션 -->
+            <div class="form-section">
+              <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-coins" style="color: var(--accent);"></i>
+                맞춤 토큰 한도 설정
+              </h3>
+              
+              <div class="form-group">
+                <label>맞춤 토큰 한도 (토큰/월)</label>
+                <div class="input-group">
+                  <input type="number" id="customToken" placeholder="토큰 한도를 입력하세요 (공백 시 기본 한도 적용)" min="0" />
+                  <span class="input-unit">토큰/월</span>
+                </div>
+                <div class="info-text">값을 입력하면 해당 회원에게 맞춤 토큰 한도가 적용됩니다. 공백으로 두면 기본 등급별 한도가 적용됩니다.</div>
+              </div>
+
+              <div class="form-group">
+                <label>사유</label>
+                <textarea 
+                  id="tokenReason" 
+                  placeholder="예: 이벤트 프로모션, VIP 혜택 등"
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- 버튼 그룹 -->
+            <div class="btn-group">
+              <button class="btn" onclick="resetForm()">
+                <i class="fas fa-undo"></i> 초기화
+              </button>
+              <button class="btn primary" onclick="saveMemberCustomization()">
+                <i class="fas fa-save"></i> 저장
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
+
+    <script>
+      // ==================== 설정 ====================
+      
+      let supabase;
+      let allMembers = [];
+      let selectedMember = null;
+      let currentLevel = 'all';
+      let currentUserType = 'all'; // 회원 유형 필터
+      let customMembers = new Set(); // 맞춤 설정이 있는 회원 ID 저장
+      
+      // 페이지네이션 설정
+      let currentPage = 1;
+      let itemsPerPage = 50; // 한 페이지에 50명씩
+      let totalPages = 1;
+
+      // ==================== 초기화 ====================
+
+      window.addEventListener('load', async function() {
+        try {
+          console.log('🔄 페이지 초기화 시작...');
+          
+          supabase = await AdminBootstrap.getSupabaseClient();
+          console.log('✅ Supabase 클라이언트 초기화:', supabase);
+          
+          await AdminBootstrap.initializeHeader();
+          console.log('✅ 헤더 초기화 완료');
+          
+          await AdminBootstrap.initializeSidebar();
+          console.log('✅ 사이드바 초기화 완료');
+          
+          await loadAllMembers();
+          console.log('✅ 회원 목록 로드 완료');
+          
+        } catch (error) {
+          console.error('❌ 페이지 초기화 오류:', error);
+          showMessage('페이지 초기화 실패: ' + error.message, 'error');
+        }
+      });
+
+      // ==================== 회원 조회 ====================
+
+      async function loadAllMembers() {
+        try {
+          console.log('👥 회원 목록 조회 시작...');
+          
+          // 회원 목록 조회
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, name, email, user_type, membership_level, created_at')
+            .order('created_at', { ascending: false });
+
+          console.log('👥 profiles 조회 결과:', { data, error });
+          
+          if (error) throw error;
+
+          allMembers = data || [];
+          
+          // FREE 등급을 씨앗으로 자동 변경
+          const freeMembers = allMembers.filter(m => m.membership_level === 'free' || m.membership_level === null);
+          if (freeMembers.length > 0) {
+            console.log(`🔄 FREE 등급 회원 ${freeMembers.length}명을 씨앗으로 변경 중...`);
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ membership_level: 'seed' })
+              .in('id', freeMembers.map(m => m.id));
+            
+            if (updateError) {
+              console.error('❌ FREE 등급 변경 실패:', updateError);
+            } else {
+              console.log(`✅ ${freeMembers.length}명의 FREE 등급을 씨앗으로 변경 완료`);
+              // 변경된 데이터 반영
+              allMembers = allMembers.map(m => 
+                (m.membership_level === 'free' || m.membership_level === null) 
+                  ? { ...m, membership_level: 'seed' } 
+                  : m
+              );
+            }
+          }
+          
+          console.log(`✅ 총 ${allMembers.length}명의 회원 로드`);
+
+          // 맞춤 설정이 있는 회원 확인
+          const { data: customPricing, error: pricingError } = await supabase
+            .from('member_custom_pricing')
+            .select('member_id');
+          
+          console.log('💰 맞춤 가격 조회:', { customPricing, pricingError });
+          
+          const { data: customTokens, error: tokenError } = await supabase
+            .from('member_token_limits')
+            .select('member_id');
+
+          console.log('🎟️ 맞춤 토큰 조회:', { customTokens, tokenError });
+
+          customMembers = new Set([
+            ...(customPricing || []).map(p => p.member_id),
+            ...(customTokens || []).map(t => t.member_id)
+          ]);
+
+          console.log(`✅ 맞춤 설정 회원 수: ${customMembers.size}`);
+
+          // 회원 카운트 업데이트
+          updateMemberCounts();
+          // 회원 표시
+          displayMembers();
+          // 등급 탭 색상 초기화
+          updateLevelTabsColor();
+        } catch (error) {
+          console.error('❌ 회원 조회 실패:', error);
+          console.error('❌ 에러 상세:', error.stack);
+          showMessage('회원 조회 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 회원 표시 (테이블) ====================
+
+      function displayMembers(members = null) {
+        const tbody = document.getElementById('membersTableBody');
+        const displayList = members || getFilteredMembers();
+
+        // 페이지네이션 계산
+        totalPages = Math.ceil(displayList.length / itemsPerPage);
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = Math.min(startIdx + itemsPerPage, displayList.length);
+        const pageMembers = displayList.slice(startIdx, endIdx);
+
+        if (displayList.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                <i class="fas fa-users-slash" style="font-size: 32px; margin-bottom: 8px; display: block;"></i>
+                해당 조건의 회원이 없습니다
+              </td>
+            </tr>
+          `;
+          updatePagination(0, 0, 0);
+          return;
+        }
+
+        tbody.innerHTML = pageMembers.map(member => {
+          const initial = member.name ? member.name[0].toUpperCase() : 'U';
+          const hasCustom = customMembers.has(member.id);
+          const createdDate = member.created_at ? new Date(member.created_at).toLocaleDateString('ko-KR') : '-';
+          const isSelected = selectedMember?.id === member.id;
+          
+          return `
+            <tr class="${isSelected ? 'selected' : ''}" onclick="selectMemberFromTable('${member.id}')">
+              <td>
+                <div class="member-name-cell">
+                  <div class="member-avatar-sm">${initial}</div>
+                  <span style="font-weight: 600;">${member.name || '이름 없음'}</span>
+                </div>
+              </td>
+              <td style="color: #6b7280; font-size: 13px;">${member.email}</td>
+              <td>
+                <span class="member-badge type ${member.user_type}">
+                  ${getUserTypeIcon(member.user_type)} ${getUserTypeLabel(member.user_type)}
+                </span>
+              </td>
+              <td>
+                <span style="padding: 4px 10px; background: #fef3c7; color: #92400e; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                  ${getLevelIcon(member.membership_level)} ${getLevelText(member.membership_level)}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                ${hasCustom ? '<span style="color: #dc2626; font-weight: 600;">●</span>' : '<span style="color: #d1d5db;">-</span>'}
+              </td>
+              <td style="color: #6b7280; font-size: 13px;">${createdDate}</td>
+            </tr>
+          `;
+        }).join('');
+
+        updatePagination(displayList.length, startIdx + 1, endIdx);
+      }
+
+      // ==================== 페이지네이션 업데이트 ====================
+
+      function updatePagination(total, start, end) {
+        document.getElementById('paginationInfo').textContent = 
+          total > 0 ? `${total}명 중 ${start}-${end}명 표시` : '0명';
+
+        document.getElementById('prevPageBtn').disabled = currentPage === 1;
+        document.getElementById('nextPageBtn').disabled = currentPage === totalPages || totalPages === 0;
+
+        // 페이지 번호 표시
+        const pageNumbers = document.getElementById('pageNumbers');
+        const maxPagesToShow = 5;
+        let pages = [];
+
+        if (totalPages <= maxPagesToShow) {
+          pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+        } else {
+          if (currentPage <= 3) {
+            pages = [1, 2, 3, 4, 5];
+          } else if (currentPage >= totalPages - 2) {
+            pages = [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+          } else {
+            pages = [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+          }
+        }
+
+        pageNumbers.innerHTML = pages.map(page => `
+          <button class="pagination-btn ${page === currentPage ? 'active' : ''}" 
+                  onclick="goToPage(${page})">${page}</button>
+        `).join('');
+      }
+
+      // ==================== 페이지 이동 ====================
+
+      function changePage(delta) {
+        const newPage = currentPage + delta;
+        if (newPage >= 1 && newPage <= totalPages) {
+          currentPage = newPage;
+          displayMembers();
+        }
+      }
+
+      function goToPage(page) {
+        if (page >= 1 && page <= totalPages) {
+          currentPage = page;
+          displayMembers();
+        }
+      }
+
+      // ==================== 필터링 ====================
+
+      function getFilteredMembers() {
+        let filtered = allMembers;
+
+        // 회원 유형 필터
+        if (currentUserType !== 'all') {
+          filtered = filtered.filter(m => m.user_type === currentUserType);
+        }
+
+        // 등급 필터
+        if (currentLevel !== 'all') {
+          filtered = filtered.filter(m => m.membership_level === currentLevel);
+        }
+
+        // 검색어 필터
+        const searchQuery = document.getElementById('quickSearchInput')?.value.toLowerCase();
+        if (searchQuery) {
+          filtered = filtered.filter(m => 
+            m.name?.toLowerCase().includes(searchQuery) || 
+            m.email?.toLowerCase().includes(searchQuery) ||
+            getUserTypeText(m.user_type).toLowerCase().includes(searchQuery) ||
+            getLevelText(m.membership_level).toLowerCase().includes(searchQuery)
+          );
+        }
+
+        return filtered;
+      }
+
+      // ==================== 빠른 검색 ====================
+
+      function quickSearch() {
+        const input = document.getElementById('quickSearchInput');
+        const clearBtn = document.getElementById('searchClear');
+        
+        if (input.value) {
+          clearBtn.style.display = 'flex';
+        } else {
+          clearBtn.style.display = 'none';
+        }
+
+        currentPage = 1; // 검색 시 첫 페이지로
+        displayMembers();
+      }
+
+      function clearSearch() {
+        document.getElementById('quickSearchInput').value = '';
+        document.getElementById('searchClear').style.display = 'none';
+        currentPage = 1; // 첫 페이지로
+        displayMembers();
+      }
+
+      // ==================== 회원 유형별 필터 ====================
+
+      function filterByUserType(userType) {
+        currentUserType = userType;
+        currentPage = 1; // 필터 변경 시 첫 페이지로
+        
+        // 필터 활성화 상태 변경
+        document.querySelectorAll('.type-filter').forEach(filter => {
+          filter.classList.remove('active');
+        });
+        document.getElementById(`filter-${userType}`).classList.add('active');
+
+        displayMembers();
+        updateLevelTabsColor();
+      }
+
+      // ==================== 등급별 필터 ====================
+
+      function filterByLevel(level) {
+        currentLevel = level;
+        currentPage = 1; // 필터 변경 시 첫 페이지로
+        
+        // 탭 활성화 상태 변경
+        document.querySelectorAll('.level-tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        event.target.closest('.level-tab').classList.add('active');
+
+        displayMembers();
+      }
+
+      // ==================== 회원 카운트 업데이트 ====================
+
+      function updateMemberCounts() {
+        const levels = ['seed', 'power', 'big_power', 'premium', 'elite', 'expert', 'master', 'platinum'];
+        
+        // 현재 필터에 맞는 회원 목록
+        let filteredForCount = allMembers;
+        if (currentUserType !== 'all') {
+          filteredForCount = filteredForCount.filter(m => m.user_type === currentUserType);
+        }
+        
+        // 전체 카운트
+        document.getElementById('count-all').textContent = filteredForCount.length;
+        document.getElementById('totalMemberCount').textContent = allMembers.length;
+
+        // 등급별 카운트
+        levels.forEach(level => {
+          const count = filteredForCount.filter(m => m.membership_level === level).length;
+          const element = document.getElementById(`count-${level}`);
+          if (element) element.textContent = count;
+        });
+      }
+
+      // ==================== 등급 탭 색상 업데이트 ====================
+
+      function updateLevelTabsColor() {
+        const levelTabs = document.querySelectorAll('.level-tab');
+        
+        // 모든 색상 클래스 제거
+        levelTabs.forEach(tab => {
+          tab.classList.remove('owner-color', 'agency-color', 'manager-color', 'admin-color');
+        });
+
+        // 회원 유형에 따라 색상 적용
+        if (currentUserType === 'owner') {
+          // 식당 대표 등급: 씨앗, 파워, 빅파워, 프리미엄
+          ['seed', 'power', 'big_power', 'premium'].forEach(level => {
+            const tab = document.querySelector(`.level-tab[onclick*="'${level}'"]`);
+            if (tab) tab.classList.add('owner-color');
+          });
+        } else if (currentUserType === 'agency') {
+          // 대행사 등급: 엘리트, 전문가, 마스터, 플래티넘
+          ['elite', 'expert', 'master', 'platinum'].forEach(level => {
+            const tab = document.querySelector(`.level-tab[onclick*="'${level}'"]`);
+            if (tab) tab.classList.add('agency-color');
+          });
+        }
+        // 매니저와 관리자는 일반 등급 시스템을 사용하지 않으므로 색상 적용 안 함
+
+        updateMemberCounts();
+      }
+
+      // ==================== 등급 아이콘 ====================
+
+      function getLevelIcon(level) {
+        const icons = {
+          'seed': '🌱',
+          'power': '⚡',
+          'big_power': '💪',
+          'premium': '⭐',
+          'elite': '🏆',
+          'expert': '🎯',
+          'master': '👑',
+          'platinum': '💎',
+          'admin': '🛡️'
+        };
+        return icons[level] || '👤';
+      }
+
+      // ==================== 회원 선택 (테이블) ====================
+
+      function selectMemberFromTable(memberId) {
+        const member = allMembers.find(m => m.id === memberId);
+        if (!member) return;
+
+        selectedMember = {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          userType: member.user_type,
+          level: member.membership_level
+        };
+
+        // 테이블 행 선택 상태 업데이트
+        displayMembers();
+
+        // 맞춤 설정 카드 표시
+        document.getElementById('customizationCard').style.display = 'block';
+        document.getElementById('memberName').textContent = member.name || '이름 없음';
+        document.getElementById('memberEmail').textContent = member.email;
+        document.getElementById('memberType').textContent = getUserTypeText(member.user_type);
+        document.getElementById('memberLevel').textContent = getLevelText(member.membership_level);
+
+        // 맞춤 설정 카드로 스크롤
+        setTimeout(() => {
+          document.getElementById('customizationCard').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }, 100);
+
+        loadMemberCustomization();
+      }
+
+      // ==================== 회원 맞춤 설정 로드 ====================
+
+      async function loadMemberCustomization() {
+        try {
+          // 맞춤 가격 조회
+          const pricingResp = await fetch(`/api/subscription/member-pricing/${selectedMember.id}`);
+          const pricingData = await pricingResp.json();
+
+          // 맞춤 토큰 조회
+          const tokenResp = await fetch(`/api/subscription/member-token-limit/${selectedMember.id}`);
+          const tokenData = await tokenResp.json();
+
+          // 가격 설정
+          if (pricingData.custom_pricing) {
+            document.getElementById('customPrice').value = pricingData.custom_pricing.custom_price || '';
+            document.getElementById('discountReason').value = pricingData.custom_pricing.discount_reason || '';
+          } else {
+            document.getElementById('customPrice').value = '';
+            document.getElementById('discountReason').value = '';
+          }
+
+          // 토큰 설정
+          if (tokenData.custom_limit) {
+            document.getElementById('customToken').value = tokenData.custom_limit.custom_limit || '';
+            document.getElementById('tokenReason').value = tokenData.custom_limit.reason || '';
+          } else {
+            document.getElementById('customToken').value = '';
+            document.getElementById('tokenReason').value = '';
+          }
+        } catch (error) {
+          console.error('❌ 맞춤 설정 로드 실패:', error);
+        }
+      }
+
+
+      // ==================== 저장 ====================
+
+      async function saveMemberCustomization() {
+        if (!selectedMember) return;
+
+        try {
+          const promises = [];
+
+          // 맞춤 가격 저장 (값이 입력된 경우)
+          const customPriceValue = document.getElementById('customPrice').value;
+          if (customPriceValue && customPriceValue.trim() !== '') {
+            const customPrice = parseInt(customPriceValue);
+            const discountReason = document.getElementById('discountReason').value;
+
+            promises.push(
+              fetch('/api/subscription/member-pricing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  member_id: selectedMember.id,
+                  custom_price: customPrice,
+                  discount_reason: discountReason
+                })
+              })
+            );
+          }
+
+          // 맞춤 토큰 저장 (값이 입력된 경우)
+          const customTokenValue = document.getElementById('customToken').value;
+          if (customTokenValue && customTokenValue.trim() !== '') {
+            const customToken = parseInt(customTokenValue);
+            const tokenReason = document.getElementById('tokenReason').value;
+
+            promises.push(
+              fetch('/api/subscription/member-token-limit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  member_id: selectedMember.id,
+                  custom_limit: customToken,
+                  reason: tokenReason
+                })
+              })
+            );
+          }
+
+          if (promises.length === 0) {
+            showMessage('맞춤 가격 또는 맞춤 토큰 한도를 입력해주세요', 'error');
+            return;
+          }
+
+          const responses = await Promise.all(promises);
+          const results = await Promise.all(responses.map(r => r.json()));
+
+          for (const result of results) {
+            if (!result.success) throw new Error(result.error);
+          }
+
+          showMessage(`${selectedMember.name} 회원의 맞춤 설정이 저장되었습니다`, 'success');
+          
+          // 맞춤 설정 회원 목록 업데이트
+          customMembers.add(selectedMember.id);
+          displayMembers();
+        } catch (error) {
+          console.error('❌ 저장 실패:', error);
+          showMessage('저장 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 초기화 ====================
+
+      function resetForm() {
+        if (!selectedMember) return;
+        
+        // 재로드
+        loadMemberCustomization();
+      }
+
+      // ==================== 유틸 함수 ====================
+
+      function getUserTypeIcon(type) {
+        const icons = {
+          'owner': '🍽️',
+          'agency': '🏢',
+          'manager': '👔',
+          'admin': '👑'
+        };
+        return icons[type] || '👤';
+      }
+
+      function getUserTypeLabel(type) {
+        const labels = {
+          'owner': '식당 대표',
+          'agency': '대행사',
+          'manager': '매니저',
+          'admin': '관리자'
+        };
+        return labels[type] || type;
+      }
+
+      function getUserTypeText(type) {
+        return `${getUserTypeIcon(type)} ${getUserTypeLabel(type)}`;
+      }
+
+      function getLevelText(level) {
+        const levels = {
+          'seed': '씨앗',
+          'power': '파워',
+          'big_power': '빅파워',
+          'premium': '프리미엄',
+          'elite': '엘리트',
+          'expert': '전문가',
+          'master': '마스터',
+          'platinum': '플래티넘',
+          'admin': '관리자'
+        };
+        return levels[level] || level;
+      }
+
+      function showMessage(message, type) {
+        const container = document.getElementById('statusMessage');
+        container.className = type;
+        container.innerHTML = `
+          ${type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>'}
+          ${message}
+        `;
+        container.style.display = 'block';
+
+        setTimeout(() => {
+          container.style.display = 'none';
+        }, 5000);
+      }
+    </script>
+    
+    <!-- Admin 공통 스크립트 -->
+    <script src="../assets/admin-sidebar.js"></script>
+    <script src="../assets/admin-header.js"></script>
+    <script src="../assets/admin-common.js"></script>
+  </body>
+</html>
