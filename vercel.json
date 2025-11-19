@@ -2,6 +2,7 @@
   "version": 2,
   "framework": null,
   "installCommand": "pnpm install --no-frozen-lockfile",
+  "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
     {
@@ -34,6 +35,5 @@
       "path": "/api/cron/keep-alive",
       "schedule": "*/10 * * * *"
     }
-  ],
-  "trailingSlash": false
+  ]
 }
