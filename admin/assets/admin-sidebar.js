@@ -12,7 +12,7 @@
     {
       icon: '📊',
       title: '대시보드',
-      path: './pages/dashboard.html',
+      path: '/admin/pages/dashboard.html',
       badge: null
     },
     {
@@ -21,37 +21,37 @@
     {
       icon: '👥',
       title: '회원 관리',
-      path: './member-management.html',
+      path: '/admin/pages/member-management.html',
       badge: null
     },
     {
       icon: '🔔',
       title: '리뷰 모니터링',
-      path: './review-monitoring.html',
+      path: '/admin/pages/review-monitoring.html',
       badge: null
     },
     {
       icon: '📊',
       title: '순위 리포트',
-      path: './rank-report.html',
+      path: '/admin/pages/rank-report.html',
       badge: null
     },
     {
       icon: '📰',
       title: '뉴스 관리',
-      path: './news-management.html',
+      path: '/admin/pages/news-management.html',
       badge: null
     },
     {
       icon: '🏛️',
       title: '정책지원금 관리',
-      path: './policy-management.html',
+      path: '/admin/pages/policy-management.html',
       badge: null
     },
     {
       icon: '📈',
       title: 'ADLOG 순위 추적',
-      path: './pages/ranking-dashboard-real.html',
+      path: '/admin/pages/ranking-dashboard-real.html',
       badge: 'REAL'
     },
     {
@@ -60,19 +60,19 @@
     {
       icon: '💰',
       title: '토큰 가격설정',
-      path: './pages/subscription-settings.html',
+      path: '/admin/pages/subscription-settings.html',
       badge: null
     },
     {
       icon: '📊',
       title: '토큰 대시보드',
-      path: './pages/token-dashboard.html',
+      path: '/admin/pages/token-dashboard.html',
       badge: 'NEW'
     },
     {
       icon: '⚙️',
       title: '회원 맞춤 설정',
-      path: './pages/member-subscription-customization.html',
+      path: '/admin/pages/member-subscription-customization.html',
       badge: null
     },
     {
@@ -81,7 +81,7 @@
     {
       icon: '🗄️',
       title: 'DB 뷰어',
-      path: './db-view.html',
+      path: '/admin/pages/db-view.html',
       badge: null
     },
     {
@@ -90,19 +90,19 @@
     {
       icon: '📈',
       title: '분석',
-      path: './analytics.html',
+      path: '/admin/pages/analytics.html',
       badge: null
     },
     {
       icon: '⚡',
       title: '성능',
-      path: './performance.html',
+      path: '/admin/pages/performance.html',
       badge: null
     },
     {
       icon: '🐛',
       title: '에러',
-      path: './errors.html',
+      path: '/admin/pages/errors.html',
       badge: null
     }
   ];
