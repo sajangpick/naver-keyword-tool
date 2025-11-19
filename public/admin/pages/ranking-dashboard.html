@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADLOG 순위 추적 대시보드 | 사장픽 관리자</title>
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/admin-common.css">
+    
+    <style>
+        .ranking-card {
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s;
+            height: 100%;
+        }
+        
+        .ranking-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .rank-up {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .rank-down {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .rank-same {
+            color: #95a5a6;
+        }
+        
+        .top-restaurant {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #95a5a6); }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+        .rank-other { background: #6c757d; }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .keyword-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            margin: 5px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .data-table {
+            font-size: 0.9rem;
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <!-- 사이드바 -->
+    <div id="sidebar-container"></div>
+    
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+        <!-- 헤더 -->
+        <div class="content-header">
+            <h1><i class="bi bi-graph-up"></i> ADLOG 순위 추적 대시보드</h1>
+            <div class="header-actions">
+                <button class="btn btn-success" onclick="runScraping()">
+                    <i class="bi bi-arrow-clockwise"></i> 데이터 수집
+                </button>
+                <button class="btn btn-primary" onclick="exportData()">
+                    <i class="bi bi-download"></i> 엑셀 다운로드
+                </button>
+            </div>
+        </div>
+        
+        <!-- 통계 카드 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="ranking-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">전체 식당</h6>
+                            <div class="stat-number" id="totalRestaurants">48</div>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-shop" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="ranking-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">추적 키워드</h6>
+                            <div class="stat-number" id="totalKeywords">26</div>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-search" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="ranking-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">오늘 수집</h6>
+                            <div class="stat-number" id="todayData">520</div>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-database" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="ranking-card p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">마지막 업데이트</h6>
+                            <div style="font-size: 1.2rem;" id="lastUpdate">14:34</div>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-clock-history" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 필터 섹션 -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">키워드 선택</label>
+                    <select class="form-select" id="keywordFilter">
+                        <option value="">전체</option>
+                        <option value="강남 맛집">강남 맛집</option>
+                        <option value="강남 치킨">강남 치킨</option>
+                        <option value="해운대 맛집">해운대 맛집</option>
+                        <option value="서초 맛집">서초 맛집</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">지역</label>
+                    <select class="form-select" id="regionFilter">
+                        <option value="">전체</option>
+                        <option value="서울">서울</option>
+                        <option value="부산">부산</option>
+                        <option value="대전">대전</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">카테고리</label>
+                    <select class="form-select" id="categoryFilter">
+                        <option value="">전체</option>
+                        <option value="한식">한식</option>
+                        <option value="치킨">치킨</option>
+                        <option value="카페">카페</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary w-100" onclick="applyFilters()">
+                        <i class="bi bi-funnel"></i> 필터 적용
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 탭 네비게이션 -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#overview">
+                    <i class="bi bi-speedometer2"></i> 개요
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#rankings">
+                    <i class="bi bi-list-ol"></i> 순위 현황
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#restaurants">
+                    <i class="bi bi-shop"></i> 식당 관리
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#keywords">
+                    <i class="bi bi-tags"></i> 키워드 관리
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#analysis">
+                    <i class="bi bi-graph-up-arrow"></i> 분석
+                </a>
+            </li>
+        </ul>
+        
+        <!-- 탭 콘텐츠 -->
+        <div class="tab-content">
+            <!-- 개요 탭 -->
+            <div class="tab-pane fade show active" id="overview">
+                <div class="row">
+                    <!-- TOP 상승 식당 -->
+                    <div class="col-md-6">
+                        <div class="ranking-card p-4">
+                            <h5 class="mb-3">🚀 오늘의 급상승 식당</h5>
+                            <div id="topGainers">
+                                <div class="top-restaurant">
+                                    <div class="d-flex align-items-center">
+                                        <span class="rank-badge rank-1">1</span>
+                                        <div class="ms-3">
+                                            <strong>스무고개 해운대점</strong>
+                                            <div class="text-muted small">해운대 맛집</div>
+                                        </div>
+                                    </div>
+                                    <span class="rank-up">↑15</span>
+                                </div>
+                                <div class="top-restaurant">
+                                    <div class="d-flex align-items-center">
+                                        <span class="rank-badge rank-2">2</span>
+                                        <div class="ms-3">
+                                            <strong>BBQ치킨 강남점</strong>
+                                            <div class="text-muted small">강남 치킨</div>
+                                        </div>
+                                    </div>
+                                    <span class="rank-up">↑12</span>
+                                </div>
+                                <div class="top-restaurant">
+                                    <div class="d-flex align-items-center">
+                                        <span class="rank-badge rank-3">3</span>
+                                        <div class="ms-3">
+                                            <strong>스타벅스 서면점</strong>
+                                            <div class="text-muted small">서면 카페</div>
+                                        </div>
+                                    </div>
+                                    <span class="rank-up">↑8</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- TOP 하락 식당 -->
+                    <div class="col-md-6">
+                        <div class="ranking-card p-4">
+                            <h5 class="mb-3">📉 순위 하락 주의</h5>
+                            <div id="topLosers">
+                                <div class="top-restaurant">
+                                    <div class="d-flex align-items-center">
+                                        <span class="rank-badge rank-other">1</span>
+                                        <div class="ms-3">
+                                            <strong>교촌치킨 해운대점</strong>
+                                            <div class="text-muted small">해운대 치킨</div>
+                                        </div>
+                                    </div>
+                                    <span class="rank-down">↓10</span>
+                                </div>
+                                <div class="top-restaurant">
+                                    <div class="d-flex align-items-center">
+                                        <span class="rank-badge rank-other">2</span>
+                                        <div class="ms-3">
+                                            <strong>이디야커피 강남역점</strong>
+                                            <div class="text-muted small">강남 카페</div>
+                                        </div>
+                                    </div>
+                                    <span class="rank-down">↓8</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 차트 영역 -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="ranking-card p-4">
+                            <h5 class="mb-3">📈 주간 순위 변동 추이</h5>
+                            <div class="chart-container">
+                                <canvas id="rankingChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 순위 현황 탭 -->
+            <div class="tab-pane fade" id="rankings">
+                <div class="ranking-card p-4">
+                    <h5 class="mb-3">실시간 순위 현황</h5>
+                    <div class="table-responsive">
+                        <table class="table data-table">
+                            <thead>
+                                <tr>
+                                    <th>순위</th>
+                                    <th>식당명</th>
+                                    <th>키워드</th>
+                                    <th>카테고리</th>
+                                    <th>변동</th>
+                                    <th>최근 업데이트</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingsTable">
+                                <!-- 동적 로드 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 식당 관리 탭 -->
+            <div class="tab-pane fade" id="restaurants">
+                <div class="ranking-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>등록된 식당 목록</h5>
+                        <button class="btn btn-success btn-sm" onclick="addRestaurant()">
+                            <i class="bi bi-plus-circle"></i> 식당 추가
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>식당명</th>
+                                    <th>카테고리</th>
+                                    <th>주소</th>
+                                    <th>상태</th>
+                                    <th>네이버 URL</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="restaurantsTable">
+                                <!-- 동적 로드 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 키워드 관리 탭 -->
+            <div class="tab-pane fade" id="keywords">
+                <div class="ranking-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>추적 키워드 목록</h5>
+                        <button class="btn btn-success btn-sm" onclick="addKeyword()">
+                            <i class="bi bi-plus-circle"></i> 키워드 추가
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="table-responsive">
+                                <table class="table data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>키워드</th>
+                                            <th>카테고리</th>
+                                            <th>우선순위</th>
+                                            <th>검색 횟수</th>
+                                            <th>마지막 검색</th>
+                                            <th>상태</th>
+                                            <th>작업</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="keywordsTable">
+                                        <!-- 동적 로드 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>활성 키워드</h6>
+                            <div id="activeKeywords">
+                                <span class="keyword-tag">강남 맛집</span>
+                                <span class="keyword-tag">해운대 맛집</span>
+                                <span class="keyword-tag">강남 치킨</span>
+                                <span class="keyword-tag">서초 맛집</span>
+                                <span class="keyword-tag">송파 맛집</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 분석 탭 -->
+            <div class="tab-pane fade" id="analysis">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="ranking-card p-4">
+                            <h5>지역별 분포</h5>
+                            <canvas id="regionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="ranking-card p-4">
+                            <h5>카테고리별 분포</h5>
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 로딩 스피너 -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">데이터를 불러오는 중...</p>
+        </div>
+    </main>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/admin-common.js"></script>
+    
+    <script>
+        // Supabase 초기화
+        const SUPABASE_URL = localStorage.getItem('SUPABASE_URL');
+        const SUPABASE_KEY = localStorage.getItem('SUPABASE_ANON_KEY');
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDashboardData();
+            initCharts();
+            loadRestaurants();
+            loadKeywords();
+        });
+        
+        // 대시보드 데이터 로드
+        async function loadDashboardData() {
+            try {
+                // 전체 식당 수
+                const { count: restaurantCount } = await supabase
+                    .from('adlog_restaurants')
+                    .select('*', { count: 'exact', head: true });
+                document.getElementById('totalRestaurants').textContent = restaurantCount || 48;
+                
+                // 키워드 수
+                const { count: keywordCount } = await supabase
+                    .from('tracking_keywords')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_active', true);
+                document.getElementById('totalKeywords').textContent = keywordCount || 26;
+                
+                // 오늘 데이터
+                const today = new Date().toISOString().split('T')[0];
+                const { count: todayCount } = await supabase
+                    .from('daily_rankings')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('search_date', today);
+                document.getElementById('todayData').textContent = todayCount || 0;
+                
+                // 마지막 업데이트
+                const now = new Date();
+                document.getElementById('lastUpdate').textContent = 
+                    `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+            } catch (error) {
+                console.error('데이터 로드 오류:', error);
+            }
+        }
+        
+        // 식당 목록 로드
+        async function loadRestaurants() {
+            try {
+                const { data, error } = await supabase
+                    .from('adlog_restaurants')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+                
+                if (error) throw error;
+                
+                const tbody = document.getElementById('restaurantsTable');
+                tbody.innerHTML = '';
+                
+                data.forEach(restaurant => {
+                    const row = `
+                        <tr>
+                            <td>${restaurant.place_id}</td>
+                            <td><strong>${restaurant.place_name || '미등록'}</strong></td>
+                            <td>${restaurant.category || '-'}</td>
+                            <td>${restaurant.address || '-'}</td>
+                            <td>
+                                <span class="status-badge ${restaurant.is_active ? 'status-active' : 'status-inactive'}">
+                                    ${restaurant.is_active ? '활성' : '비활성'}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="${restaurant.place_url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editRestaurant('${restaurant.id}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                
+            } catch (error) {
+                console.error('식당 로드 오류:', error);
+            }
+        }
+        
+        // 키워드 목록 로드
+        async function loadKeywords() {
+            try {
+                const { data, error } = await supabase
+                    .from('tracking_keywords')
+                    .select('*')
+                    .order('priority', { ascending: true });
+                
+                if (error) throw error;
+                
+                const tbody = document.getElementById('keywordsTable');
+                tbody.innerHTML = '';
+                
+                data.forEach(keyword => {
+                    const row = `
+                        <tr>
+                            <td><strong>${keyword.keyword}</strong></td>
+                            <td>${keyword.category || '-'}</td>
+                            <td>${keyword.priority}</td>
+                            <td>${keyword.total_searches || 0}</td>
+                            <td>${keyword.last_searched_at ? new Date(keyword.last_searched_at).toLocaleString('ko-KR') : '-'}</td>
+                            <td>
+                                <span class="status-badge ${keyword.is_active ? 'status-active' : 'status-inactive'}">
+                                    ${keyword.is_active ? '활성' : '비활성'}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="searchKeyword('${keyword.keyword}')">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                
+            } catch (error) {
+                console.error('키워드 로드 오류:', error);
+            }
+        }
+        
+        // 차트 초기화
+        function initCharts() {
+            // 순위 변동 차트
+            const ctx = document.getElementById('rankingChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['월', '화', '수', '목', '금', '토', '일'],
+                    datasets: [{
+                        label: '스무고개 해운대점',
+                        data: [15, 12, 8, 10, 7, 5, 3],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }, {
+                        label: 'BBQ치킨 강남점',
+                        data: [20, 18, 15, 14, 12, 10, 8],
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            reverse: true,
+                            title: {
+                                display: true,
+                                text: '순위'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 데이터 수집 실행
+        async function runScraping() {
+            if (confirm('데이터 수집을 시작하시겠습니까?\n약 2-3분 소요됩니다.')) {
+                document.getElementById('loadingSpinner').style.display = 'block';
+                
+                try {
+                    // Python 스크래퍼 실행 API 호출
+                    const response = await fetch('/api/admin/run-scraping', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        alert('데이터 수집이 완료되었습니다!');
+                        location.reload();
+                    } else {
+                        alert('데이터 수집 중 오류가 발생했습니다.');
+                    }
+                } catch (error) {
+                    console.error('수집 오류:', error);
+                    alert('데이터 수집 중 오류가 발생했습니다.');
+                } finally {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                }
+            }
+        }
+        
+        // 데이터 내보내기
+        function exportData() {
+            alert('엑셀 다운로드 기능 준비 중입니다.');
+        }
+        
+        // 필터 적용
+        function applyFilters() {
+            const keyword = document.getElementById('keywordFilter').value;
+            const region = document.getElementById('regionFilter').value;
+            const category = document.getElementById('categoryFilter').value;
+            
+            console.log('필터 적용:', { keyword, region, category });
+            // 필터링 로직 구현
+        }
+    </script>
+</body>
+</html>

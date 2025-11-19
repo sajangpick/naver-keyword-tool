@@ -1134,6 +1134,7 @@ function parseXMLResponse(xmlData) {
       console.log(`🔍 body > items > item: ${bodyItems.length}개`);
       console.log(`🔍 response > body > items > item: ${responseItems.length}개`);
     }
+    } // else 블록 닫기
     
   } catch (error) {
     console.error('❌ XML 파싱 오류:', error.message);

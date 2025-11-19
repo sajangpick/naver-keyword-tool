@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>토큰 가격설정 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      .container {
+        max-width: none;
+        margin: 0;
+        padding: 12px 12px 12px 4px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px 10px 8px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+      
+      .card-header .title {
+        flex: 0 0 auto;
+        font-size: 17px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      
+      .card-header .btn {
+        margin-left: 0;
+      }
+
+      .card-body {
+        padding: 10px 10px 10px 8px;
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(240px, 280px));
+        gap: 8px;
+        justify-content: start;
+      }
+      
+      @media (max-width: 1400px) {
+        .settings-grid {
+          grid-template-columns: repeat(3, minmax(240px, 1fr));
+        }
+      }
+      
+      @media (max-width: 1000px) {
+        .settings-grid {
+          grid-template-columns: repeat(2, minmax(240px, 1fr));
+        }
+        
+        .container {
+          padding: 10px;
+        }
+        
+        .card-header .title {
+          font-size: 16px;
+        }
+      }
+      
+      @media (max-width: 700px) {
+        .settings-grid {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        
+        .container {
+          padding: 8px;
+        }
+        
+        .card-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+          padding: 8px;
+        }
+        
+        .card-header .title {
+          font-size: 15px;
+        }
+        
+        .card-header .btn {
+          width: 100%;
+          text-align: center;
+          padding: 8px;
+        }
+        
+        .card-body {
+          padding: 8px;
+        }
+        
+        .setting-item {
+          padding: 8px;
+        }
+        
+        body.has-sidebar {
+          padding-left: 0;
+        }
+        
+        .admin-sidebar {
+          transform: translateX(-100%);
+          transition: transform 0.3s;
+        }
+        
+        input[type="number"] {
+          max-width: 100px;
+          font-size: 13px;
+          padding: 6px 8px;
+        }
+      }
+
+      .setting-item {
+        background: #f9fafb;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        transition: all 0.2s;
+      }
+      
+      .setting-item:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+      }
+      
+      /* 모든 카드 통일된 프리미엄 색상 */
+      .setting-item.level-seed,
+      .setting-item.level-power,
+      .setting-item.level-bigpower,
+      .setting-item.level-premium,
+      .setting-item.level-elite,
+      .setting-item.level-expert,
+      .setting-item.level-master,
+      .setting-item.level-premium-agency {
+        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+        border-color: #fed7aa;
+      }
+      
+      .setting-item input {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: #fed7aa;
+      }
+      
+      /* 식당 대표 등급별 배지 색상 */
+      .setting-item.level-seed .setting-badge {
+        background: linear-gradient(135deg, #16a34a, #22c55e);
+        box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+      }
+      
+      .setting-item.level-power .setting-badge {
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+      }
+      
+      .setting-item.level-bigpower .setting-badge {
+        background: linear-gradient(135deg, #f97316, #fb923c);
+        box-shadow: 0 2px 4px rgba(251, 146, 60, 0.3);
+      }
+      
+      .setting-item.level-premium .setting-badge {
+        background: linear-gradient(135deg, #ec4899, #f9a8d4);
+        box-shadow: 0 2px 4px rgba(249, 168, 212, 0.3);
+      }
+      
+      /* 대행사 등급별 배지 색상 */
+      .setting-item.level-elite .setting-badge {
+        background: linear-gradient(135deg, #6366f1, #818cf8);
+        box-shadow: 0 2px 4px rgba(129, 140, 248, 0.3);
+      }
+      
+      .setting-item.level-expert .setting-badge {
+        background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+        box-shadow: 0 2px 4px rgba(167, 139, 250, 0.3);
+      }
+      
+      .setting-item.level-master .setting-badge {
+        background: linear-gradient(135deg, #a855f7, #c084fc);
+        box-shadow: 0 2px 4px rgba(192, 132, 252, 0.3);
+      }
+      
+      .setting-item.level-premium-agency .setting-badge {
+        background: linear-gradient(135deg, #dc2626, #ef4444);
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+      }
+
+      .setting-label {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .setting-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        margin-bottom: 2px;
+      }
+      
+      .input-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4b5563;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      
+      .input-group .unit {
+        white-space: nowrap;
+        color: #6b7280;
+        font-weight: 500;
+        font-size: 13px;
+        min-width: 50px;
+      }
+
+      input[type="number"] {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 120px;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(52, 144, 220, 0.1);
+      }
+
+      .btn {
+        padding: 5px 10px;
+        border: 1px solid var(--border);
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: #374151;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .btn.danger {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+      }
+
+      .btn-group .btn {
+        flex: 1;
+      }
+
+      .info-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+      }
+
+      .error {
+        padding: 16px;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        color: #dc2626;
+        margin-bottom: 16px;
+      }
+
+      .success {
+        padding: 16px;
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        color: #16a34a;
+        margin-bottom: 16px;
+      }
+
+      .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--accent);
+      }
+
+      .section-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 40px 0;
+      }
+
+      .section-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body class="admin-body">
+    <!-- 사이드바 -->
+    <div id="admin-sidebar"></div>
+
+    <!-- 헤더 -->
+    <div id="header"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+      <div class="container">
+        <!-- 페이지 타이틀 -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
+            <i class="fas fa-sliders-h" style="color: var(--accent);"></i>
+            토큰 가격설정
+          </h1>
+        </div>
+        <div class="subtitle">구독 요금과 토큰 한도를 설정합니다</div>
+
+        <!-- 상태 메시지 -->
+        <div id="statusMessage" style="display: none;"></div>
+
+        <!-- 식당 대표 설정 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-utensils" style="color: #f59e0b;"></i>
+              🍽️ 식당 대표 등급 설정
+            </div>
+            <button class="btn primary" onclick="saveSettings('owner')">
+              <i class="fas fa-save"></i> 저장
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="settings-grid" id="owner-settings">
+              <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 대행사 설정 -->
+        <section class="card">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-building" style="color: #8b5cf6;"></i>
+              🏢 대행사 등급 설정
+            </div>
+            <button class="btn primary" onclick="saveSettings('agency')">
+              <i class="fas fa-save"></i> 저장
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="settings-grid" id="agency-settings">
+              <div class="loading"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="/admin/assets/admin-bootstrap.js" defer></script>
+
+    <script>
+      // ==================== 설정 ====================
+      
+      let supabase;
+      let pricingData = {};
+      let tokenData = {};
+
+      // ==================== 초기화 ====================
+
+      window.addEventListener('load', async function() {
+        try {
+          console.log('🔄 초기화 시작...');
+          
+          supabase = await AdminBootstrap.getSupabaseClient();
+          console.log('✅ Supabase 클라이언트 초기화 완료');
+          
+          await AdminBootstrap.initializeHeader();
+          console.log('✅ 헤더 초기화 완료');
+          
+          await AdminBootstrap.initializeSidebar();
+          console.log('✅ 사이드바 초기화 완료');
+          
+          await loadAllSettings();
+          console.log('✅ 모든 설정 로드 완료');
+          
+        } catch (error) {
+          console.error('❌ 페이지 초기화 실패:', error);
+          showMessage('페이지 초기화 실패: ' + error.message, 'error');
+        }
+      });
+
+      // ==================== 통합 설정 로드 ====================
+
+      async function loadAllSettings() {
+        try {
+          // 가격과 토큰 동시 로드
+          const [pricingRes, tokenRes] = await Promise.all([
+            fetch('/api/subscription/pricing-config'),
+            fetch('/api/subscription/token-config')
+          ]);
+
+          const pricingResult = await pricingRes.json();
+          const tokenResult = await tokenRes.json();
+
+          if (!pricingResult.success) throw new Error(pricingResult.error);
+          if (!tokenResult.success) throw new Error(tokenResult.error);
+
+          pricingData = pricingResult.pricing;
+          tokenData = tokenResult.tokens;
+
+          renderSettings();
+        } catch (error) {
+          console.error('❌ 설정 로드 실패:', error);
+          showMessage('설정 로드 실패: ' + error.message, 'error');
+        }
+      }
+
+      // ==================== 통합 UI 렌더링 ====================
+
+      function renderSettings() {
+        // 식당 대표 등급 설정
+        const ownerLevels = [
+          { priceKey: 'owner_seed_price', tokenKey: 'owner_seed_limit', label: '🌱 씨앗', icon: '🌱', colorClass: 'level-seed' },
+          { priceKey: 'owner_power_price', tokenKey: 'owner_power_limit', label: '⚡ 파워', icon: '⚡', colorClass: 'level-power' },
+          { priceKey: 'owner_bigpower_price', tokenKey: 'owner_bigpower_limit', label: '💪 빅파워', icon: '💪', colorClass: 'level-bigpower' },
+          { priceKey: 'owner_premium_price', tokenKey: 'owner_premium_limit', label: '⭐ 프리미엄', icon: '⭐', colorClass: 'level-premium' }
+        ];
+
+        document.getElementById('owner-settings').innerHTML = ownerLevels.map(level => `
+          <div class="setting-item ${level.colorClass}">
+            <div class="setting-label">
+              ${level.label}
+              <span class="setting-badge">등급 설정</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <div class="input-group">
+                <label>💰 가격</label>
+                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" placeholder="가격 입력"/>
+                <span class="unit">원/월</span>
+              </div>
+              <div class="input-group">
+                <label>🪙 토큰</label>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" placeholder="토큰 입력"/>
+                <span class="unit">토큰/월</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        // 대행사 등급 설정
+        const agencyLevels = [
+          { priceKey: 'agency_elite_price', tokenKey: 'agency_elite_limit', label: '🏆 엘리트', icon: '🏆', colorClass: 'level-elite' },
+          { priceKey: 'agency_expert_price', tokenKey: 'agency_expert_limit', label: '🎯 전문가', icon: '🎯', colorClass: 'level-expert' },
+          { priceKey: 'agency_master_price', tokenKey: 'agency_master_limit', label: '👑 마스터', icon: '👑', colorClass: 'level-master' },
+          { priceKey: 'agency_premium_price', tokenKey: 'agency_premium_limit', label: '💎 프리미엄', icon: '💎', colorClass: 'level-premium-agency' }
+        ];
+
+        document.getElementById('agency-settings').innerHTML = agencyLevels.map(level => `
+          <div class="setting-item ${level.colorClass}">
+            <div class="setting-label">
+              ${level.label}
+              <span class="setting-badge">등급 설정</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <div class="input-group">
+                <label>💰 가격</label>
+                <input type="number" id="${level.priceKey}" value="${pricingData[level.priceKey] || 0}" min="0" placeholder="가격 입력"/>
+                <span class="unit">원/월</span>
+              </div>
+              <div class="input-group">
+                <label>🪙 토큰</label>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" placeholder="토큰 입력"/>
+                <span class="unit">토큰/월</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // ==================== 통합 저장 ====================
+
+      async function saveSettings(type) {
+        try {
+          const pricingUpdate = {};
+          const tokenUpdate = {};
+
+          if (type === 'owner') {
+            pricingUpdate.owner_seed_price = parseInt(document.getElementById('owner_seed_price').value) || 0;
+            pricingUpdate.owner_power_price = parseInt(document.getElementById('owner_power_price').value) || 0;
+            pricingUpdate.owner_bigpower_price = parseInt(document.getElementById('owner_bigpower_price').value) || 0;
+            pricingUpdate.owner_premium_price = parseInt(document.getElementById('owner_premium_price').value) || 0;
+
+            tokenUpdate.owner_seed_limit = parseInt(document.getElementById('owner_seed_limit').value) || 0;
+            tokenUpdate.owner_power_limit = parseInt(document.getElementById('owner_power_limit').value) || 0;
+            tokenUpdate.owner_bigpower_limit = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
+            tokenUpdate.owner_premium_limit = parseInt(document.getElementById('owner_premium_limit').value) || 0;
+          } else {
+            pricingUpdate.agency_elite_price = parseInt(document.getElementById('agency_elite_price').value) || 0;
+            pricingUpdate.agency_expert_price = parseInt(document.getElementById('agency_expert_price').value) || 0;
+            pricingUpdate.agency_master_price = parseInt(document.getElementById('agency_master_price').value) || 0;
+            pricingUpdate.agency_premium_price = parseInt(document.getElementById('agency_premium_price').value) || 0;
+
+            tokenUpdate.agency_elite_limit = parseInt(document.getElementById('agency_elite_limit').value) || 0;
+            tokenUpdate.agency_expert_limit = parseInt(document.getElementById('agency_expert_limit').value) || 0;
+            tokenUpdate.agency_master_limit = parseInt(document.getElementById('agency_master_limit').value) || 0;
+            tokenUpdate.agency_premium_limit = parseInt(document.getElementById('agency_premium_limit').value) || 0;
+          }
+
+          // 가격과 토큰 동시 저장
+          const [pricingRes, tokenRes] = await Promise.all([
+            fetch('/api/subscription/pricing-config', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(pricingUpdate)
+            }),
+            fetch('/api/subscription/token-config', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(tokenUpdate)
+            })
+          ]);
+
+          const pricingResult = await pricingRes.json();
+          const tokenResult = await tokenRes.json();
+
+          if (!pricingResult.success) throw new Error(pricingResult.error);
+          if (!tokenResult.success) throw new Error(tokenResult.error);
+
+          pricingData = pricingResult.pricing;
+          tokenData = tokenResult.tokens;
+
+          showMessage(`${type === 'owner' ? '🍽️ 식당 대표' : '🏢 대행사'} 설정이 저장되었습니다`, 'success');
+        } catch (error) {
+          console.error('❌ 저장 실패:', error);
+          showMessage('저장 실패: ' + error.message, 'error');
+        }
+      }
+
+
+      // ==================== 메시지 ====================
+
+      function showMessage(message, type) {
+        const container = document.getElementById('statusMessage');
+        container.className = type;
+        container.innerHTML = `
+          ${type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : '<i class="fas fa-check-circle"></i>'}
+          ${message}
+        `;
+        container.style.display = 'block';
+
+        setTimeout(() => {
+          container.style.display = 'none';
+        }, 5000);
+      }
+    </script>
+    
+    <!-- Admin 공통 스크립트 -->
+    <script src="../assets/admin-sidebar.js"></script>
+    <script src="../assets/admin-header.js"></script>
+    <script src="../assets/admin-common.js"></script>
+  </body>
+</html>

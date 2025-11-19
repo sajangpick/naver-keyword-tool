@@ -2,7 +2,21 @@
   "version": 2,
   "framework": null,
   "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "cleanUrls": false,
   "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/admin/pages/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -23,6 +37,11 @@
       "source": "/admin/",
       "destination": "/admin/pages/dashboard.html",
       "permanent": false
+    },
+    {
+      "source": "/admin/pages/:path*",
+      "destination": "/admin/pages/:path*",
+      "permanent": false
     }
   ],
   "crons": [
@@ -34,6 +53,5 @@
       "path": "/api/cron/keep-alive",
       "schedule": "*/10 * * * *"
     }
-  ],
-  "trailingSlash": false
+  ]
 }
