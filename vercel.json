@@ -4,9 +4,18 @@
   "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": null,
   "outputDirectory": ".",
-  "cleanUrls": false,
+  "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        }
+      ]
+    },
     {
       "source": "/admin/pages/(.*)",
       "headers": [
