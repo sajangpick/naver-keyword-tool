@@ -86,7 +86,12 @@
 
     // 키보드 입력 시도 시에만 팝업 표시
     element.addEventListener('keydown', function(event) {
-      if (!isUserLoggedIn() && !alertShown) {
+      // 로그인 상태 체크 (가장 먼저)
+      if (isUserLoggedIn()) {
+        return; // 로그인되어 있으면 정상 작동
+      }
+      
+      if (!alertShown) {
         event.preventDefault();
         event.stopPropagation();
         alertShown = true; // 팝업 표시 플래그 설정
@@ -100,20 +105,24 @@
         // 3초 후 플래그 리셋 (사용자가 다시 시도할 수 있도록)
         setTimeout(() => { alertShown = false; }, 3000);
       }
-    }, true);
+    }, false); // 캡처 단계에서 버블링 단계로 변경
 
     // input 이벤트 (붙여넣기, 드래그 등)
     element.addEventListener('input', function(event) {
-      if (!isUserLoggedIn() && !alertShown) {
-        event.preventDefault();
-        event.stopPropagation();
-        
+      // 로그인 상태 체크 (가장 먼저)
+      if (isUserLoggedIn()) {
+        return; // 로그인되어 있으면 아무것도 하지 않음
+      }
+      
+      if (!alertShown) {
         // 입력된 값 제거
         const originalValue = element.value;
         element.value = '';
         
         // 값이 실제로 변경된 경우에만 팝업 표시
         if (originalValue !== '') {
+          event.preventDefault();
+          event.stopPropagation();
           alertShown = true;
           showLoginRequiredAlert(event);
           
@@ -121,11 +130,16 @@
           setTimeout(() => { alertShown = false; }, 3000);
         }
       }
-    }, true);
+    }, false); // 캡처 단계에서 버블링 단계로 변경
 
     // paste 이벤트 (붙여넣기 시도)
     element.addEventListener('paste', function(event) {
-      if (!isUserLoggedIn() && !alertShown) {
+      // 로그인 상태 체크 (가장 먼저)
+      if (isUserLoggedIn()) {
+        return; // 로그인되어 있으면 정상 작동
+      }
+      
+      if (!alertShown) {
         event.preventDefault();
         event.stopPropagation();
         alertShown = true;
@@ -134,7 +148,7 @@
         // 3초 후 플래그 리셋
         setTimeout(() => { alertShown = false; }, 3000);
       }
-    }, true);
+    }, false); // 캡처 단계에서 버블링 단계로 변경
   }
 
   // 버튼 클릭 보호
@@ -152,7 +166,12 @@
     let alertShown = false;
 
     button.addEventListener('click', function(event) {
-      if (!isUserLoggedIn() && !alertShown) {
+      // 로그인 상태 체크 (가장 먼저)
+      if (isUserLoggedIn()) {
+        return; // 로그인되어 있으면 정상 작동
+      }
+      
+      if (!alertShown) {
         event.preventDefault();
         event.stopPropagation();
         alertShown = true;
@@ -161,7 +180,7 @@
         // 3초 후 플래그 리셋
         setTimeout(() => { alertShown = false; }, 3000);
       }
-    }, true);
+    }, false); // 캡처 단계에서 버블링 단계로 변경
   }
 
   // 페이지의 모든 입력 필드 자동 보호
@@ -275,11 +294,8 @@
       const newState = isUserLoggedIn();
       console.log('[auth-guard] 인증 상태 변경:', newState);
       
-      if (newState) {
-        // 로그인됨 - 페이지 새로고침으로 보호 해제
-        console.log('[auth-guard] ✅ 로그인 완료 - 페이지 새로고침');
-        window.location.reload();
-      }
+      // 로그인됨 - 이벤트 리스너 제거 (페이지 새로고침 제거)
+      // 이미 페이지에 있는 보호는 남아있지만, 로그인 상태이므로 작동하지 않음
     });
   }
 
