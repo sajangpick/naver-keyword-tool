@@ -496,16 +496,8 @@
 
         <!-- 컨트롤 -->
         <div class="policy-controls">
-          <button class="btn btn-primary" onclick="openModal()">
-            <i class="fas fa-plus"></i> 새 정책 등록
-          </button>
-          
           <button class="btn btn-primary" style="background: #ff6b6b;" onclick="fetchRealPolicies()">
-            <i class="fas fa-download"></i> 실제 데이터 가져오기
-          </button>
-          
-          <button class="btn btn-primary" style="background: #4dabf7;" onclick="testApiConnection()">
-            <i class="fas fa-vial"></i> API 연결 테스트
+            <i class="fas fa-download"></i> 정책 가져오기
           </button>
 
           <div class="category-filter">
@@ -896,15 +888,32 @@
       // 통계 로드
       async function loadStatistics() {
         try {
-          const response = await fetch(`${API_BASE}/api/policy-support/categories`);
-          const result = await response.json();
+          // 전체 정책 수 (모든 상태 포함)
+          const totalResponse = await fetch(`${API_BASE}/api/policy-support?page=1&limit=1&status=all`);
+          const totalResult = await totalResponse.json();
+          if (totalResult.success && totalResult.pagination) {
+            document.getElementById('totalCount').textContent = totalResult.pagination.total || 0;
+          }
           
-          if (result.success && result.data) {
-            const total = Object.values(result.data).reduce((sum, count) => sum + count, 0);
-            document.getElementById('totalCount').textContent = total;
-            
-            // 상태별 카운트 (예시 - 실제로는 API에서 가져와야 함)
-            // 여기서는 임시로 표시
+          // 진행중 정책 수
+          const activeResponse = await fetch(`${API_BASE}/api/policy-support?page=1&limit=1&status=active`);
+          const activeResult = await activeResponse.json();
+          if (activeResult.success && activeResult.pagination) {
+            document.getElementById('activeCount').textContent = activeResult.pagination.total || 0;
+          }
+          
+          // 예정 정책 수
+          const upcomingResponse = await fetch(`${API_BASE}/api/policy-support?page=1&limit=1&status=upcoming`);
+          const upcomingResult = await upcomingResponse.json();
+          if (upcomingResult.success && upcomingResult.pagination) {
+            document.getElementById('upcomingCount').textContent = upcomingResult.pagination.total || 0;
+          }
+          
+          // 마감 정책 수
+          const endedResponse = await fetch(`${API_BASE}/api/policy-support?page=1&limit=1&status=ended`);
+          const endedResult = await endedResponse.json();
+          if (endedResult.success && endedResult.pagination) {
+            document.getElementById('endedCount').textContent = endedResult.pagination.total || 0;
           }
         } catch (error) {
           console.error('Load statistics error:', error);
@@ -1258,80 +1267,8 @@
         }
       });
 
-      // API 연결 테스트
-      async function testApiConnection() {
-        const btn = event.target.closest('button');
-        const originalText = btn.innerHTML;
-        
-        try {
-          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> API 테스트 중...';
-          btn.disabled = true;
-          
-          console.log('🧪 API 연결 테스트 시작...');
-          
-          const response = await fetch(`${API_BASE}/api/test-policy-api`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          const result = await response.json();
-          
-          console.log('🧪 API 테스트 결과:', result);
-          
-          if (result.success) {
-            // 결과를 모달로 표시
-            let message = `✅ API 테스트 완료!\n\n`;
-            message += `📊 총 테스트: ${result.summary.total}개\n`;
-            message += `✅ 성공: ${result.summary.success}개\n`;
-            message += `❌ 실패: ${result.summary.failed}개\n\n`;
-            
-            if (result.summary.apiKeySet) {
-              message += `🔑 API 키: 설정됨 (길이: ${result.summary.apiKeyLength})\n`;
-            } else {
-              message += `⚠️ API 키: 환경변수에 설정되지 않음 (기본값 사용)\n`;
-            }
-            
-            message += `\n📋 상세 결과:\n`;
-            result.results.forEach((r, i) => {
-              message += `\n${i + 1}. ${r.name}\n`;
-              if (r.success) {
-                message += `   ✅ 성공: ${r.itemCount || 0}개 항목, ${r.duration}\n`;
-              } else {
-                message += `   ❌ 실패: HTTP ${r.status || 'N/A'}\n`;
-                if (r.errorCode) {
-                  message += `   에러 코드: ${r.errorCode}\n`;
-                  message += `   에러 메시지: ${r.errorMsg || r.error || '알 수 없음'}\n`;
-                } else if (r.error) {
-                  message += `   에러: ${r.error}\n`;
-                }
-              }
-            });
-            
-            // 실패한 경우 추가 안내
-            if (result.summary.failed > 0) {
-              message += `\n\n💡 해결 방법:\n`;
-              message += `1. API 키가 공공데이터포털에서 활성화되어 있는지 확인\n`;
-              message += `2. Render 서버의 환경변수에 PUBLIC_DATA_KEY가 설정되어 있는지 확인\n`;
-              message += `3. 일일 호출 한도가 초과되지 않았는지 확인\n`;
-            }
-            
-            alert(message);
-          } else {
-            alert(`❌ API 테스트 실패:\n${result.error || '알 수 없는 오류'}`);
-          }
-          
-        } catch (error) {
-          console.error('API 테스트 에러:', error);
-          alert(`❌ API 테스트 중 오류 발생:\n${error.message}`);
-        } finally {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-        }
-      }
 
-      // 실제 데이터 가져오기
+      // 정책 가져오기
       async function fetchRealPolicies() {
         if (!confirm('실제 정부 정책 데이터를 가져오시겠습니까?\n\n공공데이터포털과 정책브리핑에서 실시간 데이터를 수집합니다.')) {
           return;
@@ -1423,7 +1360,7 @@
           if (policies.length === 0) {
             alert('⚠️ 수집된 정책 데이터가 없습니다.\n\n서버 로그를 확인하거나 잠시 후 다시 시도해주세요.\n\n가능한 원인:\n1. API 키가 유효하지 않음\n2. API 응답 형식이 변경됨\n3. 필터링이 너무 엄격함');
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';
+            btn.innerHTML = '<i class="fas fa-download"></i> 정책 가져오기';
             return;
           }
 
