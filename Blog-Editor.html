@@ -472,12 +472,20 @@
       @media (max-width: 768px) {
         .container {
           padding: 12px 8px;
+          max-width: 344px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
         }
       }
 
       @media (max-width: 360px) {
         .container {
           padding: 12px 8px;
+          max-width: 344px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
         }
       }
 
@@ -600,6 +608,10 @@
         .main-content {
           padding-left: 0;
           padding-bottom: 65px;
+          max-width: 344px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
         }
       }
 
@@ -713,6 +725,10 @@
 
         .main-content {
           padding-bottom: 55px;
+          max-width: 344px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
         }
       }
 
@@ -903,10 +919,12 @@
       }
 
         .container {
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
-            padding: 5px;
+            padding: 5px 0;
             background: transparent;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
@@ -925,12 +943,17 @@
         .header-section {
             background: #ffe8d9;
             border-radius: 20px 20px 0 0;
-            padding: 8px 20px 8px 20px;
+            padding: 8px 36px 8px 36px;
             margin-bottom: 0;
             min-height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            max-width: 1250px;
+            margin-left: auto;
+            margin-right: auto;
+            box-sizing: border-box;
         }
 
         .page-header {
@@ -960,6 +983,21 @@
             padding: 8px 12px 8px 12px;
             border-radius: 16px 16px 0 0;
             min-height: 56px;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          
+          .form-section {
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          
+          .result-section {
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
           }
 
           .page-header {
@@ -986,6 +1024,21 @@
             padding: 8px 8px 8px 8px;
             border-radius: 12px 12px 0 0;
             min-height: 56px;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          
+          .form-section {
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          
+          .result-section {
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
           }
 
           .page-header {
@@ -1015,14 +1068,30 @@
             overflow: hidden;
             margin-bottom: 40px;
             margin-top: 0;
+            width: 100%;
+            max-width: 1250px;
+            margin-left: auto;
+            margin-right: auto;
+            box-sizing: border-box;
         }
 
         .review-content {
             padding: 36px;
+            max-width: 1250px;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
           .review-content {
+            padding: 24px 16px;
+            max-width: 344px;
+            margin: 0 auto;
+          }
+          
+          .result-content {
+            max-width: 344px;
+            margin: 0 auto;
             padding: 24px 16px;
           }
         }
@@ -1030,6 +1099,14 @@
         @media (max-width: 360px) {
           .review-content {
             padding: 20px 12px;
+            max-width: 344px;
+            margin: 0 auto;
+          }
+          
+          .result-content {
+            max-width: 344px;
+            margin: 0 auto;
+            padding: 24px 16px;
           }
         }
 
@@ -1165,10 +1242,18 @@
             overflow: hidden;
             margin-bottom: 40px;
             margin-top: 0;
+            width: 100%;
+            max-width: 1250px;
+            margin-left: auto;
+            margin-right: auto;
+            box-sizing: border-box;
         }
         
         .result-content {
             padding: 36px;
+            max-width: 1250px;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
 
         .result-section.show {
@@ -1934,8 +2019,6 @@
         </div>
           </form>
         </div>
-          </div>
-
         <div class="result-section" id="resultSection">
             <div class="result-content">
                 <div class="step-indicator">
@@ -1971,6 +2054,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
   </div>
 
