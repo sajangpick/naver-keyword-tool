@@ -1878,6 +1878,7 @@
       let currentSort = 'latest';
       let currentSearch = '';
       let policies = [];
+      let allPolicies = []; // 전체 정책 목록 캐시
       let selectedPolicy = null;
 
       // 페이지 로드 시 초기화
@@ -1886,7 +1887,50 @@
         initViewTabs();
         loadPolicies();
         checkFeaturedPolicies();
+        // 전체 정책 목록 미리 로드 (저장됨 필터를 위한 캐시)
+        preloadAllPolicies();
       });
+
+      // 전체 정책 목록 미리 로드 (캐시용)
+      async function preloadAllPolicies() {
+        try {
+          const token = await getAccessToken();
+          const params = new URLSearchParams({
+            page: 1,
+            limit: 1000 // 충분히 큰 수로 전체 정책 가져오기
+          });
+
+          if (token) {
+            let userId = null;
+            try {
+              if (window.authState?.supabase) {
+                const { data: { session } } = await window.authState.supabase.auth.getSession();
+                if (session?.user?.id) {
+                  userId = session.user.id;
+                }
+              }
+            } catch (error) {
+              console.error('사용자 정보 가져오기 실패:', error);
+            }
+            
+            if (!userId) {
+              const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+              userId = userData.id;
+            }
+            
+            if (userId) params.append('user_id', userId);
+          }
+
+          const response = await fetch(`${API_BASE}/api/policy-support?${params}`);
+          const result = await response.json();
+
+          if (result.success && result.data) {
+            allPolicies = result.data;
+          }
+        } catch (error) {
+          console.error('전체 정책 미리 로드 실패:', error);
+        }
+      }
 
       // 뷰 탭 초기화
       function initViewTabs() {
@@ -1909,10 +1953,14 @@
       }
 
       // 정책지원금 목록 로드
-      async function loadPolicies(page = 1) {
+      async function loadPolicies(page = 1, showLoading = true) {
         currentPage = page;
         const grid = document.getElementById('policyGrid');
-        grid.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><div>로딩 중...</div></div>';
+        
+        // 저장됨 필터일 때는 로딩 화면 표시하지 않음
+        if (showLoading && currentBookmarked !== 'true') {
+          grid.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><div>로딩 중...</div></div>';
+        }
 
         try {
           const params = new URLSearchParams({
@@ -1958,6 +2006,13 @@
           if (!result.success) throw new Error(result.error);
 
           policies = result.data || [];
+          
+          // 전체 정책 목록 캐시 저장 (저장됨 필터를 위한 클라이언트 사이드 필터링)
+          if (currentBookmarked === 'all' && currentCategory === 'all' && currentStatus === 'all' && 
+              currentArea === 'all' && currentBusiness === 'all' && !currentSearch) {
+            allPolicies = policies;
+          }
+          
           await renderPolicies(policies);
           renderPagination(result.pagination);
 
@@ -2159,11 +2214,27 @@
           bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
         }
         
-        // 정책 목록 로드
-        loadPolicies(1);
+        // 정책 목록 로드 (로딩 화면 없이)
+        if (allPolicies.length > 0) {
+          // 클라이언트 사이드에서 필터링
+          policies = allPolicies;
+          await renderPolicies(allPolicies);
+          
+          const pagination = {
+            page: 1,
+            limit: 12,
+            total: allPolicies.length,
+            totalPages: Math.ceil(allPolicies.length / 12)
+          };
+          renderPagination(pagination);
+          document.getElementById('resultCount').textContent = `총 ${allPolicies.length}개의 지원금`;
+        } else {
+          // 캐시가 없으면 서버에서 로드
+          loadPolicies(1, true);
+        }
       }
 
-      // 저장된 정책 보기
+      // 저장된 정책 보기 (클라이언트 사이드 필터링)
       async function showBookmarkedPolicies() {
         const token = await getAccessToken();
         if (!token) {
@@ -2199,8 +2270,32 @@
           allPoliciesTab.style.borderColor = 'var(--border)';
         }
         
-        // 정책 목록 로드
-        loadPolicies(1);
+        // 클라이언트 사이드에서 저장된 정책만 필터링 (로딩 화면 없이)
+        if (allPolicies.length > 0) {
+          const bookmarkedPolicies = allPolicies.filter(policy => 
+            policy.user_interest?.is_bookmarked === true
+          );
+          
+          policies = bookmarkedPolicies;
+          await renderPolicies(bookmarkedPolicies);
+          
+          // 페이지네이션 업데이트
+          const pagination = {
+            page: 1,
+            limit: 12,
+            total: bookmarkedPolicies.length,
+            totalPages: Math.ceil(bookmarkedPolicies.length / 12)
+          };
+          renderPagination(pagination);
+          document.getElementById('resultCount').textContent = `총 ${bookmarkedPolicies.length}개의 지원금`;
+        } else {
+          // 캐시가 없으면 서버에서 로드 (하지만 로딩 화면은 표시하지 않음)
+          const grid = document.getElementById('policyGrid');
+          const originalContent = grid.innerHTML;
+          
+          // 백그라운드에서 로드
+          loadPolicies(1);
+        }
       }
 
       // 카테고리 필터
@@ -2531,12 +2626,19 @@
         // 1. K-Startup API의 신청 URL 우선 사용
         if (policy.application_url) {
           const normalized = normalizeUrl(policy.application_url);
-          if (normalized && !normalized.match(/^https?:\/\/[^\/]+$/)) {
-            return normalized;
+          if (normalized) {
+            // 도메인만 있는 경우가 아닌지 확인 (경로가 있는 경우만 사용)
+            if (!normalized.match(/^https?:\/\/[^\/]+$/)) {
+              return normalized;
+            }
+            // 도메인만 있어도 사용 (예: https://www.example.com)
+            if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+              return normalized;
+            }
           }
         }
         
-        // 2. K-Startup API의 상세 페이지 URL 사용 (신청 페이지로 연결 가능)
+          // 2. K-Startup API의 상세 페이지 URL 사용 (신청 페이지로 연결 가능)
         if (policy.website_url) {
           const normalized = normalizeUrl(policy.website_url);
           if (normalized) {
@@ -2544,8 +2646,8 @@
             if (normalized.includes('k-startup.go.kr')) {
               return normalized;
             }
-            // 다른 사이트의 상세 페이지도 사용 (홈페이지가 아닌 경우)
-            if (!normalized.match(/^https?:\/\/[^\/]+$/)) {
+            // 다른 사이트의 상세 페이지도 사용 (홈페이지만 있는 경우도 허용)
+            if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
               return normalized;
             }
           }
@@ -2609,8 +2711,8 @@
           return 'https://www.mois.go.kr';
         }
         
-        // 5. 기본값: K-Startup 사업공고 페이지 (가장 포괄적)
-        return 'https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do';
+        // 5. 기본값: 신청 URL이 없으면 null 반환 (상세 정보 표시)
+        return null;
       }
       
       // 정책 신청 (카드에서 직접 신청) - 실제 신청 사이트로 이동
@@ -2633,13 +2735,41 @@
           
           if (applicationUrl) {
             // URL이 http:// 또는 https://로 시작하는지 확인
-            let finalUrl = applicationUrl;
-            if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
-              finalUrl = 'https://' + finalUrl;
+            let finalUrl = applicationUrl.trim();
+            
+            // URL 유효성 검사
+            try {
+              // URL 객체로 검증
+              const url = new URL(finalUrl);
+              finalUrl = url.href; // 정규화된 URL 사용
+            } catch (urlError) {
+              // URL이 유효하지 않으면 https:// 추가 시도
+              if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                finalUrl = 'https://' + finalUrl;
+              }
+              
+              // 다시 검증
+              try {
+                const url = new URL(finalUrl);
+                finalUrl = url.href;
+              } catch (e) {
+                throw new Error(`잘못된 URL 형식입니다: ${finalUrl}`);
+              }
             }
             
             // 실제 신청 사이트로 새 창에서 열기
-            window.open(finalUrl, '_blank');
+            const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
+            
+            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+              // 팝업이 차단된 경우
+              if (confirm('팝업이 차단되었습니다. 새 창을 열 수 없습니다.\n\nURL을 복사하시겠습니까?')) {
+                navigator.clipboard.writeText(finalUrl).then(() => {
+                  alert('URL이 클립보드에 복사되었습니다:\n' + finalUrl);
+                }).catch(() => {
+                  alert('URL을 복사할 수 없습니다. 아래 URL을 직접 복사하세요:\n' + finalUrl);
+                });
+              }
+            }
             
             // 로그인한 경우 신청 상태 기록 (선택적)
             const token = await getAccessToken();
@@ -2664,12 +2794,32 @@
               }
             }
           } else {
-            // 신청 URL이 없으면 안내
+            // 신청 URL이 없으면 안내 및 상세 정보 표시
             const contactInfo = policy.contact_info || policy.phone_number || '별도 문의';
-            const message = `"${policy.title}" 정책의 신청 페이지 URL이 등록되지 않았습니다.\n\n` +
-                          `문의처: ${contactInfo}\n\n` +
-                          `관리자 페이지에서 신청 URL을 등록해주세요.`;
-            alert(message);
+            const websiteUrl = policy.website_url || policy.homepage_url || '';
+            let message = `"${policy.title}" 정책의 신청 페이지 URL이 등록되지 않았습니다.\n\n`;
+            message += `문의처: ${contactInfo}\n`;
+            
+            if (websiteUrl) {
+              message += `홈페이지: ${websiteUrl}\n\n`;
+              message += `위 홈페이지에서 신청 방법을 확인하시겠습니까?`;
+              
+              if (confirm(message)) {
+                let url = websiteUrl.trim();
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                  url = 'https://' + url;
+                }
+                try {
+                  const urlObj = new URL(url);
+                  window.open(urlObj.href, '_blank', 'noopener,noreferrer');
+                } catch (e) {
+                  alert('홈페이지 URL이 올바르지 않습니다: ' + url);
+                }
+              }
+            } else {
+              message += `\n관리자 페이지에서 신청 URL을 등록해주세요.`;
+              alert(message);
+            }
           }
           
         } catch (error) {
