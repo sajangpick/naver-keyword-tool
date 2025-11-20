@@ -1825,13 +1825,29 @@
       </div>
 
       <!-- 전체 정책 탭 -->
-      <div class="view-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; padding: 0 4px;">
-        <button class="view-tab active" id="allPoliciesTab" onclick="showAllPolicies()" style="padding: 10px 20px; border: 2px solid var(--primary); background: var(--primary); color: white; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-          <i class="fas fa-list" style="margin-right: 6px;"></i> 전체 정책
-        </button>
-        <button class="view-tab" id="bookmarkedPoliciesTab" onclick="showBookmarkedPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-          <i class="fas fa-bookmark" style="margin-right: 6px;"></i> 저장된 정책
-        </button>
+      <div class="view-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; padding: 0 4px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px;">
+          <button class="view-tab active" id="allPoliciesTab" onclick="showAllPolicies()" style="padding: 10px 20px; border: 2px solid var(--primary); background: var(--primary); color: white; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <i class="fas fa-list" style="margin-right: 6px;"></i> 전체 정책
+          </button>
+          <button class="view-tab" id="bookmarkedPoliciesTab" onclick="showBookmarkedPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <i class="fas fa-bookmark" style="margin-right: 6px;"></i> 저장된 정책
+          </button>
+        </div>
+        <div style="display: flex; gap: 6px; margin-left: 12px; flex-wrap: wrap;">
+          <button class="source-filter-btn" data-source="all" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: var(--primary); color: white; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            전체
+          </button>
+          <button class="source-filter-btn" data-source="kstartup" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            K-Startup
+          </button>
+          <button class="source-filter-btn" data-source="bizinfo" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            기업마당
+          </button>
+          <button class="source-filter-btn" data-source="sbiz" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            소상공인마당
+          </button>
+        </div>
       </div>
 
       <!-- 정렬 옵션 -->
@@ -1944,6 +1960,7 @@
       let currentArea = 'all';
       let currentBusiness = 'all';
       let currentBookmarked = 'all';
+      let currentSource = 'all'; // 데이터 출처 필터
       let currentSort = 'latest';
       let currentSearch = '';
       let policies = [];
@@ -1954,6 +1971,13 @@
       document.addEventListener('DOMContentLoaded', () => {
         // 전체 정책 탭 초기화
         initViewTabs();
+        // 데이터 출처 필터 초기화
+        const allSourceBtn = document.querySelector('.source-filter-btn[data-source="all"]');
+        if (allSourceBtn) {
+          allSourceBtn.style.background = 'var(--primary)';
+          allSourceBtn.style.color = 'white';
+          allSourceBtn.style.borderColor = 'var(--primary)';
+        }
         loadPolicies();
         // 전체 정책 목록 미리 로드 (저장됨 필터를 위한 캐시)
         preloadAllPolicies();
@@ -2041,6 +2065,7 @@
           if (currentArea !== 'all') params.append('area', currentArea);
           if (currentBusiness !== 'all') params.append('business_type', currentBusiness);
           if (currentBookmarked !== 'all') params.append('bookmarked', currentBookmarked);
+          if (currentSource !== 'all') params.append('source', currentSource);
           if (currentSearch) params.append('search', currentSearch);
 
           // 사용자 ID 추가 (로그인한 경우)
@@ -2091,9 +2116,8 @@
           console.error('Load policies error:', error);
           grid.innerHTML = `
             <div class="empty-state">
-              <div class="empty-icon">⚠️</div>
-              <div class="empty-title">정책지원금을 불러올 수 없습니다</div>
-              <div class="empty-desc">${error.message}</div>
+              <div class="empty-icon">📭</div>
+              <div class="empty-title">해당 정책 지원금이 없습니다</div>
             </div>
           `;
         }
@@ -2175,39 +2199,11 @@
             }
           }
           
-            // 저장된 정책 필터인 경우 다른 메시지 표시
-          if (currentBookmarked === 'true') {
-            grid.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-icon">🔖</div>
-              <div class="empty-title">저장된 정책이 없습니다</div>
-              <div class="empty-desc" style="margin-bottom: 20px;">
-                아직 저장한 정책이 없습니다.<br/>
-                관심 있는 정책을 저장하여 나중에 쉽게 확인하세요.
-              </div>
-            </div>
-          `;
-            return;
-          }
-          
-          // 일반적인 경우 (데이터베이스에 정책이 없는 경우)
+          // 빈 상태 메시지 (모든 경우 동일)
           grid.innerHTML = `
             <div class="empty-state">
               <div class="empty-icon">📭</div>
-              <div class="empty-title">정책지원금 데이터가 없습니다</div>
-              <div class="empty-desc" style="margin-bottom: 20px;">
-                데이터베이스에 정책 정보가 없습니다.<br/>
-                관리자 페이지에서 실제 데이터를 가져오거나 직접 등록해주세요.
-              </div>
-              ${isAdmin ? `
-                <button class="policy-btn primary" onclick="window.location.href='/admin/policy-management.html'" style="margin-top: 16px;">
-                  <i class="fas fa-cog"></i> 관리자 페이지로 이동
-                </button>
-              ` : `
-                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 16px;">
-                  💡 관리자에게 문의하여 정책 데이터를 추가해주세요.
-                </div>
-              `}
+              <div class="empty-title">해당 정책 지원금이 없습니다</div>
             </div>
           `;
           return;
@@ -2285,9 +2281,8 @@
           console.error('Render policies error:', error);
           grid.innerHTML = `
             <div class="empty-state">
-              <div class="empty-icon">⚠️</div>
-              <div class="empty-title">정책 카드를 표시할 수 없습니다</div>
-              <div class="empty-desc">${error.message}</div>
+              <div class="empty-icon">📭</div>
+              <div class="empty-title">해당 정책 지원금이 없습니다</div>
             </div>
           `;
         }
@@ -2353,17 +2348,34 @@
         // 정책 목록 로드 (로딩 화면 없이)
         if (allPolicies.length > 0) {
           // 클라이언트 사이드에서 필터링
-          policies = allPolicies;
-          await renderPolicies(allPolicies);
+          let filteredPolicies = allPolicies;
+          
+          // 데이터 출처 필터 적용
+          if (currentSource !== 'all') {
+            filteredPolicies = filteredPolicies.filter(policy => {
+              const dataSource = getDataSource(policy);
+              if (currentSource === 'kstartup') {
+                return dataSource.name === 'K-Startup';
+              } else if (currentSource === 'bizinfo') {
+                return dataSource.name === '기업마당';
+              } else if (currentSource === 'sbiz') {
+                return dataSource.name === '소상공인마당';
+              }
+              return true;
+            });
+          }
+          
+          policies = filteredPolicies;
+          await renderPolicies(filteredPolicies);
           
           const pagination = {
             page: 1,
             limit: 12,
-            total: allPolicies.length,
-            totalPages: Math.ceil(allPolicies.length / 12)
+            total: filteredPolicies.length,
+            totalPages: Math.ceil(filteredPolicies.length / 12)
           };
           renderPagination(pagination);
-          document.getElementById('resultCount').textContent = `총 ${allPolicies.length}개의 지원금`;
+          document.getElementById('resultCount').textContent = `총 ${filteredPolicies.length}개의 지원금`;
         } else {
           // 캐시가 없으면 서버에서 로드
           loadPolicies(1, true);
@@ -2408,9 +2420,24 @@
         
         // 클라이언트 사이드에서 저장된 정책만 필터링 (로딩 화면 없이)
         if (allPolicies.length > 0) {
-          const bookmarkedPolicies = allPolicies.filter(policy => 
+          let bookmarkedPolicies = allPolicies.filter(policy => 
             policy.user_interest?.is_bookmarked === true
           );
+          
+          // 데이터 출처 필터 적용
+          if (currentSource !== 'all') {
+            bookmarkedPolicies = bookmarkedPolicies.filter(policy => {
+              const dataSource = getDataSource(policy);
+              if (currentSource === 'kstartup') {
+                return dataSource.name === 'K-Startup';
+              } else if (currentSource === 'bizinfo') {
+                return dataSource.name === '기업마당';
+              } else if (currentSource === 'sbiz') {
+                return dataSource.name === '소상공인마당';
+              }
+              return true;
+            });
+          }
           
           policies = bookmarkedPolicies;
           await renderPolicies(bookmarkedPolicies);
@@ -2480,6 +2507,22 @@
         document.querySelectorAll('[data-bookmarked]').forEach(el => el.classList.remove('active'));
         element.classList.add('active');
         currentBookmarked = element.dataset.bookmarked;
+        loadPolicies(1);
+      }
+
+      // 데이터 출처 필터
+      function filterBySource(element) {
+        document.querySelectorAll('.source-filter-btn').forEach(btn => {
+          btn.style.background = 'white';
+          btn.style.color = 'var(--text-primary)';
+          btn.style.borderColor = 'var(--border)';
+        });
+        
+        element.style.background = 'var(--primary)';
+        element.style.color = 'white';
+        element.style.borderColor = 'var(--primary)';
+        
+        currentSource = element.dataset.source;
         loadPolicies(1);
       }
 
@@ -2790,11 +2833,18 @@
           return null;
         };
         
+        // 특정 정책에 대한 URL 매핑 (제목 기반)
+        const policyTitle = policy.title || '';
+        if (policyTitle.includes('소상공인 정책자금 융자') || policyTitle.includes('정책자금 융자')) {
+          // 소상공인 정책자금 융자는 소상공인마당에서 신청
+          return 'https://www.sbiz.or.kr';
+        }
+        
         // 1. application_url 최우선 사용 (각 공고의 실제 신청 URL)
         if (policy.application_url) {
           const normalized = normalizeUrl(policy.application_url);
           if (normalized && normalized.startsWith('http')) {
-            // 유효한 URL이면 바로 사용
+            // 유효한 URL이면 바로 사용 (단순 도메인도 포함)
             return normalized;
           }
         }
@@ -2824,6 +2874,12 @@
             
             // 기타 상세 페이지 형태의 URL (detail, view, info 등이 포함된 경우)
             if (normalized.match(/\/detail|\/view|\/info|\/notice|\/board/i)) {
+              return normalized;
+            }
+            
+            // 소상공인마당, 소상공인시장진흥공단, 기업마당, K-Startup의 경우 단순 도메인도 사용
+            if (normalized.includes('sbiz.or.kr') || normalized.includes('semas.or.kr') || 
+                normalized.includes('bizinfo.go.kr') || normalized.includes('k-startup.go.kr')) {
               return normalized;
             }
             
