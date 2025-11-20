@@ -1758,7 +1758,7 @@
         <!-- 헤더 섹션 -->
         <div class="header-section">
           <div class="page-title">
-            <h1>정책지원금 정보 <span class="beta-badge">준비중</span></h1>
+            <h1>정책지원금 정보</h1>
             <p>소상공인을 위한 정부 지원 정책을 한눈에 확인하세요.</p>
           </div>
         </div>
@@ -2179,6 +2179,11 @@
       async function renderPolicies(policies) {
         const grid = document.getElementById('policyGrid');
         
+        if (!grid) {
+          console.error('policyGrid element not found');
+          return;
+        }
+        
         if (!policies || policies.length === 0) {
           const token = await getAccessToken();
           let isAdmin = false;
@@ -2237,26 +2242,26 @@
           return;
         }
 
-        grid.innerHTML = policies.map(policy => {
-          const deadline = calculateDeadline(policy.application_end_date);
-          const isBookmarked = policy.user_interest?.is_bookmarked;
-          const isApplied = policy.user_interest?.is_applied || policy.user_policy_interests?.[0]?.is_applied;
+        try {
+          const html = policies.map(policy => {
+            const deadline = calculateDeadline(policy.application_end_date);
+            const isBookmarked = policy.user_interest?.is_bookmarked;
+            const isApplied = policy.user_interest?.is_applied || policy.user_policy_interests?.[0]?.is_applied;
 
-          let statusClass = 'status-active';
-          let statusText = '접수중';
-          
-          if (policy.status === 'upcoming') {
-            statusClass = 'status-upcoming';
-            statusText = '접수예정';
-          } else if (policy.status === 'ended') {
-            statusClass = 'status-ended';
-            statusText = '마감';
-          }
+            let statusClass = 'status-active';
+            let statusText = '접수중';
+            
+            if (policy.status === 'upcoming') {
+              statusClass = 'status-upcoming';
+              statusText = '접수예정';
+            } else if (policy.status === 'ended') {
+              statusClass = 'status-ended';
+              statusText = '마감';
+            }
 
+            const dataSource = getDataSource(policy);
 
-          const dataSource = getDataSource(policy);
-
-          return `
+            return `
             <div class="policy-card" onclick="openPolicyDetail(${policy.id})">
               <div class="data-source-badge ${dataSource.class}" style="position: absolute; top: 16px; left: 16px; background: ${dataSource.color}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; z-index: 2;">
                 ${dataSource.name}
@@ -2302,7 +2307,19 @@
               </div>
             </div>
           `;
-        }).join('');
+          }).join('');
+          
+          grid.innerHTML = html;
+        } catch (error) {
+          console.error('Render policies error:', error);
+          grid.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">⚠️</div>
+              <div class="empty-title">정책 카드를 표시할 수 없습니다</div>
+              <div class="empty-desc">${error.message}</div>
+            </div>
+          `;
+        }
       }
 
       // 마감일 계산
