@@ -1640,6 +1640,18 @@
         </div>
 
         <div class="filter-tags" style="margin-top: 12px;">
+          <div class="filter-label">내 정책</div>
+          <div class="filter-options">
+            <div class="filter-tag active" data-bookmarked="all" onclick="filterByBookmarked(this)">
+              <i class="fas fa-list" style="margin-right: 4px;"></i> 전체
+            </div>
+            <div class="filter-tag" data-bookmarked="true" onclick="filterByBookmarked(this)">
+              <i class="fas fa-bookmark" style="margin-right: 4px; color: #f59e0b;"></i> 저장됨
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-tags" style="margin-top: 12px;">
           <div class="filter-label">상태</div>
           <div class="filter-options">
             <div class="filter-tag active" data-status="all" onclick="filterByStatus(this)">전체</div>
@@ -1823,6 +1835,7 @@
       let currentStatus = 'all';
       let currentArea = 'all';
       let currentBusiness = 'all';
+      let currentBookmarked = 'all';
       let currentSort = 'latest';
       let currentSearch = '';
       let policies = [];
@@ -1851,6 +1864,7 @@
           if (currentStatus !== 'all') params.append('status', currentStatus);
           if (currentArea !== 'all') params.append('area', currentArea);
           if (currentBusiness !== 'all') params.append('business_type', currentBusiness);
+          if (currentBookmarked !== 'all') params.append('bookmarked', currentBookmarked);
           if (currentSearch) params.append('search', currentSearch);
 
           // 사용자 ID 추가 (로그인한 경우)
@@ -1892,6 +1906,9 @@
 
           // 통계 카드 활성 상태 업데이트
           updateStatItemActiveState();
+          
+          // 카테고리별 통계 업데이트 (필터 조건 반영)
+          loadCategoryStats();
 
         } catch (error) {
           console.error('Load policies error:', error);
@@ -2051,6 +2068,7 @@
         currentCategory = element.dataset.category;
         loadPolicies(1);
         updateStatItemActiveState();
+        // 통계도 업데이트 (카테고리 필터는 통계에 반영하지 않음 - 전체 기준)
       }
 
       // 카테고리별 현황에서 카테고리 필터링
@@ -2097,6 +2115,7 @@
         element.classList.add('active');
         currentStatus = element.dataset.status;
         loadPolicies(1);
+        // loadPolicies 내부에서 loadCategoryStats() 호출됨
       }
 
       // 지역 필터
@@ -2105,6 +2124,7 @@
         element.classList.add('active');
         currentArea = element.dataset.area;
         loadPolicies(1);
+        // loadPolicies 내부에서 loadCategoryStats() 호출됨
       }
 
       // 업종 필터
@@ -2113,12 +2133,31 @@
         element.classList.add('active');
         currentBusiness = element.dataset.business;
         loadPolicies(1);
+        // loadPolicies 내부에서 loadCategoryStats() 호출됨
+      }
+
+      // 저장됨 필터
+      async function filterByBookmarked(element) {
+        const token = await getAccessToken();
+        if (!token && element.dataset.bookmarked === 'true') {
+          if (confirm('로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?')) {
+            window.location.href = '/login.html';
+          }
+          return;
+        }
+
+        document.querySelectorAll('[data-bookmarked]').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        currentBookmarked = element.dataset.bookmarked;
+        loadPolicies(1);
+        // loadPolicies 내부에서 loadCategoryStats() 호출됨
       }
 
       // 검색
       function searchPolicies() {
         currentSearch = document.getElementById('searchInput').value.trim();
         loadPolicies(1);
+        // loadPolicies 내부에서 loadCategoryStats() 호출됨
       }
 
       // 엔터키로 검색
@@ -2573,15 +2612,56 @@
       // 카테고리별 통계 로드
       async function loadCategoryStats() {
         try {
-          const response = await fetch(`${API_BASE}/api/policy-support/categories`);
+          // 현재 필터 조건을 반영한 통계 요청
+          const params = new URLSearchParams();
+          
+          if (currentStatus !== 'all') params.append('status', currentStatus);
+          if (currentArea !== 'all') params.append('area', currentArea);
+          if (currentBusiness !== 'all') params.append('business_type', currentBusiness);
+          if (currentSearch) params.append('search', currentSearch);
+          if (currentBookmarked !== 'all') {
+            params.append('bookmarked', currentBookmarked);
+            
+            // 사용자 ID 추가 (로그인한 경우)
+            const token = await getAccessToken();
+            if (token) {
+              let userId = null;
+              try {
+                if (window.authState?.supabase) {
+                  const { data: { session } } = await window.authState.supabase.auth.getSession();
+                  if (session?.user?.id) {
+                    userId = session.user.id;
+                  }
+                }
+              } catch (error) {
+                console.error('사용자 정보 가져오기 실패:', error);
+              }
+              
+              if (!userId) {
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                userId = userData.id;
+              }
+              
+              if (userId) params.append('user_id', userId);
+            }
+          }
+
+          const url = `${API_BASE}/api/policy-support/categories${params.toString() ? '?' + params.toString() : ''}`;
+          const response = await fetch(url);
           const result = await response.json();
           
           if (result.success && result.data) {
             const stats = result.data;
+            
+            // 각 카테고리별로 숫자 업데이트
             Object.keys(stats).forEach(category => {
-              const countEl = document.querySelector(`[data-category="${category}"]`);
+              // .stat-count 클래스를 가진 요소 중에서 data-category 속성이 일치하는 것 찾기
+              const countEl = document.querySelector(`.stat-count[data-category="${category}"]`);
               if (countEl) {
                 countEl.textContent = stats[category] || 0;
+              } else {
+                // 디버깅용
+                console.warn(`카테고리 "${category}"의 통계 요소를 찾을 수 없습니다.`);
               }
             });
             
@@ -2590,6 +2670,9 @@
             if (statsSection) {
               statsSection.style.display = 'block';
             }
+            
+            // 디버깅용 로그
+            console.log('카테고리별 통계 업데이트 완료:', stats);
           }
         } catch (error) {
           console.error('Category stats error:', error);
