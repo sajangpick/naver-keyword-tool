@@ -1393,26 +1393,6 @@
         border-color: #f59e0b;
       }
 
-      /* 중요 알림 배너 */
-      .featured-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 32px;
-      }
-
-      .featured-title {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-
-      .featured-desc {
-        font-size: 14px;
-        opacity: 0.95;
-      }
-
       /* 빈 상태 */
       .empty-state {
         text-align: center;
@@ -1763,14 +1743,6 @@
           </div>
         </div>
 
-        <!-- 중요 알림 배너 -->
-        <div class="featured-banner" id="featuredBanner" style="display: none;">
-          <div class="featured-title">
-            <i class="fas fa-star"></i> 주목! 마감 임박 지원금
-          </div>
-          <div class="featured-desc" id="featuredDesc"></div>
-        </div>
-
         <!-- 검색 및 필터 -->
         <div class="filter-section">
         <div class="search-box">
@@ -1983,7 +1955,6 @@
         // 전체 정책 탭 초기화
         initViewTabs();
         loadPolicies();
-        checkFeaturedPolicies();
         // 전체 정책 목록 미리 로드 (저장됨 필터를 위한 캐시)
         preloadAllPolicies();
       });
@@ -2565,13 +2536,29 @@
         </button>`;
 
         // 페이지 번호
-        for (let i = 1; i <= pagination.totalPages; i++) {
+        // 1부터 10까지는 모두 연속적으로 표시 (빈 칸 없이)
+        const displayCount = Math.min(10, pagination.totalPages);
+        for (let i = 1; i <= displayCount; i++) {
           if (i === pagination.page) {
             html += `<button class="page-btn active">${i}</button>`;
-          } else if (i === 1 || i === pagination.totalPages || Math.abs(i - pagination.page) <= 2) {
+          } else {
             html += `<button class="page-btn" onclick="loadPolicies(${i})">${i}</button>`;
-          } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+          }
+        }
+        
+        // 총 페이지가 10개를 넘는 경우에만 마지막 페이지 추가 표시
+        if (pagination.totalPages > 10 && pagination.page <= 10) {
+          html += `<span style="padding: 0 8px;">...</span>`;
+          html += `<button class="page-btn" onclick="loadPolicies(${pagination.totalPages})">${pagination.totalPages}</button>`;
+        } else if (pagination.totalPages > 10 && pagination.page > 10) {
+          // 현재 페이지가 10보다 큰 경우
+          if (pagination.page > 11) {
             html += `<span style="padding: 0 8px;">...</span>`;
+          }
+          html += `<button class="page-btn active">${pagination.page}</button>`;
+          if (pagination.page < pagination.totalPages) {
+            html += `<span style="padding: 0 8px;">...</span>`;
+            html += `<button class="page-btn" onclick="loadPolicies(${pagination.totalPages})">${pagination.totalPages}</button>`;
           }
         }
 
@@ -2998,28 +2985,6 @@
           markAsApplied();
         }
       }
-
-      // 중요 정책 확인
-      async function checkFeaturedPolicies() {
-        try {
-          const response = await fetch(`${API_BASE}/api/policy-support?status=active&limit=5`);
-          const result = await response.json();
-          
-          if (result.success && result.data) {
-            const featured = result.data.filter(p => p.is_featured);
-            if (featured.length > 0) {
-              const banner = document.getElementById('featuredBanner');
-              const desc = document.getElementById('featuredDesc');
-              
-              desc.textContent = featured.map(p => `• ${p.title}`).join('\n');
-              banner.style.display = 'block';
-            }
-          }
-        } catch (error) {
-          console.error('Featured policies error:', error);
-        }
-      }
-
 
       // 신청 완료 표시 - 실제 신청 사이트로 이동
       async function markAsApplied() {
