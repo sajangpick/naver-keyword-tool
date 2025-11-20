@@ -271,6 +271,17 @@
       box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1);
     }
 
+    .form-input select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 35px;
+      cursor: pointer;
+    }
+
     .btn {
       padding: 12px 24px;
       border: none;
@@ -875,7 +886,37 @@
 
           <div class="form-group">
             <label class="form-label">영업시간</label>
-            <input type="text" class="form-input" id="editStoreHours" placeholder="예: 11:30-22:00 (매일)">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
+              <div>
+                <label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">오픈 시간</label>
+                <select class="form-input" id="editStoreOpenHour" style="margin-bottom: 0;">
+                  <option value="">시 선택</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">마감 시간</label>
+                <select class="form-input" id="editStoreCloseHour" style="margin-bottom: 0;">
+                  <option value="">시 선택</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">요일</label>
+                <select class="form-input" id="editStoreDays" style="margin-bottom: 0;">
+                  <option value="매일">매일</option>
+                  <option value="월~금">월~금</option>
+                  <option value="토일">토일</option>
+                  <option value="월~토">월~토</option>
+                  <option value="일요일 휴무">일요일 휴무</option>
+                  <option value="월요일 휴무">월요일 휴무</option>
+                  <option value="화요일 휴무">화요일 휴무</option>
+                  <option value="수요일 휴무">수요일 휴무</option>
+                  <option value="목요일 휴무">목요일 휴무</option>
+                  <option value="금요일 휴무">금요일 휴무</option>
+                  <option value="토요일 휴무">토요일 휴무</option>
+                </select>
+              </div>
+            </div>
+            <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">오픈 시간과 마감 시간을 선택해주세요</small>
           </div>
 
           <div class="form-group">
@@ -1636,6 +1677,67 @@
       }
     }
 
+    // 시간 드롭다운 옵션 생성 (30분 단위)
+    function initTimeDropdowns() {
+      const openHourSelect = document.getElementById('editStoreOpenHour');
+      const closeHourSelect = document.getElementById('editStoreCloseHour');
+      
+      if (!openHourSelect || !closeHourSelect) return;
+      
+      // 기존 옵션 제거 (시 선택 제외)
+      while (openHourSelect.children.length > 1) {
+        openHourSelect.removeChild(openHourSelect.lastChild);
+      }
+      while (closeHourSelect.children.length > 1) {
+        closeHourSelect.removeChild(closeHourSelect.lastChild);
+      }
+      
+      // 00:00부터 23:30까지 30분 단위로 생성
+      for (let hour = 0; hour < 24; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          const displayTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          
+          const openOption = document.createElement('option');
+          openOption.value = timeStr;
+          openOption.textContent = displayTime;
+          openHourSelect.appendChild(openOption);
+          
+          const closeOption = document.createElement('option');
+          closeOption.value = timeStr;
+          closeOption.textContent = displayTime;
+          closeHourSelect.appendChild(closeOption);
+        }
+      }
+    }
+
+    // 영업시간 문자열 파싱 (11:30-22:00 (매일) 형식)
+    function parseBusinessHours(hoursStr) {
+      if (!hoursStr) return { openHour: '', closeHour: '', days: '매일' };
+      
+      // 시간 추출 (11:30-22:00)
+      const timeMatch = hoursStr.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+      if (!timeMatch) return { openHour: '', closeHour: '', days: '매일' };
+      
+      const openHour = `${String(timeMatch[1]).padStart(2, '0')}:${timeMatch[2]}`;
+      const closeHour = `${String(timeMatch[3]).padStart(2, '0')}:${timeMatch[4]}`;
+      
+      // 요일 추출
+      let days = '매일';
+      const daysMatch = hoursStr.match(/\(([^)]+)\)/);
+      if (daysMatch) {
+        days = daysMatch[1].trim();
+      }
+      
+      return { openHour, closeHour, days };
+    }
+
+    // 드롭다운 값으로부터 영업시간 문자열 생성
+    function formatBusinessHours(openHour, closeHour, days) {
+      if (!openHour || !closeHour) return '';
+      return `${openHour}-${closeHour} (${days})`;
+    }
+
     // 가게 정보 저장
     async function saveStoreInfo() {
       if (!currentUser) {
@@ -1643,11 +1745,17 @@
         return;
       }
 
+      // 드롭다운에서 영업시간 가져오기
+      const openHour = document.getElementById('editStoreOpenHour').value;
+      const closeHour = document.getElementById('editStoreCloseHour').value;
+      const days = document.getElementById('editStoreDays').value;
+      const businessHours = formatBusinessHours(openHour, closeHour, days);
+
       const storeInfo = {
         placeUrl: document.getElementById('editStoreUrl').value.trim(),
         companyName: document.getElementById('editStoreName').value.trim(),
         companyAddress: document.getElementById('editStoreAddress').value.trim(),
-        businessHours: document.getElementById('editStoreHours').value.trim(),
+        businessHours: businessHours,
         phoneNumber: document.getElementById('editStorePhone').value.trim(),
         mainMenu: document.getElementById('editStoreMenu').value.trim(),
         landmarks: document.getElementById('editStoreLandmarks').value.trim(),
@@ -1889,7 +1997,15 @@
         if (cleanedData.storeUrl) document.getElementById('editStoreUrl').value = cleanedData.storeUrl;
         if (cleanedData.storeName) document.getElementById('editStoreName').value = cleanedData.storeName;
         if (cleanedData.storeAddress) document.getElementById('editStoreAddress').value = cleanedData.storeAddress;
-        if (cleanedData.storeHours) document.getElementById('editStoreHours').value = cleanedData.storeHours;
+        
+        // 영업시간 파싱하여 드롭다운에 설정
+        if (cleanedData.storeHours) {
+          const parsed = parseBusinessHours(cleanedData.storeHours);
+          if (parsed.openHour) document.getElementById('editStoreOpenHour').value = parsed.openHour;
+          if (parsed.closeHour) document.getElementById('editStoreCloseHour').value = parsed.closeHour;
+          if (parsed.days) document.getElementById('editStoreDays').value = parsed.days;
+        }
+        
         if (cleanedData.storePhone) document.getElementById('editStorePhone').value = cleanedData.storePhone;
         if (cleanedData.storeMenu) document.getElementById('editStoreMenu').value = cleanedData.storeMenu;
         if (cleanedData.storeLandmarks) document.getElementById('editStoreLandmarks').value = cleanedData.storeLandmarks;
@@ -2428,6 +2544,7 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
     }
 
     window.addEventListener('load', function() {
+      initTimeDropdowns(); // 시간 드롭다운 초기화
       initPage();
       setupLogoutButton();
     });

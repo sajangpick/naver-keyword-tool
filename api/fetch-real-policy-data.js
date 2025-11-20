@@ -43,153 +43,12 @@ const DATA_SOURCES = {
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER || process.env.VERCEL;
 
 /**
- * 내장된 실제 정책 데이터 (6개)
- * 문서: docs/06_지원금_정책안내/01_정책지원금_6가지안내.md
+ * 내장된 샘플 데이터 함수 (사용 안 함 - 삭제됨)
+ * 실제 API 데이터만 사용합니다.
  */
 function getBuiltInPolicies() {
-  const today = new Date();
-  const nextYear = new Date(today.getFullYear() + 1, 0, 1);
-  
-  return [
-    {
-      title: '2024년 소상공인 정책자금 융자',
-      organization: '중소벤처기업부',
-      category: 'operation',
-      summary: '소상공인의 경영 안정과 성장을 위한 정책자금 지원',
-      description: '소상공인(상시근로자 10인 미만)을 대상으로 최대 7천만원까지 저금리 융자를 지원합니다. 시설개선, 운영자금, 디지털 전환 등 다양한 용도로 사용 가능합니다.',
-      support_amount: '최대 7,000만원',
-      support_type: 'loan',
-      eligibility_criteria: '- 사업자등록 후 6개월 이상 영업 중인 소상공인\n- 상시근로자 10인 미만\n- 연매출 10억원 이하\n- 신용등급 6등급 이상',
-      required_documents: '- 사업자등록증\n- 재무제표\n- 신용등급 확인서\n- 사업계획서',
-      business_type: ['음식점', '카페', '소매업', '서비스업'],
-      target_area: ['전국'],
-      application_start_date: '2024-01-02',
-      application_end_date: nextYear.toISOString().split('T')[0],
-      application_method: '온라인 신청 (소상공인마당)',
-      application_url: 'https://www.semas.or.kr',
-      contact_info: '소상공인시장진흥공단',
-      phone_number: '1357',
-      website_url: 'https://www.sbiz.or.kr',
-      status: 'active',
-      is_featured: true,
-      tags: ['소상공인', '정책자금', '융자']
-    },
-    {
-      title: '소상공인 스마트상점 기술보급',
-      organization: '중소벤처기업부',
-      category: 'facility',
-      summary: '연매출 2억원 이하 소상공인을 위한 스마트상점 구축 지원',
-      description: '키오스크, POS 시스템, 온라인몰 구축 등 디지털 전환을 위한 시설 및 장비를 지원합니다. 자부담 10%만 부담하면 됩니다.',
-      support_amount: '최대 1,000만원 (자부담 10%)',
-      support_type: 'grant',
-      eligibility_criteria: '- 연매출 2억원 이하 소상공인\n- 사업자등록 후 1년 이상 영업 중',
-      required_documents: '- 사업자등록증\n- 매출 증빙서류\n- 사업계획서',
-      business_type: ['음식점', '카페', '소매업'],
-      target_area: ['전국'],
-      application_start_date: '2024-02-01',
-      application_end_date: '2024-12-31',
-      application_method: '온라인 신청',
-      application_url: 'https://smartstore.sbiz.or.kr',
-      contact_info: '소상공인시장진흥공단',
-      phone_number: '1357',
-      website_url: 'https://smartstore.sbiz.or.kr',
-      status: 'active',
-      is_featured: true,
-      tags: ['스마트상점', '디지털전환', '키오스크']
-    },
-    {
-      title: '백년가게 육성사업',
-      organization: '중소벤처기업부',
-      category: 'marketing',
-      summary: '업력 30년 이상 소상공인을 위한 브랜드 개발 및 마케팅 지원',
-      description: '오랜 전통을 가진 소상공인 가게의 브랜드 가치를 높이고 마케팅을 지원하여 지속가능한 경영을 돕습니다.',
-      support_amount: '최대 3,000만원',
-      support_type: 'grant',
-      eligibility_criteria: '- 업력 30년 이상 소상공인\n- 사업자등록 후 30년 이상 영업 중',
-      required_documents: '- 사업자등록증\n- 영업기간 증빙서류\n- 브랜드 개발 계획서',
-      business_type: ['음식점', '소매업', '서비스업'],
-      target_area: ['전국'],
-      application_start_date: '2024-03-01',
-      application_end_date: '2024-11-30',
-      application_method: '온라인 신청',
-      application_url: 'https://www.sbiz.or.kr',
-      contact_info: '소상공인시장진흥공단',
-      phone_number: '1357',
-      website_url: 'https://www.sbiz.or.kr',
-      status: 'active',
-      is_featured: false,
-      tags: ['백년가게', '브랜드', '마케팅']
-    },
-    {
-      title: '착한가격업소 인센티브 지원',
-      organization: '행정안전부',
-      category: 'operation',
-      summary: '착한가격업소로 지정된 업소에 대한 인센티브 지원',
-      description: '물가안정에 기여하는 착한가격업소에 대해 상하수도료 감면, 쓰레기봉투 지원 등 다양한 인센티브를 제공합니다.',
-      support_amount: '연간 최대 200만원 상당',
-      support_type: 'grant',
-      eligibility_criteria: '- 착한가격업소로 지정된 업체\n- 가격 안정 유지 업소',
-      required_documents: '- 착한가격업소 지정서\n- 사업자등록증',
-      business_type: ['음식점', '이미용업', '세탁업'],
-      target_area: ['전국'],
-      application_start_date: '2024-01-01',
-      application_end_date: nextYear.toISOString().split('T')[0],
-      application_method: '지자체별 상이',
-      application_url: 'https://www.mois.go.kr',
-      contact_info: '각 지자체 경제정책과',
-      phone_number: '120',
-      website_url: 'https://www.mois.go.kr',
-      status: 'active',
-      is_featured: false,
-      tags: ['착한가격업소', '인센티브']
-    },
-    {
-      title: '노란우산 희망장려금',
-      organization: '중소기업중앙회',
-      category: 'operation',
-      summary: '노란우산 신규 가입 소상공인에게 제공되는 가입 장려금',
-      description: '노란우산 공제에 신규 가입하는 소상공인에게 월 1만원씩 12개월간 총 12만원의 장려금을 지급합니다.',
-      support_amount: '월 1만원 × 12개월 (총 12만원)',
-      support_type: 'grant',
-      eligibility_criteria: '- 노란우산 신규 가입 소상공인\n- 사업자등록 후 6개월 이상 영업 중',
-      required_documents: '- 사업자등록증\n- 노란우산 가입 증빙서류',
-      business_type: ['음식점', '카페', '소매업', '서비스업'],
-      target_area: ['전국'],
-      application_start_date: '2024-01-01',
-      application_end_date: nextYear.toISOString().split('T')[0],
-      application_method: '온라인 신청',
-      application_url: 'https://www.yellowumbrella.or.kr',
-      contact_info: '중소기업중앙회',
-      phone_number: '1666-9988',
-      website_url: 'https://www.yellowumbrella.or.kr',
-      status: 'active',
-      is_featured: false,
-      tags: ['노란우산', '공제', '장려금']
-    },
-    {
-      title: '일자리 안정자금',
-      organization: '고용노동부',
-      category: 'employment',
-      summary: '소상공인 일자리 유지를 위한 인건비 지원',
-      description: '소상공인의 일자리 안정을 위해 근로자 고용 유지 시 월 30만원의 인건비를 지원합니다.',
-      support_amount: '월 30만원',
-      support_type: 'grant',
-      eligibility_criteria: '- 상시근로자 5인 이상 50인 미만 소상공인\n- 고용 유지 증빙',
-      required_documents: '- 사업자등록증\n- 고용보험 가입 증명서\n- 고용 유지 증빙서류',
-      business_type: ['음식점', '카페', '소매업', '서비스업', '제조업'],
-      target_area: ['전국'],
-      application_start_date: '2024-01-01',
-      application_end_date: nextYear.toISOString().split('T')[0],
-      application_method: '온라인 신청',
-      application_url: 'https://www.moel.go.kr',
-      contact_info: '고용노동부',
-      phone_number: '1350',
-      website_url: 'https://www.moel.go.kr',
-      status: 'active',
-      is_featured: false,
-      tags: ['일자리', '인건비', '고용유지']
-    }
-  ];
+  // 샘플 데이터 제거 - 실제 API 데이터만 사용
+  return [];
 }
 
 /**
@@ -271,6 +130,34 @@ async function fetchRealPolicies() {
             type: 'json',
             source: 'bizinfo',
             note: '기업마당 소상공인 대상 공고'
+          },
+          // 기업마당 지원사업 검색 API - 소상공인시장진흥공단 공고
+          {
+            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&organization=소상공인시장진흥공단`,
+            type: 'json',
+            source: 'semas',
+            note: '기업마당 소상공인시장진흥공단 공고'
+          },
+          // 기업마당 지원사업 검색 API - 소상공인시장진흥공단 (다른 필터 시도)
+          {
+            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&org=소상공인시장진흥공단`,
+            type: 'json',
+            source: 'semas',
+            note: '기업마당 소상공인시장진흥공단 공고 (org 필터)'
+          },
+          // 기업마당 지원사업 검색 API - 소상공인시장진흥공단 (키워드 검색)
+          {
+            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&keyword=소상공인시장진흥공단`,
+            type: 'json',
+            source: 'semas',
+            note: '기업마당 소상공인시장진흥공단 공고 (키워드 검색)'
+          },
+          // 기업마당 지원사업 검색 API - 소상공인시장진흥공단 (기관명 검색)
+          {
+            url: `https://www.bizinfo.go.kr/api/support/search?serviceKey=${encodeURIComponent(apiKey)}&page=1&perPage=1000&agency=소상공인시장진흥공단`,
+            type: 'json',
+            source: 'semas',
+            note: '기업마당 소상공인시장진흥공단 공고 (agency 필터)'
           },
           // 공공데이터포털 - 중소기업 정책자금 정보 - 여러 페이지 순회
           {
@@ -686,14 +573,27 @@ async function fetchRealPolicies() {
                 
                 // 현재 신청 가능한 정책만 포함
                 if (title) {
+                  // organization 필드 추출 (소상공인시장진흥공단 확인용)
+                  const org = item.organization || item['pbanc_ntrp_nm'] || item['sprv_inst'] || 
+                              item['수행기관'] || item.excInsttNm || item.수행기관 || item['pblancInsttNm'] || 
+                              item['기관명'] || item['orgNm'] || item['기관'] || '';
+                  
+                  // 소상공인시장진흥공단 관련 정책인지 확인
+                  const isSemasPolicy = org.includes('소상공인시장진흥공단') || 
+                                       org.includes('소상공인마당') ||
+                                       org.includes('SEMAS') ||
+                                       title.includes('소상공인시장진흥공단') ||
+                                       (endpoint.source === 'semas');
+                  
                   if (policies.length < 10 || policies.length % 10 === 0) {
-                    console.log(`✅ 정책 추가: ${title.substring(0, 50)}... (누적: ${policies.length + 1}개)`);
+                    const orgInfo = isSemasPolicy ? ' [소상공인시장진흥공단]' : '';
+                    console.log(`✅ 정책 추가: ${title.substring(0, 50)}...${orgInfo} (누적: ${policies.length + 1}개)`);
                   }
+                  
                   // K-Startup API + 중소벤처기업부 사업공고 API 필드 매핑
-          policies.push({
+                  policies.push({
                     title: title,
-                    organization: item.organization || item['pbanc_ntrp_nm'] || item['sprv_inst'] || 
-                                 item['수행기관'] || item.excInsttNm || item.수행기관 || item['pblancInsttNm'] || '한국창업진흥원',
+                    organization: org || '한국창업진흥원',
                     category: item.category || mapCategory(item['supt_biz_clsfc'] || item['지원분야'] || item.supportField || item.지원분야 || item['pblancSe'] || item['bsnsSe'] || ''),
                     summary: summary || title,
                     description: description || summary || title,
@@ -727,8 +627,16 @@ async function fetchRealPolicies() {
               
               // 데이터를 가져왔으면 로그 출력 (모든 엔드포인트 시도)
               const addedCount = policies.filter(p => p.source === (endpoint.source || 'bizinfo')).length;
+              const semasCount = policies.filter(p => {
+                const org = (p.organization || '').toLowerCase();
+                return org.includes('소상공인시장진흥공단') || org.includes('소상공인마당') || p.source === 'semas';
+              }).length;
+              
               if (addedCount > 0) {
                 console.log(`✅ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 ${addedCount}개 정책 추가`);
+                if (semasCount > 0) {
+                  console.log(`📌 소상공인시장진흥공단 공고: ${semasCount}개 포함`);
+                }
                 console.log(`📊 처리 통계: 전체 ${allData.length}개 중 ${addedCount}개 추가, ${filteredCount}개 필터링됨`);
               } else {
                 console.error(`❌ ${endpoint.type.toUpperCase()} 엔드포인트 (${endpoint.source})에서 정책을 찾지 못함`);
@@ -773,11 +681,21 @@ async function fetchRealPolicies() {
         
         // 소스별 통계 출력
         const sourceStats = {};
+        let semasTotalCount = 0;
         policies.forEach(p => {
           const source = p.source || 'unknown';
           sourceStats[source] = (sourceStats[source] || 0) + 1;
+          
+          // 소상공인시장진흥공단 공고 카운트
+          const org = (p.organization || '').toLowerCase();
+          if (org.includes('소상공인시장진흥공단') || org.includes('소상공인마당') || p.source === 'semas') {
+            semasTotalCount++;
+          }
         });
         console.log(`📊 소스별 정책 수:`, JSON.stringify(sourceStats, null, 2));
+        if (semasTotalCount > 0) {
+          console.log(`📌 소상공인시장진흥공단 공고 총 ${semasTotalCount}개 포함됨`);
+        }
         
         // 실패한 경우 상세 정보
         if (failedApiCalls === totalApiCalls && totalApiCalls > 0) {
@@ -827,46 +745,19 @@ async function fetchRealPolicies() {
     // API 키를 통해 공공데이터포털에서 K-Startup 데이터를 가져옵니다.
     console.log('ℹ️ K-Startup 데이터는 공공데이터포털 API를 통해 수집됩니다.');
     
-    // 3. 실제 데이터가 없을 경우에만 내장 데이터 사용 (백업)
-    // 하지만 실제 API 데이터가 있으면 내장 데이터는 제외
-    if (policies.length === 0) {
-      console.log('⚠️ 실제 데이터를 가져오지 못했습니다. 내장 데이터를 사용합니다.');
-      const builtInPolicies = getBuiltInPolicies();
-      policies.push(...builtInPolicies);
+    // 샘플 데이터 제거 - 실제 API 데이터만 사용
+    // 정책 수 확인
+    if (policies.length >= 50) {
+      console.log(`✅ ${policies.length}개 정책 수집 완료`);
+    } else if (policies.length > 0) {
+      console.log(`ℹ️ ${policies.length}개 정책 수집 (목표: 50개)`);
     } else {
-      // 실제 데이터가 있으면 내장 샘플 데이터는 제외 (중복 방지)
-      const builtInTitles = [
-        '2024년 소상공인 정책자금 융자',
-        '소상공인 스마트상점 기술보급',
-        '백년가게 육성사업',
-        '착한가격업소 인센티브 지원',
-        '노란우산 희망장려금',
-        '일자리 안정자금'
-      ];
-      const beforeCount = policies.length;
-      const filteredPolicies = policies.filter(p => !builtInTitles.includes(p.title));
-      const removedCount = beforeCount - filteredPolicies.length;
-      if (removedCount > 0) {
-        console.log(`🗑️ 내장 샘플 데이터 ${removedCount}개 제외 (실제 API 데이터만 사용)`);
-      }
-      policies.length = 0;
-      policies.push(...filteredPolicies);
-      
-      // 정책 수 확인
-      if (policies.length >= 50) {
-        console.log(`✅ ${policies.length}개 정책 수집 완료`);
-      } else if (policies.length > 0) {
-        console.log(`ℹ️ ${policies.length}개 정책 수집 (목표: 50개)`);
-      } else {
-        console.warn(`⚠️ 수집된 정책이 없습니다. API 호출 또는 필터링을 확인하세요.`);
-      }
+      console.warn(`⚠️ 수집된 정책이 없습니다. API 호출 또는 필터링을 확인하세요.`);
     }
     
   } catch (error) {
     console.error('실제 데이터 수집 실패:', error);
-    // 에러 발생 시 내장 데이터 사용
-    const builtInPolicies = getBuiltInPolicies();
-    policies.push(...builtInPolicies);
+    // 에러 발생 시 빈 배열 반환 (샘플 데이터 제거)
   }
   
   return policies;
