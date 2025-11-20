@@ -1723,7 +1723,7 @@
       </a>
       <a class="menu-item" href="./news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
-        <span>정보</span>
+        <span>뉴스</span>
       </a>
       <a class="menu-item active" href="./policy-support.html">
         <span class="ico"><i class="fa-solid fa-coins"></i></span>
@@ -1833,11 +1833,11 @@
           <button class="view-tab" id="bookmarkedPoliciesTab" onclick="showBookmarkedPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
             <i class="fas fa-bookmark" style="margin-right: 6px;"></i> 저장된 정책
           </button>
+          <button class="view-tab" id="myPoliciesTab" onclick="showMyPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <i class="fas fa-check-circle" style="margin-right: 6px;"></i> MY정책
+          </button>
         </div>
         <div style="display: flex; gap: 6px; margin-left: 12px; flex-wrap: wrap;">
-          <button class="source-filter-btn" data-source="all" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: var(--primary); color: white; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
-            전체
-          </button>
           <button class="source-filter-btn" data-source="kstartup" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
             K-Startup
           </button>
@@ -1846,6 +1846,18 @@
           </button>
           <button class="source-filter-btn" data-source="sbiz" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
             소상공인마당
+          </button>
+          <button class="source-filter-btn" data-source="public" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            공공기관
+          </button>
+          <button class="source-filter-btn" data-source="agency" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            진흥기관
+          </button>
+          <button class="source-filter-btn" data-source="local" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            지자체
+          </button>
+          <button class="source-filter-btn" data-source="private" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            민간
           </button>
         </div>
       </div>
@@ -1971,13 +1983,7 @@
       document.addEventListener('DOMContentLoaded', () => {
         // 전체 정책 탭 초기화
         initViewTabs();
-        // 데이터 출처 필터 초기화
-        const allSourceBtn = document.querySelector('.source-filter-btn[data-source="all"]');
-        if (allSourceBtn) {
-          allSourceBtn.style.background = 'var(--primary)';
-          allSourceBtn.style.color = 'white';
-          allSourceBtn.style.borderColor = 'var(--primary)';
-        }
+        // 데이터 출처 필터는 초기화하지 않음 (전체 버튼 제거)
         loadPolicies();
         // 전체 정책 목록 미리 로드 (저장됨 필터를 위한 캐시)
         preloadAllPolicies();
@@ -2028,6 +2034,7 @@
       function initViewTabs() {
         const allPoliciesTab = document.getElementById('allPoliciesTab');
         const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
         
         if (allPoliciesTab) {
           allPoliciesTab.classList.add('active');
@@ -2041,6 +2048,13 @@
           bookmarkedPoliciesTab.style.background = 'white';
           bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
           bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.remove('active');
+          myPoliciesTab.style.background = 'white';
+          myPoliciesTab.style.color = 'var(--text-primary)';
+          myPoliciesTab.style.borderColor = 'var(--border)';
         }
       }
 
@@ -2345,6 +2359,14 @@
           bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
         }
         
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.remove('active');
+          myPoliciesTab.style.background = 'white';
+          myPoliciesTab.style.color = 'var(--text-primary)';
+          myPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
         // 정책 목록 로드 (로딩 화면 없이)
         if (allPolicies.length > 0) {
           // 클라이언트 사이드에서 필터링
@@ -2352,17 +2374,7 @@
           
           // 데이터 출처 필터 적용
           if (currentSource !== 'all') {
-            filteredPolicies = filteredPolicies.filter(policy => {
-              const dataSource = getDataSource(policy);
-              if (currentSource === 'kstartup') {
-                return dataSource.name === 'K-Startup';
-              } else if (currentSource === 'bizinfo') {
-                return dataSource.name === '기업마당';
-              } else if (currentSource === 'sbiz') {
-                return dataSource.name === '소상공인마당';
-              }
-              return true;
-            });
+            filteredPolicies = filteredPolicies.filter(policy => matchesSourceFilter(policy, currentSource));
           }
           
           policies = filteredPolicies;
@@ -2418,6 +2430,14 @@
           allPoliciesTab.style.borderColor = 'var(--border)';
         }
         
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.remove('active');
+          myPoliciesTab.style.background = 'white';
+          myPoliciesTab.style.color = 'var(--text-primary)';
+          myPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
         // 클라이언트 사이드에서 저장된 정책만 필터링 (로딩 화면 없이)
         if (allPolicies.length > 0) {
           let bookmarkedPolicies = allPolicies.filter(policy => 
@@ -2426,17 +2446,7 @@
           
           // 데이터 출처 필터 적용
           if (currentSource !== 'all') {
-            bookmarkedPolicies = bookmarkedPolicies.filter(policy => {
-              const dataSource = getDataSource(policy);
-              if (currentSource === 'kstartup') {
-                return dataSource.name === 'K-Startup';
-              } else if (currentSource === 'bizinfo') {
-                return dataSource.name === '기업마당';
-              } else if (currentSource === 'sbiz') {
-                return dataSource.name === '소상공인마당';
-              }
-              return true;
-            });
+            bookmarkedPolicies = bookmarkedPolicies.filter(policy => matchesSourceFilter(policy, currentSource));
           }
           
           policies = bookmarkedPolicies;
@@ -2458,6 +2468,79 @@
           
           // 백그라운드에서 로드
           loadPolicies(1);
+        }
+      }
+
+      // MY정책 보기 (신청완료한 정책만 표시)
+      async function showMyPolicies() {
+        const token = await getAccessToken();
+        if (!token) {
+          if (confirm('로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?')) {
+            window.location.href = '/login.html';
+          }
+          return;
+        }
+
+        // 저장된 정책 필터 해제
+        currentBookmarked = 'all';
+        
+        // 저장됨 필터 태그 초기화
+        document.querySelectorAll('[data-bookmarked]').forEach(el => el.classList.remove('active'));
+        const allBookmarkedEl = document.querySelector('[data-bookmarked="all"]');
+        if (allBookmarkedEl) allBookmarkedEl.classList.add('active');
+        
+        // 탭 스타일 업데이트
+        const allPoliciesTab = document.getElementById('allPoliciesTab');
+        const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
+        
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.add('active');
+          myPoliciesTab.style.background = 'var(--primary)';
+          myPoliciesTab.style.color = 'white';
+          myPoliciesTab.style.borderColor = 'var(--primary)';
+        }
+        
+        if (allPoliciesTab) {
+          allPoliciesTab.classList.remove('active');
+          allPoliciesTab.style.background = 'white';
+          allPoliciesTab.style.color = 'var(--text-primary)';
+          allPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        if (bookmarkedPoliciesTab) {
+          bookmarkedPoliciesTab.classList.remove('active');
+          bookmarkedPoliciesTab.style.background = 'white';
+          bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
+          bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        // 클라이언트 사이드에서 신청완료한 정책만 필터링 (로딩 화면 없이)
+        if (allPolicies.length > 0) {
+          let myPolicies = allPolicies.filter(policy => 
+            policy.user_interest?.is_applied === true || policy.user_policy_interests?.[0]?.is_applied === true
+          );
+          
+          // 데이터 출처 필터 적용
+          if (currentSource !== 'all') {
+            myPolicies = myPolicies.filter(policy => matchesSourceFilter(policy, currentSource));
+          }
+          
+          policies = myPolicies;
+          await renderPolicies(myPolicies);
+          
+          // 페이지네이션 업데이트
+          const pagination = {
+            page: 1,
+            limit: 12,
+            total: myPolicies.length,
+            totalPages: Math.ceil(myPolicies.length / 12)
+          };
+          renderPagination(pagination);
+          document.getElementById('resultCount').textContent = `총 ${myPolicies.length}개의 지원금`;
+        } else {
+          // 캐시가 없으면 서버에서 로드
+          loadPolicies(1, true);
         }
       }
 
@@ -2524,6 +2607,41 @@
         
         currentSource = element.dataset.source;
         loadPolicies(1);
+      }
+      
+      // 출처 이름으로 필터링 가능한지 확인
+      function matchesSourceFilter(policy, sourceFilter) {
+        if (sourceFilter === 'all') return true;
+        
+        const dataSource = getDataSource(policy);
+        const org = policy.organization || '';
+        
+        switch(sourceFilter) {
+          case 'kstartup':
+            return dataSource.name === 'K-Startup';
+          case 'bizinfo':
+            return dataSource.name === '기업마당';
+          case 'sbiz':
+            return dataSource.name === '소상공인마당';
+          case 'public':
+            // 공공기관: 부, 청, 원, 공단 등
+            return org.includes('부') || org.includes('청') || 
+                   org.includes('원') || org.includes('공단') ||
+                   dataSource.name === '고용노동부' || dataSource.name === '행정안전부';
+          case 'agency':
+            return dataSource.name === '진흥기관';
+          case 'local':
+            return dataSource.name === '지자체';
+          case 'private':
+            // 민간: 공공기관이 아니고 진흥기관도 아니고 지자체도 아닌 경우
+            return !org.includes('부') && !org.includes('청') && 
+                   !org.includes('진흥원') && !org.includes('진흥공단') && !org.includes('진흥청') &&
+                   !org.includes('지자체') && !org.includes('시청') && !org.includes('군청') && !org.includes('구청') &&
+                   dataSource.name !== 'K-Startup' && dataSource.name !== '기업마당' && dataSource.name !== '소상공인마당' &&
+                   dataSource.name !== '고용노동부' && dataSource.name !== '행정안전부';
+          default:
+            return true;
+        }
       }
 
       // 검색
