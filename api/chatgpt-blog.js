@@ -832,20 +832,23 @@ ${previousAnalysis.commonExpressions.join('\n')}
    - 진정성 있는 가게 이야기
    - 손님을 초대하는 겸손하고 환대하는 태도
 
-2. **글 구조** (2000자 내외)
+2. **글 구조** (3000-3500자)
 
-   **서론 (300자)** - 사장님의 인사
+   **서론 (400-500자)** - 사장님의 인사
    - "안녕하세요, ${placeInfo.name} 사장 ○○입니다" 같은 자연스러운 인사
    - 계절(${context.season})이나 날씨 언급하며 따뜻한 시작
    - 오늘 소개할 내용에 대한 간단한 소개
+   - 가게를 시작하게 된 계기나 사연 (자연스럽게)
    
-   **본론 (1000자)** - 가게와 메뉴 소개
-   - 우리 가게의 특별한 점, 자랑하고 싶은 점
-   - 대표 메뉴를 만드는 정성과 노하우
-   - 손님들과의 소중한 인연과 에피소드
-   - 계절 메뉴나 추천 메뉴 소개
+   **본론 (1800-2200자)** - 가게와 메뉴 소개
+   - 우리 가게의 특별한 점, 자랑하고 싶은 점 (상세하게)
+   - 대표 메뉴를 만드는 정성과 노하우 (구체적인 조리 과정, 재료 선택 등)
+   - 손님들과의 소중한 인연과 에피소드 (실제 경험담처럼)
+   - 계절 메뉴나 추천 메뉴 소개 (각 메뉴별 상세 설명)
+   - 가게의 분위기와 인테리어에 대한 설명
+   - 사장님의 철학이나 운영 원칙
    
-   **결론 (700자)** - 초대와 안내
+   **결론 (800-1000자)** - 초대와 안내
    - 손님 여러분을 기다리는 마음
    - 방문 안내 (입력된 정보만 포함, 없으면 생략)
    - 📍 위치: ${placeInfo.address !== '주소 미입력' ? placeInfo.address : '(미입력)'}
@@ -861,8 +864,8 @@ ${previousAnalysis.commonExpressions.join('\n')}
 
 4. **스타일링**
    - 문단 나누기로 가독성 확보
-   - 중요한 메뉴명이나 특징은 **볼드** 처리
    - 자연스러운 한국어 표현 사용
+   - 마크다운 기호(**볼드**, *이탤릭* 등)는 절대 사용하지 마세요
 
 5. **해시태그** (글 마지막에 추가)
    - 가게 특징 관련 3개
@@ -902,16 +905,19 @@ ${previousAnalysis.commonExpressions.join('\n')}
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-                { role: "system", content: `당신은 ${placeInfo.name}의 사장님입니다. 처음부터 끝까지 일관되게 사장님의 입장에서만 작성하세요. "저희 가게", "우리 가게"처럼 사장님 표현을 사용하고, 손님을 초대하는 따뜻한 글을 쓰세요. 절대 손님/방문객 시점으로 작성하지 마세요. AI 티 나는 표현("특별한 점", "공간철학", "프리미엄 경험" 등)은 절대 사용하지 말고, 평범한 사장님이 쓰는 진솔하고 소박한 표현만 사용하세요.` },
+                { role: "system", content: `당신은 ${placeInfo.name}의 사장님입니다. 처음부터 끝까지 일관되게 사장님의 입장에서만 작성하세요. "저희 가게", "우리 가게"처럼 사장님 표현을 사용하고, 손님을 초대하는 따뜻한 글을 쓰세요. 절대 손님/방문객 시점으로 작성하지 마세요. AI 티 나는 표현("특별한 점", "공간철학", "프리미엄 경험" 등)은 절대 사용하지 말고, 평범한 사장님이 쓰는 진솔하고 소박한 표현만 사용하세요. 마크다운 형식(**볼드**, *이탤릭*, #헤더 등)은 절대 사용하지 말고 순수한 일반 텍스트로만 작성하세요.` },
                 { role: "user", content: prompt }
             ],
             temperature: 0.85,  // 다양성과 자연스러움 균형
             frequency_penalty: 0.7,  // 반복 표현 강력 감소
             presence_penalty: 0.5,   // 새로운 주제 유도
-            max_tokens: 3000
+            max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
         });
 
-        const blogContent = completion.choices[0].message.content;
+        let blogContent = completion.choices[0].message.content;
+
+        // 마크다운 기호 제거 (**볼드**, *이탤릭* 등)
+        blogContent = removeMarkdownFormatting(blogContent);
 
         // 키워드 추출 (다음 글 작성 시 회피용)
         const diversityKeywords = extractDiversityKeywords(blogContent);
@@ -927,6 +933,27 @@ ${previousAnalysis.commonExpressions.join('\n')}
         console.error('[블로그 생성 단계] 오류:', error);
         throw new Error('블로그 생성에 실패했습니다: ' + error.message);
     }
+}
+
+/**
+ * 블로그 내용에서 마크다운 기호 제거 (**볼드**, *이탤릭* 등)
+ */
+function removeMarkdownFormatting(text) {
+    if (!text || typeof text !== 'string') return text;
+    
+    // **볼드** 제거 (내용은 유지)
+    let cleaned = text.replace(/\*\*([^*]+)\*\*/g, '$1');
+    
+    // *이탤릭* 제거 (내용은 유지)
+    cleaned = cleaned.replace(/\*([^*]+)\*/g, '$1');
+    
+    // # 헤더 제거
+    cleaned = cleaned.replace(/^#+\s+/gm, '');
+    
+    // `코드` 제거 (내용은 유지)
+    cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
+    
+    return cleaned;
 }
 
 /**
@@ -953,7 +980,7 @@ function extractDiversityKeywords(blogContent) {
 }
 
 /**
- * 체험단 리뷰 생성 (다양성 강화)
+ * 체험단 블로그 생성 (다양성 강화)
  */
 async function generateReviewTeamPost(storeInfo, existingBlog, userId, promotionData = null) {
     const context = getCurrentContext();
@@ -1040,19 +1067,28 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
    - 친구에게 추천하는 듯한 편안하고 솔직한 말투
    - 절대 사장님 시점 금지
    
-2. **글 구조** (1500-2000자)
-   **서론 (200-300자)**: 방문 계기 (손님 시점)
+2. **글 구조** (3500-4000자)
+   **서론 (500-600자)**: 방문 계기 (손님 시점)
    - "체험단으로 초대받아 다녀왔어요"
    - "평소에 궁금했던 곳인데 드디어 가봤습니다"
    - "○○ 맛집이라는 소문을 듣고 방문했어요"
+   - 가게에 대한 첫인상과 기대감 (상세하게)
+   - 가게를 알게 된 경로나 추천받은 이유
+   - 방문 전 기대했던 점들
    
-   **본론 (1000-1200자)**: 방문 후기 및 메뉴 리뷰 (손님 시점)
+   **본론 (2400-2800자)**: 방문 후기 및 메뉴 리뷰 (손님 시점)
    - "들어가자마자 분위기가 좋더라고요"
    - "이거 시켜봤는데 진짜 맛있었어요"
    - "○○이 정말 인상적이었어요"
-   - 메뉴별로 먹어본 솔직한 느낌 작성
+   - 메뉴별로 먹어본 솔직한 느낌 작성 (각 메뉴 상세 설명)
+   - 각 메뉴의 맛, 식감, 온도, 양에 대한 구체적인 평가
+   - 가게 분위기와 인테리어에 대한 상세한 묘사 (색감, 조명, 좌석 배치 등)
+   - 서비스와 직원들의 친절함에 대한 경험 (구체적인 에피소드)
+   - 음식의 맛, 양, 가격에 대한 구체적인 평가
+   - 사진 찍기 좋은 포인트나 인스타그램에 올리기 좋은 요소
+   - 다른 손님들의 반응이나 분위기
    
-   **결론 (300-500자)**: 총평 및 추천 (손님 시점)
+   **결론 (600-800자)**: 총평 및 추천 (손님 시점)
    - "재방문 의사 100%입니다"
    - "이런 분들께 추천해요"
    - "다음에는 ○○도 먹어보고 싶어요"
@@ -1093,16 +1129,20 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-                { role: "system", content: `당신은 ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)입니다. 실제로 방문해서 먹어보고 쓴 솔직한 후기를 작성합니다. 절대 사장님 시점("저희 가게", "우리 매장")으로 작성하지 마세요. 손님 시점("다녀왔어요", "먹어봤어요")으로만 작성하세요. AI 티 나는 표현("특별한 점", "공간철학" 등)은 사용하지 말고, 평범한 일반인이 쓰는 자연스러운 표현만 사용하세요.` },
+                { role: "system", content: `당신은 ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)입니다. 실제로 방문해서 먹어보고 쓴 솔직한 후기를 작성합니다. 절대 사장님 시점("저희 가게", "우리 매장")으로 작성하지 마세요. 손님 시점("다녀왔어요", "먹어봤어요")으로만 작성하세요. AI 티 나는 표현("특별한 점", "공간철학" 등)은 사용하지 말고, 평범한 일반인이 쓰는 자연스러운 표현만 사용하세요. 마크다운 형식(**볼드**, *이탤릭*, #헤더 등)은 절대 사용하지 말고 순수한 일반 텍스트로만 작성하세요.` },
                 { role: "user", content: prompt }
             ],
             temperature: 0.85,
             frequency_penalty: 0.7,
             presence_penalty: 0.5,
-            max_tokens: 3000
+            max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
         });
 
-        const blogContent = completion.choices[0].message.content;
+        let blogContent = completion.choices[0].message.content;
+        
+        // 마크다운 기호 제거 (**볼드**, *이탤릭* 등)
+        blogContent = removeMarkdownFormatting(blogContent);
+        
         const diversityKeywords = extractDiversityKeywords(blogContent);
 
         return {
@@ -1112,9 +1152,9 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
         };
 
     } catch (error) {
-        console.error('[체험단 리뷰 생성] 오류:', error);
-        console.error('[체험단 리뷰 생성] 오류 상세:', error.response?.data || error.message);
-        throw new Error('체험단 리뷰 생성에 실패했습니다: ' + error.message);
+        console.error('[체험단 블로그 생성] 오류:', error);
+        console.error('[체험단 블로그 생성] 오류 상세:', error.response?.data || error.message);
+        throw new Error('체험단 블로그 생성에 실패했습니다: ' + error.message);
     }
 }
 
@@ -1305,10 +1345,21 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
    - ${writingAngle.tone} 톤 사용
    - 일반 손님의 솔직한 시각
    
-2. **글 구조** (1200-1500자)
-   **서론 (150-200자)**: 방문 계기
-   **본론 (800-1000자)**: 찾아가는 길, 분위기, 주문, 음식 리뷰
-   **결론 (250-300자)**: 만족도, 재방문 의사, 추천 대상
+2. **글 구조** (2500-3000자)
+   **서론 (300-400자)**: 방문 계기
+   - 왜 이 가게를 선택했는지
+   - 가게에 대한 첫인상과 기대감
+   - 방문 경로와 찾아가는 길
+   
+   **본론 (1700-2000자)**: 찾아가는 길, 분위기, 주문, 음식 리뷰
+   - 가게 위치와 찾아가는 방법 (상세하게)
+   - 가게 분위기와 인테리어에 대한 상세한 묘사
+   - 주문한 메뉴와 주문 과정
+   - 각 메뉴별 상세한 음식 리뷰 (맛, 양, 가격, 추천도)
+   - 서비스와 직원들의 친절함에 대한 경험
+   - 가게의 특별한 점이나 인상 깊었던 부분
+   
+   **결론 (500-600자)**: 만족도, 재방문 의사, 추천 대상
 
 3. **필수 포함 요소**
    - 가게 이름 2-3회 언급
@@ -1326,16 +1377,20 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-                { role: "system", content: `당신은 일반 손님으로 방문 경험을 자연스럽게 기록하는 블로거입니다. ${writingAngle.name}의 관점에서 작성하되, 매번 다른 스타일로 시작하세요.` },
+                { role: "system", content: `당신은 일반 손님으로 방문 경험을 자연스럽게 기록하는 블로거입니다. ${writingAngle.name}의 관점에서 작성하되, 매번 다른 스타일로 시작하세요. 마크다운 형식(**볼드**, *이탤릭*, #헤더 등)은 절대 사용하지 말고 순수한 일반 텍스트로만 작성하세요.` },
                 { role: "user", content: prompt }
             ],
             temperature: 0.95,
             frequency_penalty: 0.6,
             presence_penalty: 0.6,
-            max_tokens: 3000
+            max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
         });
 
-        const blogContent = completion.choices[0].message.content;
+        let blogContent = completion.choices[0].message.content;
+        
+        // 마크다운 기호 제거 (**볼드**, *이탤릭* 등)
+        blogContent = removeMarkdownFormatting(blogContent);
+        
         const diversityKeywords = extractDiversityKeywords(blogContent);
 
         return {
@@ -1681,7 +1736,7 @@ module.exports = async function handler(req, res) {
                 {
                     try {
                         const startTime = Date.now();
-                        console.log('[체험단 리뷰] 생성 시작:', {
+                        console.log('[체험단 블로그] 생성 시작:', {
                             userId: data.userId,
                             companyName: data.storeInfo?.companyName,
                             hasExistingBlog: !!data.existingBlog,
@@ -1691,7 +1746,7 @@ module.exports = async function handler(req, res) {
                         const reviewResult = await generateReviewTeamPost(data.storeInfo, data.existingBlog, data.userId, data.promotionData);
                         const generationTime = Date.now() - startTime;
 
-                        console.log('[체험단 리뷰] 생성 완료:', {
+                        console.log('[체험단 블로그] 생성 완료:', {
                             generationTime,
                             contentLength: reviewResult.content.length,
                             writingAngle: reviewResult.writingAngle
@@ -1729,16 +1784,16 @@ module.exports = async function handler(req, res) {
                                 if (blogError) {
                                     dbStatus = 'failed';
                                     dbError = blogError.message;
-                                    console.error('[체험단 리뷰] DB 저장 실패:', blogError);
+                                    console.error('[체험단 블로그] DB 저장 실패:', blogError);
                                 } else {
                                     blogId = blogResult[0]?.id;
                                     dbStatus = 'success';
-                                    console.log('[체험단 리뷰] DB 저장 성공:', blogId);
+                                    console.log('[체험단 블로그] DB 저장 성공:', blogId);
                                 }
                             } catch (dbErr) {
                                 dbStatus = 'failed';
                                 dbError = dbErr.message;
-                                console.error('[체험단 리뷰] DB 저장 오류:', dbErr);
+                                console.error('[체험단 블로그] DB 저장 오류:', dbErr);
                             }
                         }
 
@@ -1754,10 +1809,10 @@ module.exports = async function handler(req, res) {
                             }
                         });
                     } catch (error) {
-                        console.error('[체험단 리뷰] 전체 오류:', error);
+                        console.error('[체험단 블로그] 전체 오류:', error);
                         return res.status(500).json({
                             success: false,
-                            error: `체험단 리뷰 생성 실패: ${error.message}`
+                            error: `체험단 블로그 생성 실패: ${error.message}`
                         });
                     }
                 }

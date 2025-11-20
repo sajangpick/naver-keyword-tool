@@ -960,6 +960,11 @@
             margin-bottom: 0;
             text-align: center;
             width: 100%;
+            position: relative;
+        }
+
+        .page-header-content {
+            width: 100%;
         }
 
         .page-header h1 {
@@ -975,6 +980,31 @@
             color: var(--text-secondary);
             line-height: 1.3;
             margin: 0;
+        }
+
+        .word-count-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--accent-color);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            display: none;
+            box-shadow: 0 2px 8px rgba(255, 123, 84, 0.3);
+            z-index: 10;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .word-count-badge.show {
+            display: flex;
+        }
+
+        .word-count-badge i {
+            font-size: 10px;
         }
 
 
@@ -1775,8 +1805,13 @@
         <!-- 헤더 섹션 (타이틀만) -->
         <div class="header-section">
             <div class="page-header">
-                <h1>AI 블로그 생성기</h1>
-                <p>AI를 활용하여 고품질 블로그 콘텐츠를 자동으로 생성해보세요.</p>
+                <div class="page-header-content">
+                    <h1>AI 블로그 생성기</h1>
+                    <p>AI를 활용하여 고품질 블로그 콘텐츠를 자동으로 생성해보세요.</p>
+                </div>
+                <div class="word-count-badge" id="wordCountBadge">
+                    <i class="fas fa-font"></i> <span id="wordCountText">0</span>자
+                </div>
             </div>
         </div>
 
@@ -1785,7 +1820,7 @@
                 <!-- 탭 네비게이션 (설명 아래) -->
                 <div class="tab-navigation" style="margin-bottom: 24px;">
                     <button class="tab-btn active" data-tab="our-store">우리매장</button>
-                    <button class="tab-btn" data-tab="review-team">체험단리뷰</button>
+                    <button class="tab-btn" data-tab="review-team">체험단 블로그</button>
                 </div>
 
                 <!-- 우리매장 탭 -->
@@ -1901,7 +1936,7 @@
             </form>
             </div>
 
-                <!-- 체험단리뷰 탭 -->
+                <!-- 체험단 블로그 탭 -->
                 <div class="tab-content" id="review-team-tab">
                     <!-- 안내 문구 -->
                     <div style="background: var(--primary-white); border: 2px solid var(--accent-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
@@ -2005,13 +2040,13 @@
                         <textarea 
                             id="existingBlog2" 
                             name="existingBlog" 
-                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 체험단 리뷰를 작성합니다. (선택사항: 입력하지 않아도 생성 가능)"
+                            placeholder="기존에 작성하신 블로그 글을 복사해서 붙여넣어주세요. 이 글의 스타일과 톤앤매너를 참고하여 새로운 체험단 블로그를 작성합니다. (선택사항: 입력하지 않아도 생성 가능)"
                         ></textarea>
                         <small style="color: #666; font-size: 12px;">💡 선택사항: 기존 블로그 글을 입력하면 그 스타일을 참고하고, 없으면 기본 스타일로 작성합니다</small>
             </div>
 
                         <button type="submit" class="btn btn-primary" id="generateReviewTeamBtn" style="width: 100%;">
-                            체험단 리뷰 생성하기
+                            체험단 블로그 생성하기
                         </button>
                     </form>
                 </div>
@@ -2074,6 +2109,20 @@
         const topicsList = document.getElementById('topicsList');
         const blogContent = document.getElementById('blogContent');
         const blogText = document.getElementById('blogText');
+        const wordCountBadge = document.getElementById('wordCountBadge');
+        const wordCountText = document.getElementById('wordCountText');
+
+        // 글자수 업데이트 함수
+        function updateWordCount(text) {
+            if (!text) {
+                wordCountBadge.classList.remove('show');
+                return;
+            }
+            
+            const count = text.length;
+            wordCountText.textContent = count.toLocaleString();
+            wordCountBadge.classList.add('show');
+        }
 
         // 전역 변수: 프로모션 데이터
         let globalPromotionData = null;
@@ -2250,7 +2299,7 @@
                 if (cleanedData.landmarks) document.getElementById('landmarks').value = cleanedData.landmarks;
                 if (cleanedData.keywords) document.getElementById('keywords').value = cleanedData.keywords;
 
-                // 체험단리뷰 탭 자동 입력 (정제된 값만)
+                // 체험단 블로그 탭 자동 입력 (정제된 값만)
                 if (cleanedData.name) document.getElementById('companyName2').value = cleanedData.name;
                 if (cleanedData.address) document.getElementById('companyAddress2').value = cleanedData.address;
                 if (cleanedData.hours) document.getElementById('businessHours2').value = cleanedData.hours;
@@ -2376,7 +2425,7 @@
             await recommendKeywords('');
         });
 
-        // AI 키워드 추천 버튼 이벤트 (체험단리뷰 탭)
+        // AI 키워드 추천 버튼 이벤트 (체험단 블로그 탭)
         document.getElementById('aiKeywordBtn2').addEventListener('click', async function() {
             await recommendKeywords('2');
         });
@@ -2604,6 +2653,9 @@
                 
                 blogContent.style.display = 'block';
                 blogText.textContent = blogContentText;
+                
+                // 글자수 업데이트
+                updateWordCount(blogContentText);
 
             } catch (error) {
                 console.error("Blog generation error:", error);
@@ -2771,7 +2823,7 @@
             }
         });
 
-        // 체험단 리뷰 폼 제출
+        // 체험단 블로그 폼 제출
         reviewTeamForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
@@ -2798,7 +2850,7 @@
                 generateReviewTeamBtn.textContent = "생성 중...";
                 resultSection.classList.add('show');
                 
-                showLoading("체험단 리뷰를 생성하고 있습니다...");
+                showLoading("체험단 블로그를 생성하고 있습니다...");
 
                 // 사용자 ID 가져오기
                 const userData = JSON.parse(localStorage.getItem('userData') || '{}');
@@ -2829,12 +2881,12 @@
 
                 // 응답 텍스트를 먼저 받아서 확인
                 const responseText = await response.text();
-                console.log('체험단 리뷰 응답:', responseText);
+                console.log('체험단 블로그 응답:', responseText);
 
                 if (!response.ok) {
                     try {
                         const errorData = JSON.parse(responseText);
-                        throw new Error(errorData.error || '체험단 리뷰 생성 실패');
+                        throw new Error(errorData.error || '체험단 블로그 생성 실패');
                     } catch (parseError) {
                         throw new Error(`서버 오류: ${responseText.substring(0, 200)}`);
                     }
@@ -2842,23 +2894,26 @@
 
                 const result = JSON.parse(responseText);
                 if (!result.success) {
-                    throw new Error(result.error || '체험단 리뷰 생성 실패');
+                    throw new Error(result.error || '체험단 블로그 생성 실패');
                 }
 
                 const blogContentText = result.data;
-                console.log('생성된 체험단 리뷰:', blogContentText);
+                console.log('생성된 체험단 블로그:', blogContentText);
                 
                 showSuccess();
                 blogContent.style.display = 'block';
                 blogText.textContent = blogContentText;
                 blogTopics.style.display = 'none';
+                
+                // 글자수 업데이트
+                updateWordCount(blogContentText);
 
             } catch (error) {
-                console.error("체험단 리뷰 생성 오류:", error);
-                showError("체험단 리뷰 생성 중 오류가 발생했습니다: " + error.message);
+                console.error("체험단 블로그 생성 오류:", error);
+                showError("체험단 블로그 생성 중 오류가 발생했습니다: " + error.message);
             } finally {
                 generateReviewTeamBtn.disabled = false;
-                generateReviewTeamBtn.textContent = "체험단 리뷰 생성하기";
+                generateReviewTeamBtn.textContent = "체험단 블로그 생성하기";
             }
         });
     </script>
