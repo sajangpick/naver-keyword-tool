@@ -1010,6 +1010,69 @@
         border-color: var(--primary);
       }
 
+      /* 전체 정책 탭 스타일 */
+      .view-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 0 4px;
+      }
+
+      .view-tab {
+        padding: 10px 20px;
+        border: 2px solid var(--border);
+        background: white;
+        color: var(--text-primary);
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .view-tab:hover {
+        background: var(--bg);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .view-tab.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      .view-tab.active:hover {
+        background: var(--primary-dark);
+      }
+
+      @media (max-width: 768px) {
+        .view-tabs {
+          gap: 6px;
+          margin-bottom: 16px;
+        }
+        
+        .view-tab {
+          padding: 8px 16px;
+          font-size: 13px;
+        }
+      }
+      
+      @media (max-width: 360px) {
+        .view-tabs {
+          gap: 4px;
+          margin-bottom: 12px;
+        }
+        
+        .view-tab {
+          padding: 7px 12px;
+          font-size: 12px;
+        }
+      }
+
       /* 정책 카드 그리드 */
       .policy-grid {
         display: grid;
@@ -1054,6 +1117,70 @@
         border-radius: 12px;
         font-size: 12px;
         font-weight: 600;
+        z-index: 1;
+      }
+
+      /* 데이터 출처 배지 */
+      .data-source-badge {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 600;
+        z-index: 2;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .source-kstartup {
+        background: #2196F3 !important;
+      }
+
+      .source-bizinfo {
+        background: #4CAF50 !important;
+      }
+
+      .source-sbiz {
+        background: #FF9800 !important;
+      }
+
+      .source-moel {
+        background: #9C27B0 !important;
+      }
+
+      .source-mois {
+        background: #607D8B !important;
+      }
+
+      .source-yellow {
+        background: #FFC107 !important;
+      }
+
+      .source-local {
+        background: #795548 !important;
+      }
+
+      .source-agency {
+        background: #3F51B5 !important;
+      }
+
+      .source-other {
+        background: #757575 !important;
+      }
+
+      @media (max-width: 768px) {
+        .data-source-badge {
+          font-size: 9px;
+          padding: 2px 6px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .data-source-badge {
+          font-size: 8px;
+          padding: 2px 5px;
+        }
       }
 
       .status-active {
@@ -1073,6 +1200,7 @@
 
       .policy-header {
         margin-bottom: 12px;
+        padding-top: 50px;
       }
 
       .policy-org {
@@ -1089,6 +1217,7 @@
       @media (max-width: 768px) {
         .policy-header {
           margin-bottom: 10px;
+          padding-top: 45px;
         }
         
         .policy-org {
@@ -1264,26 +1393,6 @@
         border-color: #f59e0b;
       }
 
-      /* 중요 알림 배너 */
-      .featured-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 32px;
-      }
-
-      .featured-title {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-
-      .featured-desc {
-        font-size: 14px;
-        opacity: 0.95;
-      }
-
       /* 빈 상태 */
       .empty-state {
         text-align: center;
@@ -1394,6 +1503,32 @@
         justify-content: space-between;
         align-items: flex-start;
         margin-bottom: 24px;
+      }
+
+      .modal-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .modal-apply-btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        background: var(--primary);
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .modal-apply-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
       }
 
       .modal-close {
@@ -1588,7 +1723,7 @@
       </a>
       <a class="menu-item" href="./news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
-        <span>정보</span>
+        <span>뉴스</span>
       </a>
       <a class="menu-item active" href="./policy-support.html">
         <span class="ico"><i class="fa-solid fa-coins"></i></span>
@@ -1603,17 +1738,9 @@
         <!-- 헤더 섹션 -->
         <div class="header-section">
           <div class="page-title">
-            <h1>정책지원금 정보 <span class="beta-badge">준비중</span></h1>
+            <h1>정책지원금 정보</h1>
             <p>소상공인을 위한 정부 지원 정책을 한눈에 확인하세요.</p>
           </div>
-        </div>
-
-        <!-- 중요 알림 배너 -->
-        <div class="featured-banner" id="featuredBanner" style="display: none;">
-          <div class="featured-title">
-            <i class="fas fa-star"></i> 주목! 마감 임박 지원금
-          </div>
-          <div class="featured-desc" id="featuredDesc"></div>
         </div>
 
         <!-- 검색 및 필터 -->
@@ -1636,6 +1763,18 @@
             <div class="filter-tag" data-category="marketing" onclick="filterByCategory(this)">마케팅</div>
             <div class="filter-tag" data-category="education" onclick="filterByCategory(this)">교육지원</div>
             <div class="filter-tag" data-category="other" onclick="filterByCategory(this)">기타</div>
+          </div>
+        </div>
+
+        <div class="filter-tags" style="margin-top: 12px;">
+          <div class="filter-label">내 정책</div>
+          <div class="filter-options">
+            <div class="filter-tag active" data-bookmarked="all" onclick="filterByBookmarked(this)">
+              <i class="fas fa-list" style="margin-right: 4px;"></i> 전체
+            </div>
+            <div class="filter-tag" data-bookmarked="true" onclick="filterByBookmarked(this)">
+              <i class="fas fa-bookmark" style="margin-right: 4px; color: #f59e0b;"></i> 저장됨
+            </div>
           </div>
         </div>
 
@@ -1683,39 +1822,43 @@
           </div>
         </div>
 
-        <!-- 카테고리별 통계 -->
-        <div class="category-stats" id="categoryStats" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); display: none;">
-          <div class="filter-label" style="margin-bottom: 12px;">카테고리별 현황</div>
-          <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-            <div class="stat-item clickable-stat" data-category="startup" onclick="filterByCategoryFromStat('startup')" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
-              <div class="stat-count" data-category="startup" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
-              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">창업지원</div>
-            </div>
-            <div class="stat-item clickable-stat" data-category="operation" onclick="filterByCategoryFromStat('operation')" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
-              <div class="stat-count" data-category="operation" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
-              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">운영지원</div>
-            </div>
-            <div class="stat-item clickable-stat" data-category="employment" onclick="filterByCategoryFromStat('employment')" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
-              <div class="stat-count" data-category="employment" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
-              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">인건비지원</div>
-            </div>
-            <div class="stat-item clickable-stat" data-category="facility" onclick="filterByCategoryFromStat('facility')" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
-              <div class="stat-count" data-category="facility" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
-              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">시설개선</div>
-            </div>
-            <div class="stat-item clickable-stat" data-category="marketing" onclick="filterByCategoryFromStat('marketing')" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
-              <div class="stat-count" data-category="marketing" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
-              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">마케팅</div>
-            </div>
-            <div class="stat-item clickable-stat" data-category="education" onclick="filterByCategoryFromStat('education')" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
-              <div class="stat-count" data-category="education" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
-              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">교육지원</div>
-            </div>
-            <div class="stat-item clickable-stat" data-category="other" onclick="filterByCategoryFromStat('other')" style="padding: 8px; background: var(--bg); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s;">
-              <div class="stat-count" data-category="other" style="font-size: 18px; font-weight: 700; color: var(--primary);">0</div>
-              <div class="stat-label" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">기타</div>
-            </div>
-          </div>
+      </div>
+
+      <!-- 전체 정책 탭 -->
+      <div class="view-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; padding: 0 4px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px;">
+          <button class="view-tab active" id="allPoliciesTab" onclick="showAllPolicies()" style="padding: 10px 20px; border: 2px solid var(--primary); background: var(--primary); color: white; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <i class="fas fa-list" style="margin-right: 6px;"></i> 전체 정책
+          </button>
+          <button class="view-tab" id="bookmarkedPoliciesTab" onclick="showBookmarkedPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <i class="fas fa-bookmark" style="margin-right: 6px;"></i> 저장된 정책
+          </button>
+          <button class="view-tab" id="myPoliciesTab" onclick="showMyPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <i class="fas fa-check-circle" style="margin-right: 6px;"></i> MY정책
+          </button>
+        </div>
+        <div style="display: flex; gap: 6px; margin-left: 12px; flex-wrap: wrap;">
+          <button class="source-filter-btn" data-source="kstartup" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            K-Startup
+          </button>
+          <button class="source-filter-btn" data-source="bizinfo" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            기업마당
+          </button>
+          <button class="source-filter-btn" data-source="sbiz" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            소상공인마당
+          </button>
+          <button class="source-filter-btn" data-source="public" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            공공기관
+          </button>
+          <button class="source-filter-btn" data-source="agency" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            진흥기관
+          </button>
+          <button class="source-filter-btn" data-source="local" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            지자체
+          </button>
+          <button class="source-filter-btn" data-source="private" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+            민간
+          </button>
         </div>
       </div>
 
@@ -1750,7 +1893,12 @@
             <h2 id="modalTitle" style="margin-top: 12px; font-size: 24px;"></h2>
             <div class="policy-amount" id="modalAmount" style="margin-top: 8px;"></div>
           </div>
-          <button class="modal-close" onclick="closeModal()">×</button>
+          <div class="modal-actions">
+            <button class="modal-apply-btn" id="modalApplyBtn" onclick="applyFromModal()">
+              <i class="fas fa-external-link-alt"></i> 신청하기
+            </button>
+            <button class="modal-close" onclick="closeModal()">×</button>
+          </div>
         </div>
 
         <div class="detail-section">
@@ -1823,23 +1971,102 @@
       let currentStatus = 'all';
       let currentArea = 'all';
       let currentBusiness = 'all';
+      let currentBookmarked = 'all';
+      let currentSource = 'all'; // 데이터 출처 필터
       let currentSort = 'latest';
       let currentSearch = '';
       let policies = [];
+      let allPolicies = []; // 전체 정책 목록 캐시
       let selectedPolicy = null;
 
       // 페이지 로드 시 초기화
       document.addEventListener('DOMContentLoaded', () => {
+        // 전체 정책 탭 초기화
+        initViewTabs();
+        // 데이터 출처 필터는 초기화하지 않음 (전체 버튼 제거)
         loadPolicies();
-        checkFeaturedPolicies();
-        loadCategoryStats();
+        // 전체 정책 목록 미리 로드 (저장됨 필터를 위한 캐시)
+        preloadAllPolicies();
       });
 
+      // 전체 정책 목록 미리 로드 (캐시용)
+      async function preloadAllPolicies() {
+        try {
+          const token = await getAccessToken();
+          const params = new URLSearchParams({
+            page: 1,
+            limit: 1000 // 충분히 큰 수로 전체 정책 가져오기
+          });
+
+          if (token) {
+            let userId = null;
+            try {
+              if (window.authState?.supabase) {
+                const { data: { session } } = await window.authState.supabase.auth.getSession();
+                if (session?.user?.id) {
+                  userId = session.user.id;
+                }
+              }
+            } catch (error) {
+              console.error('사용자 정보 가져오기 실패:', error);
+            }
+            
+            if (!userId) {
+              const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+              userId = userData.id;
+            }
+            
+            if (userId) params.append('user_id', userId);
+          }
+
+          const response = await fetch(`${API_BASE}/api/policy-support?${params}`);
+          const result = await response.json();
+
+          if (result.success && result.data) {
+            allPolicies = result.data;
+          }
+        } catch (error) {
+          console.error('전체 정책 미리 로드 실패:', error);
+        }
+      }
+
+      // 뷰 탭 초기화
+      function initViewTabs() {
+        const allPoliciesTab = document.getElementById('allPoliciesTab');
+        const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
+        
+        if (allPoliciesTab) {
+          allPoliciesTab.classList.add('active');
+          allPoliciesTab.style.background = 'var(--primary)';
+          allPoliciesTab.style.color = 'white';
+          allPoliciesTab.style.borderColor = 'var(--primary)';
+        }
+        
+        if (bookmarkedPoliciesTab) {
+          bookmarkedPoliciesTab.classList.remove('active');
+          bookmarkedPoliciesTab.style.background = 'white';
+          bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
+          bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.remove('active');
+          myPoliciesTab.style.background = 'white';
+          myPoliciesTab.style.color = 'var(--text-primary)';
+          myPoliciesTab.style.borderColor = 'var(--border)';
+        }
+      }
+
       // 정책지원금 목록 로드
-      async function loadPolicies(page = 1) {
+      async function loadPolicies(page = 1, showLoading = true) {
         currentPage = page;
         const grid = document.getElementById('policyGrid');
-        grid.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><div>로딩 중...</div></div>';
+        
+        // 저장됨 필터일 때는 로딩 화면 표시하지 않음
+        if (showLoading && currentBookmarked !== 'true') {
+          grid.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><div>로딩 중...</div></div>';
+        }
 
         try {
           const params = new URLSearchParams({
@@ -1851,6 +2078,8 @@
           if (currentStatus !== 'all') params.append('status', currentStatus);
           if (currentArea !== 'all') params.append('area', currentArea);
           if (currentBusiness !== 'all') params.append('business_type', currentBusiness);
+          if (currentBookmarked !== 'all') params.append('bookmarked', currentBookmarked);
+          if (currentSource !== 'all') params.append('source', currentSource);
           if (currentSearch) params.append('search', currentSearch);
 
           // 사용자 ID 추가 (로그인한 경우)
@@ -1884,30 +2113,85 @@
           if (!result.success) throw new Error(result.error);
 
           policies = result.data || [];
+          
+          // 전체 정책 목록 캐시 저장 (저장됨 필터를 위한 클라이언트 사이드 필터링)
+          if (currentBookmarked === 'all' && currentCategory === 'all' && currentStatus === 'all' && 
+              currentArea === 'all' && currentBusiness === 'all' && !currentSearch) {
+            allPolicies = policies;
+          }
+          
           await renderPolicies(policies);
           renderPagination(result.pagination);
 
           // 결과 개수 업데이트
           document.getElementById('resultCount').textContent = `총 ${result.pagination?.total || 0}개의 지원금`;
 
-          // 통계 카드 활성 상태 업데이트
-          updateStatItemActiveState();
-
         } catch (error) {
           console.error('Load policies error:', error);
           grid.innerHTML = `
             <div class="empty-state">
-              <div class="empty-icon">⚠️</div>
-              <div class="empty-title">정책지원금을 불러올 수 없습니다</div>
-              <div class="empty-desc">${error.message}</div>
+              <div class="empty-icon">📭</div>
+              <div class="empty-title">해당 정책 지원금이 없습니다</div>
             </div>
           `;
+        }
+      }
+
+      // 데이터 출처 판별
+      function getDataSource(policy) {
+        const url = policy.website_url || policy.application_url || '';
+        const org = policy.organization || '';
+        
+        if (url.includes('k-startup.go.kr') || org.includes('창업진흥원') || org.includes('K-Startup')) {
+          return { name: 'K-Startup', class: 'source-kstartup', color: '#2196F3' };
+        } else if (url.includes('bizinfo.go.kr') || org.includes('중소벤처기업부') || org.includes('중기부')) {
+          return { name: '기업마당', class: 'source-bizinfo', color: '#4CAF50' };
+        } else if (url.includes('sbiz.or.kr') || org.includes('소상공인') || org.includes('SEMAS')) {
+          return { name: '소상공인마당', class: 'source-sbiz', color: '#FF9800' };
+        } else if (url.includes('moel.go.kr') || org.includes('고용노동부')) {
+          return { name: '고용노동부', class: 'source-moel', color: '#9C27B0' };
+        } else if (url.includes('mois.go.kr') || org.includes('행정안전부')) {
+          return { name: '행정안전부', class: 'source-mois', color: '#607D8B' };
+        } else if (url.includes('yellowumbrella.or.kr') || org.includes('노란우산')) {
+          return { name: '노란우산', class: 'source-yellow', color: '#FFC107' };
+        } else if (org.includes('지자체') || org.includes('시청') || org.includes('군청') || org.includes('구청')) {
+          return { name: '지자체', class: 'source-local', color: '#795548' };
+        } else if (org.includes('진흥원') || org.includes('진흥공단') || org.includes('진흥청')) {
+          return { name: '진흥기관', class: 'source-agency', color: '#3F51B5' };
+        } else {
+          // 기타인 경우 기관명의 일부를 표시
+          let sourceName = '기타';
+          if (org) {
+            // 기관명에서 핵심 키워드 추출
+            const keywords = ['부', '청', '원', '공단', '협회', '재단', '센터'];
+            for (const keyword of keywords) {
+              const index = org.indexOf(keyword);
+              if (index > 0) {
+                sourceName = org.substring(0, index + 1);
+                break;
+              }
+            }
+            // 너무 길면 줄임
+            if (sourceName.length > 6) {
+              sourceName = sourceName.substring(0, 6) + '..';
+            }
+            // 여전히 "기타"면 기관명 첫 3글자 사용
+            if (sourceName === '기타' && org && org.length > 0) {
+              sourceName = org.length > 4 ? org.substring(0, 4) + '..' : org;
+            }
+          }
+          return { name: sourceName, class: 'source-other', color: '#757575' };
         }
       }
 
       // 정책 카드 렌더링
       async function renderPolicies(policies) {
         const grid = document.getElementById('policyGrid');
+        
+        if (!grid) {
+          console.error('policyGrid element not found');
+          return;
+        }
         
         if (!policies || policies.length === 0) {
           const token = await getAccessToken();
@@ -1929,48 +2213,42 @@
             }
           }
           
+          // 빈 상태 메시지 (모든 경우 동일)
           grid.innerHTML = `
             <div class="empty-state">
               <div class="empty-icon">📭</div>
-              <div class="empty-title">정책지원금 데이터가 없습니다</div>
-              <div class="empty-desc" style="margin-bottom: 20px;">
-                데이터베이스에 정책 정보가 없습니다.<br/>
-                관리자 페이지에서 실제 데이터를 가져오거나 직접 등록해주세요.
-              </div>
-              ${isAdmin ? `
-                <button class="policy-btn primary" onclick="window.location.href='/admin/policy-management.html'" style="margin-top: 16px;">
-                  <i class="fas fa-cog"></i> 관리자 페이지로 이동
-                </button>
-              ` : `
-                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 16px;">
-                  💡 관리자에게 문의하여 정책 데이터를 추가해주세요.
-                </div>
-              `}
+              <div class="empty-title">해당 정책 지원금이 없습니다</div>
             </div>
           `;
           return;
         }
 
-        grid.innerHTML = policies.map(policy => {
-          const deadline = calculateDeadline(policy.application_end_date);
-          const isBookmarked = policy.user_interest?.is_bookmarked;
-          const isApplied = policy.user_interest?.is_applied || policy.user_policy_interests?.[0]?.is_applied;
+        try {
+          const html = policies.map(policy => {
+            const deadline = calculateDeadline(policy.application_end_date);
+            const isBookmarked = policy.user_interest?.is_bookmarked;
+            const isApplied = policy.user_interest?.is_applied || policy.user_policy_interests?.[0]?.is_applied;
 
-          let statusClass = 'status-active';
-          let statusText = '접수중';
-          
-          if (policy.status === 'upcoming') {
-            statusClass = 'status-upcoming';
-            statusText = '접수예정';
-          } else if (policy.status === 'ended') {
-            statusClass = 'status-ended';
-            statusText = '마감';
-          }
+            let statusClass = 'status-active';
+            let statusText = '접수중';
+            
+            if (policy.status === 'upcoming') {
+              statusClass = 'status-upcoming';
+              statusText = '접수예정';
+            } else if (policy.status === 'ended') {
+              statusClass = 'status-ended';
+              statusText = '마감';
+            }
 
-          return `
+            const dataSource = getDataSource(policy);
+
+            return `
             <div class="policy-card" onclick="openPolicyDetail(${policy.id})">
-              <div class="policy-status ${statusClass}">${statusText}</div>
-              ${isApplied ? `<div class="policy-status" style="top: 50px; background: #4caf50; color: white;">신청완료</div>` : ''}
+              <div class="data-source-badge ${dataSource.class}" style="position: absolute; top: 16px; left: 16px; background: ${dataSource.color}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; z-index: 2;">
+                ${dataSource.name}
+              </div>
+              <div class="policy-status ${statusClass}" style="top: 16px; right: 16px; left: auto;">${statusText}</div>
+              ${isApplied ? `<div class="policy-status" style="top: 50px; right: 16px; left: auto; background: #4caf50; color: white;">신청완료</div>` : ''}
               
               <div class="policy-header">
                 <span class="policy-org">${policy.organization}</span>
@@ -2004,15 +2282,24 @@
                   <i class="${isBookmarked ? 'fas' : 'far'} fa-bookmark"></i>
                   ${isBookmarked ? '저장됨' : '저장'}
                 </button>
-                ${(policy.application_url || policy.website_url) ? `
-                  <button class="policy-btn primary" onclick="applyPolicy(${policy.id}, event)">
-                    <i class="fas fa-check-circle"></i> 신청
-                  </button>
-                ` : ''}
+                <button class="policy-btn primary" onclick="openPolicyDetail(${policy.id}); event.stopPropagation();">
+                  <i class="fas fa-info-circle"></i> 신청조건
+                </button>
               </div>
             </div>
           `;
-        }).join('');
+          }).join('');
+          
+          grid.innerHTML = html;
+        } catch (error) {
+          console.error('Render policies error:', error);
+          grid.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📭</div>
+              <div class="empty-title">해당 정책 지원금이 없습니다</div>
+            </div>
+          `;
+        }
       }
 
       // 마감일 계산
@@ -2044,52 +2331,227 @@
         return labels[category] || category;
       }
 
+      // 전체 정책 보기
+      async function showAllPolicies() {
+        // 저장된 정책 필터만 해제 (다른 필터는 유지 가능)
+        currentBookmarked = 'all';
+        
+        // 저장됨 필터 태그 초기화
+        document.querySelectorAll('[data-bookmarked]').forEach(el => el.classList.remove('active'));
+        const allBookmarkedEl = document.querySelector('[data-bookmarked="all"]');
+        if (allBookmarkedEl) allBookmarkedEl.classList.add('active');
+        
+        // 탭 스타일 업데이트
+        const allPoliciesTab = document.getElementById('allPoliciesTab');
+        const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        
+        if (allPoliciesTab) {
+          allPoliciesTab.classList.add('active');
+          allPoliciesTab.style.background = 'var(--primary)';
+          allPoliciesTab.style.color = 'white';
+          allPoliciesTab.style.borderColor = 'var(--primary)';
+        }
+        
+        if (bookmarkedPoliciesTab) {
+          bookmarkedPoliciesTab.classList.remove('active');
+          bookmarkedPoliciesTab.style.background = 'white';
+          bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
+          bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.remove('active');
+          myPoliciesTab.style.background = 'white';
+          myPoliciesTab.style.color = 'var(--text-primary)';
+          myPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        // 정책 목록 로드 (로딩 화면 없이)
+        if (allPolicies.length > 0) {
+          // 클라이언트 사이드에서 필터링
+          let filteredPolicies = allPolicies;
+          
+          // 데이터 출처 필터 적용
+          if (currentSource !== 'all') {
+            filteredPolicies = filteredPolicies.filter(policy => matchesSourceFilter(policy, currentSource));
+          }
+          
+          policies = filteredPolicies;
+          await renderPolicies(filteredPolicies);
+          
+          const pagination = {
+            page: 1,
+            limit: 12,
+            total: filteredPolicies.length,
+            totalPages: Math.ceil(filteredPolicies.length / 12)
+          };
+          renderPagination(pagination);
+          document.getElementById('resultCount').textContent = `총 ${filteredPolicies.length}개의 지원금`;
+        } else {
+          // 캐시가 없으면 서버에서 로드
+          loadPolicies(1, true);
+        }
+      }
+
+      // 저장된 정책 보기 (클라이언트 사이드 필터링)
+      async function showBookmarkedPolicies() {
+        const token = await getAccessToken();
+        if (!token) {
+          if (confirm('로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?')) {
+            window.location.href = '/login.html';
+          }
+          return;
+        }
+
+        // 저장된 정책 필터 활성화
+        currentBookmarked = 'true';
+        
+        // 저장됨 필터 태그 업데이트
+        document.querySelectorAll('[data-bookmarked]').forEach(el => el.classList.remove('active'));
+        const bookmarkedEl = document.querySelector('[data-bookmarked="true"]');
+        if (bookmarkedEl) bookmarkedEl.classList.add('active');
+        
+        // 탭 스타일 업데이트
+        const allPoliciesTab = document.getElementById('allPoliciesTab');
+        const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        
+        if (bookmarkedPoliciesTab) {
+          bookmarkedPoliciesTab.classList.add('active');
+          bookmarkedPoliciesTab.style.background = 'var(--primary)';
+          bookmarkedPoliciesTab.style.color = 'white';
+          bookmarkedPoliciesTab.style.borderColor = 'var(--primary)';
+        }
+        
+        if (allPoliciesTab) {
+          allPoliciesTab.classList.remove('active');
+          allPoliciesTab.style.background = 'white';
+          allPoliciesTab.style.color = 'var(--text-primary)';
+          allPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.remove('active');
+          myPoliciesTab.style.background = 'white';
+          myPoliciesTab.style.color = 'var(--text-primary)';
+          myPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        // 클라이언트 사이드에서 저장된 정책만 필터링 (로딩 화면 없이)
+        if (allPolicies.length > 0) {
+          let bookmarkedPolicies = allPolicies.filter(policy => 
+            policy.user_interest?.is_bookmarked === true
+          );
+          
+          // 데이터 출처 필터 적용
+          if (currentSource !== 'all') {
+            bookmarkedPolicies = bookmarkedPolicies.filter(policy => matchesSourceFilter(policy, currentSource));
+          }
+          
+          policies = bookmarkedPolicies;
+          await renderPolicies(bookmarkedPolicies);
+          
+          // 페이지네이션 업데이트
+          const pagination = {
+            page: 1,
+            limit: 12,
+            total: bookmarkedPolicies.length,
+            totalPages: Math.ceil(bookmarkedPolicies.length / 12)
+          };
+          renderPagination(pagination);
+          document.getElementById('resultCount').textContent = `총 ${bookmarkedPolicies.length}개의 지원금`;
+        } else {
+          // 캐시가 없으면 서버에서 로드 (하지만 로딩 화면은 표시하지 않음)
+          const grid = document.getElementById('policyGrid');
+          const originalContent = grid.innerHTML;
+          
+          // 백그라운드에서 로드
+          loadPolicies(1);
+        }
+      }
+
+      // MY정책 보기 (신청완료한 정책만 표시)
+      async function showMyPolicies() {
+        const token = await getAccessToken();
+        if (!token) {
+          if (confirm('로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?')) {
+            window.location.href = '/login.html';
+          }
+          return;
+        }
+
+        // 저장된 정책 필터 해제
+        currentBookmarked = 'all';
+        
+        // 저장됨 필터 태그 초기화
+        document.querySelectorAll('[data-bookmarked]').forEach(el => el.classList.remove('active'));
+        const allBookmarkedEl = document.querySelector('[data-bookmarked="all"]');
+        if (allBookmarkedEl) allBookmarkedEl.classList.add('active');
+        
+        // 탭 스타일 업데이트
+        const allPoliciesTab = document.getElementById('allPoliciesTab');
+        const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
+        
+        if (myPoliciesTab) {
+          myPoliciesTab.classList.add('active');
+          myPoliciesTab.style.background = 'var(--primary)';
+          myPoliciesTab.style.color = 'white';
+          myPoliciesTab.style.borderColor = 'var(--primary)';
+        }
+        
+        if (allPoliciesTab) {
+          allPoliciesTab.classList.remove('active');
+          allPoliciesTab.style.background = 'white';
+          allPoliciesTab.style.color = 'var(--text-primary)';
+          allPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        if (bookmarkedPoliciesTab) {
+          bookmarkedPoliciesTab.classList.remove('active');
+          bookmarkedPoliciesTab.style.background = 'white';
+          bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
+          bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
+        }
+        
+        // 클라이언트 사이드에서 신청완료한 정책만 필터링 (로딩 화면 없이)
+        if (allPolicies.length > 0) {
+          let myPolicies = allPolicies.filter(policy => 
+            policy.user_interest?.is_applied === true || policy.user_policy_interests?.[0]?.is_applied === true
+          );
+          
+          // 데이터 출처 필터 적용
+          if (currentSource !== 'all') {
+            myPolicies = myPolicies.filter(policy => matchesSourceFilter(policy, currentSource));
+          }
+          
+          policies = myPolicies;
+          await renderPolicies(myPolicies);
+          
+          // 페이지네이션 업데이트
+          const pagination = {
+            page: 1,
+            limit: 12,
+            total: myPolicies.length,
+            totalPages: Math.ceil(myPolicies.length / 12)
+          };
+          renderPagination(pagination);
+          document.getElementById('resultCount').textContent = `총 ${myPolicies.length}개의 지원금`;
+        } else {
+          // 캐시가 없으면 서버에서 로드
+          loadPolicies(1, true);
+        }
+      }
+
       // 카테고리 필터
       function filterByCategory(element) {
         document.querySelectorAll('[data-category]').forEach(el => el.classList.remove('active'));
         element.classList.add('active');
         currentCategory = element.dataset.category;
         loadPolicies(1);
-        updateStatItemActiveState();
       }
 
-      // 카테고리별 현황에서 카테고리 필터링
-      function filterByCategoryFromStat(category) {
-        currentCategory = category;
-        
-        // 카테고리 필터 태그 업데이트
-        document.querySelectorAll('.filter-tag[data-category]').forEach(el => {
-          el.classList.remove('active');
-          if (el.dataset.category === category) {
-            el.classList.add('active');
-          }
-        });
-        
-        // 통계 카드 활성 상태 업데이트
-        updateStatItemActiveState();
-        
-        // 정책 목록 로드
-        loadPolicies(1);
-      }
-
-      // 통계 카드 활성 상태 업데이트
-      function updateStatItemActiveState() {
-        document.querySelectorAll('.clickable-stat').forEach(stat => {
-          if (currentCategory === 'all') {
-            // "전체" 선택 시 모든 통계 카드 초기화
-            stat.style.background = 'var(--bg)';
-            stat.style.border = 'none';
-          } else if (stat.dataset.category === currentCategory) {
-            // 선택된 카테고리만 강조
-            stat.style.background = 'rgba(255, 123, 84, 0.15)';
-            stat.style.border = '2px solid var(--primary)';
-          } else {
-            // 다른 카테고리는 초기화
-            stat.style.background = 'var(--bg)';
-            stat.style.border = 'none';
-          }
-        });
-      }
 
       // 상태 필터
       function filterByStatus(element) {
@@ -2113,6 +2575,73 @@
         element.classList.add('active');
         currentBusiness = element.dataset.business;
         loadPolicies(1);
+      }
+
+      // 저장됨 필터
+      async function filterByBookmarked(element) {
+        const token = await getAccessToken();
+        if (!token && element.dataset.bookmarked === 'true') {
+          if (confirm('로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?')) {
+            window.location.href = '/login.html';
+          }
+          return;
+        }
+
+        document.querySelectorAll('[data-bookmarked]').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        currentBookmarked = element.dataset.bookmarked;
+        loadPolicies(1);
+      }
+
+      // 데이터 출처 필터
+      function filterBySource(element) {
+        document.querySelectorAll('.source-filter-btn').forEach(btn => {
+          btn.style.background = 'white';
+          btn.style.color = 'var(--text-primary)';
+          btn.style.borderColor = 'var(--border)';
+        });
+        
+        element.style.background = 'var(--primary)';
+        element.style.color = 'white';
+        element.style.borderColor = 'var(--primary)';
+        
+        currentSource = element.dataset.source;
+        loadPolicies(1);
+      }
+      
+      // 출처 이름으로 필터링 가능한지 확인
+      function matchesSourceFilter(policy, sourceFilter) {
+        if (sourceFilter === 'all') return true;
+        
+        const dataSource = getDataSource(policy);
+        const org = policy.organization || '';
+        
+        switch(sourceFilter) {
+          case 'kstartup':
+            return dataSource.name === 'K-Startup';
+          case 'bizinfo':
+            return dataSource.name === '기업마당';
+          case 'sbiz':
+            return dataSource.name === '소상공인마당';
+          case 'public':
+            // 공공기관: 부, 청, 원, 공단 등
+            return org.includes('부') || org.includes('청') || 
+                   org.includes('원') || org.includes('공단') ||
+                   dataSource.name === '고용노동부' || dataSource.name === '행정안전부';
+          case 'agency':
+            return dataSource.name === '진흥기관';
+          case 'local':
+            return dataSource.name === '지자체';
+          case 'private':
+            // 민간: 공공기관이 아니고 진흥기관도 아니고 지자체도 아닌 경우
+            return !org.includes('부') && !org.includes('청') && 
+                   !org.includes('진흥원') && !org.includes('진흥공단') && !org.includes('진흥청') &&
+                   !org.includes('지자체') && !org.includes('시청') && !org.includes('군청') && !org.includes('구청') &&
+                   dataSource.name !== 'K-Startup' && dataSource.name !== '기업마당' && dataSource.name !== '소상공인마당' &&
+                   dataSource.name !== '고용노동부' && dataSource.name !== '행정안전부';
+          default:
+            return true;
+        }
       }
 
       // 검색
@@ -2168,13 +2697,29 @@
         </button>`;
 
         // 페이지 번호
-        for (let i = 1; i <= pagination.totalPages; i++) {
+        // 1부터 10까지는 모두 연속적으로 표시 (빈 칸 없이)
+        const displayCount = Math.min(10, pagination.totalPages);
+        for (let i = 1; i <= displayCount; i++) {
           if (i === pagination.page) {
             html += `<button class="page-btn active">${i}</button>`;
-          } else if (i === 1 || i === pagination.totalPages || Math.abs(i - pagination.page) <= 2) {
+          } else {
             html += `<button class="page-btn" onclick="loadPolicies(${i})">${i}</button>`;
-          } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+          }
+        }
+        
+        // 총 페이지가 10개를 넘는 경우에만 마지막 페이지 추가 표시
+        if (pagination.totalPages > 10 && pagination.page <= 10) {
+          html += `<span style="padding: 0 8px;">...</span>`;
+          html += `<button class="page-btn" onclick="loadPolicies(${pagination.totalPages})">${pagination.totalPages}</button>`;
+        } else if (pagination.totalPages > 10 && pagination.page > 10) {
+          // 현재 페이지가 10보다 큰 경우
+          if (pagination.page > 11) {
             html += `<span style="padding: 0 8px;">...</span>`;
+          }
+          html += `<button class="page-btn active">${pagination.page}</button>`;
+          if (pagination.page < pagination.totalPages) {
+            html += `<span style="padding: 0 8px;">...</span>`;
+            html += `<button class="page-btn" onclick="loadPolicies(${pagination.totalPages})">${pagination.totalPages}</button>`;
           }
         }
 
@@ -2184,6 +2729,13 @@
         </button>`;
 
         container.innerHTML = html;
+      }
+
+      // 모달에서 신청하기
+      function applyFromModal() {
+        if (selectedPolicy) {
+          applyPolicy(selectedPolicy.id, null, selectedPolicy);
+        }
       }
 
       // 정책 상세 보기
@@ -2244,6 +2796,14 @@
             }
           } else {
             appliedBtn.style.display = 'none';
+          }
+
+          // 신청하기 버튼 표시/숨김 처리
+          const modalApplyBtn = document.getElementById('modalApplyBtn');
+          if (selectedPolicy.application_url || selectedPolicy.website_url) {
+            modalApplyBtn.style.display = 'flex';
+          } else {
+            modalApplyBtn.style.display = 'none';
           }
           
           // 개인 메모 표시
@@ -2391,118 +2951,149 @@
           return null;
         };
         
-        // 1. K-Startup API의 신청 URL 우선 사용
+        // 특정 정책에 대한 URL 매핑 (제목 기반)
+        const policyTitle = policy.title || '';
+        if (policyTitle.includes('소상공인 정책자금 융자') || policyTitle.includes('정책자금 융자')) {
+          // 소상공인 정책자금 융자는 소상공인마당에서 신청
+          return 'https://www.sbiz.or.kr';
+        }
+        
+        // 1. application_url 최우선 사용 (각 공고의 실제 신청 URL)
         if (policy.application_url) {
           const normalized = normalizeUrl(policy.application_url);
-          if (normalized && !normalized.match(/^https?:\/\/[^\/]+$/)) {
+          if (normalized && normalized.startsWith('http')) {
+            // 유효한 URL이면 바로 사용 (단순 도메인도 포함)
             return normalized;
           }
         }
         
-        // 2. K-Startup API의 상세 페이지 URL 사용 (신청 페이지로 연결 가능)
+        // 2. website_url 사용 (각 공고의 상세 페이지 - 신청 페이지로 연결 가능)
+        // K-Startup, 소상공인마당 등은 상세 페이지에서 신청 가능
         if (policy.website_url) {
           const normalized = normalizeUrl(policy.website_url);
-          if (normalized) {
-            // K-Startup 상세 페이지인 경우 그대로 사용
-            if (normalized.includes('k-startup.go.kr')) {
+          if (normalized && normalized.startsWith('http')) {
+            // K-Startup 상세 페이지 (bizpbancDetail.do) - 그대로 사용 (상세 페이지에서 신청 가능)
+            if (normalized.includes('k-startup.go.kr') && 
+                (normalized.includes('bizpbancDetail') || normalized.includes('detail'))) {
               return normalized;
             }
-            // 다른 사이트의 상세 페이지도 사용 (홈페이지가 아닌 경우)
-            if (!normalized.match(/^https?:\/\/[^\/]+$/)) {
+            
+            // 소상공인마당 상세 페이지
+            if (normalized.includes('sbiz.or.kr') && 
+                (normalized.includes('detail') || normalized.includes('view'))) {
+              return normalized;
+            }
+            
+            // 기업마당 상세 페이지
+            if (normalized.includes('bizinfo.go.kr') && 
+                (normalized.includes('detail') || normalized.includes('view'))) {
+              return normalized;
+            }
+            
+            // 기타 상세 페이지 형태의 URL (detail, view, info 등이 포함된 경우)
+            if (normalized.match(/\/detail|\/view|\/info|\/notice|\/board/i)) {
+              return normalized;
+            }
+            
+            // 소상공인마당, 소상공인시장진흥공단, 기업마당, K-Startup의 경우 단순 도메인도 사용
+            if (normalized.includes('sbiz.or.kr') || normalized.includes('semas.or.kr') || 
+                normalized.includes('bizinfo.go.kr') || normalized.includes('k-startup.go.kr')) {
+              return normalized;
+            }
+            
+            // 단순 홈페이지가 아닌 URL (경로가 있는 경우만 사용)
+            const urlParts = normalized.split('/');
+            if (urlParts.length > 3) {
+              // 도메인 외에 경로가 있으면 사용 (예: /web/contents/..., /policy/... 등)
               return normalized;
             }
           }
         }
         
-        // 3. 정책 제목에 따라 실제 신청 페이지 매핑
-        const title = policy.title || '';
-        const org = policy.organization || '';
-        
-        // K-Startup 관련 정책
-        if (title.includes('K-Startup') || title.includes('창업') || title.includes('스타트업') || 
-            org.includes('창업진흥원') || org.includes('K-Startup')) {
-          // K-Startup 사업공고 페이지로 연결
-          return 'https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do';
-        }
-        
-        // 소상공인 정책자금 관련 - 소상공인마당 검색
-        if (title.includes('소상공인 정책자금') || title.includes('정책자금 융자')) {
-          return 'https://www.sbiz.or.kr/policy';
-        }
-        
-        // 스마트상점 관련 - 소상공인마당 검색
-        if (title.includes('스마트상점')) {
-          return 'https://www.sbiz.or.kr/policy';
-        }
-        
-        // 일자리 안정자금 - 고용노동부 메인
-        if (title.includes('일자리 안정') || title.includes('인건비')) {
-          return 'https://www.moel.go.kr';
-        }
-        
-        // 노란우산
-        if (title.includes('노란우산')) {
-          return 'https://www.yellowumbrella.or.kr';
-        }
-        
-        // 백년가게 - 소상공인마당 검색
-        if (title.includes('백년가게')) {
-          return 'https://www.sbiz.or.kr/policy';
-        }
-        
-        // 착한가격업소 - 행정안전부 메인
-        if (title.includes('착한가격')) {
-          return 'https://www.mois.go.kr';
-        }
-        
-        // 4. 기관별 기본 신청 페이지
-        if (org.includes('중소벤처기업부') || org.includes('중기부')) {
-          return 'https://www.bizinfo.go.kr';
-        }
-        
-        if (org.includes('소상공인') || org.includes('소상공인시장진흥공단') || org.includes('SEMAS')) {
-          return 'https://www.sbiz.or.kr';
-        }
-        
-        if (org.includes('고용노동부') || org.includes('고용부')) {
-          return 'https://www.moel.go.kr';
-        }
-        
-        if (org.includes('행정안전부') || org.includes('행안부')) {
-          return 'https://www.mois.go.kr';
-        }
-        
-        // 5. 기본값: K-Startup 사업공고 페이지 (가장 포괄적)
-        return 'https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do';
+        // 3. application_url과 website_url이 모두 없거나 유효하지 않은 경우
+        // 각 공고의 고유한 신청 URL이 필요하므로 null 반환
+        // (신청 URL을 관리자 페이지에서 등록해야 함)
+        return null;
       }
       
       // 정책 신청 (카드에서 직접 신청) - 실제 신청 사이트로 이동
-      async function applyPolicy(policyId, event) {
+      async function applyPolicy(policyId, event, policyData = null) {
         if (event) {
           event.stopPropagation(); // 카드 클릭 이벤트 방지
         }
 
-        // 정책 상세 정보 가져오기
+        let policy = policyData;
+
+        // 정책 데이터가 없으면 API에서 가져오기
+        if (!policy) {
+          try {
+            const response = await fetch(`${API_BASE}/api/policy-support?id=${policyId}`);
+            const result = await response.json();
+            
+            if (!result.success) throw new Error(result.error);
+            
+            policy = result.data;
+          } catch (error) {
+            console.error('정책 정보 가져오기 실패:', error);
+            alert('정책 정보를 가져올 수 없습니다.');
+            return;
+          }
+        }
+          
         try {
-          const response = await fetch(`${API_BASE}/api/policy-support?id=${policyId}`);
-          const result = await response.json();
-          
-          if (!result.success) throw new Error(result.error);
-          
-          const policy = result.data;
-          
           // 실제 신청 페이지 URL 가져오기
           const applicationUrl = getApplicationUrl(policy);
           
           if (applicationUrl) {
             // URL이 http:// 또는 https://로 시작하는지 확인
-            let finalUrl = applicationUrl;
-            if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
-              finalUrl = 'https://' + finalUrl;
+            let finalUrl = applicationUrl.trim();
+            
+            // URL 유효성 검사
+            try {
+              // URL 객체로 검증
+              const url = new URL(finalUrl);
+              finalUrl = url.href; // 정규화된 URL 사용
+            } catch (urlError) {
+              // URL이 유효하지 않으면 https:// 추가 시도
+              if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                finalUrl = 'https://' + finalUrl;
+              }
+              
+              // 다시 검증
+              try {
+                const url = new URL(finalUrl);
+                finalUrl = url.href;
+              } catch (e) {
+                throw new Error(`잘못된 URL 형식입니다: ${finalUrl}`);
+              }
             }
             
             // 실제 신청 사이트로 새 창에서 열기
-            window.open(finalUrl, '_blank');
+            try {
+              const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
+              
+              if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                // 팝업이 차단된 경우 같은 창에서 이동
+                if (confirm('팝업이 차단되었습니다. 현재 창에서 신청 페이지로 이동하시겠습니까?')) {
+                  window.location.href = finalUrl;
+                } else {
+                  // URL 복사 옵션 제공
+                  if (confirm('URL을 복사하시겠습니까?')) {
+                    navigator.clipboard.writeText(finalUrl).then(() => {
+                      alert('URL이 클립보드에 복사되었습니다:\n' + finalUrl);
+                    }).catch(() => {
+                      alert('URL을 복사할 수 없습니다. 아래 URL을 직접 복사하세요:\n' + finalUrl);
+                    });
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('신청 페이지 열기 실패:', error);
+              // 에러 발생 시 같은 창에서 이동
+              if (confirm('신청 페이지를 여는 중 오류가 발생했습니다.\n\n현재 창에서 신청 페이지로 이동하시겠습니까?')) {
+                window.location.href = finalUrl;
+              }
+            }
             
             // 로그인한 경우 신청 상태 기록 (선택적)
             const token = await getAccessToken();
@@ -2527,12 +3118,32 @@
               }
             }
           } else {
-            // 신청 URL이 없으면 안내
+            // 신청 URL이 없으면 안내 및 상세 정보 표시
             const contactInfo = policy.contact_info || policy.phone_number || '별도 문의';
-            const message = `"${policy.title}" 정책의 신청 페이지 URL이 등록되지 않았습니다.\n\n` +
-                          `문의처: ${contactInfo}\n\n` +
-                          `관리자 페이지에서 신청 URL을 등록해주세요.`;
-            alert(message);
+            const websiteUrl = policy.website_url || policy.homepage_url || '';
+            let message = `"${policy.title}" 정책의 신청 페이지 URL이 등록되지 않았습니다.\n\n`;
+            message += `문의처: ${contactInfo}\n`;
+            
+            if (websiteUrl) {
+              message += `홈페이지: ${websiteUrl}\n\n`;
+              message += `위 홈페이지에서 신청 방법을 확인하시겠습니까?`;
+              
+              if (confirm(message)) {
+                let url = websiteUrl.trim();
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                  url = 'https://' + url;
+                }
+                try {
+                  const urlObj = new URL(url);
+                  window.open(urlObj.href, '_blank', 'noopener,noreferrer');
+                } catch (e) {
+                  alert('홈페이지 URL이 올바르지 않습니다: ' + url);
+                }
+              }
+            } else {
+              message += `\n관리자 페이지에서 신청 URL을 등록해주세요.`;
+              alert(message);
+            }
           }
           
         } catch (error) {
@@ -2546,53 +3157,6 @@
         // 외부 사이트로 이동하지 않고 바로 신청 처리
         if (selectedPolicy) {
           markAsApplied();
-        }
-      }
-
-      // 중요 정책 확인
-      async function checkFeaturedPolicies() {
-        try {
-          const response = await fetch(`${API_BASE}/api/policy-support?status=active&limit=5`);
-          const result = await response.json();
-          
-          if (result.success && result.data) {
-            const featured = result.data.filter(p => p.is_featured);
-            if (featured.length > 0) {
-              const banner = document.getElementById('featuredBanner');
-              const desc = document.getElementById('featuredDesc');
-              
-              desc.textContent = featured.map(p => `• ${p.title}`).join('\n');
-              banner.style.display = 'block';
-            }
-          }
-        } catch (error) {
-          console.error('Featured policies error:', error);
-        }
-      }
-
-      // 카테고리별 통계 로드
-      async function loadCategoryStats() {
-        try {
-          const response = await fetch(`${API_BASE}/api/policy-support/categories`);
-          const result = await response.json();
-          
-          if (result.success && result.data) {
-            const stats = result.data;
-            Object.keys(stats).forEach(category => {
-              const countEl = document.querySelector(`[data-category="${category}"]`);
-              if (countEl) {
-                countEl.textContent = stats[category] || 0;
-              }
-            });
-            
-            // 통계 섹션 표시
-            const statsSection = document.getElementById('categoryStats');
-            if (statsSection) {
-              statsSection.style.display = 'block';
-            }
-          }
-        } catch (error) {
-          console.error('Category stats error:', error);
         }
       }
 

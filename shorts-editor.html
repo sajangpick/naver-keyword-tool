@@ -388,6 +388,39 @@
             font-weight: 800;
             color: var(--text-primary);
             margin-bottom: 12px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .preparing-badge-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .preparing-badge {
+            display: inline-block;
+            background: var(--warning);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 12px;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        }
+
+        .preparing-message {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
         }
 
         .page-subtitle {
@@ -1519,6 +1552,19 @@
                 font-size: 24px;
             }
 
+            .preparing-badge-container {
+                margin-bottom: 10px;
+            }
+
+            .preparing-badge {
+                font-size: 11px;
+                padding: 3px 10px;
+            }
+
+            .preparing-message {
+                font-size: 12px;
+            }
+
             .page-subtitle {
                 font-size: 14px;
             }
@@ -1587,6 +1633,20 @@
 
             .page-title {
                 font-size: 22px;
+            }
+
+            .preparing-badge-container {
+                margin-bottom: 8px;
+                gap: 6px;
+            }
+
+            .preparing-badge {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+
+            .preparing-message {
+                font-size: 11px;
             }
 
             .mode-tab {
@@ -1713,7 +1773,7 @@
       </a>
       <a class="menu-item" href="./news-board.html">
         <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
-        <span>정보</span>
+        <span>뉴스</span>
       </a>
       <a class="menu-item" href="./policy-support.html">
         <span class="ico"><i class="fa-solid fa-coins"></i></span>
@@ -1726,6 +1786,10 @@
         <div class="container">
         <!-- 페이지 헤더 -->
         <div class="page-header">
+            <div class="preparing-badge-container">
+                <span class="preparing-badge">준비중</span>
+                <span class="preparing-message">✨ 조금만 기다려주세요! ✨</span>
+            </div>
             <h1 class="page-title">🎬 AI로 만드는 프로 영상</h1>
             <p class="page-subtitle">
                 사진 한 장과 간단한 정보만으로 SNS 홍보 영상을 자동으로 만들어드립니다.<br>
