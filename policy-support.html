@@ -1117,6 +1117,7 @@
         border-radius: 12px;
         font-size: 12px;
         font-weight: 600;
+        z-index: 1;
       }
 
       /* 데이터 출처 배지 */
@@ -1128,7 +1129,7 @@
         border-radius: 10px;
         font-size: 10px;
         font-weight: 600;
-        z-index: 1;
+        z-index: 2;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
       }
 
@@ -1150,6 +1151,18 @@
 
       .source-mois {
         background: #607D8B !important;
+      }
+
+      .source-yellow {
+        background: #FFC107 !important;
+      }
+
+      .source-local {
+        background: #795548 !important;
+      }
+
+      .source-agency {
+        background: #3F51B5 !important;
       }
 
       .source-other {
@@ -1510,6 +1523,32 @@
         margin-bottom: 24px;
       }
 
+      .modal-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .modal-apply-btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        background: var(--primary);
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .modal-apply-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+      }
+
       .modal-close {
         width: 32px;
         height: 32px;
@@ -1852,7 +1891,12 @@
             <h2 id="modalTitle" style="margin-top: 12px; font-size: 24px;"></h2>
             <div class="policy-amount" id="modalAmount" style="margin-top: 8px;"></div>
           </div>
-          <button class="modal-close" onclick="closeModal()">×</button>
+          <div class="modal-actions">
+            <button class="modal-apply-btn" id="modalApplyBtn" onclick="applyFromModal()">
+              <i class="fas fa-external-link-alt"></i> 신청하기
+            </button>
+            <button class="modal-close" onclick="closeModal()">×</button>
+          </div>
         </div>
 
         <div class="detail-section">
@@ -2082,6 +2126,53 @@
         }
       }
 
+      // 데이터 출처 판별
+      function getDataSource(policy) {
+        const url = policy.website_url || policy.application_url || '';
+        const org = policy.organization || '';
+        
+        if (url.includes('k-startup.go.kr') || org.includes('창업진흥원') || org.includes('K-Startup')) {
+          return { name: 'K-Startup', class: 'source-kstartup', color: '#2196F3' };
+        } else if (url.includes('bizinfo.go.kr') || org.includes('중소벤처기업부') || org.includes('중기부')) {
+          return { name: '기업마당', class: 'source-bizinfo', color: '#4CAF50' };
+        } else if (url.includes('sbiz.or.kr') || org.includes('소상공인') || org.includes('SEMAS')) {
+          return { name: '소상공인마당', class: 'source-sbiz', color: '#FF9800' };
+        } else if (url.includes('moel.go.kr') || org.includes('고용노동부')) {
+          return { name: '고용노동부', class: 'source-moel', color: '#9C27B0' };
+        } else if (url.includes('mois.go.kr') || org.includes('행정안전부')) {
+          return { name: '행정안전부', class: 'source-mois', color: '#607D8B' };
+        } else if (url.includes('yellowumbrella.or.kr') || org.includes('노란우산')) {
+          return { name: '노란우산', class: 'source-yellow', color: '#FFC107' };
+        } else if (org.includes('지자체') || org.includes('시청') || org.includes('군청') || org.includes('구청')) {
+          return { name: '지자체', class: 'source-local', color: '#795548' };
+        } else if (org.includes('진흥원') || org.includes('진흥공단') || org.includes('진흥청')) {
+          return { name: '진흥기관', class: 'source-agency', color: '#3F51B5' };
+        } else {
+          // 기타인 경우 기관명의 일부를 표시
+          let sourceName = '기타';
+          if (org) {
+            // 기관명에서 핵심 키워드 추출
+            const keywords = ['부', '청', '원', '공단', '협회', '재단', '센터'];
+            for (const keyword of keywords) {
+              const index = org.indexOf(keyword);
+              if (index > 0) {
+                sourceName = org.substring(0, index + 1);
+                break;
+              }
+            }
+            // 너무 길면 줄임
+            if (sourceName.length > 6) {
+              sourceName = sourceName.substring(0, 6) + '..';
+            }
+            // 여전히 "기타"면 기관명 첫 3글자 사용
+            if (sourceName === '기타' && org && org.length > 0) {
+              sourceName = org.length > 4 ? org.substring(0, 4) + '..' : org;
+            }
+          }
+          return { name: sourceName, class: 'source-other', color: '#757575' };
+        }
+      }
+
       // 정책 카드 렌더링
       async function renderPolicies(policies) {
         const grid = document.getElementById('policyGrid');
@@ -2160,35 +2251,16 @@
             statusText = '마감';
           }
 
-          // 데이터 출처 판별
-          const getDataSource = (policy) => {
-            const url = policy.website_url || policy.application_url || '';
-            const org = policy.organization || '';
-            
-            if (url.includes('k-startup.go.kr') || org.includes('창업진흥원') || org.includes('K-Startup')) {
-              return { name: 'K-Startup', class: 'source-kstartup', color: '#2196F3' };
-            } else if (url.includes('bizinfo.go.kr') || org.includes('중소벤처기업부') || org.includes('중기부')) {
-              return { name: '기업마당', class: 'source-bizinfo', color: '#4CAF50' };
-            } else if (url.includes('sbiz.or.kr') || org.includes('소상공인') || org.includes('SEMAS')) {
-              return { name: '소상공인마당', class: 'source-sbiz', color: '#FF9800' };
-            } else if (url.includes('moel.go.kr') || org.includes('고용노동부')) {
-              return { name: '고용노동부', class: 'source-moel', color: '#9C27B0' };
-            } else if (url.includes('mois.go.kr') || org.includes('행정안전부')) {
-              return { name: '행정안전부', class: 'source-mois', color: '#607D8B' };
-            } else {
-              return { name: '기타', class: 'source-other', color: '#757575' };
-            }
-          };
 
           const dataSource = getDataSource(policy);
 
           return `
             <div class="policy-card" onclick="openPolicyDetail(${policy.id})">
-              <div class="policy-status ${statusClass}">${statusText}</div>
-              ${isApplied ? `<div class="policy-status" style="top: 50px; background: #4caf50; color: white;">신청완료</div>` : ''}
-              <div class="data-source-badge ${dataSource.class}" style="position: absolute; top: 16px; left: 16px; background: ${dataSource.color}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; z-index: 1;">
+              <div class="data-source-badge ${dataSource.class}" style="position: absolute; top: 16px; left: 16px; background: ${dataSource.color}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; z-index: 2;">
                 ${dataSource.name}
               </div>
+              <div class="policy-status ${statusClass}" style="top: 16px; right: 16px; left: auto;">${statusText}</div>
+              ${isApplied ? `<div class="policy-status" style="top: 50px; right: 16px; left: auto; background: #4caf50; color: white;">신청완료</div>` : ''}
               
               <div class="policy-header">
                 <span class="policy-org">${policy.organization}</span>
@@ -2222,11 +2294,9 @@
                   <i class="${isBookmarked ? 'fas' : 'far'} fa-bookmark"></i>
                   ${isBookmarked ? '저장됨' : '저장'}
                 </button>
-                ${(policy.application_url || policy.website_url) ? `
-                  <button class="policy-btn primary" onclick="applyPolicy(${policy.id}, event)">
-                    <i class="fas fa-check-circle"></i> 신청
-                  </button>
-                ` : ''}
+                <button class="policy-btn primary" onclick="openPolicyDetail(${policy.id}); event.stopPropagation();">
+                  <i class="fas fa-info-circle"></i> 신청조건
+                </button>
               </div>
             </div>
           `;
@@ -2494,6 +2564,13 @@
         container.innerHTML = html;
       }
 
+      // 모달에서 신청하기
+      function applyFromModal() {
+        if (selectedPolicy) {
+          applyPolicy(selectedPolicy.id, null, selectedPolicy);
+        }
+      }
+
       // 정책 상세 보기
       async function openPolicyDetail(id) {
         try {
@@ -2552,6 +2629,14 @@
             }
           } else {
             appliedBtn.style.display = 'none';
+          }
+
+          // 신청하기 버튼 표시/숨김 처리
+          const modalApplyBtn = document.getElementById('modalApplyBtn');
+          if (selectedPolicy.application_url || selectedPolicy.website_url) {
+            modalApplyBtn.style.display = 'flex';
+          } else {
+            modalApplyBtn.style.display = 'none';
           }
           
           // 개인 메모 표시
@@ -2752,19 +2837,28 @@
       }
       
       // 정책 신청 (카드에서 직접 신청) - 실제 신청 사이트로 이동
-      async function applyPolicy(policyId, event) {
+      async function applyPolicy(policyId, event, policyData = null) {
         if (event) {
           event.stopPropagation(); // 카드 클릭 이벤트 방지
         }
 
-        // 정책 상세 정보 가져오기
-        try {
-          const response = await fetch(`${API_BASE}/api/policy-support?id=${policyId}`);
-          const result = await response.json();
-          
-          if (!result.success) throw new Error(result.error);
-          
-          const policy = result.data;
+        let policy = policyData;
+
+        // 정책 데이터가 없으면 API에서 가져오기
+        if (!policy) {
+          try {
+            const response = await fetch(`${API_BASE}/api/policy-support?id=${policyId}`);
+            const result = await response.json();
+            
+            if (!result.success) throw new Error(result.error);
+            
+            policy = result.data;
+          } catch (error) {
+            console.error('정책 정보 가져오기 실패:', error);
+            alert('정책 정보를 가져올 수 없습니다.');
+            return;
+          }
+        }
           
           // 실제 신청 페이지 URL 가져오기
           const applicationUrl = getApplicationUrl(policy);
