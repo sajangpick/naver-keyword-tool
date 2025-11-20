@@ -7,12 +7,21 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <!-- 사이트 설명 (SEO) -->
-    <meta name="description" content="AI가 추천하는 300개 이상의 검증된 레시피! 재료별, 가격대별 검색, 상세 조리법까지. 식당 메뉴 개발의 든든한 동반자." />
-    <meta name="keywords" content="레시피 관리, AI 레시피, 메뉴 개발, 조리법, 식당 레시피" />
+    <meta
+      name="description"
+      content="AI가 추천하는 300개 이상의 검증된 레시피! 재료별, 가격대별 검색, 상세 조리법까지. 식당 메뉴 개발의 든든한 동반자."
+    />
+    <meta
+      name="keywords"
+      content="레시피 관리, AI 레시피, 메뉴 개발, 조리법, 식당 레시피"
+    />
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="레시피 관리 시스템 - 사장픽" />
-    <meta property="og:description" content="AI가 추천하는 300개 이상의 검증된 레시피. 식당 메뉴 개발의 든든한 동반자" />
+    <meta
+      property="og:description"
+      content="AI가 추천하는 300개 이상의 검증된 레시피. 식당 메뉴 개발의 든든한 동반자"
+    />
     <meta property="og:site_name" content="사장픽" />
     <title>레시피 관리 시스템 - 사장픽</title>
     <link
@@ -331,7 +340,7 @@
 
         /* 오른쪽 페이드아웃 효과 */
         .side-nav::after {
-          content: '';
+          content: "";
           position: absolute;
           top: 0;
           right: 0;
@@ -346,7 +355,7 @@
 
         /* 오른쪽 화살표 인디케이터 */
         .side-nav::before {
-          content: '→';
+          content: "→";
           position: absolute;
           top: 50%;
           right: 8px;
@@ -361,7 +370,8 @@
         }
 
         @keyframes slideHintSide {
-          0%, 100% {
+          0%,
+          100% {
             transform: translateY(-50%) translateX(0);
           }
           50% {
@@ -448,7 +458,7 @@
 
         /* 오른쪽 페이드아웃 효과 */
         .side-nav::after {
-          content: '';
+          content: "";
           position: absolute;
           top: 0;
           right: 0;
@@ -463,7 +473,7 @@
 
         /* 오른쪽 화살표 인디케이터 */
         .side-nav::before {
-          content: '→';
+          content: "→";
           position: absolute;
           top: 50%;
           right: 6px;
@@ -1103,9 +1113,9 @@
       }
 
       .btn-primary:hover {
-        background: #059669;
+        background: #ff6b3d;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 4px 12px rgba(255, 123, 84, 0.4);
       }
 
       .btn-secondary {
@@ -1754,7 +1764,11 @@
                 >
               </div>
 
-              <form class="search-form" id="searchForm">
+              <form
+                class="search-form"
+                id="searchForm"
+                onsubmit="event.preventDefault(); searchRecipes(); return false;"
+              >
                 <div class="form-group">
                   <label>검색어</label>
                   <input
@@ -1895,7 +1909,7 @@
                     <strong style="font-size: 18px">선택한 요리:</strong>
                     <span
                       id="selectedDishName"
-                      style="color: #4caf50; font-size: 18px; font-weight: bold"
+                      style="color: #ff7b54; font-size: 18px; font-weight: bold"
                     ></span>
                   </p>
                 </div>
@@ -2192,10 +2206,18 @@
         // ===== 사용자 정보 로드 =====
         async function loadUserInfo() {
           try {
-            const userStr = localStorage.getItem("user");
+            // localStorage에서 사용자 정보 확인 (userData 키 사용)
+            const userStr = localStorage.getItem("userData");
             if (userStr) {
               const user = JSON.parse(userStr);
-              currentUserId = user.id;
+              currentUserId = user.id || user.user_id;
+              window.currentUserId = currentUserId; // 전역 설정
+              console.log(
+                "[recipe-manager] 사용자 ID 로드 완료:",
+                currentUserId
+              );
+            } else {
+              console.log("[recipe-manager] 로그인 정보 없음");
             }
           } catch (error) {
             console.error("사용자 정보 로드 실패:", error);
@@ -2250,7 +2272,7 @@
               `${API_BASE_URL}/api/recipes/search?${params}`,
               {
                 headers: {
-                  "user-id": window.currentUserId || "",
+                  "user-id": currentUserId || window.currentUserId || "",
                 },
               }
             );
@@ -2524,21 +2546,44 @@
           grid.innerHTML = "";
 
           try {
-            const response = await fetch(
-              `${API_BASE_URL}/api/recipes/my/list`,
-              {
-                headers: {
-                  "user-id": currentUserId,
-                },
-              }
-            );
-            const result = await response.json();
+            console.log("[recipe-manager] 내 레시피 로드 (localStorage)");
 
-            if (result.success) {
-              displayRecipes(result.data, grid);
-            } else {
-              grid.innerHTML = "<p>레시피 로드에 실패했습니다.</p>";
+            // localStorage에서 내 레시피 목록 가져오기
+            const myRecipesKey = `myRecipes_${currentUserId}`;
+            const savedRecipes = localStorage.getItem(myRecipesKey);
+
+            if (!savedRecipes) {
+              grid.innerHTML =
+                '<p style="text-align: center; color: #6B7280;">저장된 레시피가 없습니다.</p>';
+              return;
             }
+
+            const myRecipes = JSON.parse(savedRecipes);
+
+            if (myRecipes.length === 0) {
+              grid.innerHTML =
+                '<p style="text-align: center; color: #6B7280;">저장된 레시피가 없습니다.</p>';
+              return;
+            }
+
+            // 레시피 카드 표시 형식으로 변환
+            const recipesForDisplay = myRecipes.map((recipe) => ({
+              id: recipe.id,
+              name: recipe.name,
+              description:
+                recipe.description ||
+                recipe.recipeText?.substring(0, 100) + "..." ||
+                "AI가 생성한 레시피",
+              category: recipe.category || "기타",
+              difficulty: recipe.difficulty || "중급",
+              servings: recipe.servings || 4,
+              total_time: recipe.total_time || 60,
+              rating: 0,
+              source_type: recipe.source_type || "user_created",
+            }));
+
+            displayRecipes(recipesForDisplay, grid);
+            console.log(`✅ ${myRecipes.length}개 내 레시피 로드 완료`);
           } catch (error) {
             console.error("내 레시피 로드 오류:", error);
             grid.innerHTML = "<p>레시피 로드 중 오류가 발생했습니다.</p>";
@@ -2562,21 +2607,49 @@
           container.innerHTML = "";
 
           try {
-            const response = await fetch(
-              `${API_BASE_URL}/api/recipes/my/bookmarks`,
-              {
-                headers: {
-                  "user-id": currentUserId,
-                },
-              }
-            );
-            const result = await response.json();
+            console.log("[recipe-manager] 북마크 로드 (localStorage)");
 
-            if (result.success) {
-              displayBookmarkFolders(result.data, container);
-            } else {
-              container.innerHTML = "<p>북마크 로드에 실패했습니다.</p>";
+            // localStorage에서 북마크 목록 가져오기
+            const bookmarksKey = `bookmarks_${currentUserId}`;
+            const savedBookmarks = localStorage.getItem(bookmarksKey);
+
+            if (!savedBookmarks) {
+              container.innerHTML =
+                '<p style="text-align: center; color: #6B7280;">북마크한 레시피가 없습니다.</p>';
+              return;
             }
+
+            const bookmarks = JSON.parse(savedBookmarks);
+
+            if (bookmarks.length === 0) {
+              container.innerHTML =
+                '<p style="text-align: center; color: #6B7280;">북마크한 레시피가 없습니다.</p>';
+              return;
+            }
+
+            // 폴더별로 그룹화
+            const folders = {};
+            bookmarks.forEach((bookmark) => {
+              const folder = bookmark.folder || "기본";
+              if (!folders[folder]) {
+                folders[folder] = [];
+              }
+              folders[folder].push({
+                recipe: {
+                  id: bookmark.recipeId,
+                  name: bookmark.recipeName,
+                  category: bookmark.recipeCategory,
+                  description: "북마크한 레시피",
+                  image_url: bookmark.recipeImage,
+                  total_time: 60,
+                  servings: 4,
+                  rating: 0,
+                },
+              });
+            });
+
+            displayBookmarkFolders(folders, container);
+            console.log(`✅ ${bookmarks.length}개 북마크 로드 완료`);
           } catch (error) {
             console.error("북마크 로드 오류:", error);
             container.innerHTML = "<p>북마크 로드 중 오류가 발생했습니다.</p>";
@@ -2671,9 +2744,9 @@
           const suggestionsDiv = document.getElementById("dishSuggestions");
 
           let html = `
-                <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 10px 0; color: #2e7d32;">🎉 ${dishes.length}가지 요리를 제안합니다!</h4>
-                    <p style="margin: 0; color: #558b2f;">원하는 요리를 선택하면 상세 레시피를 만들어드립니다.</p>
+                <div style="background: #ffe8d9; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #ff7b54;">🎉 ${dishes.length}가지 요리를 제안합니다!</h4>
+                    <p style="margin: 0; color: #ff6b3d;">원하는 요리를 선택하면 상세 레시피를 만들어드립니다.</p>
                 </div>
                 
                 <div style="display: grid; gap: 16px;" id="dishCardsContainer">
@@ -2683,9 +2756,9 @@
             html += `
                     <div class="dish-card" data-index="${index}"
                          style="padding: 20px; background: white; border: 2px solid #e0e0e0; border-radius: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 20px;"
-                         onmouseover="this.style.borderColor='#4CAF50'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.2)'; this.style.transform='translateY(-2px)';"
+                         onmouseover="this.style.borderColor='#ff7b54'; this.style.boxShadow='0 4px 12px rgba(255, 123, 84, 0.3)'; this.style.transform='translateY(-2px)';"
                          onmouseout="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'; this.style.transform='translateY(0)';">
-                        <div style="flex-shrink: 0; width: 50px; height: 50px; background: linear-gradient(135deg, #4CAF50, #45a049); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
+                        <div style="flex-shrink: 0; width: 50px; height: 50px; background: linear-gradient(135deg, #ff7b54, #ff6b3d); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
                             ${index + 1}
                         </div>
                         <div style="flex: 1;">
@@ -2696,7 +2769,7 @@
                               dish.description
                             }</p>
                         </div>
-                        <div style="flex-shrink: 0; color: #4CAF50; font-size: 24px;">
+                        <div style="flex-shrink: 0; color: #ff7b54; font-size: 24px;">
                             →
                         </div>
                     </div>
@@ -2802,7 +2875,17 @@
         }
 
         // ===== AI 레시피 표시 =====
+        let currentAIRecipe = null; // AI 생성 레시피 데이터 저장
+
         function displayAIRecipe(data, container) {
+          // AI 레시피 데이터 저장
+          currentAIRecipe = {
+            name: selectedDish?.name || "AI 생성 레시피",
+            recipeText: data.recipe,
+            ingredients: selectedDish?.ingredients || "",
+            generatedAt: new Date().toISOString(),
+          };
+
           container.innerHTML = `
                 <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid var(--primary-color);">
                     <h3 style="color: var(--primary-color); margin-bottom: 15px;">
@@ -2820,9 +2903,92 @@
             `;
         }
 
+        // ===== AI 레시피 저장 =====
+        async function saveAIRecipe() {
+          if (!currentAIRecipe) {
+            alert("저장할 레시피가 없습니다.");
+            return;
+          }
+
+          // 로그인 확인
+          if (!currentUserId) {
+            try {
+              const userStr = localStorage.getItem("userData");
+              if (userStr) {
+                const user = JSON.parse(userStr);
+                currentUserId = user.id || user.user_id;
+                window.currentUserId = currentUserId;
+              }
+            } catch (error) {
+              console.error("사용자 정보 확인 실패:", error);
+            }
+          }
+
+          if (!currentUserId) {
+            alert("로그인이 필요합니다.");
+            window.location.href = "/login.html";
+            return;
+          }
+
+          try {
+            console.log(
+              "[recipe-manager] AI 레시피 저장 시작:",
+              currentAIRecipe.name
+            );
+
+            // localStorage에서 내 레시피 목록 가져오기
+            const myRecipesKey = `myRecipes_${currentUserId}`;
+            let myRecipes = [];
+
+            try {
+              const savedRecipes = localStorage.getItem(myRecipesKey);
+              if (savedRecipes) {
+                myRecipes = JSON.parse(savedRecipes);
+              }
+            } catch (e) {
+              console.error("내 레시피 로드 오류:", e);
+              myRecipes = [];
+            }
+
+            // 새 레시피 생성
+            const newRecipe = {
+              id: `ai-${Date.now()}`,
+              name: currentAIRecipe.name,
+              description: currentAIRecipe.recipeText.substring(0, 200) + "...",
+              category: "기타",
+              difficulty: "중급",
+              servings: 4,
+              total_time: 60,
+              ingredients: currentAIRecipe.ingredients,
+              recipeText: currentAIRecipe.recipeText,
+              source_type: "ai_generated",
+              created_at: currentAIRecipe.generatedAt,
+              updated_at: new Date().toISOString(),
+            };
+
+            // 레시피 추가
+            myRecipes.push(newRecipe);
+            localStorage.setItem(myRecipesKey, JSON.stringify(myRecipes));
+
+            console.log("✅ AI 레시피 저장 완료 (localStorage):", newRecipe);
+            alert(
+              `"${newRecipe.name}" 레시피가 저장되었습니다!\n\n"내 레시피" 탭에서 확인하실 수 있습니다.`
+            );
+
+            // 저장 후 내 레시피 탭으로 이동 (선택사항)
+            // document.querySelector('[data-tab="my-recipes"]').click();
+          } catch (error) {
+            console.error("AI 레시피 저장 오류:", error);
+            alert("레시피 저장 중 오류가 발생했습니다.");
+          }
+        }
+
         // ===== 레시피 상세 보기 =====
+        let currentRecipeData = null; // 현재 레시피 데이터 저장
+
         async function showRecipeDetail(recipeId) {
           currentRecipeId = recipeId;
+          currentRecipeData = null; // 초기화
           const modal = document.getElementById("recipeModal");
           const modalBody = document.getElementById("modalBody");
 
@@ -2830,6 +2996,70 @@
           modal.classList.add("active");
 
           try {
+            // AI 생성 레시피인 경우 localStorage에서 가져오기
+            if (recipeId.startsWith("ai-")) {
+              console.log(
+                "[recipe-manager] AI 생성 레시피 상세 조회:",
+                recipeId
+              );
+
+              const myRecipesKey = `myRecipes_${currentUserId}`;
+              const savedRecipes = localStorage.getItem(myRecipesKey);
+
+              if (savedRecipes) {
+                const myRecipes = JSON.parse(savedRecipes);
+                const recipe = myRecipes.find((r) => r.id === recipeId);
+
+                if (recipe) {
+                  currentRecipeData = recipe;
+
+                  // AI 레시피 전용 표시
+                  modalBody.innerHTML = `
+                    <div>
+                      <div style="background: #ffe8d9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #ff7b54; font-weight: 600;">
+                          🤖 AI가 생성한 레시피입니다
+                        </p>
+                      </div>
+                      
+                      <div style="white-space: pre-wrap; line-height: 1.8; color: #1f2937;">
+                        ${recipe.recipeText || recipe.description}
+                      </div>
+                      
+                      ${
+                        recipe.ingredients
+                          ? `
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                          <strong style="color: #ff7b54;">📝 재료:</strong>
+                          <p style="margin-top: 10px;">${recipe.ingredients}</p>
+                        </div>
+                      `
+                          : ""
+                      }
+                      
+                      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                        <small style="color: #6B7280;">
+                          생성일시: ${new Date(
+                            recipe.created_at
+                          ).toLocaleString("ko-KR")}
+                        </small>
+                      </div>
+                    </div>
+                  `;
+
+                  // 북마크 버튼 숨기기 (이미 내 레시피에 있으므로)
+                  const bookmarkBtn = document.getElementById("bookmarkBtn");
+                  bookmarkBtn.style.display = "none";
+
+                  return;
+                }
+              }
+
+              modalBody.innerHTML = "<p>레시피를 찾을 수 없습니다.</p>";
+              return;
+            }
+
+            // 일반 레시피 (공공 API 또는 샘플)
             const response = await fetch(
               `${API_BASE_URL}/api/recipes/${recipeId}`,
               {
@@ -2841,13 +3071,36 @@
             const result = await response.json();
 
             if (result.success) {
+              currentRecipeData = result.data; // 레시피 데이터 저장
               displayRecipeDetail(result.data, modalBody);
+
+              // localStorage에서 북마크 상태 확인
+              const bookmarksKey = `bookmarks_${currentUserId}`;
+              let isBookmarked = false;
+
+              try {
+                const savedBookmarks = localStorage.getItem(bookmarksKey);
+                if (savedBookmarks) {
+                  const bookmarks = JSON.parse(savedBookmarks);
+                  isBookmarked = bookmarks.some(
+                    (b) => b.recipeId === currentRecipeId
+                  );
+                }
+              } catch (e) {
+                console.error("북마크 상태 확인 오류:", e);
+              }
 
               // 북마크 버튼 업데이트
               const bookmarkBtn = document.getElementById("bookmarkBtn");
-              bookmarkBtn.innerHTML = result.data.isBookmarked
+              bookmarkBtn.style.display = "inline-flex"; // 버튼 다시 표시
+              bookmarkBtn.innerHTML = isBookmarked
                 ? "북마크 제거"
                 : "북마크 추가";
+
+              console.log(
+                "[recipe-manager] 북마크 상태:",
+                isBookmarked ? "북마크됨" : "북마크 안 됨"
+              );
             } else {
               modalBody.innerHTML = "<p>레시피를 불러올 수 없습니다.</p>";
             }
@@ -2982,31 +3235,85 @@
 
         // ===== 북마크 토글 =====
         async function toggleBookmark() {
+          // currentUserId가 없으면 localStorage에서 다시 확인
+          if (!currentUserId) {
+            try {
+              const userStr = localStorage.getItem("userData");
+              if (userStr) {
+                const user = JSON.parse(userStr);
+                currentUserId = user.id || user.user_id;
+                window.currentUserId = currentUserId;
+                console.log(
+                  "[recipe-manager] 북마크 토글 시 사용자 ID 재설정:",
+                  currentUserId
+                );
+              }
+            } catch (error) {
+              console.error("사용자 정보 재확인 실패:", error);
+            }
+          }
+
+          // 여전히 currentUserId가 없으면 로그인 필요
           if (!currentUserId) {
             alert("로그인이 필요합니다.");
+            window.location.href = "/login.html";
             return;
           }
 
           try {
-            const response = await fetch(
-              `${API_BASE_URL}/api/recipes/bookmark/${currentRecipeId}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "user-id": currentUserId,
-                },
+            console.log("[recipe-manager] 북마크 토글 (localStorage 방식):", {
+              recipeId: currentRecipeId,
+              userId: currentUserId,
+            });
+
+            // localStorage에서 북마크 목록 가져오기
+            const bookmarksKey = `bookmarks_${currentUserId}`;
+            let bookmarks = [];
+
+            try {
+              const savedBookmarks = localStorage.getItem(bookmarksKey);
+              if (savedBookmarks) {
+                bookmarks = JSON.parse(savedBookmarks);
               }
+            } catch (e) {
+              console.error("북마크 로드 오류:", e);
+              bookmarks = [];
+            }
+
+            // 현재 레시피가 북마크되어 있는지 확인
+            const bookmarkIndex = bookmarks.findIndex(
+              (b) => b.recipeId === currentRecipeId
             );
 
-            const result = await response.json();
+            if (bookmarkIndex !== -1) {
+              // 북마크 제거
+              bookmarks.splice(bookmarkIndex, 1);
+              localStorage.setItem(bookmarksKey, JSON.stringify(bookmarks));
 
-            if (result.success) {
               const bookmarkBtn = document.getElementById("bookmarkBtn");
-              bookmarkBtn.innerHTML = result.bookmarked
-                ? "북마크 제거"
-                : "북마크 추가";
-              alert(result.message);
+              bookmarkBtn.innerHTML = "북마크 추가";
+
+              console.log("✅ 북마크 제거 완료 (localStorage)");
+              alert("북마크가 제거되었습니다.");
+            } else {
+              // 북마크 추가
+              const newBookmark = {
+                recipeId: currentRecipeId,
+                recipeName: currentRecipeData?.name || "레시피",
+                recipeCategory: currentRecipeData?.category || "기타",
+                recipeImage: currentRecipeData?.image_url || null,
+                addedAt: new Date().toISOString(),
+                folder: "기본",
+              };
+
+              bookmarks.push(newBookmark);
+              localStorage.setItem(bookmarksKey, JSON.stringify(bookmarks));
+
+              const bookmarkBtn = document.getElementById("bookmarkBtn");
+              bookmarkBtn.innerHTML = "북마크 제거";
+
+              console.log("✅ 북마크 추가 완료 (localStorage):", newBookmark);
+              alert("북마크가 추가되었습니다.");
             }
           } catch (error) {
             console.error("북마크 토글 오류:", error);
@@ -3124,24 +3431,35 @@
 
       async function updateAuthUI() {
         const currentToken = ++authRenderToken;
-        
+
         // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
         const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
         const rawUser = localStorage.getItem("userData");
-        
+
         let currentUser = null;
-        
+
         if (isLoggedIn && rawUser) {
           try {
             currentUser = JSON.parse(rawUser);
-            console.log('[recipe-manager] localStorage 사용자 정보:', { email: currentUser.email });
-            
+            console.log("[recipe-manager] localStorage 사용자 정보:", {
+              email: currentUser.email,
+              id: currentUser.id,
+            });
+
+            // 전역 currentUserId 설정
+            currentUserId = currentUser.id || currentUser.user_id;
+            window.currentUserId = currentUserId;
+            console.log(
+              "[recipe-manager] currentUserId 설정 완료:",
+              currentUserId
+            );
+
             // 즉시 UI 업데이트
             renderLoggedIn({
               email: currentUser.email,
               displayName: currentUser.displayName,
               user_metadata: { full_name: currentUser.displayName },
-              app_metadata: { provider: currentUser.provider || 'kakao' }
+              app_metadata: { provider: currentUser.provider || "kakao" },
             });
           } catch (error) {
             console.error("[recipe-manager] userData 파싱 오류:", error);
@@ -3153,11 +3471,17 @@
         if (window.authState?.supabase) {
           try {
             const session = await getActiveSession();
-            
+
             if (currentToken !== authRenderToken) return;
 
             if (session?.user) {
               // Supabase 세션이 있으면 Supabase 사용자 정보 사용
+              currentUserId = session.user.id;
+              window.currentUserId = currentUserId;
+              console.log(
+                "[recipe-manager] Supabase currentUserId 설정:",
+                currentUserId
+              );
               renderLoggedIn(session.user);
             } else if (!isLoggedIn || !rawUser) {
               // 세션이 없고 localStorage에도 없으면 로그아웃 상태
@@ -3179,7 +3503,7 @@
       window.addEventListener("DOMContentLoaded", function () {
         // 즉시 localStorage 기반으로 UI 업데이트 (빠른 초기 렌더링)
         updateAuthUI();
-        
+
         (async function () {
           let waitCount = 0;
           const maxWait = 100;
@@ -3202,14 +3526,14 @@
       });
 
       // 하단바 슬라이드 인디케이터 제어
-      (function() {
-        const sideNav = document.querySelector('.side-nav');
+      (function () {
+        const sideNav = document.querySelector(".side-nav");
         if (!sideNav) return;
 
         function updateSideNavIndicator() {
           // PC 화면에서는 인디케이터 숨기기 (절대 건들지 않음)
           if (window.innerWidth > 992) {
-            sideNav.classList.add('hide-indicator');
+            sideNav.classList.add("hide-indicator");
             return;
           }
 
@@ -3217,16 +3541,16 @@
           const scrollLeft = Math.round(sideNav.scrollLeft);
           const scrollWidth = sideNav.scrollWidth;
           const clientWidth = sideNav.clientWidth;
-          
+
           // 스크롤이 끝에 도달했는지 확인
           const remainingScroll = scrollWidth - scrollLeft - clientWidth;
-          
+
           if (remainingScroll <= 3 || scrollWidth <= clientWidth) {
             // 스크롤이 끝에 도달하거나 스크롤이 필요 없으면 인디케이터 숨기기
-            sideNav.classList.add('hide-indicator');
+            sideNav.classList.add("hide-indicator");
           } else {
             // 스크롤 가능하면 인디케이터 보이기
-            sideNav.classList.remove('hide-indicator');
+            sideNav.classList.remove("hide-indicator");
           }
         }
 
@@ -3238,24 +3562,26 @@
         }
 
         // 초기 상태 확인
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initIndicator);
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", initIndicator);
         } else {
           initIndicator();
         }
 
         // 스크롤 이벤트 리스너
-        sideNav.addEventListener('scroll', updateSideNavIndicator, { passive: true });
-        
+        sideNav.addEventListener("scroll", updateSideNavIndicator, {
+          passive: true,
+        });
+
         // 리사이즈 이벤트 리스너
         let resizeTimeout;
-        window.addEventListener('resize', () => {
+        window.addEventListener("resize", () => {
           clearTimeout(resizeTimeout);
           resizeTimeout = setTimeout(updateSideNavIndicator, 150);
         });
 
         // 페이지 로드 완료 후 재확인
-        window.addEventListener('load', () => {
+        window.addEventListener("load", () => {
           setTimeout(updateSideNavIndicator, 500);
         });
 
