@@ -1119,6 +1119,57 @@
         font-weight: 600;
       }
 
+      /* 데이터 출처 배지 */
+      .data-source-badge {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 600;
+        z-index: 1;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .source-kstartup {
+        background: #2196F3 !important;
+      }
+
+      .source-bizinfo {
+        background: #4CAF50 !important;
+      }
+
+      .source-sbiz {
+        background: #FF9800 !important;
+      }
+
+      .source-moel {
+        background: #9C27B0 !important;
+      }
+
+      .source-mois {
+        background: #607D8B !important;
+      }
+
+      .source-other {
+        background: #757575 !important;
+      }
+
+      @media (max-width: 768px) {
+        .data-source-badge {
+          font-size: 9px;
+          padding: 2px 6px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .data-source-badge {
+          font-size: 8px;
+          padding: 2px 5px;
+        }
+      }
+
       .status-active {
         background: #e8f5e9;
         color: #2e7d32;
@@ -2109,10 +2160,35 @@
             statusText = '마감';
           }
 
+          // 데이터 출처 판별
+          const getDataSource = (policy) => {
+            const url = policy.website_url || policy.application_url || '';
+            const org = policy.organization || '';
+            
+            if (url.includes('k-startup.go.kr') || org.includes('창업진흥원') || org.includes('K-Startup')) {
+              return { name: 'K-Startup', class: 'source-kstartup', color: '#2196F3' };
+            } else if (url.includes('bizinfo.go.kr') || org.includes('중소벤처기업부') || org.includes('중기부')) {
+              return { name: '기업마당', class: 'source-bizinfo', color: '#4CAF50' };
+            } else if (url.includes('sbiz.or.kr') || org.includes('소상공인') || org.includes('SEMAS')) {
+              return { name: '소상공인마당', class: 'source-sbiz', color: '#FF9800' };
+            } else if (url.includes('moel.go.kr') || org.includes('고용노동부')) {
+              return { name: '고용노동부', class: 'source-moel', color: '#9C27B0' };
+            } else if (url.includes('mois.go.kr') || org.includes('행정안전부')) {
+              return { name: '행정안전부', class: 'source-mois', color: '#607D8B' };
+            } else {
+              return { name: '기타', class: 'source-other', color: '#757575' };
+            }
+          };
+
+          const dataSource = getDataSource(policy);
+
           return `
             <div class="policy-card" onclick="openPolicyDetail(${policy.id})">
               <div class="policy-status ${statusClass}">${statusText}</div>
               ${isApplied ? `<div class="policy-status" style="top: 50px; background: #4caf50; color: white;">신청완료</div>` : ''}
+              <div class="data-source-badge ${dataSource.class}" style="position: absolute; top: 16px; left: 16px; background: ${dataSource.color}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; z-index: 1;">
+                ${dataSource.name}
+              </div>
               
               <div class="policy-header">
                 <span class="policy-org">${policy.organization}</span>
