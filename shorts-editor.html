@@ -392,6 +392,15 @@
             display: inline-block;
         }
 
+        .preparing-badge-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
         .preparing-badge {
             display: inline-block;
             background: var(--warning);
@@ -400,13 +409,18 @@
             font-weight: 700;
             padding: 4px 12px;
             border-radius: 12px;
-            margin-bottom: 8px;
-            position: absolute;
-            top: -28px;
-            left: 50%;
-            transform: translateX(-50%);
             white-space: nowrap;
             box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        }
+
+        .preparing-message {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
         }
 
         .page-subtitle {
@@ -1538,10 +1552,17 @@
                 font-size: 24px;
             }
 
+            .preparing-badge-container {
+                margin-bottom: 10px;
+            }
+
             .preparing-badge {
                 font-size: 11px;
                 padding: 3px 10px;
-                top: -24px;
+            }
+
+            .preparing-message {
+                font-size: 12px;
             }
 
             .page-subtitle {
@@ -1614,10 +1635,18 @@
                 font-size: 22px;
             }
 
+            .preparing-badge-container {
+                margin-bottom: 8px;
+                gap: 6px;
+            }
+
             .preparing-badge {
                 font-size: 10px;
                 padding: 3px 8px;
-                top: -22px;
+            }
+
+            .preparing-message {
+                font-size: 11px;
             }
 
             .mode-tab {
@@ -1757,10 +1786,11 @@
         <div class="container">
         <!-- 페이지 헤더 -->
         <div class="page-header">
-            <div style="position: relative; display: inline-block;">
+            <div class="preparing-badge-container">
                 <span class="preparing-badge">준비중</span>
-                <h1 class="page-title">🎬 AI로 만드는 프로 영상</h1>
+                <span class="preparing-message">✨ 조금만 기다려주세요! ✨</span>
             </div>
+            <h1 class="page-title">🎬 AI로 만드는 프로 영상</h1>
             <p class="page-subtitle">
                 사진 한 장과 간단한 정보만으로 SNS 홍보 영상을 자동으로 만들어드립니다.<br>
                 TikTok, Instagram Reels, YouTube Shorts에 바로 업로드하세요!
