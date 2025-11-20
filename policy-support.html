@@ -2000,6 +2000,22 @@
             }
           }
           
+            // 저장된 정책 필터인 경우 다른 메시지 표시
+          if (currentBookmarked === 'true') {
+            grid.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🔖</div>
+              <div class="empty-title">저장된 정책이 없습니다</div>
+              <div class="empty-desc" style="margin-bottom: 20px;">
+                아직 저장한 정책이 없습니다.<br/>
+                관심 있는 정책을 저장하여 나중에 쉽게 확인하세요.
+              </div>
+            </div>
+          `;
+            return;
+          }
+          
+          // 일반적인 경우 (데이터베이스에 정책이 없는 경우)
           grid.innerHTML = `
             <div class="empty-state">
               <div class="empty-icon">📭</div>
