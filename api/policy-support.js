@@ -52,10 +52,70 @@ module.exports = async (req, res) => {
   // GET: 카테고리별 정책 수 조회
   if (req.method === 'GET' && isCategories) {
     try {
-      const { data, error } = await supabase
+      // 쿼리 파라미터에서 필터 조건 가져오기
+      const { 
+        status, 
+        area, 
+        business_type, 
+        search,
+        bookmarked,
+        user_id 
+      } = req.query;
+
+      // 기본적으로 모든 상태 조회 (필터링되지 않은 전체 통계)
+      const statusFilter = status || 'all';
+
+      // 저장된 정책 필터링 처리
+      let bookmarkedPolicyIds = [];
+      if (bookmarked === 'true' && user_id) {
+        const { data: bookmarkedInterests } = await supabase
+          .from('user_policy_interests')
+          .select('policy_id')
+          .eq('user_id', user_id)
+          .eq('is_bookmarked', true);
+        
+        if (bookmarkedInterests && bookmarkedInterests.length > 0) {
+          bookmarkedPolicyIds = bookmarkedInterests.map(i => i.policy_id);
+        } else {
+          // 저장된 정책이 없으면 모든 카테고리 0 반환
+          return res.status(200).json({
+            success: true,
+            data: {
+              startup: 0,
+              operation: 0,
+              employment: 0,
+              facility: 0,
+              marketing: 0,
+              education: 0,
+              other: 0
+            }
+          });
+        }
+      }
+
+      // 쿼리 구성
+      let query = supabase
         .from('policy_supports')
-        .select('category')
-        .eq('status', 'active');
+        .select('category', { count: 'exact' });
+
+      // 필터 적용
+      if (statusFilter && statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      if (area) query = query.contains('target_area', [area]);
+      if (business_type) query = query.contains('business_type', [business_type]);
+      
+      // 저장된 정책만 필터링
+      if (bookmarked === 'true' && bookmarkedPolicyIds.length > 0) {
+        query = query.in('id', bookmarkedPolicyIds);
+      }
+      
+      // 검색어 적용
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,summary.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -70,11 +130,16 @@ module.exports = async (req, res) => {
         other: 0
       };
 
-      data.forEach(item => {
-        if (categoryCounts.hasOwnProperty(item.category)) {
-          categoryCounts[item.category]++;
-        }
-      });
+      if (data) {
+        data.forEach(item => {
+          if (item.category && categoryCounts.hasOwnProperty(item.category)) {
+            categoryCounts[item.category]++;
+          } else if (item.category) {
+            // 알 수 없는 카테고리는 'other'에 포함
+            categoryCounts.other++;
+          }
+        });
+      }
 
       return res.status(200).json({
         success: true,
@@ -244,7 +309,8 @@ module.exports = async (req, res) => {
       page = 1, 
       limit = 12,
       search,
-      user_id 
+      user_id,
+      bookmarked  // 저장된 정책만 필터링 (true/false)
     } = req.query;
     
     // status가 없으면 기본값 'active' 사용 (사용자 페이지용)
@@ -284,6 +350,33 @@ module.exports = async (req, res) => {
       return res.json({ success: true, data });
     }
 
+    // 저장된 정책 필터링 처리
+    let bookmarkedPolicyIds = [];
+    if (bookmarked === 'true' && user_id) {
+      // 저장된 정책 ID 목록 가져오기
+      const { data: bookmarkedInterests } = await supabase
+        .from('user_policy_interests')
+        .select('policy_id')
+        .eq('user_id', user_id)
+        .eq('is_bookmarked', true);
+      
+      if (bookmarkedInterests && bookmarkedInterests.length > 0) {
+        bookmarkedPolicyIds = bookmarkedInterests.map(i => i.policy_id);
+      } else {
+        // 저장된 정책이 없으면 빈 결과 반환
+        return res.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            totalPages: 0
+          }
+        });
+      }
+    }
+
     // 목록 조회 쿼리 구성
     let query = supabase
       .from('policy_supports')
@@ -297,6 +390,11 @@ module.exports = async (req, res) => {
     }
     if (area) query = query.contains('target_area', [area]);
     if (business_type) query = query.contains('business_type', [business_type]);
+    
+    // 저장된 정책만 필터링
+    if (bookmarked === 'true' && bookmarkedPolicyIds.length > 0) {
+      query = query.in('id', bookmarkedPolicyIds);
+    }
     
     // 검색어 적용
     if (search) {
