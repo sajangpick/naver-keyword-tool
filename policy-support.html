@@ -2517,9 +2517,13 @@
         
         // 클라이언트 사이드에서 신청완료한 정책만 필터링 (로딩 화면 없이)
         if (allPolicies.length > 0) {
-          let myPolicies = allPolicies.filter(policy => 
-            policy.user_interest?.is_applied === true || policy.user_policy_interests?.[0]?.is_applied === true
-          );
+          // 신청완료한 정책만 필터링
+          let myPolicies = allPolicies.filter(policy => {
+            const isApplied = policy.user_interest?.is_applied === true || 
+                             policy.user_policy_interests?.[0]?.is_applied === true ||
+                             policy.user_policy_interests?.some(interest => interest.is_applied === true);
+            return isApplied;
+          });
           
           // 데이터 출처 필터 적용
           if (currentSource !== 'all') {
@@ -2539,8 +2543,94 @@
           renderPagination(pagination);
           document.getElementById('resultCount').textContent = `총 ${myPolicies.length}개의 지원금`;
         } else {
-          // 캐시가 없으면 서버에서 로드
-          loadPolicies(1, true);
+          // 캐시가 없으면 서버에서 신청완료한 정책만 로드
+          const grid = document.getElementById('policyGrid');
+          grid.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><div>로딩 중...</div></div>';
+          
+          try {
+            const token = await getAccessToken();
+            let userId = null;
+            if (token) {
+              try {
+                if (window.authState?.supabase) {
+                  const { data: { session } } = await window.authState.supabase.auth.getSession();
+                  if (session?.user?.id) {
+                    userId = session.user.id;
+                  }
+                }
+              } catch (error) {
+                console.error('사용자 정보 가져오기 실패:', error);
+              }
+              
+              if (!userId) {
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                userId = userData.id;
+              }
+            }
+            
+            if (!userId) {
+              grid.innerHTML = `
+                <div class="empty-state">
+                  <div class="empty-icon">📭</div>
+                  <div class="empty-title">해당 정책 지원금이 없습니다</div>
+                </div>
+              `;
+              return;
+            }
+            
+            // 모든 정책을 가져와서 클라이언트에서 필터링
+            const params = new URLSearchParams({
+              page: 1,
+              limit: 1000
+            });
+            params.append('user_id', userId);
+            
+            const response = await fetch(`${API_BASE}/api/policy-support?${params}`);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+              // 신청완료한 정책만 필터링
+              let myPolicies = result.data.filter(policy => {
+                const isApplied = policy.user_interest?.is_applied === true || 
+                                 policy.user_policy_interests?.[0]?.is_applied === true ||
+                                 policy.user_policy_interests?.some(interest => interest.is_applied === true);
+                return isApplied;
+              });
+              
+              // 데이터 출처 필터 적용
+              if (currentSource !== 'all') {
+                myPolicies = myPolicies.filter(policy => matchesSourceFilter(policy, currentSource));
+              }
+              
+              policies = myPolicies;
+              await renderPolicies(myPolicies);
+              
+              // 페이지네이션 업데이트
+              const pagination = {
+                page: 1,
+                limit: 12,
+                total: myPolicies.length,
+                totalPages: Math.ceil(myPolicies.length / 12)
+              };
+              renderPagination(pagination);
+              document.getElementById('resultCount').textContent = `총 ${myPolicies.length}개의 지원금`;
+            } else {
+              grid.innerHTML = `
+                <div class="empty-state">
+                  <div class="empty-icon">📭</div>
+                  <div class="empty-title">해당 정책 지원금이 없습니다</div>
+                </div>
+              `;
+            }
+          } catch (error) {
+            console.error('MY정책 로드 실패:', error);
+            grid.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <div class="empty-title">해당 정책 지원금이 없습니다</div>
+              </div>
+            `;
+          }
         }
       }
 
