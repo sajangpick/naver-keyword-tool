@@ -2623,95 +2623,55 @@
           return null;
         };
         
-        // 1. K-Startup API의 신청 URL 우선 사용
+        // 1. application_url 최우선 사용 (각 공고의 실제 신청 URL)
         if (policy.application_url) {
           const normalized = normalizeUrl(policy.application_url);
-          if (normalized) {
-            // 도메인만 있는 경우가 아닌지 확인 (경로가 있는 경우만 사용)
-            if (!normalized.match(/^https?:\/\/[^\/]+$/)) {
-              return normalized;
-            }
-            // 도메인만 있어도 사용 (예: https://www.example.com)
-            if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
-              return normalized;
-            }
+          if (normalized && normalized.startsWith('http')) {
+            // 유효한 URL이면 바로 사용
+            return normalized;
           }
         }
         
-          // 2. K-Startup API의 상세 페이지 URL 사용 (신청 페이지로 연결 가능)
+        // 2. website_url 사용 (각 공고의 상세 페이지 - 신청 페이지로 연결 가능)
+        // K-Startup, 소상공인마당 등은 상세 페이지에서 신청 가능
         if (policy.website_url) {
           const normalized = normalizeUrl(policy.website_url);
-          if (normalized) {
-            // K-Startup 상세 페이지인 경우 그대로 사용
-            if (normalized.includes('k-startup.go.kr')) {
+          if (normalized && normalized.startsWith('http')) {
+            // K-Startup 상세 페이지 (bizpbancDetail.do) - 그대로 사용 (상세 페이지에서 신청 가능)
+            if (normalized.includes('k-startup.go.kr') && 
+                (normalized.includes('bizpbancDetail') || normalized.includes('detail'))) {
               return normalized;
             }
-            // 다른 사이트의 상세 페이지도 사용 (홈페이지만 있는 경우도 허용)
-            if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+            
+            // 소상공인마당 상세 페이지
+            if (normalized.includes('sbiz.or.kr') && 
+                (normalized.includes('detail') || normalized.includes('view'))) {
+              return normalized;
+            }
+            
+            // 기업마당 상세 페이지
+            if (normalized.includes('bizinfo.go.kr') && 
+                (normalized.includes('detail') || normalized.includes('view'))) {
+              return normalized;
+            }
+            
+            // 기타 상세 페이지 형태의 URL (detail, view, info 등이 포함된 경우)
+            if (normalized.match(/\/detail|\/view|\/info|\/notice|\/board/i)) {
+              return normalized;
+            }
+            
+            // 단순 홈페이지가 아닌 URL (경로가 있는 경우만 사용)
+            const urlParts = normalized.split('/');
+            if (urlParts.length > 3) {
+              // 도메인 외에 경로가 있으면 사용 (예: /web/contents/..., /policy/... 등)
               return normalized;
             }
           }
         }
         
-        // 3. 정책 제목에 따라 실제 신청 페이지 매핑
-        const title = policy.title || '';
-        const org = policy.organization || '';
-        
-        // K-Startup 관련 정책
-        if (title.includes('K-Startup') || title.includes('창업') || title.includes('스타트업') || 
-            org.includes('창업진흥원') || org.includes('K-Startup')) {
-          // K-Startup 사업공고 페이지로 연결
-          return 'https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do';
-        }
-        
-        // 소상공인 정책자금 관련 - 소상공인마당 검색
-        if (title.includes('소상공인 정책자금') || title.includes('정책자금 융자')) {
-          return 'https://www.sbiz.or.kr/policy';
-        }
-        
-        // 스마트상점 관련 - 소상공인마당 검색
-        if (title.includes('스마트상점')) {
-          return 'https://www.sbiz.or.kr/policy';
-        }
-        
-        // 일자리 안정자금 - 고용노동부 메인
-        if (title.includes('일자리 안정') || title.includes('인건비')) {
-          return 'https://www.moel.go.kr';
-        }
-        
-        // 노란우산
-        if (title.includes('노란우산')) {
-          return 'https://www.yellowumbrella.or.kr';
-        }
-        
-        // 백년가게 - 소상공인마당 검색
-        if (title.includes('백년가게')) {
-          return 'https://www.sbiz.or.kr/policy';
-        }
-        
-        // 착한가격업소 - 행정안전부 메인
-        if (title.includes('착한가격')) {
-          return 'https://www.mois.go.kr';
-        }
-        
-        // 4. 기관별 기본 신청 페이지
-        if (org.includes('중소벤처기업부') || org.includes('중기부')) {
-          return 'https://www.bizinfo.go.kr';
-        }
-        
-        if (org.includes('소상공인') || org.includes('소상공인시장진흥공단') || org.includes('SEMAS')) {
-          return 'https://www.sbiz.or.kr';
-        }
-        
-        if (org.includes('고용노동부') || org.includes('고용부')) {
-          return 'https://www.moel.go.kr';
-        }
-        
-        if (org.includes('행정안전부') || org.includes('행안부')) {
-          return 'https://www.mois.go.kr';
-        }
-        
-        // 5. 기본값: 신청 URL이 없으면 null 반환 (상세 정보 표시)
+        // 3. application_url과 website_url이 모두 없거나 유효하지 않은 경우
+        // 각 공고의 고유한 신청 URL이 필요하므로 null 반환
+        // (신청 URL을 관리자 페이지에서 등록해야 함)
         return null;
       }
       
@@ -2758,16 +2718,29 @@
             }
             
             // 실제 신청 사이트로 새 창에서 열기
-            const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
-            
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-              // 팝업이 차단된 경우
-              if (confirm('팝업이 차단되었습니다. 새 창을 열 수 없습니다.\n\nURL을 복사하시겠습니까?')) {
-                navigator.clipboard.writeText(finalUrl).then(() => {
-                  alert('URL이 클립보드에 복사되었습니다:\n' + finalUrl);
-                }).catch(() => {
-                  alert('URL을 복사할 수 없습니다. 아래 URL을 직접 복사하세요:\n' + finalUrl);
-                });
+            try {
+              const newWindow = window.open(finalUrl, '_blank', 'noopener,noreferrer');
+              
+              if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                // 팝업이 차단된 경우 같은 창에서 이동
+                if (confirm('팝업이 차단되었습니다. 현재 창에서 신청 페이지로 이동하시겠습니까?')) {
+                  window.location.href = finalUrl;
+                } else {
+                  // URL 복사 옵션 제공
+                  if (confirm('URL을 복사하시겠습니까?')) {
+                    navigator.clipboard.writeText(finalUrl).then(() => {
+                      alert('URL이 클립보드에 복사되었습니다:\n' + finalUrl);
+                    }).catch(() => {
+                      alert('URL을 복사할 수 없습니다. 아래 URL을 직접 복사하세요:\n' + finalUrl);
+                    });
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('신청 페이지 열기 실패:', error);
+              // 에러 발생 시 같은 창에서 이동
+              if (confirm('신청 페이지를 여는 중 오류가 발생했습니다.\n\n현재 창에서 신청 페이지로 이동하시겠습니까?')) {
+                window.location.href = finalUrl;
               }
             }
             
