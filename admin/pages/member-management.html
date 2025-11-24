@@ -1074,9 +1074,9 @@
         admin: '관리자'
       };
 
-      // 등급 정규화 함수: free/FREE/null을 seed로 변환
+      // 등급 정규화 함수: null을 기본값으로 변환
       function normalizeMembershipLevel(level) {
-        if (!level || level.toLowerCase() === 'free') {
+        if (!level) {
           return 'seed';
         }
         return level.toLowerCase();
@@ -1091,7 +1091,9 @@
       // ==================== 초기화 ====================
 
       window.addEventListener('load', async function() {
-        await ensureSupabase();
+        console.log('🚀 페이지 로드 완료, 회원 목록 로드 시작');
+        // B안 사용 시 Supabase 직접 호출 불필요 (API를 통해 처리)
+        // ensureSupabase(); // 상세보기에서만 필요 시 호출
         await loadMembers();
       });
 
@@ -1099,6 +1101,7 @@
 
       async function loadMembers(userType = currentFilter, search = currentSearch, page = currentPage) {
         try {
+          console.log('🔍 회원 목록 로드 시작...', { userType, search, page });
           showLoading(true);
           hideError();
 
@@ -1107,71 +1110,45 @@
           if (userType) params.append('user_type', userType);
           if (search) params.append('search', search);
 
-          const response = await fetch(`/api/admin/members?${params}`);
+          const apiUrl = `/api/admin/members?${params}`;
+          console.log('📡 API 호출:', apiUrl);
+          
+          const response = await fetch(apiUrl);
+          
+          console.log('📥 API 응답 상태:', response.status, response.statusText);
           
           // HTTP 상태 코드 체크
           if (!response.ok) {
             const errorText = await response.text();
+            console.error('❌ API 오류:', response.status, errorText);
             throw new Error(`서버 오류 (${response.status}): ${errorText || '알 수 없는 오류'}`);
           }
 
           const result = await response.json();
+          console.log('📊 API 응답 데이터:', result);
 
           if (!result.success) {
+            console.error('❌ API 실패 응답:', result);
             throw new Error(result.error || '알 수 없는 오류');
           }
 
           // 데이터 검증
           if (!result.members) {
+            console.warn('⚠️ members 데이터가 없음, 빈 배열로 설정');
             result.members = [];
           }
           if (result.total === undefined || result.total === null) {
+            console.warn('⚠️ total 데이터가 없음, 0으로 설정');
             result.total = 0;
           }
 
-          // FREE 등급을 seed로 정규화 및 자동 변경
-          const freeMembers = result.members.filter(m => 
-            !m.membership_level || m.membership_level.toLowerCase() === 'free'
-          );
-          
-          if (freeMembers.length > 0) {
-            console.log(`🔄 FREE 등급 회원 ${freeMembers.length}명을 씨앗으로 자동 변경 중...`);
-            
-            // 각 FREE 등급 회원을 seed로 변경
-            for (const member of freeMembers) {
-              try {
-                const updateResponse = await fetch(`/api/admin/members/${member.id}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                    user_type: member.user_type || 'owner',
-                    membership_level: 'seed',
-                    role: 'member'
-                  })
-                });
-                
-                if (updateResponse.ok) {
-                  console.log(`✅ ${member.name || member.email} 회원의 등급을 seed로 변경 완료`);
-                }
-              } catch (error) {
-                console.warn(`⚠️ ${member.name || member.email} 회원 등급 변경 실패:`, error);
-              }
-            }
-          }
-          
-          // 표시용으로 정규화
-          result.members = result.members.map(member => {
-            if (!member.membership_level || 
-                member.membership_level.toLowerCase() === 'free') {
-              return { ...member, membership_level: 'seed' };
-            }
-            return member;
-          });
+          console.log(`✅ 데이터 로드 완료: 회원 ${result.members.length}명, 전체 ${result.total}명`);
 
           // 통계 업데이트 (전체 통계를 위해 별도 API 호출 필요하지만, 일단 현재 페이지 기준으로 표시)
           updateStats(result.members, result.total);
 
           // 테이블 렌더링
+          console.log('🎨 테이블 렌더링 시작...');
           renderMembers(result.members);
 
           // 페이지네이션
@@ -1181,10 +1158,11 @@
             document.getElementById('pagination').style.display = 'none';
           }
 
-          console.log(`✅ 회원 ${result.members.length}명 로드 완료 (전체: ${result.total}명)`);
+          console.log(`✅ 회원 목록 로드 완료!`);
 
         } catch (error) {
           console.error('❌ 회원 로드 실패:', error);
+          console.error('❌ 에러 스택:', error.stack);
           showError('회원 목록을 불러올 수 없습니다: ' + error.message);
           // 에러 발생 시 빈 테이블 표시
           renderMembers([]);
@@ -1194,7 +1172,7 @@
       }
 
       async function updateMemberLevel(memberId, memberName, currentLevel, currentUserType) {
-        // 등급 정규화 (FREE를 seed로 변환)
+        // 등급 정규화
         const normalizedLevel = normalizeMembershipLevel(currentLevel);
         selectedMember = { id: memberId, name: memberName, level: normalizedLevel, userType: currentUserType };
         
@@ -1315,7 +1293,7 @@
           document.getElementById('detail-user-type').innerHTML = 
             `<span class="badge ${member.user_type}">${userTypeText}</span>`;
           
-          // 등급 정규화
+          // 등급 정규화 (한 번만 선언)
           const normalizedLevel = normalizeMembershipLevel(member.membership_level);
           const levelText = LEVEL_NAMES[normalizedLevel] || normalizedLevel;
           document.getElementById('detail-level').innerHTML = 
@@ -1341,8 +1319,7 @@
           document.getElementById('detail-store-landmarks').textContent = member.store_landmarks || '-';
           document.getElementById('detail-store-keywords').textContent = member.store_keywords || '-';
 
-          // 사용량 통계 (등급 정규화 적용)
-          const normalizedLevel = normalizeMembershipLevel(member.membership_level);
+          // 사용량 통계 (등급 정규화 적용 - 이미 선언된 normalizedLevel 사용)
           const reviewLimit = LIMITS[member.user_type]?.[normalizedLevel]?.review;
           const blogLimit = LIMITS[member.user_type]?.[normalizedLevel]?.blog;
           
@@ -1566,8 +1543,11 @@
 
       function renderMembers(members) {
         const tbody = document.getElementById('memberTableBody');
+        
+        console.log('🎨 renderMembers 호출됨, 회원 수:', members?.length || 0);
 
         if (!members || members.length === 0) {
+          console.log('ℹ️ 회원이 없음, 빈 테이블 표시');
           tbody.innerHTML = `
             <tr>
               <td colspan="8" style="text-align: center; padding: 60px; color: #6b7280;">
@@ -1579,7 +1559,8 @@
           return;
         }
 
-        tbody.innerHTML = members.map(member => {
+        try {
+          tbody.innerHTML = members.map((member, index) => {
           // 등급 정규화
           const normalizedLevel = normalizeMembershipLevel(member.membership_level);
           const reviewLimit = LIMITS[member.user_type]?.[normalizedLevel]?.review;
@@ -1599,12 +1580,17 @@
           // CSS 클래스용 등급 (seed 사용)
           const levelCssClass = normalizedLevel;
 
-          return `
+            // 안전한 문자열 처리 (따옴표, 특수문자 이스케이프)
+            const safeName = (member.name || '-').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const safeEmail = (member.email || '-').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            const memberId = member.id || '';
+            
+            return `
             <tr>
-              <td><strong>${member.name || '-'}</strong></td>
-              <td>${member.email || '-'}</td>
+              <td><strong>${safeName}</strong></td>
+              <td>${safeEmail}</td>
               <td>
-                <span class="badge ${member.user_type}">
+                <span class="badge ${member.user_type || 'owner'}">
                   ${member.user_type === 'owner' ? '식당 대표' : 
                     member.user_type === 'agency' ? '대행사/블로거' : '관리자'}
                 </span>
@@ -1630,27 +1616,40 @@
                   </div>
                 ` : ''}
               </td>
-              <td>${new Date(member.created_at).toLocaleString('ko-KR', { 
+              <td>${member.created_at ? new Date(member.created_at).toLocaleString('ko-KR', { 
                 year: 'numeric', 
                 month: '2-digit', 
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit'
-              })}</td>
+              }) : '-'}</td>
               <td>
-                <button class="btn primary" onclick="showMemberDetail('${member.id}')" title="회원 상세정보">
+                <button class="btn primary" onclick="showMemberDetail('${memberId}')" title="회원 상세정보">
                   <i class="fas fa-info-circle"></i> 상세보기
                 </button>
-                <button class="btn" onclick="updateMemberLevel('${member.id}', '${member.name}', '${member.membership_level}', '${member.user_type}')" title="회원 등급 및 유형 변경">
+                <button class="btn" onclick="updateMemberLevel('${memberId}', '${safeName}', '${normalizedLevel}', '${member.user_type || 'owner'}')" title="회원 등급 및 유형 변경">
                   <i class="fas fa-edit"></i> 등급 변경
                 </button>
-                <button class="btn danger" onclick="deleteMember('${member.id}', '${member.name}')" title="회원 삭제">
+                <button class="btn danger" onclick="deleteMember('${memberId}', '${safeName}')" title="회원 삭제">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
             </tr>
           `;
-        }).join('');
+          }).join('');
+          
+          console.log('✅ 테이블 렌더링 완료');
+        } catch (error) {
+          console.error('❌ 렌더링 중 오류 발생:', error);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 60px; color: #dc2626;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
+                렌더링 오류가 발생했습니다: ${error.message}
+              </td>
+            </tr>
+          `;
+        }
       }
 
       async function updateStats(members, total) {
