@@ -473,6 +473,7 @@
           z-index: 100;
           justify-content: center;
           align-items: center;
+          align-content: center;
         }
 
         .side-nav .menu-item {
@@ -480,28 +481,28 @@
           min-width: 0;
           padding: 8px 6px;
           font-size: 8px;
-          flex: 0 0 calc(20% - 6.4px);
-          max-width: calc(20% - 6.4px);
           box-sizing: border-box;
         }
 
-        /* 첫 5개 아이템 (첫 번째 줄) */
+        /* 첫 5개 아이템 (첫 번째 줄) - 각각 20% 너비로 정확히 배치 */
         .side-nav .menu-item:nth-child(1),
         .side-nav .menu-item:nth-child(2),
         .side-nav .menu-item:nth-child(3),
         .side-nav .menu-item:nth-child(4),
         .side-nav .menu-item:nth-child(5) {
-          flex: 0 0 calc(20% - 6.4px);
-          max-width: calc(20% - 6.4px);
+          flex: 0 0 calc((100% - 32px) / 5);
+          width: calc((100% - 32px) / 5);
+          max-width: calc((100% - 32px) / 5);
         }
 
-        /* 나머지 4개 아이템 (두 번째 줄) */
+        /* 나머지 4개 아이템 (두 번째 줄) - 각각 25% 너비로 가운데 정렬 */
         .side-nav .menu-item:nth-child(6),
         .side-nav .menu-item:nth-child(7),
         .side-nav .menu-item:nth-child(8),
         .side-nav .menu-item:nth-child(9) {
-          flex: 0 0 calc(25% - 6px);
-          max-width: calc(25% - 6px);
+          flex: 0 0 calc((100% - 24px) / 4);
+          width: calc((100% - 24px) / 4);
+          max-width: calc((100% - 24px) / 4);
         }
 
         .side-nav .menu-item .ico {
@@ -511,11 +512,14 @@
         }
 
         .main-content {
-          padding-left: 0;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
           padding-bottom: 100px;
           display: flex;
           justify-content: center;
-          align-items: flex-start;
+          align-items: center;
+          width: 100%;
+          margin: 0 auto;
         }
 
         .container {
@@ -525,6 +529,8 @@
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
+          margin: 0 auto;
         }
       }
 
@@ -538,20 +544,36 @@
           overflow-x: hidden;
           justify-content: center;
           flex-wrap: wrap;
+          align-content: center;
         }
 
         .side-nav .menu-item {
           min-width: 0;
           padding: 4px 1px;
           font-size: 6px;
-          flex: 0 0 calc(20% - 3.2px);
-          max-width: calc(20% - 3.2px);
           gap: 2px;
+          box-sizing: border-box;
         }
 
-        .side-nav .menu-item:nth-child(n+6) {
-          flex: 0 0 calc(25% - 3px);
-          max-width: calc(25% - 3px);
+        /* 첫 5개 아이템 (첫 번째 줄) */
+        .side-nav .menu-item:nth-child(1),
+        .side-nav .menu-item:nth-child(2),
+        .side-nav .menu-item:nth-child(3),
+        .side-nav .menu-item:nth-child(4),
+        .side-nav .menu-item:nth-child(5) {
+          flex: 0 0 calc((100% - 16px) / 5);
+          width: calc((100% - 16px) / 5);
+          max-width: calc((100% - 16px) / 5);
+        }
+
+        /* 나머지 4개 아이템 (두 번째 줄) */
+        .side-nav .menu-item:nth-child(6),
+        .side-nav .menu-item:nth-child(7),
+        .side-nav .menu-item:nth-child(8),
+        .side-nav .menu-item:nth-child(9) {
+          flex: 0 0 calc((100% - 12px) / 4);
+          width: calc((100% - 12px) / 4);
+          max-width: calc((100% - 12px) / 4);
         }
 
         .side-nav .menu-item .ico {
@@ -773,16 +795,30 @@
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
+          margin: 0 auto;
         }
 
         .header-section {
           width: 100%;
           max-width: 100%;
+          margin: 0 auto;
         }
 
         .chat-container {
           width: 100%;
           max-width: 100%;
+          margin: 0 auto;
+        }
+
+        .page-header {
+          text-align: center;
+          width: 100%;
+        }
+
+        .page-header h1,
+        .page-header p {
+          text-align: center;
         }
       }
 
@@ -1272,6 +1308,10 @@
         margin: 0 auto;
         width: 100%;
         max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
 
       .welcome-message h3 {
