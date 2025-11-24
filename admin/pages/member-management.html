@@ -1045,7 +1045,6 @@
       // 회원 등급 제한 정보
       const LIMITS = {
         owner: {
-          free: { review: 10, blog: 2 },  // FREE 등급도 씨앗과 동일
           seed: { review: 10, blog: 2 },
           power: { review: 50, blog: 10 },
           big_power: { review: 200, blog: 30 },
@@ -1064,8 +1063,6 @@
 
       // 등급 한글명
       const LEVEL_NAMES = {
-        free: '씨앗',      // FREE 등급도 씨앗으로 표시
-        FREE: '씨앗',      // 대문자 FREE도 씨앗으로 표시
         seed: '씨앗',
         power: '파워',
         big_power: '빅파워',
