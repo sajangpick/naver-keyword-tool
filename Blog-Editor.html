@@ -2001,6 +2001,16 @@
               </div>
 
                     <div class="form-group">
+                        <label for="atmosphere2">매장 분위기/인테리어</label>
+                        <textarea 
+                            id="atmosphere2" 
+                            name="atmosphere" 
+                            placeholder="예: 모던한 인테리어, 따뜻한 조명, 넓은 테이블, 루프탑 테라스"
+                        ></textarea>
+                        <small style="color: #666; font-size: 12px;">매장의 분위기나 인테리어 특징을 입력해주세요</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="landmarks2">주변 랜드마크</label>
                         <input 
                             type="text" 
@@ -2273,6 +2283,7 @@
                     hours: cleanValue(data.store_business_hours),
                     phone: cleanValue(data.store_phone_number),
                     menu: cleanValue(data.store_main_menu),
+                    atmosphere: cleanValue(data.store_atmosphere),
                     landmarks: cleanValue(data.store_landmarks),
                     keywords: cleanValue(data.store_keywords)
                 };
@@ -2305,6 +2316,7 @@
                 if (cleanedData.hours) document.getElementById('businessHours2').value = cleanedData.hours;
                 if (cleanedData.phone) document.getElementById('phoneNumber2').value = cleanedData.phone;
                 if (cleanedData.menu) document.getElementById('mainMenu2').value = cleanedData.menu;
+                if (cleanedData.atmosphere) document.getElementById('atmosphere2').value = cleanedData.atmosphere;
                 if (cleanedData.landmarks) document.getElementById('landmarks2').value = cleanedData.landmarks;
                 if (cleanedData.keywords) document.getElementById('keywords2').value = cleanedData.keywords;
 
@@ -2328,6 +2340,7 @@
             const companyNameId = tabNumber ? `companyName${tabNumber}` : 'companyName';
             const companyAddressId = tabNumber ? `companyAddress${tabNumber}` : 'companyAddress';
             const mainMenuId = tabNumber ? `mainMenu${tabNumber}` : 'mainMenu';
+            const atmosphereId = tabNumber ? `atmosphere${tabNumber}` : null; // 체험단 탭에만 있음
             const landmarksId = tabNumber ? `landmarks${tabNumber}` : 'landmarks';
             const keywordsId = tabNumber ? `keywords${tabNumber}` : 'keywords';
 
@@ -2340,6 +2353,7 @@
             const companyName = document.getElementById(companyNameId).value.trim();
             const companyAddress = document.getElementById(companyAddressId).value.trim();
             const mainMenu = document.getElementById(mainMenuId).value.trim();
+            const atmosphere = atmosphereId ? (document.getElementById(atmosphereId)?.value.trim() || '') : '';
             const landmarks = document.getElementById(landmarksId).value.trim();
 
             // 최소한 업체명만 입력되어 있으면 OK
@@ -2363,6 +2377,7 @@
                             companyName,
                             companyAddress,
                             mainMenu,
+                            atmosphere,
                             landmarks
                         }
                     })
@@ -2833,6 +2848,7 @@
             const businessHours = formData.get("businessHours") || "";
             const phoneNumber = formData.get("phoneNumber") || "";
             const mainMenu = formData.get("mainMenu") || "";
+            const atmosphere = formData.get("atmosphere") || "";
             const landmarks = formData.get("landmarks") || "";
             const keywords = formData.get("keywords") || "";
             const existingBlog = formData.get("existingBlog") || "";
@@ -2869,6 +2885,7 @@
                                 businessHours,
                                 phoneNumber,
                                 mainMenu,
+                                atmosphere,
                                 landmarks,
                                 keywords
                             },
