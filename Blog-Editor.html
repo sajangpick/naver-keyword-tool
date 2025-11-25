@@ -2111,6 +2111,9 @@
                     <button type="button" id="aiKeywordBtn" class="ai-keyword-btn">
                         🤖 AI 키워드 추천받기
                     </button>
+                    <small style="color: #ff6b35; font-size: 11px; font-weight: 600; display: block; margin-top: 4px;">
+                        ⚠️ 약 400~600 토큰 소비
+                    </small>
                     <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
                     
                     <!-- AI 추천 키워드 영역 -->
@@ -2226,6 +2229,9 @@
                         <button type="button" id="aiKeywordBtn2" class="ai-keyword-btn">
                             🤖 AI 키워드 추천받기
                         </button>
+                        <small style="color: #ff6b35; font-size: 11px; font-weight: 600; display: block; margin-top: 4px;">
+                            ⚠️ 약 400~600 토큰 소비
+                        </small>
                         <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
                         
                         <!-- AI 추천 키워드 영역 -->
@@ -2608,13 +2614,41 @@
                 return;
             }
 
+            // 사용자 ID 가져오기
+            const userId = await getProfileId();
+            
+            // 블로그 생성에 필요한 토큰 체크 (키워드 추천 전에)
+            if (userId) {
+                try {
+                    const tokenResponse = await fetch(`/api/subscription/token-usage?user_id=${userId}`);
+                    if (tokenResponse.ok) {
+                        const tokenData = await tokenResponse.json();
+                        if (tokenData.success && tokenData.summary) {
+                            const remainingTokens = tokenData.summary.tokensRemaining || 0;
+                            const blogGenerationTokens = 7000; // 블로그 생성에 필요한 토큰 (약 7000~8000)
+                            
+                            // 키워드 추천은 가능하지만(400~600), 블로그 생성 토큰이 부족한 경우
+                            if (remainingTokens >= 600 && remainingTokens < blogGenerationTokens) {
+                                // 경고 팝업 표시
+                                const shouldProceed = await showBlogTokenWarningModal(remainingTokens, blogGenerationTokens);
+                                if (!shouldProceed) {
+                                    return; // 사용자가 취소하면 중단
+                                }
+                            }
+                        }
+                    }
+                } catch (tokenError) {
+                    console.warn('토큰 체크 중 오류 (키워드 추천은 계속 진행):', tokenError);
+                    // 토큰 체크 실패해도 키워드 추천은 진행
+                }
+            }
+
             try {
                 // 버튼 비활성화
                 btn.disabled = true;
                 btn.textContent = '🤖 AI 분석 중...';
 
-                // 사용자 ID 가져오기 (profiles.id)
-                const userId = await getProfileId();
+                // userId는 이미 위에서 가져왔으므로 재사용
 
                 // 요청 데이터 준비
                 const requestData = {
@@ -2752,9 +2786,11 @@
             // 에러 메시지에서 토큰 정보 추출
             const remainingMatch = errorMessage.match(/남은 토큰[\(（](\d+)[\)）]/);
             const requiredMatch = errorMessage.match(/필요 토큰[:\s]*(\d+)/);
+            const limitMatch = errorMessage.match(/월 토큰 한도[:\s]*(\d+)/);
             
             const remainingTokens = remainingMatch ? parseInt(remainingMatch[1]) : 0;
             const requiredTokens = requiredMatch ? parseInt(requiredMatch[1]) : 3000;
+            const monthlyLimit = limitMatch ? parseInt(limitMatch[1]) : null;
 
             // 팝업 HTML 생성
             const modalHTML = `
@@ -2774,6 +2810,12 @@
                                     <span class="token-info-label">필요 토큰</span>
                                     <span class="token-info-value">${requiredTokens.toLocaleString()}개</span>
                                 </div>
+                                ${monthlyLimit ? `
+                                <div class="token-info-row">
+                                    <span class="token-info-label">월 토큰 한도</span>
+                                    <span class="token-info-value">${monthlyLimit.toLocaleString()}개</span>
+                                </div>
+                                ` : ''}
                                 <div class="token-info-row">
                                     <span class="token-info-label">부족한 토큰</span>
                                     <span class="token-info-value insufficient">${(requiredTokens - remainingTokens).toLocaleString()}개</span>
@@ -2812,6 +2854,96 @@
         // 토큰 팝업 닫기 함수
         function closeTokenModal() {
             const modal = document.getElementById('tokenInsufficientModal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+
+        // 블로그 생성 토큰 부족 경고 팝업 (키워드 추천은 가능하지만 블로그 생성 토큰 부족)
+        function showBlogTokenWarningModal(remainingTokens, blogGenerationTokens) {
+            return new Promise((resolve) => {
+                // 기존 팝업이 있으면 제거
+                const existingModal = document.getElementById('blogTokenWarningModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                const insufficientTokens = blogGenerationTokens - remainingTokens;
+
+                // 팝업 HTML 생성
+                const modalHTML = `
+                    <div class="token-modal-overlay" id="blogTokenWarningModal">
+                        <div class="token-modal">
+                            <div class="token-modal-header">
+                                <span class="icon">⚠️</span>
+                                <h2>블로그 생성 토큰 부족</h2>
+                            </div>
+                            <div class="token-modal-body">
+                                <div class="token-info-box">
+                                    <div class="token-info-row">
+                                        <span class="token-info-label">남은 토큰</span>
+                                        <span class="token-info-value">${remainingTokens.toLocaleString()}개</span>
+                                    </div>
+                                    <div class="token-info-row">
+                                        <span class="token-info-label">블로그 생성 필요 토큰</span>
+                                        <span class="token-info-value">${blogGenerationTokens.toLocaleString()}개</span>
+                                    </div>
+                                    <div class="token-info-row">
+                                        <span class="token-info-label">부족한 토큰</span>
+                                        <span class="token-info-value insufficient">${insufficientTokens.toLocaleString()}개</span>
+                                    </div>
+                                </div>
+                                <p class="token-modal-message" style="text-align: center; font-weight: 600; color: #333; margin: 20px 0;">
+                                    AI 키워드 추천은 사용 가능하지만,<br>
+                                    블로그 생성 토큰이 부족합니다.<br><br>
+                                    그래도 진행하시겠습니까?
+                                </p>
+                                <div class="token-modal-actions">
+                                    <button class="token-modal-btn token-modal-btn-primary" id="proceedKeywordBtn">
+                                        키워드 추천 진행
+                                    </button>
+                                    <button class="token-modal-btn token-modal-btn-secondary" id="cancelKeywordBtn">
+                                        취소
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 팝업 추가
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+                const modal = document.getElementById('blogTokenWarningModal');
+                
+                // 진행 버튼 클릭
+                document.getElementById('proceedKeywordBtn').addEventListener('click', () => {
+                    closeBlogTokenWarningModal();
+                    resolve(true);
+                });
+
+                // 취소 버튼 클릭
+                document.getElementById('cancelKeywordBtn').addEventListener('click', () => {
+                    closeBlogTokenWarningModal();
+                    resolve(false);
+                });
+
+                // 배경 클릭 시 취소
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeBlogTokenWarningModal();
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
+        // 블로그 토큰 경고 팝업 닫기
+        function closeBlogTokenWarningModal() {
+            const modal = document.getElementById('blogTokenWarningModal');
             if (modal) {
                 modal.style.animation = 'fadeOut 0.3s ease';
                 setTimeout(() => {

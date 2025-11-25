@@ -129,7 +129,7 @@ async function checkAndUpdateTokenLimit(userId, tokensToUse) {
 
       return {
         success: false,
-        error: '토큰 한도를 초과했습니다',
+        error: `토큰 한도를 초과했습니다. 월 토큰 한도: ${cycle.monthly_token_limit}`,
         tokensUsed: cycle.tokens_used,
         monthlyLimit: cycle.monthly_token_limit,
         tokensRemaining: 0
@@ -272,7 +272,7 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       return {
         success: false,
         hasLimit: false,
-        error: '토큰 한도를 초과했습니다. 구독을 업그레이드해주세요.',
+        error: `토큰 한도를 초과했습니다. 구독을 업그레이드해주세요. 월 토큰 한도: ${cycle.monthly_token_limit}`,
         remaining: 0,
         limit: cycle.monthly_token_limit
       };
@@ -282,7 +282,7 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       return {
         success: false,
         hasLimit: false,
-        error: `남은 토큰(${cycle.tokens_remaining})이 부족합니다. 필요 토큰: ${estimatedTokens}`,
+        error: `남은 토큰(${cycle.tokens_remaining})이 부족합니다. 필요 토큰: ${estimatedTokens}. 월 토큰 한도: ${cycle.monthly_token_limit}`,
         remaining: cycle.tokens_remaining,
         limit: cycle.monthly_token_limit
       };
