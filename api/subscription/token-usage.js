@@ -220,32 +220,35 @@ module.exports = async (req, res) => {
       console.log(`🔍 토큰 한도 조회 시작: user_id=${user_id}, userType=${userType}, level=${membershipLevel}, key=${tokenLimitKey}`);
       
       try {
-        const { data: latestTokenConfig, error: configError } = await supabase
+        // token_config 조회 (여러 행이 있을 수 있으므로 최신 것 가져오기)
+        const { data: tokenConfigs, error: configError } = await supabase
           .from('token_config')
           .select('*')
-          .single();
+          .order('updated_at', { ascending: false })
+          .limit(1);
         
         if (configError) {
           console.error('❌ token_config 조회 실패:', configError);
+          currentTokenLimit = 100;
+        } else if (!tokenConfigs || tokenConfigs.length === 0) {
+          console.warn('⚠️ token_config 데이터가 없습니다. 기본값 사용: 100');
+          currentTokenLimit = 100;
         } else {
-          console.log('✅ token_config 전체 데이터:', JSON.stringify(latestTokenConfig, null, 2));
-        }
-        
-        if (latestTokenConfig) {
+          const latestTokenConfig = tokenConfigs[0];
+          console.log('✅ token_config 조회 성공:', JSON.stringify(latestTokenConfig, null, 2));
+          
           // tokenLimitKey로 직접 조회
           const limitValue = latestTokenConfig[tokenLimitKey];
           console.log(`🔍 ${tokenLimitKey} 값:`, limitValue, '(타입:', typeof limitValue, ')');
           
-          if (limitValue !== undefined && limitValue !== null) {
+          if (limitValue !== undefined && limitValue !== null && limitValue !== 0) {
             currentTokenLimit = Number(limitValue);
             console.log(`✅ 최신 토큰 한도 설정 완료: ${currentTokenLimit} (${tokenLimitKey})`);
           } else {
-            console.warn(`⚠️ ${tokenLimitKey} 값이 undefined/null입니다. 기본값 사용: 100`);
+            // 값이 0이거나 없으면 기본값 사용
+            console.warn(`⚠️ ${tokenLimitKey} 값이 ${limitValue}입니다. 기본값 사용: 100`);
             currentTokenLimit = 100;
           }
-        } else {
-          console.warn('⚠️ token_config 데이터가 없습니다. 기본값 사용: 100');
-          currentTokenLimit = 100;
         }
       } catch (error) {
         // 컬럼이 없거나 에러 발생 시 기본값 사용
@@ -254,13 +257,12 @@ module.exports = async (req, res) => {
         currentTokenLimit = 100;
       }
       
-      // 최종 확인: currentTokenLimit이 0이면 안 됨
-      if (currentTokenLimit === 0) {
-        console.warn('⚠️ currentTokenLimit이 0입니다. 기본값 100으로 설정');
-        currentTokenLimit = 100;
+      // 최종 확인: currentTokenLimit이 0이거나 기본값이면 경고
+      if (currentTokenLimit === 0 || currentTokenLimit === 100) {
+        console.warn(`⚠️ currentTokenLimit이 ${currentTokenLimit}입니다. 관리자 페이지에서 설정한 값이 반영되지 않았을 수 있습니다.`);
       }
       
-      console.log(`✅ 최종 토큰 한도: ${currentTokenLimit}`);
+      console.log(`✅ 최종 토큰 한도: ${currentTokenLimit} (사용자: ${userType}_${membershipLevel})`);
 
       // 현재 구독 사이클 조회
       const { data: cycle } = await supabase

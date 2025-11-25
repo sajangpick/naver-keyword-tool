@@ -374,20 +374,39 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       const membershipLevel = profile.membership_level || 'seed';
       const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
       
+      console.log(`🔍 [token-tracker] 토큰 한도 조회: userType=${userType}, level=${membershipLevel}, key=${tokenLimitKey}`);
+      
       try {
-        const { data: latestTokenConfig } = await supabase
+        // token_config 조회 (여러 행이 있을 수 있으므로 최신 것 가져오기)
+        const { data: tokenConfigs, error: configError } = await supabase
           .from('token_config')
-          .select(tokenLimitKey)
-          .single();
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1);
         
-        if (latestTokenConfig && latestTokenConfig[tokenLimitKey] !== undefined) {
-          currentTokenLimit = latestTokenConfig[tokenLimitKey];
+        if (configError) {
+          console.error('❌ [token-tracker] token_config 조회 실패:', configError);
+        } else if (!tokenConfigs || tokenConfigs.length === 0) {
+          console.warn('⚠️ [token-tracker] token_config 데이터가 없습니다. 사이클 값 사용');
+        } else {
+          const latestTokenConfig = tokenConfigs[0];
+          const limitValue = latestTokenConfig[tokenLimitKey];
+          console.log(`🔍 [token-tracker] ${tokenLimitKey} 값:`, limitValue);
+          
+          if (limitValue !== undefined && limitValue !== null && limitValue !== 0) {
+            currentTokenLimit = Number(limitValue);
+            console.log(`✅ [token-tracker] 최신 토큰 한도 설정: ${currentTokenLimit} (${tokenLimitKey})`);
+          } else {
+            console.warn(`⚠️ [token-tracker] ${tokenLimitKey} 값이 ${limitValue}입니다. 사이클 값 사용: ${cycle.monthly_token_limit}`);
+          }
         }
       } catch (error) {
         // 컬럼이 없거나 에러 발생 시 사이클의 값 사용
-        console.log('⚠️ token_config에서 최신 한도 조회 실패, 사이클 값 사용:', error.message);
+        console.error('❌ [token-tracker] token_config에서 최신 한도 조회 실패, 사이클 값 사용:', error.message);
       }
     }
+    
+    console.log(`✅ [token-tracker] 최종 토큰 한도: ${currentTokenLimit} (사이클 값: ${cycle.monthly_token_limit})`);
 
     if (cycle.is_exceeded) {
       return {
