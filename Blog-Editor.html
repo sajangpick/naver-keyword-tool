@@ -2863,7 +2863,7 @@
                     const existingModal = document.getElementById('tokenInsufficientModal');
                     const existingBlogModal = document.getElementById('blogTokenWarningModal');
                     if (!existingModal && !existingBlogModal) {
-                        showTokenInsufficientModal(error.message);
+                        await showTokenInsufficientModal(error.message);
                     }
                 } else {
                     // 일반 오류는 기존 방식으로 표시
@@ -2895,7 +2895,7 @@
         }
 
         // 토큰 부족 팝업 표시 함수 (에러 메시지에서 파싱)
-        function showTokenInsufficientModal(errorMessage) {
+        async function showTokenInsufficientModal(errorMessage) {
             // 기존 팝업이 있으면 제거
             const existingModal = document.getElementById('tokenInsufficientModal');
             if (existingModal) {
@@ -2905,12 +2905,32 @@
             // 에러 메시지에서 토큰 정보 추출
             const remainingMatch = errorMessage.match(/남은 토큰[\(（](\d+)[\)）]/);
             const requiredMatch = errorMessage.match(/필요 토큰[:\s]*(\d+)/);
-            const limitMatch = errorMessage.match(/월 토큰 한도[:\s]*(\d+)/);
             
             // 쉼표 제거 후 파싱
             const remainingTokens = remainingMatch ? parseInt(remainingMatch[1].replace(/,/g, '')) : 0;
             const requiredTokens = requiredMatch ? parseInt(requiredMatch[1].replace(/,/g, '')) : 7000; // 블로그 생성 실제 필요 토큰
-            const monthlyLimit = limitMatch ? parseInt(limitMatch[1].replace(/,/g, '')) : null;
+            
+            // 항상 API에서 최신 토큰 한도 가져오기 (관리자 페이지 설정 반영)
+            let monthlyLimit = null;
+            try {
+                const userId = await getProfileId();
+                if (userId) {
+                    const tokenResponse = await fetch(`/api/subscription/token-usage?user_id=${userId}`);
+                    if (tokenResponse.ok) {
+                        const tokenData = await tokenResponse.json();
+                        if (tokenData.success && tokenData.summary) {
+                            monthlyLimit = tokenData.summary.monthlyLimit || null;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('토큰 한도 조회 실패:', error);
+                // 에러 메시지에서 파싱 시도 (백업)
+                const limitMatch = errorMessage.match(/월 토큰 한도[:\s]*(\d+)/);
+                if (limitMatch) {
+                    monthlyLimit = parseInt(limitMatch[1].replace(/,/g, ''));
+                }
+            }
             
             showTokenInsufficientModalDirect(remainingTokens, requiredTokens, monthlyLimit);
         }
@@ -3277,7 +3297,7 @@
         function showError(message) {
             // 토큰 부족 오류 감지
             if (message.includes('토큰') && (message.includes('부족') || message.includes('insufficient'))) {
-                showTokenInsufficientModal(message);
+                showTokenInsufficientModal(message).catch(err => console.error('토큰 팝업 표시 오류:', err));
                 // 기존 에러 표시는 숨김
                 loadingDiv.style.display = 'none';
                 errorDiv.style.display = 'none';
