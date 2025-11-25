@@ -4723,19 +4723,22 @@ app.get('/api/subscription/token-config', async (req, res) => {
       throw error;
     }
 
-    // 없으면 기본값으로 초기화
+    // 없으면 기본값으로 초기화 (블로그 1개 = 7,500 토큰 기준)
     if (!data) {
       const { data: newConfig } = await supabase
         .from('token_config')
         .insert([{
-          owner_seed_limit: 100,
-          owner_power_limit: 500,
-          owner_bigpower_limit: 833,
-          owner_premium_limit: 1166,
-          agency_elite_limit: 1000,
-          agency_expert_limit: 3000,
-          agency_master_limit: 5000,
-          agency_premium_limit: 10000
+          // 식당 대표 등급 (블로그 생성 기준)
+          owner_seed_limit: 25000,      // 씨앗: 블로그 2~3개 (무료 제공)
+          owner_power_limit: 50000,     // 파워: 블로그 5개
+          owner_bigpower_limit: 75000,  // 빅파워: 블로그 8개
+          owner_premium_limit: 100000,  // 프리미엄: 블로그 10개
+          
+          // 대행사 등급 (더 많은 사용량)
+          agency_elite_limit: 50000,    // 엘리트: 블로그 5개
+          agency_expert_limit: 100000,  // 전문가: 블로그 10개
+          agency_master_limit: 200000,  // 마스터: 블로그 20개
+          agency_premium_limit: 500000  // 프리미엄: 블로그 50개
         }])
         .select()
         .single();
