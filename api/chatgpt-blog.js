@@ -36,9 +36,9 @@ const openai = new OpenAI({
  */
 async function callOpenAIWithTracking(userId, apiCall, apiType = 'chatgpt-blog') {
     try {
-        // 토큰 한도 사전 체크 (예상 토큰: 3000)
+        // 토큰 한도 사전 체크 (예상 토큰: 7000 - 블로그 생성 전체 프로세스)
         if (userId) {
-            const limitCheck = await checkTokenLimit(userId, 3000);
+            const limitCheck = await checkTokenLimit(userId, 7000);
             if (!limitCheck.success) {
                 throw new Error(limitCheck.error);
             }

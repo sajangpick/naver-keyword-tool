@@ -1914,6 +1914,106 @@
                 flex-direction: column;
             }
         }
+
+        /* 성공 팝업 스타일 */
+        .success-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            overflow: hidden;
+        }
+
+        .success-modal-header {
+            background: linear-gradient(135deg, var(--accent-color), #e66a42);
+            padding: 32px 32px 24px;
+            color: white;
+            text-align: center;
+        }
+
+        .success-modal-header .icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .success-modal-body {
+            padding: 32px;
+            text-align: center;
+        }
+
+        .success-modal-message {
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .success-modal-actions {
+            padding: 0 32px 32px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .success-modal-btn {
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--accent-color);
+            color: white;
+            min-width: 120px;
+        }
+
+        .success-modal-btn:hover {
+            background: #e66a42;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 123, 84, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .success-modal {
+                width: 95%;
+                max-width: none;
+            }
+
+            .success-modal-header {
+                padding: 28px 24px 20px;
+            }
+
+            .success-modal-header .icon {
+                font-size: 48px;
+            }
+
+            .success-modal-body {
+                padding: 24px 20px;
+            }
+
+            .success-modal-message {
+                font-size: 16px;
+            }
+        }
     </style>
     <!-- 인증 가드: 로그인 필수 기능 보호 -->
     <script src="./assets/auth-guard.js" defer></script>
@@ -2809,7 +2909,7 @@
             
             // 쉼표 제거 후 파싱
             const remainingTokens = remainingMatch ? parseInt(remainingMatch[1].replace(/,/g, '')) : 0;
-            const requiredTokens = requiredMatch ? parseInt(requiredMatch[1].replace(/,/g, '')) : 3000;
+            const requiredTokens = requiredMatch ? parseInt(requiredMatch[1].replace(/,/g, '')) : 7000; // 블로그 생성 실제 필요 토큰
             const monthlyLimit = limitMatch ? parseInt(limitMatch[1].replace(/,/g, '')) : null;
             
             showTokenInsufficientModalDirect(remainingTokens, requiredTokens, monthlyLimit);
@@ -2987,6 +3087,56 @@
             }
         }
 
+        // 성공 팝업 표시 함수
+        function showSuccessModal(message) {
+            // 기존 성공 팝업이 있으면 제거
+            const existingModal = document.getElementById('successModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modalHTML = `
+                <div class="success-modal-overlay" id="successModal">
+                    <div class="success-modal">
+                        <div class="success-modal-header">
+                            <span class="icon">✅</span>
+                        </div>
+                        <div class="success-modal-body">
+                            <p class="success-modal-message">${message}</p>
+                        </div>
+                        <div class="success-modal-actions">
+                            <button class="success-modal-btn" onclick="closeSuccessModal()">확인</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            const modal = document.getElementById('successModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeSuccessModal();
+                }
+            });
+
+            // 3초 후 자동으로 닫기
+            setTimeout(() => {
+                closeSuccessModal();
+            }, 3000);
+        }
+
+        // 성공 팝업 닫기 함수
+        function closeSuccessModal() {
+            const modal = document.getElementById('successModal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+
         // AI 키워드 추천 버튼 이벤트 (우리매장 탭)
         document.getElementById('aiKeywordBtn').addEventListener('click', async function() {
             await recommendKeywords('');
@@ -3013,7 +3163,7 @@
 
                 // 가게 정보 불러오기 (userId 전달)
                 await loadStoreInfo(userId);
-                alert('✅ 저장된 정보를 불러왔습니다!');
+                showSuccessModal('저장된 정보를 불러왔습니다!');
 
             } catch (error) {
                 console.error('가게 정보 불러오기 오류:', error);

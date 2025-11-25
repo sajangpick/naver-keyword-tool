@@ -77,15 +77,31 @@ async function checkAndUpdateTokenLimit(userId, tokensToUse) {
       const cycleEnd = new Date(today);
       cycleEnd.setDate(cycleEnd.getDate() + 30);
 
-      // 사용자 타입 확인
+      // 사용자 프로필 확인
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_type')
+        .select('user_type, membership_level')
         .eq('id', userId)
         .single();
 
       const userType = profile?.user_type || 'owner';
-      const monthlyLimit = userType === 'owner' ? 10000 : 50000; // 기본 한도
+      const membershipLevel = profile?.membership_level || 'seed';
+      
+      // token_config에서 최신 토큰 한도 가져오기
+      let monthlyLimit = 100; // 기본값
+      try {
+        const { data: tokenConfig } = await supabase
+          .from('token_config')
+          .select('*')
+          .single();
+
+        if (tokenConfig) {
+          const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+          monthlyLimit = tokenConfig[tokenLimitKey] || monthlyLimit;
+        }
+      } catch (error) {
+        console.log('⚠️ token_config 조회 실패, 기본값 사용:', error.message);
+      }
 
       const { data: newCycle, error: createError } = await supabase
         .from('subscription_cycle')
@@ -114,6 +130,34 @@ async function checkAndUpdateTokenLimit(userId, tokensToUse) {
     const newTokensUsed = (cycle.tokens_used || 0) + tokensToUse;
     const tokensRemaining = cycle.monthly_token_limit - newTokensUsed;
 
+    // token_config에서 최신 토큰 한도 가져오기 (관리자 설정 반영)
+    let currentTokenLimit = cycle.monthly_token_limit;
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('membership_level, user_type')
+        .eq('id', userId)
+        .single();
+
+      if (profile) {
+        const userType = profile.user_type || 'owner';
+        const membershipLevel = profile.membership_level || 'seed';
+        const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+        
+        const { data: latestTokenConfig } = await supabase
+          .from('token_config')
+          .select(tokenLimitKey)
+          .single();
+        
+        if (latestTokenConfig && latestTokenConfig[tokenLimitKey] !== undefined) {
+          currentTokenLimit = latestTokenConfig[tokenLimitKey];
+        }
+      }
+    } catch (error) {
+      // 에러 발생 시 사이클의 값 사용
+      console.log('⚠️ token_config에서 최신 한도 조회 실패, 사이클 값 사용:', error.message);
+    }
+
     if (tokensRemaining < 0) {
       // 한도 초과
       await supabase
@@ -129,9 +173,9 @@ async function checkAndUpdateTokenLimit(userId, tokensToUse) {
 
       return {
         success: false,
-        error: `토큰 한도를 초과했습니다. 월 토큰 한도: ${cycle.monthly_token_limit}`,
+        error: `토큰 한도를 초과했습니다. 월 토큰 한도: ${currentTokenLimit}`,
         tokensUsed: cycle.tokens_used,
-        monthlyLimit: cycle.monthly_token_limit,
+        monthlyLimit: currentTokenLimit,
         tokensRemaining: 0
       };
     }
@@ -152,7 +196,7 @@ async function checkAndUpdateTokenLimit(userId, tokensToUse) {
       success: true,
       tokensUsed: newTokensUsed,
       tokensRemaining: tokensRemaining,
-      monthlyLimit: cycle.monthly_token_limit
+      monthlyLimit: currentTokenLimit // 최신 토큰 한도 사용
     };
 
   } catch (error) {
@@ -323,13 +367,35 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       return { success: true, hasLimit: true };
     }
 
+    // 4. token_config에서 최신 토큰 한도 가져오기 (관리자 설정 반영)
+    let currentTokenLimit = cycle.monthly_token_limit; // 기본값은 사이클의 값
+    if (profile) {
+      const userType = profile.user_type || 'owner';
+      const membershipLevel = profile.membership_level || 'seed';
+      const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+      
+      try {
+        const { data: latestTokenConfig } = await supabase
+          .from('token_config')
+          .select(tokenLimitKey)
+          .single();
+        
+        if (latestTokenConfig && latestTokenConfig[tokenLimitKey] !== undefined) {
+          currentTokenLimit = latestTokenConfig[tokenLimitKey];
+        }
+      } catch (error) {
+        // 컬럼이 없거나 에러 발생 시 사이클의 값 사용
+        console.log('⚠️ token_config에서 최신 한도 조회 실패, 사이클 값 사용:', error.message);
+      }
+    }
+
     if (cycle.is_exceeded) {
       return {
         success: false,
         hasLimit: false,
-        error: `토큰 한도를 초과했습니다. 구독을 업그레이드해주세요. 월 토큰 한도: ${cycle.monthly_token_limit}`,
+        error: `토큰 한도를 초과했습니다. 구독을 업그레이드해주세요. 월 토큰 한도: ${currentTokenLimit}`,
         remaining: 0,
-        limit: cycle.monthly_token_limit
+        limit: currentTokenLimit
       };
     }
 
@@ -337,9 +403,9 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       return {
         success: false,
         hasLimit: false,
-        error: `남은 토큰(${cycle.tokens_remaining})이 부족합니다. 필요 토큰: ${estimatedTokens}. 월 토큰 한도: ${cycle.monthly_token_limit}`,
+        error: `남은 토큰(${cycle.tokens_remaining})이 부족합니다. 필요 토큰: ${estimatedTokens}. 월 토큰 한도: ${currentTokenLimit}`,
         remaining: cycle.tokens_remaining,
-        limit: cycle.monthly_token_limit
+        limit: currentTokenLimit
       };
     }
 
@@ -347,7 +413,7 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       success: true,
       hasLimit: true,
       remaining: cycle.tokens_remaining,
-      limit: cycle.monthly_token_limit
+      limit: currentTokenLimit
     };
 
   } catch (error) {

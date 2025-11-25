@@ -214,6 +214,35 @@ module.exports = async (req, res) => {
         .limit(1)
         .single();
 
+      // 사용자 프로필 조회 (등급 확인)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('membership_level, user_type')
+        .eq('id', user_id)
+        .single();
+
+      // token_config에서 최신 토큰 한도 가져오기 (관리자 설정 반영)
+      let currentTokenLimit = cycle?.monthly_token_limit || 0;
+      if (profile && cycle) {
+        const userType = profile.user_type || 'owner';
+        const membershipLevel = profile.membership_level || 'seed';
+        const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+        
+        try {
+          const { data: latestTokenConfig } = await supabase
+            .from('token_config')
+            .select(tokenLimitKey)
+            .single();
+          
+          if (latestTokenConfig && latestTokenConfig[tokenLimitKey] !== undefined) {
+            currentTokenLimit = latestTokenConfig[tokenLimitKey];
+          }
+        } catch (error) {
+          // 컬럼이 없거나 에러 발생 시 사이클의 값 사용
+          console.log('⚠️ token_config에서 최신 한도 조회 실패, 사이클 값 사용:', error.message);
+        }
+      }
+
       // 토큰 사용 내역 조회
       const { data: usage, error: fetchError } = await supabase
         .from('token_usage')
@@ -229,7 +258,7 @@ module.exports = async (req, res) => {
         usage: usage || [],
         cycle: cycle || null,
         summary: {
-          monthlyLimit: cycle?.monthly_token_limit || 0,
+          monthlyLimit: currentTokenLimit, // 최신 토큰 한도 사용
           tokensUsed: cycle?.tokens_used || 0,
           tokensRemaining: cycle?.tokens_remaining || 0,
           isExceeded: cycle?.is_exceeded || false
