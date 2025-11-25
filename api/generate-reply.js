@@ -22,6 +22,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 사용자 ID 추출
+    const userId = await extractUserId(req) || req.body.userId || null;
+
     const { 
       reviewText, 
       placeInfo, 
@@ -42,7 +45,7 @@ export default async function handler(req, res) {
 
     // 액션: 홍보 포인트 추천
     if (action === 'recommend-promo-points') {
-      const promoPoints = await recommendPromoPoints(reviewText, placeInfo, ownerTips, promotionData);
+      const promoPoints = await recommendPromoPoints(reviewText, placeInfo, ownerTips, promotionData, userId);
       return res.status(200).json({
         success: true,
         data: { promoPoints }
@@ -56,7 +59,8 @@ export default async function handler(req, res) {
       ownerTips, 
       replyStyle || 'promo',
       selectedPromoPoints,
-      promotionData
+      promotionData,
+      userId
     );
 
     return res.status(200).json({
@@ -76,7 +80,7 @@ export default async function handler(req, res) {
 /**
  * AI 홍보 포인트 추천
  */
-async function recommendPromoPoints(reviewText, placeInfo, ownerTips, promotionData = null) {
+async function recommendPromoPoints(reviewText, placeInfo, ownerTips, promotionData = null, userId = null) {
   // 프로모션 정보 프롬프트 생성
   let promotionPrompt = '';
   if (promotionData) {
@@ -146,6 +150,14 @@ ${promotionPrompt}
 포인트3
 ...`;
 
+  // 토큰 한도 체크
+  if (userId) {
+    const limitCheck = await checkTokenLimit(userId, 500);
+    if (!limitCheck.success) {
+      throw new Error(limitCheck.error);
+    }
+  }
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
@@ -154,6 +166,11 @@ ${promotionPrompt}
     ],
     temperature: 0.7,
   });
+
+  // 토큰 사용량 추적
+  if (userId && response.usage) {
+    await trackTokenUsage(userId, response.usage, 'review-reply-promo');
+  }
 
   const content = response.choices[0]?.message?.content || '';
   const points = content
@@ -291,6 +308,14 @@ ${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 - 자연스럽고 진심 어린 답글로 작성해주세요
 - 답글만 출력하고, 다른 설명은 하지 마세요`;
 
+  // 토큰 한도 체크
+  if (userId) {
+    const limitCheck = await checkTokenLimit(userId, 1000);
+    if (!limitCheck.success) {
+      throw new Error(limitCheck.error);
+    }
+  }
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
@@ -299,6 +324,11 @@ ${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
     ],
     temperature: 0.7,
   });
+
+  // 토큰 사용량 추적
+  if (userId && response.usage) {
+    await trackTokenUsage(userId, response.usage, 'review-reply');
+  }
 
   const reply = response.choices[0]?.message?.content || '';
   return reply.trim();

@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { trackTokenUsage, checkTokenLimit, extractUserId } = require('./middleware/token-tracker');
 
 // OpenAI 초기화 (키가 없으면 null)
 let openai = null;
@@ -42,6 +43,9 @@ module.exports = async (req, res) => {
       });
     }
 
+    // 사용자 ID 추출
+    const userId = await extractUserId(req) || req.body.userId || null;
+
     const { category } = req.body;
 
     // 카테고리별 프롬프트
@@ -56,6 +60,17 @@ module.exports = async (req, res) => {
     const categoryText = category && categoryPrompts[category] 
       ? categoryPrompts[category] 
       : '외식업 전반';
+
+    // 토큰 한도 체크
+    if (userId) {
+      const limitCheck = await checkTokenLimit(userId, 1000);
+      if (!limitCheck.success) {
+        return res.status(403).json({
+          success: false,
+          error: limitCheck.error
+        });
+      }
+    }
 
     // ChatGPT에게 뉴스 추천 요청
     const completion = await openai.chat.completions.create({
@@ -94,6 +109,11 @@ module.exports = async (req, res) => {
       temperature: 0.8,
       response_format: { type: 'json_object' }
     });
+
+    // 토큰 사용량 추적
+    if (userId && completion.usage) {
+      await trackTokenUsage(userId, completion.usage, 'ai-news-recommend');
+    }
 
     const result = JSON.parse(completion.choices[0].message.content);
 

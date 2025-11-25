@@ -2367,6 +2367,10 @@
                 btn.disabled = true;
                 btn.textContent = '🤖 AI 분석 중...';
 
+                // 사용자 ID 가져오기
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const userId = userData.id || null;
+
                 // API 호출
                 const response = await fetch('/api/chatgpt-blog', {
                     method: 'POST',
@@ -2374,6 +2378,7 @@
                     body: JSON.stringify({
                         step: 'recommend-keywords',
                         data: {
+                            userId,
                             companyName,
                             companyAddress,
                             mainMenu,

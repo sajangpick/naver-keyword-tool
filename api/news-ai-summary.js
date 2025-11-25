@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { trackTokenUsage, checkTokenLimit, extractUserId } = require('./middleware/token-tracker');
 
 // OpenAI 초기화 (키가 없으면 null)
 let openai = null;
@@ -42,6 +43,9 @@ module.exports = async (req, res) => {
         error: 'AI 서비스가 설정되지 않았습니다. OPENAI_API_KEY를 확인해주세요.'
       });
     }
+
+    // 사용자 ID 추출
+    const userId = await extractUserId(req) || req.body.userId || null;
 
     const { title, content, url, press, publishedAt } = req.body;
 
@@ -176,6 +180,17 @@ ${url ? `원문 링크: ${url}` : '원문 링크: (정보 없음)'}
 
 위 형식에 맞춰 해석을 작성해주세요:`;
 
+    // 토큰 한도 체크
+    if (userId) {
+      const limitCheck = await checkTokenLimit(userId, 2000);
+      if (!limitCheck.success) {
+        return res.status(403).json({
+          success: false,
+          error: limitCheck.error
+        });
+      }
+    }
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -199,6 +214,11 @@ ${url ? `원문 링크: ${url}` : '원문 링크: (정보 없음)'}
       temperature: 0.7,
       max_tokens: 2500
     });
+
+    // 토큰 사용량 추적
+    if (userId && completion.usage) {
+      await trackTokenUsage(userId, completion.usage, 'news-ai-summary');
+    }
 
     const analysis = completion.choices[0].message.content;
 
