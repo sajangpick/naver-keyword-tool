@@ -1720,6 +1720,200 @@
                 min-width: 0 !important;
             }
         }
+
+        /* 토큰 부족 팝업 스타일 */
+        .token-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        .token-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            overflow: hidden;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .token-modal-header {
+            background: linear-gradient(135deg, var(--accent-color), #e66a42);
+            padding: 24px 32px;
+            color: white;
+            text-align: center;
+        }
+
+        .token-modal-header .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .token-modal-header h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .token-modal-body {
+            padding: 32px;
+        }
+
+        .token-info-box {
+            background: #fff7f0;
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .token-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 123, 84, 0.2);
+        }
+
+        .token-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .token-info-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .token-info-value {
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .token-info-value.insufficient {
+            color: #e74c3c;
+        }
+
+        .token-info-value.sufficient {
+            color: var(--accent-color);
+        }
+
+        .token-modal-message {
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .token-modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .token-modal-btn {
+            flex: 1;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .token-modal-btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .token-modal-btn-primary:hover {
+            background: #e66a42;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 123, 84, 0.3);
+        }
+
+        .token-modal-btn-secondary {
+            background: #f5f5f5;
+            color: var(--text-primary);
+        }
+
+        .token-modal-btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        @media (max-width: 768px) {
+            .token-modal {
+                width: 95%;
+                max-width: none;
+            }
+
+            .token-modal-header {
+                padding: 20px 24px;
+            }
+
+            .token-modal-header .icon {
+                font-size: 40px;
+            }
+
+            .token-modal-header h2 {
+                font-size: 20px;
+            }
+
+            .token-modal-body {
+                padding: 24px 20px;
+            }
+
+            .token-modal-actions {
+                flex-direction: column;
+            }
+        }
     </style>
     <!-- 인증 가드: 로그인 필수 기능 보호 -->
     <script src="./assets/auth-guard.js" defer></script>
@@ -2464,15 +2658,20 @@
                     tagsId
                 });
                 
-                // 더 자세한 에러 메시지 표시
-                let errorMsg = '❌ 키워드 추천에 실패했습니다.\n\n';
-                errorMsg += `오류: ${error.message}\n\n`;
-                errorMsg += '다음 사항을 확인해주세요:\n';
-                errorMsg += '1. 업체명이 입력되어 있는지 확인\n';
-                errorMsg += '2. 인터넷 연결 상태 확인\n';
-                errorMsg += '3. 잠시 후 다시 시도해주세요';
-                
-                alert(errorMsg);
+                // 토큰 부족 오류 감지
+                if (error.message.includes('토큰') && (error.message.includes('부족') || error.message.includes('insufficient'))) {
+                    showTokenInsufficientModal(error.message);
+                } else {
+                    // 일반 오류는 기존 방식으로 표시
+                    let errorMsg = '❌ 키워드 추천에 실패했습니다.\n\n';
+                    errorMsg += `오류: ${error.message}\n\n`;
+                    errorMsg += '다음 사항을 확인해주세요:\n';
+                    errorMsg += '1. 업체명이 입력되어 있는지 확인\n';
+                    errorMsg += '2. 인터넷 연결 상태 확인\n';
+                    errorMsg += '3. 잠시 후 다시 시도해주세요';
+                    
+                    alert(errorMsg);
+                }
             } finally {
                 // 버튼 복구
                 btn.disabled = false;
@@ -2489,6 +2688,85 @@
             const selectedKeywords = Array.from(selectedTags).map(tag => tag.dataset.keyword);
             
             keywordsInput.value = selectedKeywords.join(', ');
+        }
+
+        // 토큰 부족 팝업 표시 함수
+        function showTokenInsufficientModal(errorMessage) {
+            // 기존 팝업이 있으면 제거
+            const existingModal = document.getElementById('tokenInsufficientModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // 에러 메시지에서 토큰 정보 추출
+            const remainingMatch = errorMessage.match(/남은 토큰[\(（](\d+)[\)）]/);
+            const requiredMatch = errorMessage.match(/필요 토큰[:\s]*(\d+)/);
+            
+            const remainingTokens = remainingMatch ? parseInt(remainingMatch[1]) : 0;
+            const requiredTokens = requiredMatch ? parseInt(requiredMatch[1]) : 3000;
+
+            // 팝업 HTML 생성
+            const modalHTML = `
+                <div class="token-modal-overlay" id="tokenInsufficientModal">
+                    <div class="token-modal">
+                        <div class="token-modal-header">
+                            <span class="icon">⚠️</span>
+                            <h2>토큰이 부족합니다</h2>
+                        </div>
+                        <div class="token-modal-body">
+                            <div class="token-info-box">
+                                <div class="token-info-row">
+                                    <span class="token-info-label">남은 토큰</span>
+                                    <span class="token-info-value insufficient">${remainingTokens.toLocaleString()}개</span>
+                                </div>
+                                <div class="token-info-row">
+                                    <span class="token-info-label">필요 토큰</span>
+                                    <span class="token-info-value">${requiredTokens.toLocaleString()}개</span>
+                                </div>
+                                <div class="token-info-row">
+                                    <span class="token-info-label">부족한 토큰</span>
+                                    <span class="token-info-value insufficient">${(requiredTokens - remainingTokens).toLocaleString()}개</span>
+                                </div>
+                            </div>
+                            <p class="token-modal-message">
+                                AI 기능을 사용하려면 더 많은 토큰이 필요합니다.<br>
+                                마이페이지에서 토큰을 충전하거나 구독을 업그레이드해주세요.
+                            </p>
+                            <div class="token-modal-actions">
+                                <button class="token-modal-btn token-modal-btn-primary" onclick="location.href='/mypage.html'">
+                                    <i class="fas fa-coins"></i>
+                                    토큰 충전하기
+                                </button>
+                                <button class="token-modal-btn token-modal-btn-secondary" onclick="closeTokenModal()">
+                                    닫기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 팝업 추가
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            // 배경 클릭 시 닫기
+            const modal = document.getElementById('tokenInsufficientModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeTokenModal();
+                }
+            });
+        }
+
+        // 토큰 팝업 닫기 함수
+        function closeTokenModal() {
+            const modal = document.getElementById('tokenInsufficientModal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
         }
 
         // AI 키워드 추천 버튼 이벤트 (우리매장 탭)
@@ -2629,12 +2907,23 @@
 
         // 오류 표시
         function showError(message) {
-            loadingDiv.style.display = 'none';
-            errorDiv.style.display = 'block';
-            successDiv.style.display = 'none';
-            blogTopics.style.display = 'none';
-            blogContent.style.display = 'none';
-            document.getElementById('errorMessage').textContent = message;
+            // 토큰 부족 오류 감지
+            if (message.includes('토큰') && (message.includes('부족') || message.includes('insufficient'))) {
+                showTokenInsufficientModal(message);
+                // 기존 에러 표시는 숨김
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                successDiv.style.display = 'none';
+                blogTopics.style.display = 'none';
+                blogContent.style.display = 'none';
+            } else {
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                blogTopics.style.display = 'none';
+                blogContent.style.display = 'none';
+                document.getElementById('errorMessage').textContent = message;
+            }
         }
 
         // 성공 표시
