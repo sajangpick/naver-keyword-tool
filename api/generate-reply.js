@@ -185,7 +185,7 @@ ${promotionPrompt}
 /**
  * 답글 생성 (스타일별)
  */
-async function generateReply(reviewText, placeInfo, ownerTips, replyStyle, selectedPromoPoints, promotionData = null) {
+async function generateReply(reviewText, placeInfo, ownerTips, replyStyle, selectedPromoPoints, promotionData = null, userId = null) {
   // 프로모션 정보 프롬프트 생성
   let promotionPrompt = '';
   if (promotionData) {

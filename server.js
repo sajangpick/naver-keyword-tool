@@ -2733,29 +2733,37 @@ ${placeInfoText}${ownerTipsInstruction}
           }
 
           // 2. review_responses 테이블에 리뷰 & 답글 저장
-          // 테스트 회원 ID 조회 (김사장)
-          const { data: testUser, error: userError } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("name", "김사장")
-            .single();
-
-          let userId = testUser?.id;
+          // 사용자 ID 가져오기 (요청에서 먼저 확인)
+          let userId = req.body?.userId || req.headers?.["user-id"] || null;
           
-          if (userError || !testUser) {
-            devLog("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
-            // 첫 번째 회원 가져오기
-            const { data: firstUser, error: firstUserError } = await supabase
+          // userId가 없으면 테스트 회원 ID 조회 (김사장)
+          if (!userId) {
+            devLog("⚠️ userId가 없어 테스트 회원(김사장)을 찾습니다.");
+            const { data: testUser, error: userError } = await supabase
               .from("profiles")
               .select("id")
-              .limit(1)
+              .eq("name", "김사장")
               .single();
+
+            userId = testUser?.id;
             
-            if (firstUserError || !firstUser) {
-              throw new Error("profiles 테이블에 회원이 없습니다.");
+            if (userError || !testUser) {
+              devLog("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
+              // 첫 번째 회원 가져오기
+              const { data: firstUser, error: firstUserError } = await supabase
+                .from("profiles")
+                .select("id")
+                .limit(1)
+                .single();
+              
+              if (firstUserError || !firstUser) {
+                throw new Error("profiles 테이블에 회원이 없습니다.");
+              }
+              
+              userId = firstUser.id;
             }
-            
-            userId = firstUser.id;
+          } else {
+            devLog(`✅ 사용자 ID 확인: ${userId}`);
           }
 
           const reviewData = {
@@ -2787,17 +2795,22 @@ ${placeInfoText}${ownerTipsInstruction}
             dbSaveStatus = "success";
             
             // 리뷰 사용량 증가
-            try {
-              const { incrementReviewUsage } = require('./api/utils/usage-tracker');
-              const usageResult = await incrementReviewUsage(userId);
-              if (usageResult.success) {
-                devLog(`✅ 리뷰 사용량 증가 완료: ${usageResult.count}`);
-              } else {
-                devError("⚠️ 리뷰 사용량 증가 실패:", usageResult.error);
+            if (userId) {
+              try {
+                const { incrementReviewUsage } = require('./api/utils/usage-tracker');
+                devLog(`📊 리뷰 사용량 증가 시도: userId=${userId}`);
+                const usageResult = await incrementReviewUsage(userId);
+                if (usageResult.success) {
+                  devLog(`✅ 리뷰 사용량 증가 완료: ${usageResult.count}`);
+                } else {
+                  devError("⚠️ 리뷰 사용량 증가 실패:", usageResult.error);
+                }
+              } catch (usageErr) {
+                devError("⚠️ 리뷰 사용량 증가 중 오류:", usageErr);
+                // 사용량 증가 실패해도 답글 생성은 성공으로 처리
               }
-            } catch (usageErr) {
-              devError("⚠️ 리뷰 사용량 증가 중 오류:", usageErr);
-              // 사용량 증가 실패해도 답글 생성은 성공으로 처리
+            } else {
+              devLog("⚠️ userId가 없어 리뷰 사용량을 증가시키지 않습니다.");
             }
           }
         } catch (dbErr) {

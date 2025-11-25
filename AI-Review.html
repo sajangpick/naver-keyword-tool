@@ -1794,6 +1794,54 @@
           }
         }
 
+        // 현재 사용자 ID 가져오기 (profiles 테이블의 id)
+        async function getUserId() {
+          try {
+            // Supabase 클라이언트 초기화
+            if (!window.authState?.supabase) {
+              console.warn("[userId] Supabase 클라이언트가 없습니다.");
+              // localStorage에서 가져오기 (fallback)
+              const userData = getCurrentUser();
+              return userData?.id || null;
+            }
+
+            const supabase = window.authState.supabase;
+            
+            // 1. Supabase 세션에서 auth user 가져오기
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (!sessionData?.session?.user) {
+              console.warn("[userId] 세션이 없습니다.");
+              // localStorage에서 가져오기 (fallback)
+              const userData = getCurrentUser();
+              return userData?.id || null;
+            }
+
+            const authUser = sessionData.session.user;
+            
+            // 2. profiles 테이블에서 profiles.id 가져오기
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('kakao_id', authUser.user_metadata?.kakao_id || authUser.id)
+              .single();
+
+            if (profileError || !profile) {
+              console.warn("[userId] profiles를 찾을 수 없습니다:", profileError);
+              // profiles를 찾지 못하면 auth user id 반환 (API에서 변환 시도)
+              return authUser.id;
+            }
+
+            console.log("[userId] profiles.id 찾음:", profile.id);
+            return profile.id; // profiles 테이블의 id 반환
+
+          } catch (error) {
+            console.warn("[userId] 사용자 ID를 가져올 수 없습니다:", error);
+            // 에러 발생 시 localStorage에서 가져오기 (fallback)
+            const userData = getCurrentUser();
+            return userData?.id || null;
+          }
+        }
+
         // 답글 생성 공통 함수 (스타일별)
         async function generateReply(style, buttonElement) {
           const text = reviewText.value.trim();
@@ -1841,6 +1889,9 @@
               showPlaceInfoStatus("💭 답글 생성 중", "loading");
             }
 
+            // 사용자 ID 가져오기
+            const userId = await getUserId();
+
             // 2단계: 답글 생성 (스타일 포함)
             const requestBody = {
               reviewText: text,
@@ -1853,6 +1904,11 @@
 
             if (tips) {
               requestBody.ownerTips = tips;
+            }
+
+            // 사용자 ID 추가
+            if (userId) {
+              requestBody.userId = userId;
             }
 
             // 프로모션 정보 추가

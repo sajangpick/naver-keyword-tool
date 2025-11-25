@@ -2332,6 +2332,54 @@
         let globalPromotionData = null;
         let globalHasPromotion = false;
 
+        // 현재 사용자 ID 가져오기 (profiles 테이블의 id)
+        async function getProfileId() {
+            try {
+                // Supabase 클라이언트 초기화
+                if (!window.authState?.supabase) {
+                    console.warn("[profileId] Supabase 클라이언트가 없습니다.");
+                    // localStorage에서 가져오기 (fallback)
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    return userData?.id || null;
+                }
+
+                const supabase = window.authState.supabase;
+                
+                // 1. Supabase 세션에서 auth user 가져오기
+                const { data: sessionData } = await supabase.auth.getSession();
+                if (!sessionData?.session?.user) {
+                    console.warn("[profileId] 세션이 없습니다.");
+                    // localStorage에서 가져오기 (fallback)
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    return userData?.id || null;
+                }
+
+                const authUser = sessionData.session.user;
+                
+                // 2. profiles 테이블에서 profiles.id 가져오기
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('kakao_id', authUser.user_metadata?.kakao_id || authUser.id)
+                    .single();
+
+                if (profileError || !profile) {
+                    console.warn("[profileId] profiles를 찾을 수 없습니다:", profileError);
+                    // profiles를 찾지 못하면 auth user id 반환 (API에서 변환 시도)
+                    return authUser.id;
+                }
+
+                console.log("[profileId] profiles.id 찾음:", profile.id);
+                return profile.id; // profiles 테이블의 id 반환
+
+            } catch (error) {
+                console.warn("[profileId] 사용자 ID를 가져올 수 없습니다:", error);
+                // 에러 발생 시 localStorage에서 가져오기 (fallback)
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                return userData?.id || null;
+            }
+        }
+
         // 인증 확인 (Supabase 세션 기반)
         async function ensureAuthenticated() {
             // 🔧 개발 환경 체크 (프로덕션에서는 항상 인증 필요)
@@ -2415,17 +2463,21 @@
         });
 
         // 통합 가게 정보 자동 입력 (기본 정보 + 프로모션 정보)
-        async function loadStoreInfo() {
+        async function loadStoreInfo(userIdParam = null) {
             try {
-                // 로그인 확인
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                if (!userData.id) {
+                // userId 파라미터가 없으면 가져오기
+                let userId = userIdParam;
+                if (!userId) {
+                    userId = await getProfileId();
+                }
+                
+                if (!userId) {
                     console.log('로그인되지 않음');
                     return;
                 }
 
                 // 통합 정보 API 호출
-                const response = await fetch(`/api/store-info-all?userId=${userData.id}`);
+                const response = await fetch(`/api/store-info-all?userId=${userId}`);
                 if (!response.ok) {
                     console.error('가게 정보 조회 실패:', response.statusText);
                     return;
@@ -2561,9 +2613,8 @@
                 btn.disabled = true;
                 btn.textContent = '🤖 AI 분석 중...';
 
-                // 사용자 ID 가져오기
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                const userId = userData.id || null;
+                // 사용자 ID 가져오기 (profiles.id)
+                const userId = await getProfileId();
 
                 // 요청 데이터 준비
                 const requestData = {
@@ -2782,9 +2833,9 @@
         // 가게 정보 불러오기 버튼 이벤트
         document.getElementById('loadStoreInfoBtn').addEventListener('click', async function() {
             try {
-                // 로그인 확인
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                if (!userData.id) {
+                // 로그인 확인 및 profiles.id 가져오기
+                const userId = await getProfileId();
+                if (!userId) {
                     alert('로그인이 필요합니다.');
                     return;
                 }
@@ -2793,8 +2844,8 @@
                 this.disabled = true;
                 this.textContent = '불러오는 중...';
 
-                // 가게 정보 불러오기
-                await loadStoreInfo();
+                // 가게 정보 불러오기 (userId 전달)
+                await loadStoreInfo(userId);
                 alert('✅ 저장된 정보를 불러왔습니다!');
 
             } catch (error) {
@@ -2810,9 +2861,9 @@
         // 가게 정보 저장 버튼 이벤트
         document.getElementById('saveStoreInfoBtn').addEventListener('click', async function() {
             try {
-                // 로그인 확인
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                if (!userData.id) {
+                // 로그인 확인 및 profiles.id 가져오기
+                const userId = await getProfileId();
+                if (!userId) {
                     alert('로그인이 필요합니다.');
                     return;
                 }
@@ -2836,7 +2887,7 @@
                 const response = await fetch('/api/store-info', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: userData.id, storeInfo })
+                    body: JSON.stringify({ userId: userId, storeInfo })
                 });
 
                 if (!response.ok) {
@@ -2957,9 +3008,8 @@
                 showLoading("선택된 주제로 블로그 글을 생성하고 있습니다...");
                 updateStep(3); // 4단계: 글 생성
 
-                // 사용자 ID 가져오기
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                const userId = userData.id || null;
+                // 사용자 ID 가져오기 (profiles.id)
+                const userId = await getProfileId();
 
                 const generateResponse = await fetch('/api/chatgpt-blog', {
                     method: 'POST',
@@ -3055,9 +3105,8 @@
                 showLoading("가게 정보를 분석하고 있습니다...");
                 updateStep(0);
 
-                // 사용자 ID 가져오기
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                const userId = userData.id || null;
+                // 사용자 ID 가져오기 (profiles.id)
+                const userId = await getProfileId();
 
                 const crawlResponse = await fetch('/api/chatgpt-blog', {
                     method: 'POST',
@@ -3213,9 +3262,8 @@
                 
                 showLoading("체험단 블로그를 생성하고 있습니다...");
 
-                // 사용자 ID 가져오기
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                const userId = userData.id || null;
+                // 사용자 ID 가져오기 (profiles.id)
+                const userId = await getProfileId();
 
                 const response = await fetch('/api/chatgpt-blog', {
                     method: 'POST',

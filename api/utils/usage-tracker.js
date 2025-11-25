@@ -15,8 +15,61 @@ if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KE
 }
 
 /**
+ * auth user id를 profiles id로 변환
+ * @param {string} userId - auth user id 또는 profiles id
+ * @returns {Promise<string|null>} profiles id
+ */
+async function resolveProfileId(userId) {
+    if (!userId) return null;
+    
+    try {
+        // 먼저 profiles.id로 직접 조회 시도
+        const { data: profileById, error: errorById } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', userId)
+            .single();
+        
+        if (profileById && !errorById) {
+            return profileById.id; // 이미 profiles.id인 경우
+        }
+        
+        // profiles.id가 아니면 auth user id로 간주하고 kakao_id나 email로 찾기
+        // auth user id를 kakao_id로 사용하는 경우
+        const { data: profileByKakaoId, error: errorByKakaoId } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('kakao_id', userId)
+            .single();
+        
+        if (profileByKakaoId && !errorByKakaoId) {
+            return profileByKakaoId.id;
+        }
+        
+        // email로 찾기 시도
+        const { data: profileByEmail, error: errorByEmail } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', userId)
+            .single();
+        
+        if (profileByEmail && !errorByEmail) {
+            return profileByEmail.id;
+        }
+        
+        // 찾지 못한 경우 원래 userId 반환 (혹시 모를 경우를 대비)
+        console.warn('⚠️ profiles를 찾을 수 없어 원래 userId 사용:', userId);
+        return userId;
+        
+    } catch (error) {
+        console.error('❌ profileId 변환 실패:', error);
+        return userId; // 에러 발생 시 원래 userId 반환
+    }
+}
+
+/**
  * 리뷰 답글 사용량 증가
- * @param {string} userId - 사용자 ID
+ * @param {string} userId - 사용자 ID (auth user id 또는 profiles id)
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 async function incrementReviewUsage(userId) {
@@ -31,11 +84,20 @@ async function incrementReviewUsage(userId) {
     }
 
     try {
+        // userId를 profiles.id로 변환
+        const profileId = await resolveProfileId(userId);
+        if (!profileId) {
+            console.error('❌ profiles.id를 찾을 수 없습니다:', userId);
+            return { success: false, error: '프로필을 찾을 수 없습니다.' };
+        }
+        
+        console.log(`🔍 userId 변환: ${userId} → ${profileId}`);
+        
         // 현재 사용량 조회
         const { data: profile, error: fetchError } = await supabase
             .from('profiles')
             .select('monthly_review_count')
-            .eq('id', userId)
+            .eq('id', profileId)
             .single();
 
         if (fetchError) {
@@ -44,7 +106,7 @@ async function incrementReviewUsage(userId) {
         }
 
         if (!profile) {
-            console.error('❌ 프로필을 찾을 수 없습니다:', userId);
+            console.error('❌ 프로필을 찾을 수 없습니다:', profileId);
             return { success: false, error: '프로필을 찾을 수 없습니다.' };
         }
 
@@ -59,14 +121,14 @@ async function incrementReviewUsage(userId) {
                 monthly_review_count: newCount,
                 updated_at: new Date().toISOString()
             })
-            .eq('id', userId);
+            .eq('id', profileId);
 
         if (updateError) {
             console.error('❌ 리뷰 사용량 업데이트 실패:', updateError);
             return { success: false, error: updateError.message };
         }
 
-        console.log(`✅ 리뷰 사용량 증가: ${userId} (${currentCount} → ${newCount})`);
+        console.log(`✅ 리뷰 사용량 증가: ${profileId} (${currentCount} → ${newCount})`);
         return { success: true, count: newCount };
 
     } catch (error) {
@@ -77,7 +139,7 @@ async function incrementReviewUsage(userId) {
 
 /**
  * 블로그 포스팅 사용량 증가
- * @param {string} userId - 사용자 ID
+ * @param {string} userId - 사용자 ID (auth user id 또는 profiles id)
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 async function incrementBlogUsage(userId) {
@@ -92,11 +154,20 @@ async function incrementBlogUsage(userId) {
     }
 
     try {
+        // userId를 profiles.id로 변환
+        const profileId = await resolveProfileId(userId);
+        if (!profileId) {
+            console.error('❌ profiles.id를 찾을 수 없습니다:', userId);
+            return { success: false, error: '프로필을 찾을 수 없습니다.' };
+        }
+        
+        console.log(`🔍 userId 변환: ${userId} → ${profileId}`);
+        
         // 현재 사용량 조회
         const { data: profile, error: fetchError } = await supabase
             .from('profiles')
             .select('monthly_blog_count')
-            .eq('id', userId)
+            .eq('id', profileId)
             .single();
 
         if (fetchError) {
@@ -105,7 +176,7 @@ async function incrementBlogUsage(userId) {
         }
 
         if (!profile) {
-            console.error('❌ 프로필을 찾을 수 없습니다:', userId);
+            console.error('❌ 프로필을 찾을 수 없습니다:', profileId);
             return { success: false, error: '프로필을 찾을 수 없습니다.' };
         }
 
@@ -120,14 +191,14 @@ async function incrementBlogUsage(userId) {
                 monthly_blog_count: newCount,
                 updated_at: new Date().toISOString()
             })
-            .eq('id', userId);
+            .eq('id', profileId);
 
         if (updateError) {
             console.error('❌ 블로그 사용량 업데이트 실패:', updateError);
             return { success: false, error: updateError.message };
         }
 
-        console.log(`✅ 블로그 사용량 증가: ${userId} (${currentCount} → ${newCount})`);
+        console.log(`✅ 블로그 사용량 증가: ${profileId} (${currentCount} → ${newCount})`);
         return { success: true, count: newCount };
 
     } catch (error) {
