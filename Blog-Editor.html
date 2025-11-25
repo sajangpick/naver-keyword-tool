@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com wss://*.supabase.co; img-src 'self' data: https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <!-- 사이트 설명 (SEO) -->
@@ -2017,6 +2017,23 @@
     </style>
     <!-- 인증 가드: 로그인 필수 기능 보호 -->
     <script src="./assets/auth-guard.js" defer></script>
+    <!-- Meta Pixel Code -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '823098897158597');
+      fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=823098897158597&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
   </head>
   <body>
   <header class="header">
@@ -2902,16 +2919,14 @@
                 existingModal.remove();
             }
 
-            // 에러 메시지에서 토큰 정보 추출
-            const remainingMatch = errorMessage.match(/남은 토큰[\(（](\d+)[\)）]/);
+            // 에러 메시지에서 필요 토큰만 추출 (백업용)
             const requiredMatch = errorMessage.match(/필요 토큰[:\s]*(\d+)/);
-            
-            // 쉼표 제거 후 파싱
-            const remainingTokens = remainingMatch ? parseInt(remainingMatch[1].replace(/,/g, '')) : 0;
             const requiredTokens = requiredMatch ? parseInt(requiredMatch[1].replace(/,/g, '')) : 7000; // 블로그 생성 실제 필요 토큰
             
-            // 항상 API에서 최신 토큰 한도 가져오기 (관리자 페이지 설정 반영)
+            // 항상 API에서 최신 토큰 정보 가져오기 (관리자 페이지 설정 반영)
+            let remainingTokens = 0;
             let monthlyLimit = null;
+            
             try {
                 const userId = await getProfileId();
                 if (userId) {
@@ -2919,14 +2934,26 @@
                     if (tokenResponse.ok) {
                         const tokenData = await tokenResponse.json();
                         if (tokenData.success && tokenData.summary) {
+                            // API에서 가져온 값 사용 (관리자 설정 반영)
+                            remainingTokens = tokenData.summary.tokensRemaining || 0;
                             monthlyLimit = tokenData.summary.monthlyLimit || null;
+                            
+                            console.log('✅ API에서 토큰 정보 가져옴:', {
+                                remaining: remainingTokens,
+                                limit: monthlyLimit
+                            });
                         }
                     }
                 }
             } catch (error) {
-                console.warn('토큰 한도 조회 실패:', error);
-                // 에러 메시지에서 파싱 시도 (백업)
+                console.warn('토큰 정보 조회 실패, 에러 메시지에서 파싱:', error);
+                // API 호출 실패 시에만 에러 메시지에서 파싱 (백업)
+                const remainingMatch = errorMessage.match(/남은 토큰[\(（](\d+)[\)）]/);
                 const limitMatch = errorMessage.match(/월 토큰 한도[:\s]*(\d+)/);
+                
+                if (remainingMatch) {
+                    remainingTokens = parseInt(remainingMatch[1].replace(/,/g, ''));
+                }
                 if (limitMatch) {
                     monthlyLimit = parseInt(limitMatch[1].replace(/,/g, ''));
                 }

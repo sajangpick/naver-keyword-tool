@@ -205,11 +205,15 @@ module.exports = async (req, res) => {
       }
 
       // 사용자 프로필 조회 (등급 확인) - 먼저 조회
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('membership_level, user_type')
         .eq('id', user_id)
         .single();
+
+      if (profileError) {
+        console.error('❌ 프로필 조회 실패:', profileError);
+      }
 
       // token_config에서 최신 토큰 한도 가져오기 (관리자 설정 반영) - 항상 최신 값 사용
       let currentTokenLimit = 0;
@@ -218,23 +222,36 @@ module.exports = async (req, res) => {
         const membershipLevel = profile.membership_level || 'seed';
         const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
         
+        console.log(`🔍 토큰 한도 조회: userType=${userType}, level=${membershipLevel}, key=${tokenLimitKey}`);
+        
         try {
-          const { data: latestTokenConfig } = await supabase
+          const { data: latestTokenConfig, error: configError } = await supabase
             .from('token_config')
-            .select(tokenLimitKey)
+            .select('*')
             .single();
+          
+          if (configError) {
+            console.error('❌ token_config 조회 실패:', configError);
+          } else {
+            console.log('✅ token_config 조회 성공:', latestTokenConfig);
+          }
           
           if (latestTokenConfig && latestTokenConfig[tokenLimitKey] !== undefined) {
             currentTokenLimit = latestTokenConfig[tokenLimitKey];
+            console.log(`✅ 최신 토큰 한도: ${currentTokenLimit} (${tokenLimitKey})`);
           } else {
             // 기본값 사용
             currentTokenLimit = userType === 'owner' ? 100 : 1000;
+            console.log(`⚠️ ${tokenLimitKey} 값이 없어 기본값 사용: ${currentTokenLimit}`);
           }
         } catch (error) {
           // 컬럼이 없거나 에러 발생 시 기본값 사용
-          console.log('⚠️ token_config에서 최신 한도 조회 실패, 기본값 사용:', error.message);
+          console.error('❌ token_config에서 최신 한도 조회 실패, 기본값 사용:', error.message);
           currentTokenLimit = userType === 'owner' ? 100 : 1000;
         }
+      } else {
+        console.warn('⚠️ 프로필이 없어 기본 토큰 한도 사용');
+        currentTokenLimit = 100;
       }
 
       // 현재 구독 사이클 조회
