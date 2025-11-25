@@ -2785,6 +2785,20 @@ ${placeInfoText}${ownerTipsInstruction}
             savedReviewId = reviewResult[0]?.id;
             devLog("✅ review_responses 저장 성공:", savedReviewId);
             dbSaveStatus = "success";
+            
+            // 리뷰 사용량 증가
+            try {
+              const { incrementReviewUsage } = require('./api/utils/usage-tracker');
+              const usageResult = await incrementReviewUsage(userId);
+              if (usageResult.success) {
+                devLog(`✅ 리뷰 사용량 증가 완료: ${usageResult.count}`);
+              } else {
+                devError("⚠️ 리뷰 사용량 증가 실패:", usageResult.error);
+              }
+            } catch (usageErr) {
+              devError("⚠️ 리뷰 사용량 증가 중 오류:", usageErr);
+              // 사용량 증가 실패해도 답글 생성은 성공으로 처리
+            }
           }
         } catch (dbErr) {
           devError("❌ DB 저장 중 오류:", dbErr);

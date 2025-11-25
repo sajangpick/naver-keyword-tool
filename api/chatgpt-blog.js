@@ -1851,6 +1851,20 @@ module.exports = async function handler(req, res) {
                                     blogId = blogResult[0]?.id;
                                     dbStatus = 'success';
                                     console.log('[체험단 블로그] DB 저장 성공:', blogId);
+                                    
+                                    // 블로그 사용량 증가
+                                    try {
+                                        const { incrementBlogUsage } = require('./utils/usage-tracker');
+                                        const usageResult = await incrementBlogUsage(data.userId);
+                                        if (usageResult.success) {
+                                            console.log(`✅ 블로그 사용량 증가 완료: ${usageResult.count}`);
+                                        } else {
+                                            console.warn('⚠️ 블로그 사용량 증가 실패:', usageResult.error);
+                                        }
+                                    } catch (usageErr) {
+                                        console.error('⚠️ 블로그 사용량 증가 중 오류:', usageErr);
+                                        // 사용량 증가 실패해도 블로그 생성은 성공으로 처리
+                                    }
                                 }
                             } catch (dbErr) {
                                 dbStatus = 'failed';
@@ -1936,6 +1950,20 @@ module.exports = async function handler(req, res) {
                                     blogId = blogResult[0]?.id;
                                     dbStatus = 'success';
                                     console.log('[방문 후기] DB 저장 성공:', blogId);
+                                    
+                                    // 블로그 사용량 증가
+                                    try {
+                                        const { incrementBlogUsage } = require('./utils/usage-tracker');
+                                        const usageResult = await incrementBlogUsage(data.userId);
+                                        if (usageResult.success) {
+                                            console.log(`✅ 블로그 사용량 증가 완료: ${usageResult.count}`);
+                                        } else {
+                                            console.warn('⚠️ 블로그 사용량 증가 실패:', usageResult.error);
+                                        }
+                                    } catch (usageErr) {
+                                        console.error('⚠️ 블로그 사용량 증가 중 오류:', usageErr);
+                                        // 사용량 증가 실패해도 블로그 생성은 성공으로 처리
+                                    }
                                 }
                             } catch (dbErr) {
                                 dbStatus = 'failed';
@@ -2010,6 +2038,20 @@ module.exports = async function handler(req, res) {
                             } else {
                                 blogId = blogResultData[0]?.id;
                                 dbStatus = 'success';
+                                
+                                // 블로그 사용량 증가
+                                try {
+                                    const { incrementBlogUsage } = require('./utils/usage-tracker');
+                                    const usageResult = await incrementBlogUsage(data.userId);
+                                    if (usageResult.success) {
+                                        console.log(`✅ 블로그 사용량 증가 완료: ${usageResult.count}`);
+                                    } else {
+                                        console.warn('⚠️ 블로그 사용량 증가 실패:', usageResult.error);
+                                    }
+                                } catch (usageErr) {
+                                    console.error('⚠️ 블로그 사용량 증가 중 오류:', usageErr);
+                                    // 사용량 증가 실패해도 블로그 생성은 성공으로 처리
+                                }
                             }
                         } catch (dbErr) {
                             dbStatus = 'failed';
