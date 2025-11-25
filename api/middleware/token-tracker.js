@@ -253,7 +253,52 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       return { success: true, hasLimit: true };
     }
 
-    // 현재 구독 사이클 조회
+    // 1. 전체 토큰 사용 제어 확인
+    const { data: tokenConfig } = await supabase
+      .from('token_config')
+      .select('token_usage_enabled')
+      .single();
+
+    if (tokenConfig && tokenConfig.token_usage_enabled === false) {
+      return {
+        success: false,
+        hasLimit: false,
+        error: '관리자에 의해 토큰 사용이 일시적으로 제한되었습니다. 잠시 후 다시 시도해주세요.',
+        remaining: 0,
+        limit: 0
+      };
+    }
+
+    // 2. 사용자 프로필 조회 (등급 확인)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('membership_level, user_type')
+      .eq('id', userId)
+      .single();
+
+    if (profile) {
+      const userType = profile.user_type || 'owner';
+      const membershipLevel = profile.membership_level || 'seed';
+      const enabledKey = `${userType}_${membershipLevel}_enabled`;
+
+      // 해당 등급의 토큰 사용 활성화 여부 확인
+      const { data: levelConfig } = await supabase
+        .from('token_config')
+        .select(enabledKey)
+        .single();
+
+      if (levelConfig && levelConfig[enabledKey] === false) {
+        return {
+          success: false,
+          hasLimit: false,
+          error: `관리자에 의해 ${membershipLevel} 등급의 토큰 사용이 제한되었습니다. 관리자에게 문의해주세요.`,
+          remaining: 0,
+          limit: 0
+        };
+      }
+    }
+
+    // 3. 현재 구독 사이클 조회
     const { data: cycle } = await supabase
       .from('subscription_cycle')
       .select('*')

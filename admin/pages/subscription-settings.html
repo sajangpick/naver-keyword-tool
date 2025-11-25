@@ -171,6 +171,73 @@
         background: rgba(255, 255, 255, 0.95);
         border-color: #fed7aa;
       }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 26px;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 26px;
+      }
+
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .toggle-slider {
+        background-color: #22c55e;
+      }
+
+      input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+      }
+
+      .enabled-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-left: 6px;
+      }
+
+      .disabled-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-left: 6px;
+      }
       
       /* 식당 대표 등급별 배지 색상 */
       .setting-item.level-seed .setting-badge {
@@ -397,6 +464,32 @@
         <!-- 상태 메시지 -->
         <div id="statusMessage" style="display: none;"></div>
 
+        <!-- 전체 토큰 사용 제어 -->
+        <section class="card" style="margin-bottom: 20px;">
+          <div class="card-header">
+            <div class="title">
+              <i class="fas fa-power-off" style="color: #ef4444;"></i>
+              🔒 전체 토큰 사용 제어
+            </div>
+            <button class="btn primary" onclick="saveTokenUsageControl()">
+              <i class="fas fa-save"></i> 저장
+            </button>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
+                <input type="checkbox" id="token_usage_enabled" style="width: 20px; height: 20px; cursor: pointer;">
+                <span style="font-size: 15px; font-weight: 600; color: #111827;">
+                  전체 토큰 사용 활성화
+                </span>
+              </label>
+              <span style="font-size: 12px; color: #6b7280;">
+                (비활성화 시 모든 등급의 토큰 사용이 차단됩니다)
+              </span>
+            </div>
+          </div>
+        </section>
+
         <!-- 식당 대표 설정 -->
         <section class="card">
           <div class="card-header">
@@ -445,6 +538,7 @@
       let supabase;
       let pricingData = {};
       let tokenData = {};
+      let tokenUsageControl = { token_usage_enabled: true };
 
       // ==================== 초기화 ====================
 
@@ -488,8 +582,14 @@
 
           pricingData = pricingResult.pricing;
           tokenData = tokenResult.tokens;
+          
+          // 토큰 사용 제어 설정 추출
+          tokenUsageControl = {
+            token_usage_enabled: tokenData.token_usage_enabled !== false
+          };
 
           renderSettings();
+          renderTokenUsageControl();
         } catch (error) {
           console.error('❌ 설정 로드 실패:', error);
           showMessage('설정 로드 실패: ' + error.message, 'error');
@@ -553,9 +653,55 @@
                 <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" placeholder="토큰 입력"/>
                 <span class="unit">토큰/월</span>
               </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="${level.tokenKey.replace('_limit', '_enabled')}" ${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                  </div>
+                  <span style="font-weight: 600; color: #4b5563;">토큰 사용 활성화</span>
+                </label>
+                <span class="${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? 'enabled-badge' : 'disabled-badge'}">
+                  ${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? '활성화' : '비활성화'}
+                </span>
+              </div>
             </div>
           </div>
         `).join('');
+      }
+
+      // 토큰 사용 제어 UI 렌더링
+      function renderTokenUsageControl() {
+        const checkbox = document.getElementById('token_usage_enabled');
+        const badge = document.getElementById('tokenUsageBadge');
+        
+        if (checkbox) {
+          checkbox.checked = tokenUsageControl.token_usage_enabled;
+          
+          // 초기 배지 설정
+          if (badge) {
+            if (checkbox.checked) {
+              badge.className = 'enabled-badge';
+              badge.textContent = '활성화';
+            } else {
+              badge.className = 'disabled-badge';
+              badge.textContent = '비활성화';
+            }
+          }
+          
+          // 체크박스 변경 시 배지 업데이트
+          checkbox.addEventListener('change', function() {
+            if (badge) {
+              if (this.checked) {
+                badge.className = 'enabled-badge';
+                badge.textContent = '활성화';
+              } else {
+                badge.className = 'disabled-badge';
+                badge.textContent = '비활성화';
+              }
+            }
+          });
+        }
       }
 
       // ==================== 통합 저장 ====================
@@ -575,6 +721,12 @@
             tokenUpdate.owner_power_limit = parseInt(document.getElementById('owner_power_limit').value) || 0;
             tokenUpdate.owner_bigpower_limit = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
             tokenUpdate.owner_premium_limit = parseInt(document.getElementById('owner_premium_limit').value) || 0;
+            
+            // 토큰 사용 활성화/비활성화 설정
+            tokenUpdate.owner_seed_enabled = document.getElementById('owner_seed_enabled').checked;
+            tokenUpdate.owner_power_enabled = document.getElementById('owner_power_enabled').checked;
+            tokenUpdate.owner_bigpower_enabled = document.getElementById('owner_bigpower_enabled').checked;
+            tokenUpdate.owner_premium_enabled = document.getElementById('owner_premium_enabled').checked;
           } else {
             pricingUpdate.agency_elite_price = parseInt(document.getElementById('agency_elite_price').value) || 0;
             pricingUpdate.agency_expert_price = parseInt(document.getElementById('agency_expert_price').value) || 0;
@@ -585,6 +737,12 @@
             tokenUpdate.agency_expert_limit = parseInt(document.getElementById('agency_expert_limit').value) || 0;
             tokenUpdate.agency_master_limit = parseInt(document.getElementById('agency_master_limit').value) || 0;
             tokenUpdate.agency_premium_limit = parseInt(document.getElementById('agency_premium_limit').value) || 0;
+            
+            // 토큰 사용 활성화/비활성화 설정
+            tokenUpdate.agency_elite_enabled = document.getElementById('agency_elite_enabled').checked;
+            tokenUpdate.agency_expert_enabled = document.getElementById('agency_expert_enabled').checked;
+            tokenUpdate.agency_master_enabled = document.getElementById('agency_master_enabled').checked;
+            tokenUpdate.agency_premium_enabled = document.getElementById('agency_premium_enabled').checked;
           }
 
           // 가격과 토큰 동시 저장
@@ -617,6 +775,32 @@
         }
       }
 
+
+      // ==================== 토큰 사용 제어 저장 ====================
+
+      async function saveTokenUsageControl() {
+        try {
+          const tokenUsageUpdate = {
+            token_usage_enabled: document.getElementById('token_usage_enabled').checked
+          };
+
+          const tokenRes = await fetch('/api/subscription/token-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tokenUsageUpdate)
+          });
+
+          const tokenResult = await tokenRes.json();
+
+          if (!tokenResult.success) throw new Error(tokenResult.error);
+
+          tokenUsageControl = tokenUsageUpdate;
+          showMessage('✅ 전체 토큰 사용 제어 설정이 저장되었습니다', 'success');
+        } catch (error) {
+          console.error('❌ 저장 실패:', error);
+          showMessage('저장 실패: ' + error.message, 'error');
+        }
+      }
 
       // ==================== 메시지 ====================
 
