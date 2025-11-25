@@ -1192,13 +1192,22 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
  * AI 키워드 추천 (12개, 다양하고 세부적인 키워드)
  */
 async function recommendKeywordsForStore(data) {
-    const { companyName, companyAddress, mainMenu, landmarks, userId } = data;
+    console.log('[키워드 추천] 요청 데이터:', data);
+    
+    const { companyName, companyAddress, mainMenu, atmosphere, landmarks, userId } = data;
 
-    // 주소에서 지역 정보 추출
-    const addressParts = companyAddress.split(' ');
+    // 필수 데이터 검증
+    if (!companyName || companyName.trim() === '') {
+        throw new Error('업체명은 필수 입력 항목입니다.');
+    }
+
+    // 주소에서 지역 정보 추출 (주소가 없을 경우 빈 문자열 처리)
+    const addressParts = (companyAddress || '').split(' ');
     const city = addressParts[0] || '';
     const district = addressParts[1] || '';
     const neighborhood = addressParts[2] || '';
+    
+    console.log('[키워드 추천] 추출된 지역 정보:', { city, district, neighborhood });
 
     const prompt = `
 [역할]
@@ -1206,9 +1215,10 @@ async function recommendKeywordsForStore(data) {
 
 [가게 정보]
 - 가게명: ${companyName}
-- 위치: ${companyAddress}
+- 위치: ${companyAddress || '(미입력)'}
 - 지역: ${city} ${district} ${neighborhood}
-- 대표메뉴: ${mainMenu}
+- 대표메뉴: ${mainMenu || '(미입력)'}
+${atmosphere ? `- 매장 분위기/인테리어: ${atmosphere}` : ''}
 ${landmarks ? `- 주변 랜드마크: ${landmarks}` : ''}
 
 [키워드 추천 가이드라인]
@@ -1254,12 +1264,15 @@ ${landmarks ? `- 주변 랜드마크: ${landmarks}` : ''}
         );
 
         const keywordsText = completion.choices[0].message.content.trim();
+        console.log('[키워드 추천] AI 응답 원본:', keywordsText);
         
         // 쉼표로 구분된 키워드를 배열로 변환
         let keywords = keywordsText
             .split(',')
             .map(k => k.trim())
             .filter(k => k.length > 0);
+        
+        console.log('[키워드 추천] 파싱된 키워드 배열:', keywords);
 
         // 12개가 아니면 조정
         if (keywords.length > 12) {
@@ -1771,7 +1784,14 @@ module.exports = async function handler(req, res) {
                 break;
 
             case 'recommend-keywords':
-                result = await recommendKeywordsForStore(data);
+                try {
+                    console.log('[키워드 추천] step 처리 시작');
+                    result = await recommendKeywordsForStore(data);
+                    console.log('[키워드 추천] step 처리 완료:', result);
+                } catch (error) {
+                    console.error('[키워드 추천] step 처리 오류:', error);
+                    throw error;
+                }
                 break;
 
             case 'generate-review-team':

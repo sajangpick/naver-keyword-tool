@@ -2371,29 +2371,64 @@
                 const userData = JSON.parse(localStorage.getItem('userData') || '{}');
                 const userId = userData.id || null;
 
+                // 요청 데이터 준비
+                const requestData = {
+                    step: 'recommend-keywords',
+                    data: {
+                        userId,
+                        companyName,
+                        companyAddress,
+                        mainMenu,
+                        atmosphere,
+                        landmarks
+                    }
+                };
+
+                console.log('🔍 키워드 추천 요청 데이터:', requestData);
+                console.log('🔍 탭 번호:', tabNumber || '우리매장');
+
                 // API 호출
                 const response = await fetch('/api/chatgpt-blog', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        step: 'recommend-keywords',
-                        data: {
-                            userId,
-                            companyName,
-                            companyAddress,
-                            mainMenu,
-                            atmosphere,
-                            landmarks
-                        }
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
+                console.log('🔍 API 응답 상태:', response.status, response.statusText);
+
                 if (!response.ok) {
-                    throw new Error('키워드 추천 실패');
+                    // 응답 본문을 먼저 읽어서 에러 메시지 확인
+                    let errorMessage = '키워드 추천 실패';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = `서버 오류 (${response.status})`;
+                    }
+                    throw new Error(errorMessage);
                 }
 
-                const result = await response.json();
-                const keywords = result.data.keywords || [];
+                // 응답 본문 읽기
+                const responseText = await response.text();
+                console.log('🔍 API 응답 본문:', responseText);
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('❌ JSON 파싱 오류:', parseError);
+                    throw new Error(`서버 응답 파싱 실패: ${responseText.substring(0, 200)}`);
+                }
+                
+                console.log('🔍 파싱된 응답:', result);
+                
+                // 응답 구조 확인
+                if (!result.success) {
+                    throw new Error(result.error || '키워드 추천 실패');
+                }
+                
+                const keywords = result.data?.keywords || [];
+                console.log('🔍 추출된 키워드:', keywords);
 
                 if (keywords.length === 0) {
                     throw new Error('추천된 키워드가 없습니다');
@@ -2421,7 +2456,23 @@
 
             } catch (error) {
                 console.error('키워드 추천 오류:', error);
-                alert('❌ 키워드 추천에 실패했습니다.\n' + error.message);
+                console.error('에러 상세:', {
+                    message: error.message,
+                    stack: error.stack,
+                    btnId,
+                    areaId,
+                    tagsId
+                });
+                
+                // 더 자세한 에러 메시지 표시
+                let errorMsg = '❌ 키워드 추천에 실패했습니다.\n\n';
+                errorMsg += `오류: ${error.message}\n\n`;
+                errorMsg += '다음 사항을 확인해주세요:\n';
+                errorMsg += '1. 업체명이 입력되어 있는지 확인\n';
+                errorMsg += '2. 인터넷 연결 상태 확인\n';
+                errorMsg += '3. 잠시 후 다시 시도해주세요';
+                
+                alert(errorMsg);
             } finally {
                 // 버튼 복구
                 btn.disabled = false;
