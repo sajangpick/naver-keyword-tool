@@ -596,6 +596,26 @@
         }
       }
 
+      // ==================== 기본 토큰 한도 설정 ====================
+      
+      // 블로그 1개 = 약 7,500 토큰, 리뷰 1개 = 약 1,000 토큰 기준
+      function getDefaultTokenLimit(tokenKey) {
+        const defaults = {
+          // 식당 대표 등급 (블로그 생성 기준)
+          'owner_seed_limit': 25000,      // 씨앗: 블로그 2~3개 (15,000~22,500) + 여유분 (무료 제공)
+          'owner_power_limit': 50000,     // 파워: 블로그 5개 (37,500) + 여유분
+          'owner_bigpower_limit': 75000,  // 빅파워: 블로그 8개 (60,000) + 여유분
+          'owner_premium_limit': 100000,   // 프리미엄: 블로그 10개 (75,000) + 여유분
+          
+          // 대행사 등급 (더 많은 사용량)
+          'agency_elite_limit': 50000,    // 엘리트: 블로그 5개
+          'agency_expert_limit': 100000,  // 전문가: 블로그 10개
+          'agency_master_limit': 200000,  // 마스터: 블로그 20개
+          'agency_premium_limit': 500000  // 프리미엄: 블로그 50개
+        };
+        return defaults[tokenKey] || 0;
+      }
+
       // ==================== 통합 UI 렌더링 ====================
 
       function renderSettings() {
@@ -621,7 +641,7 @@
               </div>
               <div class="input-group">
                 <label>🪙 토큰</label>
-                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" placeholder="토큰 입력"/>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || getDefaultTokenLimit(level.tokenKey)}" min="0" placeholder="토큰 입력"/>
                 <span class="unit">토큰/월</span>
               </div>
             </div>
@@ -650,7 +670,7 @@
               </div>
               <div class="input-group">
                 <label>🪙 토큰</label>
-                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || 0}" min="0" placeholder="토큰 입력"/>
+                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || getDefaultTokenLimit(level.tokenKey)}" min="0" placeholder="토큰 입력"/>
                 <span class="unit">토큰/월</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">

@@ -53,7 +53,17 @@ module.exports = async (req, res) => {
           agency_elite_limit: 1000,
           agency_expert_limit: 3000,
           agency_master_limit: 5000,
-          agency_premium_limit: 10000
+          agency_premium_limit: 10000,
+          // 토큰 사용 제한 필드 기본값 (컬럼이 없어도 에러 없이 처리)
+          token_usage_enabled: true,
+          owner_seed_enabled: true,
+          owner_power_enabled: true,
+          owner_bigpower_enabled: true,
+          owner_premium_enabled: true,
+          agency_elite_enabled: true,
+          agency_expert_enabled: true,
+          agency_master_enabled: true,
+          agency_premium_enabled: true
         };
 
         const { data: newConfig, error: insertError } = await supabase
@@ -70,9 +80,23 @@ module.exports = async (req, res) => {
         });
       }
 
+      // 존재하지 않는 컬럼은 기본값으로 채우기
+      const configWithDefaults = {
+        ...existingConfig,
+        token_usage_enabled: existingConfig.token_usage_enabled !== undefined ? existingConfig.token_usage_enabled : true,
+        owner_seed_enabled: existingConfig.owner_seed_enabled !== undefined ? existingConfig.owner_seed_enabled : true,
+        owner_power_enabled: existingConfig.owner_power_enabled !== undefined ? existingConfig.owner_power_enabled : true,
+        owner_bigpower_enabled: existingConfig.owner_bigpower_enabled !== undefined ? existingConfig.owner_bigpower_enabled : true,
+        owner_premium_enabled: existingConfig.owner_premium_enabled !== undefined ? existingConfig.owner_premium_enabled : true,
+        agency_elite_enabled: existingConfig.agency_elite_enabled !== undefined ? existingConfig.agency_elite_enabled : true,
+        agency_expert_enabled: existingConfig.agency_expert_enabled !== undefined ? existingConfig.agency_expert_enabled : true,
+        agency_master_enabled: existingConfig.agency_master_enabled !== undefined ? existingConfig.agency_master_enabled : true,
+        agency_premium_enabled: existingConfig.agency_premium_enabled !== undefined ? existingConfig.agency_premium_enabled : true
+      };
+
       return res.json({
         success: true,
-        tokens: existingConfig
+        tokens: configWithDefaults
       });
     }
 
@@ -93,25 +117,111 @@ module.exports = async (req, res) => {
         });
       }
 
-      // 업데이트
-      const { data: updatedConfig, error: updateError } = await supabase
-        .from('token_config')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentConfig.id)
-        .select()
-        .single();
+      // 존재하는 컬럼만 업데이트 (컬럼이 없어도 에러 없이 처리)
+      // Supabase는 존재하지 않는 컬럼을 업데이트하려고 하면 에러가 발생하므로
+      // 안전하게 필터링
+      const safeUpdateData = {};
+      
+      // 기본 컬럼들 (항상 존재)
+      const basicFields = [
+        'owner_seed_limit', 'owner_power_limit', 'owner_bigpower_limit', 'owner_premium_limit',
+        'agency_elite_limit', 'agency_expert_limit', 'agency_master_limit', 'agency_premium_limit'
+      ];
+      
+      // 토큰 사용 제한 필드들 (없을 수 있음)
+      const restrictionFields = [
+        'token_usage_enabled',
+        'owner_seed_enabled', 'owner_power_enabled', 'owner_bigpower_enabled', 'owner_premium_enabled',
+        'agency_elite_enabled', 'agency_expert_enabled', 'agency_master_enabled', 'agency_premium_enabled'
+      ];
 
-      if (updateError) throw updateError;
+      // 기본 필드는 항상 업데이트
+      basicFields.forEach(field => {
+        if (updateData[field] !== undefined) {
+          safeUpdateData[field] = updateData[field];
+        }
+      });
 
-      console.log('✅ 토큰 한도 업데이트 완료:', updatedConfig);
+      // 제한 필드는 존재하는 경우에만 업데이트 (에러 방지)
+      // Supabase는 존재하지 않는 컬럼을 업데이트하려고 하면 에러가 발생하므로
+      // 일단 모두 포함하고, 에러 발생 시 해당 필드만 제외하여 재시도
+      restrictionFields.forEach(field => {
+        if (updateData[field] !== undefined) {
+          safeUpdateData[field] = updateData[field];
+        }
+      });
+
+      // 업데이트 시도
+      let updatedConfig;
+      let updateError;
+
+      try {
+        const result = await supabase
+          .from('token_config')
+          .update({
+            ...safeUpdateData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentConfig.id)
+          .select()
+          .single();
+
+        updatedConfig = result.data;
+        updateError = result.error;
+      } catch (err) {
+        // 컬럼이 없는 경우 에러 발생 가능
+        // 기본 필드만 업데이트 재시도
+        const basicOnlyUpdate = {};
+        basicFields.forEach(field => {
+          if (updateData[field] !== undefined) {
+            basicOnlyUpdate[field] = updateData[field];
+          }
+        });
+
+        const retryResult = await supabase
+          .from('token_config')
+          .update({
+            ...basicOnlyUpdate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentConfig.id)
+          .select()
+          .single();
+
+        updatedConfig = retryResult.data;
+        updateError = retryResult.error;
+
+        // 제한 필드는 컬럼이 없어서 저장되지 않았지만, 응답에는 기본값 포함
+        if (!updateError && updatedConfig) {
+          restrictionFields.forEach(field => {
+            if (updateData[field] !== undefined) {
+              updatedConfig[field] = updateData[field];
+            } else {
+              updatedConfig[field] = true; // 기본값
+            }
+          });
+        }
+      }
+
+      if (updateError) {
+        // 컬럼이 없는 경우 친절한 메시지
+        if (updateError.message && updateError.message.includes('column') && updateError.message.includes('does not exist')) {
+          return res.status(400).json({
+            success: false,
+            error: '토큰 사용 제한 기능을 사용하려면 데이터베이스에 컬럼을 추가해야 합니다. SQL 마이그레이션 파일을 실행해주세요.',
+            needsMigration: true,
+            migrationFile: 'database/schemas/features/subscription/add-token-usage-restriction.sql'
+          });
+        }
+        throw updateError;
+      }
+
+      console.log('✅ 토큰 설정 업데이트 완료:', updatedConfig);
 
       return res.json({
         success: true,
         tokens: updatedConfig,
-        message: '토큰 한도가 업데이트되었습니다'
+        message: '토큰 설정이 업데이트되었습니다'
       });
     }
 

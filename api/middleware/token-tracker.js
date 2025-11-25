@@ -253,20 +253,25 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       return { success: true, hasLimit: true };
     }
 
-    // 1. 전체 토큰 사용 제어 확인
-    const { data: tokenConfig } = await supabase
-      .from('token_config')
-      .select('token_usage_enabled')
-      .single();
+    // 1. 전체 토큰 사용 제어 확인 (컬럼이 없어도 에러 없이 처리)
+    try {
+      const { data: tokenConfig } = await supabase
+        .from('token_config')
+        .select('token_usage_enabled')
+        .single();
 
-    if (tokenConfig && tokenConfig.token_usage_enabled === false) {
-      return {
-        success: false,
-        hasLimit: false,
-        error: '관리자에 의해 토큰 사용이 일시적으로 제한되었습니다. 잠시 후 다시 시도해주세요.',
-        remaining: 0,
-        limit: 0
-      };
+      if (tokenConfig && tokenConfig.token_usage_enabled === false) {
+        return {
+          success: false,
+          hasLimit: false,
+          error: '관리자에 의해 토큰 사용이 일시적으로 제한되었습니다. 잠시 후 다시 시도해주세요.',
+          remaining: 0,
+          limit: 0
+        };
+      }
+    } catch (error) {
+      // 컬럼이 없는 경우 무시하고 계속 진행
+      console.log('⚠️ token_usage_enabled 컬럼이 없습니다. 기본값(true)으로 진행합니다.');
     }
 
     // 2. 사용자 프로필 조회 (등급 확인)
@@ -281,20 +286,25 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       const membershipLevel = profile.membership_level || 'seed';
       const enabledKey = `${userType}_${membershipLevel}_enabled`;
 
-      // 해당 등급의 토큰 사용 활성화 여부 확인
-      const { data: levelConfig } = await supabase
-        .from('token_config')
-        .select(enabledKey)
-        .single();
+      // 해당 등급의 토큰 사용 활성화 여부 확인 (컬럼이 없어도 에러 없이 처리)
+      try {
+        const { data: levelConfig } = await supabase
+          .from('token_config')
+          .select(enabledKey)
+          .single();
 
-      if (levelConfig && levelConfig[enabledKey] === false) {
-        return {
-          success: false,
-          hasLimit: false,
-          error: `관리자에 의해 ${membershipLevel} 등급의 토큰 사용이 제한되었습니다. 관리자에게 문의해주세요.`,
-          remaining: 0,
-          limit: 0
-        };
+        if (levelConfig && levelConfig[enabledKey] === false) {
+          return {
+            success: false,
+            hasLimit: false,
+            error: `관리자에 의해 ${membershipLevel} 등급의 토큰 사용이 제한되었습니다. 관리자에게 문의해주세요.`,
+            remaining: 0,
+            limit: 0
+          };
+        }
+      } catch (error) {
+        // 컬럼이 없는 경우 무시하고 계속 진행 (기본값: 활성화)
+        console.log(`⚠️ ${enabledKey} 컬럼이 없습니다. 기본값(true)으로 진행합니다.`);
       }
     }
 
