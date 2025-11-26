@@ -47,7 +47,9 @@ module.exports = async (req, res) => {
             const updates = req.body;
             const { reset_usage } = updates;
 
-            // 허용된 필드만 업데이트 (role은 profiles 테이블에 없으므로 제외)
+            console.log('[Admin Member Update] 받은 요청 데이터:', JSON.stringify(updates, null, 2));
+
+            // 허용된 필드만 업데이트 (role과 reset_usage는 profiles 테이블에 없으므로 제외)
             const allowedFields = [
                 'name',
                 'business_name',
@@ -60,16 +62,24 @@ module.exports = async (req, res) => {
                 'is_active'
             ];
 
+            // profiles 테이블에 없는 필드들 (명시적으로 제외)
+            const excludedFields = ['role', 'reset_usage'];
+
             const dataToUpdate = {};
             Object.keys(updates).forEach(key => {
-                // role은 무시 (테이블에 없음)
-                if (key === 'role') {
+                // role과 reset_usage는 명시적으로 제외 (테이블에 없음)
+                if (excludedFields.includes(key)) {
+                    console.log(`[Admin Member Update] 필드 제외: ${key} (테이블에 없음)`);
                     return;
                 }
                 if (allowedFields.includes(key)) {
                     dataToUpdate[key] = updates[key];
+                } else {
+                    console.log(`[Admin Member Update] 허용되지 않은 필드: ${key}`);
                 }
             });
+
+            console.log('[Admin Member Update] 업데이트할 데이터:', JSON.stringify(dataToUpdate, null, 2));
 
             if (Object.keys(dataToUpdate).length === 0 && !reset_usage) {
                 return res.status(400).json({
@@ -89,10 +99,20 @@ module.exports = async (req, res) => {
                 .single();
 
             if (error) {
-                console.error('[Admin Member Update] Error:', error);
+                console.error('[Admin Member Update] Supabase Error:', error);
+                console.error('[Admin Member Update] Error Code:', error.code);
+                console.error('[Admin Member Update] Error Details:', error.details);
+                console.error('[Admin Member Update] Error Hint:', error.hint);
+                
+                // role 관련 에러인 경우 명시적으로 안내
+                let errorMessage = error.message || 'Failed to update member';
+                if (error.message && error.message.includes('role')) {
+                    errorMessage = 'role 컬럼이 profiles 테이블에 없습니다. role 필드는 전송하지 마세요.';
+                }
+                
                 return res.status(500).json({
                     success: false,
-                    error: error.message || 'Failed to update member'
+                    error: errorMessage
                 });
             }
 

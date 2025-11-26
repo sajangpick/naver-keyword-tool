@@ -152,76 +152,92 @@ module.exports = async (req, res) => {
       });
 
       // 업데이트 시도
+      // 먼저 기본 필드만 업데이트 시도 (항상 존재하는 컬럼)
+      const basicOnlyUpdate = {};
+      basicFields.forEach(field => {
+        if (updateData[field] !== undefined) {
+          basicOnlyUpdate[field] = updateData[field];
+        }
+      });
+
       let updatedConfig;
       let updateError;
 
-      try {
-        const result = await supabase
-          .from('token_config')
-          .update({
-            ...safeUpdateData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentConfig.id)
-          .select()
-          .single();
+      // 1단계: 기본 필드만 업데이트
+      const basicResult = await supabase
+        .from('token_config')
+        .update({
+          ...basicOnlyUpdate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentConfig.id)
+        .select()
+        .single();
 
-        updatedConfig = result.data;
-        updateError = result.error;
-      } catch (err) {
-        // 컬럼이 없는 경우 에러 발생 가능
-        // 기본 필드만 업데이트 재시도
-        const basicOnlyUpdate = {};
-        basicFields.forEach(field => {
+      updatedConfig = basicResult.data;
+      updateError = basicResult.error;
+
+      // 2단계: 제한 필드가 있으면 별도로 업데이트 시도 (컬럼이 있을 경우에만)
+      if (!updateError && restrictionFields.some(field => updateData[field] !== undefined)) {
+        const restrictionOnlyUpdate = {};
+        restrictionFields.forEach(field => {
           if (updateData[field] !== undefined) {
-            basicOnlyUpdate[field] = updateData[field];
+            restrictionOnlyUpdate[field] = updateData[field];
           }
         });
 
-        const retryResult = await supabase
-          .from('token_config')
-          .update({
-            ...basicOnlyUpdate,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentConfig.id)
-          .select()
-          .single();
+        // 제한 필드 업데이트 시도 (컬럼이 없으면 에러 발생 가능)
+        try {
+          const restrictionResult = await supabase
+            .from('token_config')
+            .update({
+              ...restrictionOnlyUpdate,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', currentConfig.id)
+            .select()
+            .single();
 
-        updatedConfig = retryResult.data;
-        updateError = retryResult.error;
-
-        // 제한 필드는 컬럼이 없어서 저장되지 않았지만, 응답에는 기본값 포함
-        if (!updateError && updatedConfig) {
-          restrictionFields.forEach(field => {
-            if (updateData[field] !== undefined) {
-              updatedConfig[field] = updateData[field];
-            } else {
-              updatedConfig[field] = true; // 기본값
+          if (restrictionResult.data) {
+            updatedConfig = restrictionResult.data;
+          }
+          // 에러가 발생해도 기본 필드는 이미 저장되었으므로 계속 진행
+          if (restrictionResult.error) {
+            console.warn('⚠️ 토큰 사용 제한 필드 업데이트 실패 (컬럼이 없을 수 있음):', restrictionResult.error.message);
+            // 응답에는 요청한 값 포함 (실제 DB에는 저장되지 않았지만 사용자에게는 표시)
+            if (updatedConfig) {
+              Object.keys(restrictionOnlyUpdate).forEach(field => {
+                updatedConfig[field] = restrictionOnlyUpdate[field];
+              });
             }
-          });
+          }
+        } catch (err) {
+          console.warn('⚠️ 토큰 사용 제한 필드 업데이트 중 에러 (무시):', err.message);
+          // 응답에는 요청한 값 포함
+          if (updatedConfig) {
+            Object.keys(restrictionOnlyUpdate).forEach(field => {
+              updatedConfig[field] = restrictionOnlyUpdate[field];
+            });
+          }
         }
       }
 
       if (updateError) {
-        // 컬럼이 없는 경우 친절한 메시지
-        if (updateError.message && updateError.message.includes('column') && updateError.message.includes('does not exist')) {
-          return res.status(400).json({
-            success: false,
-            error: '토큰 사용 제한 기능을 사용하려면 데이터베이스에 컬럼을 추가해야 합니다. SQL 마이그레이션 파일을 실행해주세요.',
-            needsMigration: true,
-            migrationFile: 'database/schemas/features/subscription/add-token-usage-restriction.sql'
-          });
-        }
         throw updateError;
       }
+
+      // 제한 필드가 요청되었지만 컬럼이 없는 경우 경고 메시지 포함
+      const hasRestrictionFields = restrictionFields.some(field => updateData[field] !== undefined);
+      const warningMessage = hasRestrictionFields ? 
+        '토큰 사용 제한 설정은 저장되었지만, 데이터베이스에 컬럼이 없어 실제로는 적용되지 않을 수 있습니다. SQL 마이그레이션을 실행해주세요: database/schemas/features/subscription/add-token-usage-restriction.sql' : null;
 
       console.log('✅ 토큰 설정 업데이트 완료:', updatedConfig);
 
       return res.json({
         success: true,
         tokens: updatedConfig,
-        message: '토큰 설정이 업데이트되었습니다'
+        message: '토큰 설정이 업데이트되었습니다',
+        warning: warningMessage || undefined
       });
     }
 

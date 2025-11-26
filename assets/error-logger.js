@@ -104,6 +104,7 @@
       const userId = window.currentUser?.id || null;
       
       // 기본 에러 데이터 구성
+      // 주의: 테이블에 없는 컬럼은 제외해야 저장이 성공합니다
       const errorData = {
         error_type: errorType,
         severity: severity,
@@ -119,7 +120,8 @@
         session_id: sessionId,
         user_agent: ua,
         browser: browser,
-        browser_version: browserVersion,
+        // browser_version 컬럼이 테이블에 없으면 주석 처리
+        // browser_version: browserVersion,
         os: os,
         device_type: deviceType,
         page_url: window.location.href

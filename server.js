@@ -3579,9 +3579,10 @@ app.put('/api/admin/members/:id', async (req, res) => {
       updateData.membership_level = membership_level;
     }
 
-    // 역할 변경
-    if (role) {
-      updateData.role = role;
+    // 역할 변경 (role은 profiles 테이블에 없으므로 제외)
+    // if (role) {
+    //   updateData.role = role;
+    // }
     }
     
     // 사용량 초기화 옵션
