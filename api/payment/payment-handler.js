@@ -264,14 +264,19 @@ async function activateSubscription(userId, orderId) {
 
     if (updateError) throw updateError;
 
-    // 3. 새 구독 사이클 생성
-    const { data: tokenConfig } = await supabase
+    // 3. 새 구독 사이클 생성 (관리자 설정에서 최신 한도 가져오기)
+    const { data: tokenConfigs } = await supabase
       .from('token_config')
       .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .single();
 
+    const tokenConfig = tokenConfigs || {};
     const tokenKey = `owner_${planType}_limit`;
     const monthlyTokens = tokenConfig[tokenKey] || 100;
+    
+    console.log(`✅ [payment] 관리자 설정 토큰 한도 사용: ${monthlyTokens} (${tokenKey})`);
 
     const startDate = new Date();
     const endDate = new Date(startDate);

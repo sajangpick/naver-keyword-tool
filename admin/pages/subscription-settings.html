@@ -464,32 +464,6 @@
         <!-- 상태 메시지 -->
         <div id="statusMessage" style="display: none;"></div>
 
-        <!-- 전체 토큰 사용 제어 -->
-        <section class="card" style="margin-bottom: 20px;">
-          <div class="card-header">
-            <div class="title">
-              <i class="fas fa-power-off" style="color: #ef4444;"></i>
-              🔒 전체 토큰 사용 제어
-            </div>
-            <button class="btn primary" onclick="saveTokenUsageControl()">
-              <i class="fas fa-save"></i> 저장
-            </button>
-          </div>
-          <div class="card-body">
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-                <input type="checkbox" id="token_usage_enabled" style="width: 20px; height: 20px; cursor: pointer;">
-                <span style="font-size: 15px; font-weight: 600; color: #111827;">
-                  전체 토큰 사용 활성화
-                </span>
-              </label>
-              <span style="font-size: 12px; color: #6b7280;">
-                (비활성화 시 모든 등급의 토큰 사용이 차단됩니다)
-              </span>
-            </div>
-          </div>
-        </section>
-
         <!-- 식당 대표 설정 -->
         <section class="card">
           <div class="card-header">
@@ -548,7 +522,6 @@
       let supabase;
       let pricingData = {};
       let tokenData = {};
-      let tokenUsageControl = { token_usage_enabled: true };
 
       // ==================== 초기화 ====================
 
@@ -593,18 +566,12 @@
           pricingData = pricingResult.pricing;
           tokenData = tokenResult.tokens;
           
-          // 토큰 사용 제어 설정 추출
-          tokenUsageControl = {
-            token_usage_enabled: tokenData.token_usage_enabled !== false
-          };
-          
           // 경고 메시지가 있으면 표시 (컬럼이 없는 경우)
           if (tokenResult.warning) {
             showMessage('⚠️ ' + tokenResult.warning, 'warning');
           }
 
           renderSettings();
-          renderTokenUsageControl();
         } catch (error) {
           console.error('❌ 설정 로드 실패:', error);
           showMessage('설정 로드 실패: ' + error.message, 'error');
@@ -727,40 +694,6 @@
         `).join('');
       }
 
-      // 토큰 사용 제어 UI 렌더링
-      function renderTokenUsageControl() {
-        const checkbox = document.getElementById('token_usage_enabled');
-        const badge = document.getElementById('tokenUsageBadge');
-        
-        if (checkbox) {
-          checkbox.checked = tokenUsageControl.token_usage_enabled;
-          
-          // 초기 배지 설정
-          if (badge) {
-            if (checkbox.checked) {
-              badge.className = 'enabled-badge';
-              badge.textContent = '활성화';
-            } else {
-              badge.className = 'disabled-badge';
-              badge.textContent = '비활성화';
-            }
-          }
-          
-          // 체크박스 변경 시 배지 업데이트
-          checkbox.addEventListener('change', function() {
-            if (badge) {
-              if (this.checked) {
-                badge.className = 'enabled-badge';
-                badge.textContent = '활성화';
-              } else {
-                badge.className = 'disabled-badge';
-                badge.textContent = '비활성화';
-              }
-            }
-          });
-        }
-      }
-
       // ==================== 통합 저장 ====================
 
       async function saveSettings(type) {
@@ -835,39 +768,6 @@
             showMessage('⚠️ ' + tokenResult.warning, 'warning');
           } else {
             showMessage(`${type === 'owner' ? '🍽️ 식당 대표' : '🏢 대행사'} 설정이 저장되었습니다`, 'success');
-          }
-        } catch (error) {
-          console.error('❌ 저장 실패:', error);
-          showMessage('저장 실패: ' + error.message, 'error');
-        }
-      }
-
-
-      // ==================== 토큰 사용 제어 저장 ====================
-
-      async function saveTokenUsageControl() {
-        try {
-          const tokenUsageUpdate = {
-            token_usage_enabled: document.getElementById('token_usage_enabled').checked
-          };
-
-          const tokenRes = await fetch('/api/subscription/token-config', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tokenUsageUpdate)
-          });
-
-          const tokenResult = await tokenRes.json();
-
-          if (!tokenResult.success) throw new Error(tokenResult.error);
-
-          tokenUsageControl = tokenUsageUpdate;
-          
-          // 경고 메시지가 있으면 표시
-          if (tokenResult.warning) {
-            showMessage('⚠️ ' + tokenResult.warning, 'warning');
-          } else {
-            showMessage('✅ 전체 토큰 사용 제어 설정이 저장되었습니다', 'success');
           }
         } catch (error) {
           console.error('❌ 저장 실패:', error);

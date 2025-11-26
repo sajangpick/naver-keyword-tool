@@ -186,10 +186,15 @@ async function getDashboardData(user, res) {
       .select('*')
       .single();
 
-    const { data: tokenConfig } = await supabase
+    // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선)
+    const { data: tokenConfigs } = await supabase
       .from('token_config')
       .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .single();
+    
+    const tokenConfig = tokenConfigs || {};
 
     // 플랜 정보 구성
     const userType = profile.user_type || 'owner';
@@ -253,6 +258,31 @@ async function getDashboardData(user, res) {
       }
     ];
 
+    // 관리자 설정에서 현재 사용자의 토큰 한도 가져오기 (우선 사용)
+    const userType = profile.user_type || 'owner';
+    const membershipLevel = profile.membership_level || 'seed';
+    const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+    
+    let currentTokenLimit = cycle.monthly_token_limit; // 기본값: 사이클 값
+    if (tokenConfig[tokenLimitKey] !== undefined && tokenConfig[tokenLimitKey] !== null) {
+      currentTokenLimit = Number(tokenConfig[tokenLimitKey]);
+      console.log(`✅ [user-dashboard] 관리자 설정 한도 사용: ${currentTokenLimit} (${tokenLimitKey})`);
+      
+      // 사이클의 한도와 다르면 사이클 업데이트
+      if (cycle.monthly_token_limit !== currentTokenLimit) {
+        console.log(`🔄 [user-dashboard] 사이클 한도 업데이트: ${cycle.monthly_token_limit} → ${currentTokenLimit}`);
+        await supabase
+          .from('subscription_cycle')
+          .update({
+            monthly_token_limit: currentTokenLimit,
+            tokens_remaining: currentTokenLimit - totalUsed,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', cycle.id);
+        console.log('✅ [user-dashboard] 사이클 한도 업데이트 완료');
+      }
+    }
+
     // 다음 갱신일 계산
     const cycleEndDate = new Date(cycle.cycle_end_date);
     const today = new Date();
@@ -271,10 +301,11 @@ async function getDashboardData(user, res) {
         },
         cycle: {
           ...cycle,
+          monthly_token_limit: currentTokenLimit, // 관리자 설정 값 사용
           tokens_used: totalUsed,
-          tokens_remaining: cycle.monthly_token_limit - totalUsed,
+          tokens_remaining: currentTokenLimit - totalUsed, // 관리자 설정 기준
           days_remaining: daysRemaining,
-          usage_rate: Math.round((totalUsed / cycle.monthly_token_limit) * 100)
+          usage_rate: Math.round((totalUsed / currentTokenLimit) * 100) // 관리자 설정 기준
         },
         plans,
         recentUsage,

@@ -77,10 +77,15 @@ async function renewExpiredSubscriptions() {
           .select('*')
           .single();
 
-        const { data: tokenConfig } = await supabase
+        // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선)
+        const { data: tokenConfigs } = await supabase
           .from('token_config')
           .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
           .single();
+        
+        const tokenConfig = tokenConfigs || {};
 
         // 개인 맞춤 설정 확인
         const { data: customPricing } = await supabase
