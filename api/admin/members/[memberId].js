@@ -6,12 +6,23 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Supabase 클라이언트 초기화
-let supabase = null;
-if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    supabase = createClient(
+// Supabase 클라이언트 생성 함수 (매 요청마다 새로 생성하여 스키마 캐시 문제 방지)
+function getSupabaseClient() {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return null;
+    }
+    // 매번 새 클라이언트 생성하여 스키마 캐시 문제 방지
+    return createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        {
+            db: {
+                schema: 'public'
+            },
+            auth: {
+                persistSession: false
+            }
+        }
     );
 }
 
@@ -25,6 +36,9 @@ module.exports = async (req, res) => {
         return res.status(200).end();
     }
 
+    // 매 요청마다 새 Supabase 클라이언트 생성 (스키마 캐시 문제 방지)
+    const supabase = getSupabaseClient();
+    
     if (!supabase) {
         return res.status(500).json({
             success: false,
@@ -90,23 +104,21 @@ module.exports = async (req, res) => {
 
             dataToUpdate.updated_at = new Date().toISOString();
 
-            // 프로필 업데이트 (role 컬럼이 없으므로 명시적으로 필드 지정)
-            const { data, error } = await supabase
+            // 프로필 업데이트 (스키마 캐시 문제 방지를 위해 .select() 없이 업데이트만 수행)
+            const { error: updateError } = await supabase
                 .from('profiles')
                 .update(dataToUpdate)
-                .eq('id', memberId)
-                .select('id, name, email, user_type, membership_level, created_at, updated_at')
-                .single();
+                .eq('id', memberId);
 
-            if (error) {
-                console.error('[Admin Member Update] Supabase Error:', error);
-                console.error('[Admin Member Update] Error Code:', error.code);
-                console.error('[Admin Member Update] Error Details:', error.details);
-                console.error('[Admin Member Update] Error Hint:', error.hint);
+            if (updateError) {
+                console.error('[Admin Member Update] Supabase Update Error:', updateError);
+                console.error('[Admin Member Update] Error Code:', updateError.code);
+                console.error('[Admin Member Update] Error Details:', updateError.details);
+                console.error('[Admin Member Update] Error Hint:', updateError.hint);
                 
                 // role 관련 에러인 경우 명시적으로 안내
-                let errorMessage = error.message || 'Failed to update member';
-                if (error.message && error.message.includes('role')) {
+                let errorMessage = updateError.message || 'Failed to update member';
+                if (updateError.message && updateError.message.includes('role')) {
                     errorMessage = 'role 컬럼이 profiles 테이블에 없습니다. role 필드는 전송하지 마세요.';
                 }
                 
@@ -114,6 +126,18 @@ module.exports = async (req, res) => {
                     success: false,
                     error: errorMessage
                 });
+            }
+
+            // 업데이트 성공 후 별도로 조회 (스키마 캐시 문제 방지)
+            const { data, error: selectError } = await supabase
+                .from('profiles')
+                .select('id, name, email, user_type, membership_level, created_at, updated_at')
+                .eq('id', memberId)
+                .single();
+
+            if (selectError) {
+                console.error('[Admin Member Update] Select Error (non-critical):', selectError);
+                // 업데이트는 성공했으므로 빈 데이터로 반환
             }
 
             // 사용량 초기화 (이번 달 사용량 삭제)

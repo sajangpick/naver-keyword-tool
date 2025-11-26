@@ -597,6 +597,11 @@
           tokenUsageControl = {
             token_usage_enabled: tokenData.token_usage_enabled !== false
           };
+          
+          // 경고 메시지가 있으면 표시 (컬럼이 없는 경우)
+          if (tokenResult.warning) {
+            showMessage('⚠️ ' + tokenResult.warning, 'warning');
+          }
 
           renderSettings();
           renderTokenUsageControl();
@@ -825,7 +830,12 @@
           pricingData = pricingResult.pricing;
           tokenData = tokenResult.tokens;
 
-          showMessage(`${type === 'owner' ? '🍽️ 식당 대표' : '🏢 대행사'} 설정이 저장되었습니다`, 'success');
+          // 경고 메시지가 있으면 표시 (컬럼이 없는 경우)
+          if (tokenResult.warning) {
+            showMessage('⚠️ ' + tokenResult.warning, 'warning');
+          } else {
+            showMessage(`${type === 'owner' ? '🍽️ 식당 대표' : '🏢 대행사'} 설정이 저장되었습니다`, 'success');
+          }
         } catch (error) {
           console.error('❌ 저장 실패:', error);
           showMessage('저장 실패: ' + error.message, 'error');
@@ -852,7 +862,13 @@
           if (!tokenResult.success) throw new Error(tokenResult.error);
 
           tokenUsageControl = tokenUsageUpdate;
-          showMessage('✅ 전체 토큰 사용 제어 설정이 저장되었습니다', 'success');
+          
+          // 경고 메시지가 있으면 표시
+          if (tokenResult.warning) {
+            showMessage('⚠️ ' + tokenResult.warning, 'warning');
+          } else {
+            showMessage('✅ 전체 토큰 사용 제어 설정이 저장되었습니다', 'success');
+          }
         } catch (error) {
           console.error('❌ 저장 실패:', error);
           showMessage('저장 실패: ' + error.message, 'error');
