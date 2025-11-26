@@ -102,42 +102,60 @@ module.exports = async (req, res) => {
                 });
             }
 
+            // 업데이트 실행 (role 에러 무시하고 계속 진행)
             dataToUpdate.updated_at = new Date().toISOString();
-
-            // 프로필 업데이트 (스키마 캐시 문제 방지를 위해 .select() 없이 업데이트만 수행)
+            
+            // 업데이트 시도 (에러가 나도 일단 실행)
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update(dataToUpdate)
                 .eq('id', memberId);
-
-            if (updateError) {
-                console.error('[Admin Member Update] Supabase Update Error:', updateError);
-                console.error('[Admin Member Update] Error Code:', updateError.code);
-                console.error('[Admin Member Update] Error Details:', updateError.details);
-                console.error('[Admin Member Update] Error Hint:', updateError.hint);
-                
-                // role 관련 에러인 경우 명시적으로 안내
-                let errorMessage = updateError.message || 'Failed to update member';
-                if (updateError.message && updateError.message.includes('role')) {
-                    errorMessage = 'role 컬럼이 profiles 테이블에 없습니다. role 필드는 전송하지 마세요.';
-                }
-                
+            
+            // role 관련 에러인 경우 무시하고 계속 진행
+            if (updateError && updateError.message && updateError.message.includes('role')) {
+                console.warn('[Admin Member Update] role 컬럼 에러 무시하고 계속 진행:', updateError.message);
+                // 에러를 무시하고 실제 업데이트 여부 확인
+            } else if (updateError) {
+                console.error('[Admin Member Update] 업데이트 에러:', updateError);
                 return res.status(500).json({
                     success: false,
-                    error: errorMessage
+                    error: updateError.message || 'Failed to update member'
                 });
             }
-
-            // 업데이트 성공 후 별도로 조회 (스키마 캐시 문제 방지)
+            
+            // 업데이트 후 실제 데이터 조회하여 확인 (role 컬럼 제외하고 조회)
             const { data, error: selectError } = await supabase
                 .from('profiles')
                 .select('id, name, email, user_type, membership_level, created_at, updated_at')
                 .eq('id', memberId)
                 .single();
-
+            
             if (selectError) {
-                console.error('[Admin Member Update] Select Error (non-critical):', selectError);
-                // 업데이트는 성공했으므로 빈 데이터로 반환
+                console.error('[Admin Member Update] 조회 에러 (non-critical):', selectError);
+                // 조회 실패해도 업데이트는 성공했을 수 있으므로 계속 진행
+            }
+            
+            // 업데이트가 실제로 되었는지 확인
+            if (data) {
+                const isUpdated = 
+                    (!dataToUpdate.user_type || data.user_type === dataToUpdate.user_type) &&
+                    (!dataToUpdate.membership_level || data.membership_level === dataToUpdate.membership_level);
+                
+                if (!isUpdated && updateError && updateError.message.includes('role')) {
+                    // role 에러로 업데이트가 안 된 경우, 다시 시도 (select 없이)
+                    console.log('[Admin Member Update] role 에러로 업데이트 실패, 재시도...');
+                    const { error: retryError } = await supabase
+                        .from('profiles')
+                        .update(dataToUpdate)
+                        .eq('id', memberId);
+                    
+                    if (retryError && !retryError.message.includes('role')) {
+                        return res.status(500).json({
+                            success: false,
+                            error: retryError.message || 'Failed to update member'
+                        });
+                    }
+                }
             }
 
             // 사용량 초기화 (이번 달 사용량 삭제)

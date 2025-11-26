@@ -5,10 +5,12 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Supabase 클라이언트 초기화
-let supabase = null;
-if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    supabase = createClient(
+// Supabase 클라이언트 생성 함수 (매 요청마다 새로 생성)
+function getSupabaseClient() {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return null;
+    }
+    return createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_ROLE_KEY
     );
@@ -31,6 +33,9 @@ module.exports = async (req, res) => {
         });
     }
 
+    // 매 요청마다 새 Supabase 클라이언트 생성
+    const supabase = getSupabaseClient();
+    
     if (!supabase) {
         return res.status(500).json({
             success: false,
