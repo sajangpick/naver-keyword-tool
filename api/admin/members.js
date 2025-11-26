@@ -74,9 +74,54 @@ module.exports = async (req, res) => {
             });
         }
 
+        // 이번 달 시작일 계산 (현재 달의 1일 00:00:00)
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        firstDayOfMonth.setHours(0, 0, 0, 0);
+
+        // 각 회원의 실제 사용량 계산
+        const membersWithUsage = await Promise.all(
+            (members || []).map(async (member) => {
+                try {
+                    const userId = member.id;
+
+                    // 이번 달 리뷰 답글 수 계산
+                    const { count: reviewCount } = await supabase
+                        .from('user_events')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', userId)
+                        .eq('event_name', 'review_replied')
+                        .gte('created_at', firstDayOfMonth.toISOString());
+
+                    // 이번 달 블로그 생성 수 계산
+                    const { count: blogCount } = await supabase
+                        .from('user_events')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', userId)
+                        .eq('event_name', 'blog_created')
+                        .gte('created_at', firstDayOfMonth.toISOString());
+
+                    // 실제 사용량으로 업데이트
+                    return {
+                        ...member,
+                        monthly_review_count: reviewCount || 0,
+                        monthly_blog_count: blogCount || 0
+                    };
+                } catch (err) {
+                    console.error(`[Admin Members API] 회원 ${member.id} 사용량 계산 실패:`, err);
+                    // 에러 발생 시 기본값 반환
+                    return {
+                        ...member,
+                        monthly_review_count: 0,
+                        monthly_blog_count: 0
+                    };
+                }
+            })
+        );
+
         return res.status(200).json({
             success: true,
-            members: members || [],
+            members: membersWithUsage || [],
             total: count || 0,
             page: parseInt(page),
             limit: parseInt(limit),

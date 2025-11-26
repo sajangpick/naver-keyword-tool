@@ -3955,54 +3955,6 @@ app.post('/api/admin/manager-roles', async (req, res) => {
   }
 });
 
-// ==================== 에러 핸들러 ====================
-
-// 404 에러 핸들러
-app.use("*", (req, res) => {
-  const prod = process.env.NODE_ENV === "production";
-  const payload = {
-    error: "요청한 경로를 찾을 수 없습니다.",
-    path: req.originalUrl,
-    timestamp: new Date().toISOString(),
-  };
-  if (!prod) {
-    payload.availableEndpoints = [
-      "GET /",
-      "GET /health",
-      "GET /auth/me",
-      "POST /auth/logout",
-      "POST /api/keywords",
-      "POST /api/keyword-trend",
-      "GET /api/related-keywords",
-      "POST /api/generate-blog",
-      "POST /api/analyze-review",
-      "POST /api/generate-reply",
-      "GET /api/search/local",
-      "GET /api/test-keys",
-      "GET /auth/kakao/login",
-      "GET /auth/kakao/callback",
-      "GET /api/admin/members",
-      "PUT /api/admin/members/:id",
-      "GET /api/admin/members/:id",
-      "DELETE /api/admin/members/:id",
-    ];
-  }
-  res.status(404).json(payload);
-});
-
-// 전역 에러 핸들러
-app.use((error, req, res, next) => {
-  devError("전역 에러:", error);
-  res.status(500).json({
-    error: "서버 내부 오류가 발생했습니다.",
-    details:
-      process.env.NODE_ENV === "development"
-        ? error.message
-        : "서버 관리자에게 문의하세요.",
-    timestamp: new Date().toISOString(),
-  });
-});
-
 // 쇼츠 영상 기획/대본 API
 
 app.post("/api/shorts/plan-and-script", async (req, res) => {
@@ -4179,7 +4131,138 @@ app.delete("/api/shorts/plan-history/:id", async (req, res) => {
   }
 });
 
-// ==================== Runway API 설정 ====================
+// ==================== Gemini 영상 생성 API 설정 ====================
+
+// Gemini API로 이미지 분석 및 영상 생성 프롬프트 개선
+async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, style, duration) {
+  try {
+    devLog("Gemini API로 이미지 분석 및 프롬프트 생성 시작:", { imageUrl, menuName, style });
+
+    if (!GEMINI_API_KEY) {
+      throw new Error("Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경변수를 설정해주세요.");
+    }
+
+    // 이미지 URL에서 이미지 데이터 가져오기
+    const imageResponse = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 30000,
+    });
+    
+    const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+    const imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
+
+    // 스타일별 기본 프롬프트
+    const styleDescriptions = {
+      luxury: "고급스럽고 우아한 느낌, 느린 모션, 프리미엄 레스토랑 품질, 영화적인 조명, 세련된 분위기",
+      fast: "역동적인 음식 영상, 빠른 편집, 트렌디한 SNS 스타일, 생동감 있는 색상, 활기찬 움직임",
+      chef: "셰프의 손으로 음식을 준비하는 모습, 요리 과정 클로즈업, 전문 주방, 상세한 음식 준비, 진정성 있는 요리",
+      plating: "아름다운 음식 플레이팅, 예술적인 프레젠테이션, 레스토랑 품질의 요리, 우아한 배치, 전문적인 푸드 스타일링",
+      simple: "깔끔한 음식 영상, 단순하고 우아함, 미니멀 스타일, 자연스러운 조명, 전문적인 품질"
+    };
+
+    const styleDescription = styleDescriptions[style] || styleDescriptions.simple;
+
+    // Gemini에 이미지 분석 및 프롬프트 생성 요청
+    const prompt = `다음은 식당 홍보용 쇼츠 영상을 만들기 위한 음식 사진입니다.
+
+메뉴명: ${menuName}
+메뉴 특징: ${menuFeatures || '없음'}
+영상 스타일: ${styleDescription}
+영상 길이: ${duration}초
+
+이 이미지를 분석하여 다음 정보를 제공해주세요:
+1. 이미지에 보이는 음식의 특징 (색상, 구성, 모양 등)
+2. 영상으로 만들 때 강조해야 할 포인트
+3. 영상 생성 AI(Runway, Pika 등)에 사용할 최적의 영어 프롬프트 (50단어 이내, 영화적이고 전문적인 표현 사용)
+
+응답 형식:
+특징: [이미지 분석 결과]
+강조 포인트: [영상에서 강조할 내용]
+프롬프트: [영어 프롬프트만 제공, 따옴표 없이]`;
+
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+              {
+                inline_data: {
+                  mime_type: imageMimeType,
+                  data: imageBase64,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 500,
+          temperature: 0.7,
+        },
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+      }
+    );
+
+    if (
+      response.data.candidates &&
+      response.data.candidates[0] &&
+      response.data.candidates[0].content
+    ) {
+      const geminiResponse = response.data.candidates[0].content.parts[0].text;
+      
+      // 프롬프트 추출 (응답에서 "프롬프트:" 뒤의 텍스트 추출)
+      let videoPrompt = geminiResponse;
+      const promptMatch = geminiResponse.match(/프롬프트:\s*(.+?)(?:\n|$)/i);
+      if (promptMatch) {
+        videoPrompt = promptMatch[1].trim();
+      } else {
+        // 프롬프트: 라벨이 없으면 마지막 문장을 프롬프트로 사용
+        const lines = geminiResponse.split('\n').filter(line => line.trim());
+        videoPrompt = lines[lines.length - 1].trim();
+      }
+
+      // 기본 프롬프트와 결합
+      const finalPrompt = `${videoPrompt}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video, ${duration} seconds, vertical format (9:16 aspect ratio).`;
+
+      devLog("Gemini 프롬프트 생성 완료:", finalPrompt);
+      return {
+        prompt: finalPrompt,
+        analysis: geminiResponse,
+      };
+    } else {
+      throw new Error("Gemini API 응답 형식 오류");
+    }
+  } catch (error) {
+    devError("Gemini 이미지 분석 오류:", error.response?.data || error.message);
+    
+    // Gemini 실패 시 기본 프롬프트 사용
+    const stylePrompts = {
+      luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
+      fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
+      chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
+      plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
+      simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
+    };
+
+    const fallbackPrompt = `${stylePrompts[style] || stylePrompts.simple}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video.`;
+    
+    devLog("Gemini 실패, 기본 프롬프트 사용:", fallbackPrompt);
+    return {
+      prompt: fallbackPrompt,
+      analysis: "Gemini 분석 실패, 기본 프롬프트 사용",
+    };
+  }
+}
+
+// ==================== Runway API 설정 (폴백용) ====================
 
 const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY || "key_8f7dd7e27cc2ed2a9bbb19893c6636fab1d008334adf301de3074d2f739f4e894440353d83e15c4bc272a78237bc201ceca2d9032ae168ae5bd97f98c1b5d2b7";
 
@@ -4390,16 +4473,17 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
           .getPublicUrl(filePath);
         const imageUrl = urlData?.publicUrl || "";
 
-        // 스타일별 프롬프트 생성
-        const stylePrompts = {
-          luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
-          fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
-          chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
-          plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
-          simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
-        };
-
-        const prompt = `${stylePrompts[style] || stylePrompts.simple}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video.`;
+        // Gemini API로 이미지 분석 및 영상 생성 프롬프트 생성
+        devLog("Gemini로 이미지 분석 및 프롬프트 생성 시작...");
+        const { prompt, analysis } = await generateVideoPromptWithGemini(
+          imageUrl,
+          menuName,
+          menuFeatures,
+          style,
+          parseInt(duration) || 10
+        );
+        devLog("Gemini 프롬프트 생성 완료:", prompt);
+        devLog("Gemini 분석 결과:", analysis);
 
         // 영상 데이터베이스에 저장 (처리 중 상태)
         const { data: videoData, error: dbError } = await supabase
@@ -4582,6 +4666,60 @@ if (process.env.VERCEL) {
   } catch (error) {
     devLog('⚠️ 크론 작업 설정 실패 (node-cron 패키지 필요):', error.message);
   }
+
+// ==================== 에러 핸들러 ====================
+
+// 404 에러 핸들러 (모든 라우트 뒤에 위치해야 함)
+app.use("*", (req, res) => {
+  const prod = process.env.NODE_ENV === "production";
+  const payload = {
+    error: "요청한 경로를 찾을 수 없습니다.",
+    path: req.originalUrl,
+    timestamp: new Date().toISOString(),
+  };
+  if (!prod) {
+    payload.availableEndpoints = [
+      "GET /",
+      "GET /health",
+      "GET /auth/me",
+      "POST /auth/logout",
+      "POST /api/keywords",
+      "POST /api/keyword-trend",
+      "GET /api/related-keywords",
+      "POST /api/generate-blog",
+      "POST /api/analyze-review",
+      "POST /api/generate-reply",
+      "GET /api/search/local",
+      "GET /api/test-keys",
+      "GET /auth/kakao/login",
+      "GET /auth/kakao/callback",
+      "GET /api/admin/members",
+      "PUT /api/admin/members/:id",
+      "GET /api/admin/members/:id",
+      "DELETE /api/admin/members/:id",
+      "POST /api/shorts/plan-and-script",
+      "GET /api/shorts/plan-history",
+      "POST /api/shorts/plan-history",
+      "DELETE /api/shorts/plan-history/:id",
+      "POST /api/shorts/generate",
+      "GET /api/shorts/videos",
+    ];
+  }
+  res.status(404).json(payload);
+});
+
+// 전역 에러 핸들러
+app.use((error, req, res, next) => {
+  devError("전역 에러:", error);
+  res.status(500).json({
+    error: "서버 내부 오류가 발생했습니다.",
+    details:
+      process.env.NODE_ENV === "development"
+        ? error.message
+        : "서버 관리자에게 문의하세요.",
+    timestamp: new Date().toISOString(),
+  });
+});
 
   app.listen(PORT, "0.0.0.0", () => {
     devLog("==========================================");
