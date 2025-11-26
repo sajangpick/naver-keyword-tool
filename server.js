@@ -3437,10 +3437,57 @@ app.get('/api/admin/members', async (req, res) => {
         error: error.message 
       });
     }
+
+    // 이번 달 시작일 계산 (현재 달의 1일 00:00:00)
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
+
+    // 각 회원의 실제 사용량 계산
+    const membersWithUsage = await Promise.all(
+      (data || []).map(async (member) => {
+        try {
+          // auth.users 테이블에서 user_id 찾기 (profiles.id와 auth.users.id가 다를 수 있음)
+          // profiles 테이블의 id가 auth.users.id와 동일하다고 가정
+          const userId = member.id;
+
+          // 이번 달 리뷰 답글 수 계산
+          const { count: reviewCount } = await supabase
+            .from('user_events')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('event_name', 'review_replied')
+            .gte('created_at', firstDayOfMonth.toISOString());
+
+          // 이번 달 블로그 생성 수 계산
+          const { count: blogCount } = await supabase
+            .from('user_events')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('event_name', 'blog_created')
+            .gte('created_at', firstDayOfMonth.toISOString());
+
+          // 실제 사용량으로 업데이트
+          return {
+            ...member,
+            monthly_review_count: reviewCount || 0,
+            monthly_blog_count: blogCount || 0
+          };
+        } catch (err) {
+          console.error(`❌ 회원 ${member.id} 사용량 계산 실패:`, err);
+          // 에러 발생 시 기존 값 유지
+          return {
+            ...member,
+            monthly_review_count: member.monthly_review_count || 0,
+            monthly_blog_count: member.monthly_blog_count || 0
+          };
+        }
+      })
+    );
     
     res.json({
       success: true,
-      members: data,
+      members: membersWithUsage,
       total: count,
       page: parseInt(page),
       limit: parseInt(limit)
