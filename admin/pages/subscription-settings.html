@@ -471,14 +471,9 @@
               <i class="fas fa-utensils" style="color: #f59e0b;"></i>
               🍽️ 식당 대표 등급 설정
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn" onclick="resetToDefaults('owner')" style="background: #f3f4f6; border-color: #d1d5db;">
-                <i class="fas fa-undo"></i> 기본값으로 초기화
-              </button>
-              <button class="btn primary" onclick="saveSettings('owner')">
-                <i class="fas fa-save"></i> 저장
-              </button>
-            </div>
+            <button class="btn primary" onclick="saveSettings('owner')">
+              <i class="fas fa-save"></i> 저장
+            </button>
           </div>
           <div class="card-body">
             <div class="settings-grid" id="owner-settings">
@@ -494,14 +489,9 @@
               <i class="fas fa-building" style="color: #8b5cf6;"></i>
               🏢 대행사 등급 설정
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn" onclick="resetToDefaults('agency')" style="background: #f3f4f6; border-color: #d1d5db;">
-                <i class="fas fa-undo"></i> 기본값으로 초기화
-              </button>
-              <button class="btn primary" onclick="saveSettings('agency')">
-                <i class="fas fa-save"></i> 저장
-              </button>
-            </div>
+            <button class="btn primary" onclick="saveSettings('agency')">
+              <i class="fas fa-save"></i> 저장
+            </button>
           </div>
           <div class="card-body">
             <div class="settings-grid" id="agency-settings">
@@ -773,46 +763,6 @@
           console.error('❌ 저장 실패:', error);
           showMessage('저장 실패: ' + error.message, 'error');
         }
-      }
-
-      // ==================== 기본값으로 초기화 ====================
-
-      function resetToDefaults(type) {
-        const defaults = type === 'owner' ? {
-          seed: 25000,
-          power: 50000,
-          bigpower: 75000,
-          premium: 100000
-        } : {
-          elite: 50000,
-          expert: 100000,
-          master: 200000,
-          premium: 500000
-        };
-
-        const message = type === 'owner' ? 
-          `식당 대표 등급의 토큰 한도를 기본값으로 초기화하시겠습니까?\n\n기본값:\n🌱 씨앗: ${defaults.seed.toLocaleString()} 토큰/월\n⚡ 파워: ${defaults.power.toLocaleString()} 토큰/월\n💪 빅파워: ${defaults.bigpower.toLocaleString()} 토큰/월\n⭐ 프리미엄: ${defaults.premium.toLocaleString()} 토큰/월` :
-          `대행사 등급의 토큰 한도를 기본값으로 초기화하시겠습니까?\n\n기본값:\n🏆 엘리트: ${defaults.elite.toLocaleString()} 토큰/월\n🎯 전문가: ${defaults.expert.toLocaleString()} 토큰/월\n👑 마스터: ${defaults.master.toLocaleString()} 토큰/월\n💎 프리미엄: ${defaults.premium.toLocaleString()} 토큰/월`;
-
-        if (!confirm(message)) {
-          return;
-        }
-
-        if (type === 'owner') {
-          // 식당 대표 등급 기본값 적용
-          document.getElementById('owner_seed_limit').value = defaults.seed;
-          document.getElementById('owner_power_limit').value = defaults.power;
-          document.getElementById('owner_bigpower_limit').value = defaults.bigpower;
-          document.getElementById('owner_premium_limit').value = defaults.premium;
-        } else {
-          // 대행사 등급 기본값 적용
-          document.getElementById('agency_elite_limit').value = defaults.elite;
-          document.getElementById('agency_expert_limit').value = defaults.expert;
-          document.getElementById('agency_master_limit').value = defaults.master;
-          document.getElementById('agency_premium_limit').value = defaults.premium;
-        }
-
-        showMessage('✅ 기본값이 입력 필드에 적용되었습니다. "저장" 버튼을 클릭하여 저장하세요.', 'success');
       }
 
       // ==================== 메시지 ====================
