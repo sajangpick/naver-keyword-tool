@@ -8,11 +8,13 @@
 (function() {
   'use strict';
   
-  // Supabase 클라이언트 (mypage.html에서 초기화됨)
-  const supabase = window.supabaseClient || window.supabase;
+  // Supabase 클라이언트 (여러 방식으로 초기화될 수 있음)
+  const supabase = window.supabaseClient || window.supabase || 
+                   (window.authState && window.authState.supabase) || null;
   
   if (!supabase || typeof supabase.from !== 'function') {
-    console.warn('⚠️ Supabase 클라이언트가 초기화되지 않았습니다.');
+    // 경고를 조용히 무시 (모든 페이지에서 Supabase가 필요한 것은 아님)
+    // console.warn('⚠️ Supabase 클라이언트가 초기화되지 않았습니다.');
     return;
   }
   

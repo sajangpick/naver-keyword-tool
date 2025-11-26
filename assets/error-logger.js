@@ -103,7 +103,8 @@
       // 사용자 ID (로그인한 경우)
       const userId = window.currentUser?.id || null;
       
-      return {
+      // 기본 에러 데이터 구성
+      const errorData = {
         error_type: errorType,
         severity: severity,
         error_message: error.message || String(error),
@@ -121,14 +122,20 @@
         browser_version: browserVersion,
         os: os,
         device_type: deviceType,
-        page_url: window.location.href,
-        additional_data: {
-          ...additionalData,
-          timestamp: new Date().toISOString(),
-          referrer: document.referrer,
-          viewport: `${window.innerWidth}x${window.innerHeight}`
-        }
+        page_url: window.location.href
       };
+      
+      // additional_data 컬럼이 있는 경우에만 추가
+      // (테이블에 컬럼이 없으면 저장 실패하므로 조건부로 추가)
+      // 주석: additional_data 컬럼이 테이블에 있으면 아래 주석을 해제하세요
+      // errorData.additional_data = {
+      //   ...additionalData,
+      //   timestamp: new Date().toISOString(),
+      //   referrer: document.referrer,
+      //   viewport: `${window.innerWidth}x${window.innerHeight}`
+      // };
+      
+      return errorData;
     } catch (err) {
       console.error('에러 정보 수집 실패:', err);
       return null;

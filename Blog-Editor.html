@@ -2480,11 +2480,33 @@
                 const authUser = sessionData.session.user;
                 
                 // 2. profiles 테이블에서 profiles.id 가져오기
-                const { data: profile, error: profileError } = await supabase
+                // profiles.id는 일반적으로 auth.users.id와 동일하므로 먼저 직접 조회 시도
+                let profile = null;
+                let profileError = null;
+                
+                // 방법 1: auth.users.id로 직접 조회 (profiles.id = auth.users.id인 경우)
+                const { data: profileById, error: errorById } = await supabase
                     .from('profiles')
                     .select('id')
-                    .eq('kakao_id', authUser.user_metadata?.kakao_id || authUser.id)
+                    .eq('id', authUser.id)
                     .single();
+                
+                if (!errorById && profileById) {
+                    profile = profileById;
+                } else {
+                    // 방법 2: kakao_id로 조회 시도
+                    const { data: profileByKakaoId, error: errorByKakaoId } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('kakao_id', authUser.user_metadata?.kakao_id || authUser.id)
+                        .single();
+                    
+                    if (!errorByKakaoId && profileByKakaoId) {
+                        profile = profileByKakaoId;
+                    } else {
+                        profileError = errorByKakaoId || errorById;
+                    }
+                }
 
                 if (profileError || !profile) {
                     console.warn("[profileId] profiles를 찾을 수 없습니다:", profileError);

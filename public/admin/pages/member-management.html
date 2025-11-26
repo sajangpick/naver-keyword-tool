@@ -1061,8 +1061,9 @@
         }
       };
 
-      // 등급 한글명
+      // 등급 한글명 (FREE도 씨앗으로 표시)
       const LEVEL_NAMES = {
+        free: '씨앗',      // FREE 등급도 씨앗으로 표시
         seed: '씨앗',
         power: '파워',
         big_power: '빅파워',
@@ -1073,6 +1074,19 @@
         platinum: '플래티넘',
         admin: '관리자'
       };
+
+      // 등급 정규화 함수: FREE/free/null을 seed로 변환
+      function normalizeMembershipLevel(level) {
+        if (!level) {
+          return 'seed';
+        }
+        const normalized = level.toLowerCase();
+        // FREE 또는 free를 seed로 변환
+        if (normalized === 'free') {
+          return 'seed';
+        }
+        return normalized;
+      }
 
       // 상태 변수
       let currentFilter = '';
@@ -1147,11 +1161,49 @@
       }
 
       async function updateMemberLevel(memberId, memberName, currentLevel, currentUserType) {
-        selectedMember = { id: memberId, name: memberName, level: currentLevel, userType: currentUserType };
+        // 등급 정규화
+        const normalizedLevel = normalizeMembershipLevel(currentLevel);
+        selectedMember = { id: memberId, name: memberName, level: normalizedLevel, userType: currentUserType };
         
         document.getElementById('modal-member-name').value = memberName;
-        // 기존 등급에 맞는 값을 찾아 설정
-        document.getElementById('modal-new-level').value = currentLevel;
+        
+        // 현재 등급을 드롭다운 value 형식으로 변환: "user_type:role:membership_level"
+        let dropdownValue = 'owner:member:seed'; // 기본값
+        
+        if (currentUserType === 'owner') {
+          // 식당 대표 등급: owner:member:seed, owner:member:power, owner:member:big_power, owner:member:premium
+          dropdownValue = `owner:member:${normalizedLevel}`;
+        } else if (currentUserType === 'agency') {
+          // 대행사/블로거 등급: agency:member:elite, agency:member:expert, agency:member:master, agency:member:platinum
+          dropdownValue = `agency:member:${normalizedLevel}`;
+        } else if (currentUserType === 'manager') {
+          // 매니저: manager:general:admin 또는 manager:super:admin
+          // membership_level이 'admin'이면 일반 매니저, 'super'면 수퍼 매니저로 가정
+          if (normalizedLevel === 'super' || normalizedLevel === 'super_admin') {
+            dropdownValue = 'manager:super:admin';
+          } else {
+            dropdownValue = 'manager:general:admin';
+          }
+        } else if (currentUserType === 'admin') {
+          // 관리자: admin:general:admin 또는 admin:owner:admin
+          // membership_level이 'owner'이면 오너 관리자, 그 외는 일반 관리자로 가정
+          if (normalizedLevel === 'owner' || normalizedLevel === 'owner_admin') {
+            dropdownValue = 'admin:owner:admin';
+          } else {
+            dropdownValue = 'admin:general:admin';
+          }
+        }
+        
+        // 드롭다운에 현재 등급 설정
+        const dropdown = document.getElementById('modal-new-level');
+        dropdown.value = dropdownValue;
+        
+        // 만약 드롭다운에 해당 값이 없으면 기본값으로 설정
+        if (!dropdown.value || dropdown.value !== dropdownValue) {
+          console.warn(`⚠️ 드롭다운에 ${dropdownValue} 값이 없습니다. 기본값으로 설정합니다.`);
+          dropdown.value = 'owner:member:seed';
+        }
+        
         document.getElementById('modal-reset-usage').checked = false;
         
         document.getElementById('levelModal').classList.add('show');

@@ -45,13 +45,15 @@ module.exports = async (req, res) => {
         // PUT: 회원 정보 수정
         if (req.method === 'PUT') {
             const updates = req.body;
+            const { reset_usage } = updates;
 
-            // 허용된 필드만 업데이트
+            // 허용된 필드만 업데이트 (role은 profiles 테이블에 없으므로 제외)
             const allowedFields = [
                 'name',
                 'business_name',
                 'phone',
                 'user_type',
+                'membership_level',  // 추가: 등급 변경 지원
                 'user_level',
                 'review_count',
                 'blog_count',
@@ -60,12 +62,16 @@ module.exports = async (req, res) => {
 
             const dataToUpdate = {};
             Object.keys(updates).forEach(key => {
+                // role은 무시 (테이블에 없음)
+                if (key === 'role') {
+                    return;
+                }
                 if (allowedFields.includes(key)) {
                     dataToUpdate[key] = updates[key];
                 }
             });
 
-            if (Object.keys(dataToUpdate).length === 0) {
+            if (Object.keys(dataToUpdate).length === 0 && !reset_usage) {
                 return res.status(400).json({
                     success: false,
                     error: 'No valid fields to update'
@@ -74,6 +80,7 @@ module.exports = async (req, res) => {
 
             dataToUpdate.updated_at = new Date().toISOString();
 
+            // 프로필 업데이트
             const { data, error } = await supabase
                 .from('profiles')
                 .update(dataToUpdate)
@@ -85,14 +92,45 @@ module.exports = async (req, res) => {
                 console.error('[Admin Member Update] Error:', error);
                 return res.status(500).json({
                     success: false,
-                    error: 'Failed to update member'
+                    error: error.message || 'Failed to update member'
                 });
+            }
+
+            // 사용량 초기화 (이번 달 사용량 삭제)
+            if (reset_usage) {
+                const now = new Date();
+                const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                firstDayOfMonth.setHours(0, 0, 0, 0);
+
+                // 이번 달 리뷰 답글 이벤트 삭제
+                const { error: reviewError } = await supabase
+                    .from('user_events')
+                    .delete()
+                    .eq('user_id', memberId)
+                    .eq('event_name', 'review_replied')
+                    .gte('created_at', firstDayOfMonth.toISOString());
+
+                if (reviewError) {
+                    console.error('[Admin Member Update] Review usage reset error:', reviewError);
+                }
+
+                // 이번 달 블로그 생성 이벤트 삭제
+                const { error: blogError } = await supabase
+                    .from('user_events')
+                    .delete()
+                    .eq('user_id', memberId)
+                    .eq('event_name', 'blog_created')
+                    .gte('created_at', firstDayOfMonth.toISOString());
+
+                if (blogError) {
+                    console.error('[Admin Member Update] Blog usage reset error:', blogError);
+                }
             }
 
             return res.status(200).json({
                 success: true,
                 data: data,
-                message: '회원 정보가 수정되었습니다.'
+                message: '회원 정보가 수정되었습니다.' + (reset_usage ? ' (사용량 초기화 완료)' : '')
             });
         }
 
