@@ -3315,6 +3315,15 @@
                 
                 // 결과 섹션 숨기기
                 resultSection.classList.remove('show');
+                
+                // 이전 탭에서 생성된 글쓰기 관점 정보 제거
+                const existingAngleInfo = blogContent.querySelector('.angle-info-box');
+                if (existingAngleInfo) {
+                    existingAngleInfo.remove();
+                }
+                
+                // 블로그 내용도 초기화 (다음 생성 시 깨끗한 상태로 시작)
+                blogText.textContent = '';
             });
         });
 

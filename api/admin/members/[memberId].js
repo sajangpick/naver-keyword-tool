@@ -90,12 +90,12 @@ module.exports = async (req, res) => {
 
             dataToUpdate.updated_at = new Date().toISOString();
 
-            // 프로필 업데이트
+            // 프로필 업데이트 (role 컬럼이 없으므로 명시적으로 필드 지정)
             const { data, error } = await supabase
                 .from('profiles')
                 .update(dataToUpdate)
                 .eq('id', memberId)
-                .select()
+                .select('id, name, email, user_type, membership_level, created_at, updated_at')
                 .single();
 
             if (error) {
