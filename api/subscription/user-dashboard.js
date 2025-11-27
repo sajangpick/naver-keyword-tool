@@ -139,35 +139,102 @@ module.exports = async (req, res) => {
  */
 async function getDashboardData(user, res) {
   try {
+    console.log(`📊 [user-dashboard] 대시보드 데이터 조회 시작: ${user.id}`);
+    
+    // Supabase 클라이언트 확인
     if (!supabase) {
-      throw new Error('Supabase 클라이언트가 초기화되지 않았습니다');
+      console.error('❌ [user-dashboard] Supabase 클라이언트가 초기화되지 않았습니다');
+      // Supabase가 없어도 기본값 반환
+      return res.json({
+        success: true,
+        data: {
+          profile: {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.name || '',
+            user_type: 'owner',
+            membership_level: 'seed'
+          },
+          cycle: {
+            id: null,
+            monthly_token_limit: 100,
+            tokens_used: 0,
+            tokens_remaining: 100,
+            days_remaining: 30
+          },
+          recentUsage: [],
+          plans: []
+        }
+      });
     }
 
-    // 사용자 프로필 조회
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    // 사용자 프로필 조회 (에러 처리 강화)
+    let profile = null;
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-    if (profileError) {
-      console.error('❌ [user-dashboard] 프로필 조회 실패:', profileError);
-      throw profileError;
+      if (profileError) {
+        console.error('❌ [user-dashboard] 프로필 조회 실패:', profileError);
+        // 프로필 조회 실패해도 기본값 사용
+        profile = {
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name || '',
+          user_type: 'owner',
+          membership_level: 'seed'
+        };
+        console.warn('⚠️ [user-dashboard] 기본 프로필 사용');
+      } else {
+        profile = profileData;
+      }
+    } catch (profileException) {
+      console.error('❌ [user-dashboard] 프로필 조회 중 예외:', profileException);
+      // 예외 발생해도 기본값 사용
+      profile = {
+        id: user.id,
+        email: user.email || '',
+        name: user.user_metadata?.name || '',
+        user_type: 'owner',
+        membership_level: 'seed'
+      };
     }
 
     if (!profile) {
-      throw new Error('사용자 프로필을 찾을 수 없습니다');
+      // 최후의 수단: 사용자 정보로부터 기본 프로필 생성
+      profile = {
+        id: user.id,
+        email: user.email || '',
+        name: user.user_metadata?.name || '',
+        user_type: 'owner',
+        membership_level: 'seed'
+      };
     }
 
-    // 현재 구독 사이클 조회
-    const { data: cycle, error: cycleError } = await supabase
-      .from('subscription_cycle')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(); // single() 대신 maybeSingle() 사용하여 데이터가 없어도 에러 없이 null 반환
+    // 현재 구독 사이클 조회 (에러 처리 강화)
+    let cycle = null;
+    try {
+      const { data: cycleData, error: cycleError } = await supabase
+        .from('subscription_cycle')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (cycleError) {
+        console.warn('⚠️ [user-dashboard] 사이클 조회 실패 (무시하고 계속):', cycleError.message);
+      } else {
+        cycle = cycleData;
+      }
+    } catch (cycleException) {
+      console.error('❌ [user-dashboard] 사이클 조회 중 예외:', cycleException);
+      // 예외 발생해도 계속 진행
+    }
 
     // 사이클이 없으면 새로 생성 (하지만 실패해도 계속 진행)
     let currentCycle = cycle;
@@ -308,21 +375,42 @@ async function getDashboardData(user, res) {
       // 에러 발생해도 계속 진행 (기본값 사용)
     }
 
-    // 가격 정보 조회 (에러 처리 포함)
-    const { data: pricingConfig } = await supabase
-      .from('pricing_config')
-      .select('*')
-      .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
-
-    // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선, 에러 처리 포함)
-    const { data: tokenConfigs } = await supabase
-      .from('token_config')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
+    // 가격 정보 조회 (에러 처리 강화)
+    let pricingConfig = null;
+    let tokenConfig = {};
     
-    const tokenConfig = tokenConfigs || {};
+    try {
+      const { data: pricingData, error: pricingError } = await supabase
+        .from('pricing_config')
+        .select('*')
+        .maybeSingle();
+      
+      if (pricingError) {
+        console.warn('⚠️ [user-dashboard] pricing_config 조회 실패 (무시하고 계속):', pricingError.message);
+      } else {
+        pricingConfig = pricingData;
+      }
+    } catch (pricingException) {
+      console.error('❌ [user-dashboard] pricing_config 조회 중 예외:', pricingException);
+    }
+
+    // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선, 에러 처리 강화)
+    try {
+      const { data: tokenConfigs, error: tokenConfigError } = await supabase
+        .from('token_config')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (tokenConfigError) {
+        console.warn('⚠️ [user-dashboard] token_config 조회 실패 (무시하고 계속):', tokenConfigError.message);
+      } else {
+        tokenConfig = tokenConfigs || {};
+      }
+    } catch (tokenConfigException) {
+      console.error('❌ [user-dashboard] token_config 조회 중 예외:', tokenConfigException);
+    }
 
     // 플랜 정보 구성
     const userType = profile.user_type || 'owner';
@@ -457,9 +545,38 @@ async function getDashboardData(user, res) {
       message: error.message,
       code: error.code,
       details: error.details,
-      hint: error.hint
+      hint: error.hint,
+      stack: error.stack?.split('\n').slice(0, 10).join('\n')
     });
-    throw error;
+    
+    // 에러가 발생해도 최소한의 기본 데이터는 반환
+    try {
+      return res.json({
+        success: true,
+        data: {
+          profile: {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.name || '',
+            user_type: 'owner',
+            membership_level: 'seed'
+          },
+          cycle: {
+            id: null,
+            monthly_token_limit: 100,
+            tokens_used: 0,
+            tokens_remaining: 100,
+            days_remaining: 30
+          },
+          recentUsage: [],
+          plans: [],
+          error: error.message
+        }
+      });
+    } catch (responseError) {
+      // 응답 전송도 실패하면 에러를 다시 throw
+      throw error;
+    }
   }
 }
 

@@ -4856,6 +4856,28 @@ app.get("/api/shorts/videos", async (req, res) => {
     const userId = req.headers["user-id"] || req.query.userId;
     ensureUserId(userId);
 
+    // 테이블 존재 여부 확인
+    const { error: tableCheckError } = await supabase
+      .from("shorts_videos")
+      .select("id")
+      .limit(0);
+    
+    // 테이블이 없으면 빈 배열 반환 (에러 대신)
+    if (tableCheckError && tableCheckError.message.includes("Could not find the table")) {
+      devError("⚠️  shorts_videos 테이블이 없습니다:", tableCheckError.message);
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0,
+        },
+        warning: "테이블이 생성되지 않았습니다. Supabase에서 테이블을 생성해주세요."
+      });
+    }
+
     const { page = 1, limit = 20, status } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -4873,6 +4895,20 @@ app.get("/api/shorts/videos", async (req, res) => {
     const { data: videos, error, count } = await query;
 
     if (error) {
+      // 테이블이 없는 경우 빈 배열 반환
+      if (error.message && error.message.includes("Could not find the table")) {
+        return res.json({
+          success: true,
+          data: [],
+          pagination: {
+            total: 0,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: 0,
+          },
+          warning: "테이블이 생성되지 않았습니다."
+        });
+      }
       throw error;
     }
 
