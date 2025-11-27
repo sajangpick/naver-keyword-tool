@@ -7,10 +7,29 @@
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <title>마이페이지 - 사장픽</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ff7b54'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
   <style>
+    /* 사장픽 브랜드 색상 변수 */
+    :root {
+      --accent-color: #ff7b54;
+      --accent-dark: #e56548;
+      --bg-color: #fff7f0;
+      --text-primary: #201a17;
+      --text-secondary: #7a6a60;
+      --secondary: #ffe8d9;
+      --white: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --success: #4caf50;
+      --warning: #ff9800;
+      --error: #f44336;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -18,10 +37,10 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
-      background: linear-gradient(135deg, #03c75a 0%, #02a84a 100%);
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg-color);
       min-height: 100vh;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .container {
@@ -31,28 +50,29 @@
     }
 
     .page-title {
-      font-size: 32px;
-      font-weight: bold;
-      color: white;
-      margin-bottom: 10px;
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 8px;
       text-align: center;
-      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      letter-spacing: -0.5px;
     }
 
     .page-subtitle {
       font-size: 16px;
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--text-secondary);
       margin-bottom: 40px;
       text-align: center;
+      font-weight: 500;
     }
 
     .profile-section {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(15px);
-      border-radius: 25px;
+      background: var(--white);
+      border-radius: 24px;
       padding: 40px;
       margin-bottom: 30px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
     }
 
     .profile-header {
@@ -61,21 +81,21 @@
       gap: 30px;
       margin-bottom: 40px;
       padding-bottom: 30px;
-      border-bottom: 2px solid #f0f4ff;
+      border-bottom: 1px solid var(--border);
     }
 
     .profile-avatar-large {
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      background: linear-gradient(45deg, #03c75a, #02a84a);
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
       font-size: 36px;
       font-weight: bold;
-      box-shadow: 0 15px 40px rgba(3, 199, 90, 0.4);
+      box-shadow: 0 8px 24px rgba(255, 123, 84, 0.3);
     }
 
     .profile-info {
@@ -85,13 +105,13 @@
     .profile-name {
       font-size: 28px;
       font-weight: 700;
-      color: #333;
+      color: var(--text-primary);
       margin-bottom: 8px;
     }
 
     .profile-email {
       font-size: 16px;
-      color: #666;
+      color: var(--text-secondary);
       margin-bottom: 15px;
     }
 
@@ -142,39 +162,40 @@
     }
 
     .section {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(15px);
+      background: var(--white);
       border-radius: 20px;
-      padding: 25px;
-      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
       transition: all 0.3s ease;
     }
 
     .section:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--accent-color);
     }
 
     .section-title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
-      color: #333;
-      margin-bottom: 20px;
+      color: var(--text-primary);
+      margin-bottom: 24px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
     .section-title i {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(45deg, #03c75a, #02a84a);
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
-      font-size: 16px;
+      font-size: 18px;
     }
 
     .stats-grid {
@@ -184,11 +205,12 @@
     }
 
     .stat-card {
-      background: linear-gradient(135deg, #03c75a, #02a84a);
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
       color: white;
-      padding: 20px 15px;
-      border-radius: 18px;
+      padding: 24px 20px;
+      border-radius: 16px;
       text-align: center;
+      box-shadow: 0 4px 12px rgba(255, 123, 84, 0.2);
     }
 
     .stat-number {
@@ -208,29 +230,30 @@
     }
 
     .activity-item {
-      padding: 15px;
+      padding: 16px;
       border-radius: 12px;
-      background: #f8f9ff;
+      background: var(--secondary);
       margin-bottom: 12px;
-      border-left: 3px solid #03c75a;
+      border-left: 4px solid var(--accent-color);
       transition: all 0.3s ease;
     }
 
     .activity-item:hover {
-      transform: translateX(8px);
-      box-shadow: 0 8px 25px rgba(3, 199, 90, 0.1);
+      transform: translateX(4px);
+      box-shadow: var(--shadow-sm);
+      background: #ffe0cc;
     }
 
     .activity-title {
       font-weight: 600;
       margin-bottom: 4px;
-      color: #333;
+      color: var(--text-primary);
       font-size: 14px;
     }
 
     .activity-content {
       font-size: 13px;
-      color: #666;
+      color: var(--text-secondary);
       margin-bottom: 8px;
       line-height: 1.4;
     }
@@ -250,25 +273,26 @@
       display: block;
       margin-bottom: 8px;
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary);
       font-size: 14px;
     }
 
     .form-input {
       width: 100%;
-      padding: 12px 15px;
-      border: 2px solid #e8ecff;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
       border-radius: 12px;
       font-size: 14px;
       transition: all 0.3s ease;
-      background: #f8f9ff;
+      background: var(--white);
+      color: var(--text-primary);
     }
 
     .form-input:focus {
       outline: none;
-      border-color: #03c75a;
-      background: white;
-      box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1);
+      border-color: var(--accent-color);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(255, 123, 84, 0.1);
     }
 
     .form-input select {
@@ -293,13 +317,13 @@
     }
 
     .btn-primary {
-      background: linear-gradient(45deg, #03c75a, #02a84a);
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
       color: white;
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(3, 199, 90, 0.4);
+      box-shadow: 0 8px 24px rgba(255, 123, 84, 0.3);
     }
 
     .btn-secondary {
@@ -332,8 +356,8 @@
       display: inline-block;
       width: 40px;
       height: 40px;
-      border: 4px solid #e5e7eb;
-      border-top: 4px solid #667eea;
+      border: 4px solid var(--secondary);
+      border-top: 4px solid var(--accent-color);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -363,7 +387,7 @@
 
     .usage-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, #03c75a, #02a84a);
+      background: linear-gradient(90deg, var(--accent-color), var(--accent-dark));
       border-radius: 4px;
       transition: width 0.3s;
     }
@@ -391,10 +415,11 @@
 
     /* 토큰 정보 스타일 */
     .token-status-card {
-      background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
-      border-radius: 15px;
-      padding: 25px;
-      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--secondary) 0%, #ffe0cc 100%);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255, 123, 84, 0.1);
     }
 
     .token-plan {
@@ -407,16 +432,17 @@
     .plan-name {
       font-size: 24px;
       font-weight: bold;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .plan-badge {
-      background: #667eea;
+      background: var(--accent-color);
       color: white;
-      padding: 4px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
+      box-shadow: 0 2px 8px rgba(255, 123, 84, 0.2);
     }
 
     .token-meter {
@@ -430,19 +456,19 @@
     }
 
     .meter-label {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 14px;
     }
 
     .meter-value {
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .meter-bar {
       width: 100%;
       height: 20px;
-      background: #e0e7ff;
+      background: var(--secondary);
       border-radius: 10px;
       overflow: hidden;
       position: relative;
@@ -450,17 +476,17 @@
 
     .meter-fill {
       height: 100%;
-      background: linear-gradient(90deg, #667eea, #764ba2);
+      background: linear-gradient(90deg, var(--accent-color), var(--accent-dark));
       border-radius: 10px;
       transition: width 0.5s ease;
-      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 2px 10px rgba(255, 123, 84, 0.3);
     }
 
     .meter-percent {
       text-align: right;
       margin-top: 5px;
       font-size: 14px;
-      color: #667eea;
+      color: var(--accent-color);
       font-weight: 600;
     }
 
@@ -482,19 +508,19 @@
 
     .token-stat i {
       font-size: 20px;
-      color: #667eea;
+      color: var(--accent-color);
     }
 
     .stat-label {
       font-size: 12px;
-      color: #999;
+      color: var(--text-secondary);
       display: block;
     }
 
     .stat-value {
       font-size: 18px;
       font-weight: bold;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .token-usage-history {
@@ -502,10 +528,10 @@
     }
 
     .usage-list {
-      background: white;
-      border: 1px solid #e0e7ff;
-      border-radius: 10px;
-      padding: 15px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
       max-height: 200px;
       overflow-y: auto;
     }
@@ -514,8 +540,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #f0f4ff;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
     }
 
     .usage-item:last-child {
@@ -524,36 +550,36 @@
 
     .usage-api {
       font-size: 14px;
-      color: #666;
+      color: var(--text-secondary);
     }
 
     .usage-tokens {
       font-weight: 600;
-      color: #667eea;
+      color: var(--accent-color);
     }
 
     .usage-time {
       font-size: 12px;
-      color: #999;
+      color: var(--text-secondary);
     }
 
     .btn-upgrade {
       width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      padding: 14px;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
       margin-top: 15px;
-      transition: transform 0.2s;
+      transition: all 0.3s ease;
     }
 
     .btn-upgrade:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 8px 24px rgba(255, 123, 84, 0.3);
     }
 
     @media (max-width: 768px) {
@@ -858,11 +884,11 @@
           
           <!-- 최근 사용 내역 -->
           <div class="token-usage-history">
-            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">
+            <h4 style="margin-bottom: 10px; color: var(--text-primary); font-size: 16px; font-weight: 600;">
               <i class="fas fa-history"></i> 최근 사용 내역
             </h4>
             <div id="recentUsageList" class="usage-list">
-              <div style="text-align: center; color: #999; padding: 20px;">
+              <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
                 <i class="fas fa-spinner fa-spin"></i> 로딩 중...
               </div>
             </div>
@@ -1981,29 +2007,73 @@
           if (usageList) {
             if (recentUsage && recentUsage.length > 0) {
               usageList.innerHTML = recentUsage.slice(0, 5).map(usage => {
+                // API 타입을 한국어로 변환
                 const apiLabels = {
                   'chatgpt': 'ChatGPT',
+                  'chatgpt-blog': '블로그 작성',
+                  'blog-topic-recommendation': '블로그 주제 추천',
+                  'menu-analysis': '메뉴 분석',
+                  'place-info-enrichment': '가게 정보 보강',
+                  'keyword-recommendation': '키워드 추천',
                   'blog': '블로그 작성',
                   'reply': '리뷰 답글',
+                  'review-response': '리뷰 답글 생성',
                   'claude': 'Claude',
-                  'news': '뉴스 추천'
+                  'news': '뉴스 추천',
+                  'ai-news-recommend': 'AI 뉴스 추천'
                 };
+                
+                // api_type이 없으면 api_name 사용
+                const apiType = usage.api_type || usage.api_name || '';
+                let apiLabel = apiType;
+                
+                // 정확한 매칭 시도
+                if (apiLabels[apiType]) {
+                  apiLabel = apiLabels[apiType];
+                } else {
+                  // 부분 매칭 시도 (예: 'chatgpt-blog' -> '블로그 작성')
+                  for (const [key, value] of Object.entries(apiLabels)) {
+                    if (apiType.includes(key) || key.includes(apiType)) {
+                      apiLabel = value;
+                      break;
+                    }
+                  }
+                  
+                  // 매칭 실패 시 기본 변환 규칙 적용
+                  if (apiLabel === apiType) {
+                    if (apiType.includes('blog')) {
+                      apiLabel = '블로그 작성';
+                    } else if (apiType.includes('review') || apiType.includes('reply')) {
+                      apiLabel = '리뷰 답글';
+                    } else if (apiType.includes('menu')) {
+                      apiLabel = '메뉴 분석';
+                    } else if (apiType.includes('place') || apiType.includes('store')) {
+                      apiLabel = '가게 정보';
+                    } else if (apiType.includes('keyword')) {
+                      apiLabel = '키워드 추천';
+                    } else if (apiType.includes('topic')) {
+                      apiLabel = '주제 추천';
+                    } else {
+                      apiLabel = apiType; // 변환 실패 시 원본 표시
+                    }
+                  }
+                }
                 
                 const timeAgo = getTimeAgo(new Date(usage.used_at));
                 
                 return `
                   <div class="usage-item">
                     <div>
-                      <span class="usage-api">${apiLabels[usage.api_type] || usage.api_type}</span>
+                      <span class="usage-api">${apiLabel}</span>
                       <span class="usage-time">${timeAgo}</span>
                     </div>
-                    <span class="usage-tokens">-${usage.tokens_used || 0} 토큰</span>
+                    <span class="usage-tokens">-${(usage.tokens_used || 0).toLocaleString()} 토큰</span>
                   </div>
                 `;
               }).join('');
             } else {
               usageList.innerHTML = `
-                <div style="text-align: center; color: #999; padding: 20px;">
+                <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
                   <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
                 </div>
               `;
@@ -2556,10 +2626,10 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
           }[video.status] || video.status;
 
           const statusColor = {
-            'processing': '#ff9800',
-            'completed': '#4caf50',
-            'failed': '#f44336'
-          }[video.status] || '#666';
+            'processing': 'var(--warning)',
+            'completed': 'var(--success)',
+            'failed': 'var(--error)'
+          }[video.status] || 'var(--text-secondary)';
 
           const styleNames = {
             'luxury': '럭셔리',
@@ -2569,12 +2639,17 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
             'simple': '심플 클래식'
           };
 
+          // 생성 중인 영상은 주기적으로 상태 체크
+          const videoId = video.id;
+          const isProcessing = video.status === 'processing';
+          
           return `
-            <div class="activity-item">
+            <div class="activity-item" id="shorts-video-${videoId}" data-video-id="${videoId}" data-status="${video.status}">
               <div class="activity-title">
                 ${video.menu_name || video.title || '제목 없음'}
                 <span style="margin-left: 8px; font-size: 12px; color: ${statusColor}; font-weight: 600;">
                   ${statusText}
+                  ${isProcessing ? '<i class="fas fa-spinner fa-spin" style="margin-left: 4px;"></i>' : ''}
                 </span>
               </div>
               <div class="activity-content">
@@ -2586,10 +2661,23 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
               ${video.image_url ? `
                 <div style="margin-top: 12px;">
                   <img src="${video.image_url}" alt="영상 썸네일" 
-                    style="max-width: 200px; max-height: 150px; border-radius: 8px; object-fit: cover;">
+                    style="max-width: 200px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);">
                 </div>
               ` : ''}
-              <div class="activity-meta">
+              ${video.status === 'completed' && video.video_url ? `
+                <div style="margin-top: 12px;">
+                  <video controls style="max-width: 200px; max-height: 300px; border-radius: 8px; border: 1px solid var(--border);">
+                    <source src="${video.video_url}" type="video/mp4">
+                    브라우저가 비디오 태그를 지원하지 않습니다.
+                  </video>
+                </div>
+              ` : ''}
+              ${video.status === 'failed' && video.error_message ? `
+                <div style="margin-top: 8px; padding: 8px; background: #fee2e2; border-radius: 6px; font-size: 12px; color: #dc2626;">
+                  <i class="fas fa-exclamation-triangle"></i> ${video.error_message}
+                </div>
+              ` : ''}
+              <div class="activity-meta" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
                 <span><i class="fas fa-clock"></i> ${new Date(video.created_at).toLocaleString('ko-KR', {
                   year: 'numeric',
                   month: '2-digit',
@@ -2597,15 +2685,35 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
                   hour: '2-digit',
                   minute: '2-digit'
                 })}</span>
-                ${video.status === 'completed' && video.video_url ? `
-                  <a href="${video.video_url}" target="_blank" style="color: #03c75a; text-decoration: none;">
-                    <i class="fas fa-play"></i> 영상 보기
-                  </a>
-                ` : ''}
+                <div style="display: flex; gap: 8px;">
+                  ${video.status === 'completed' && video.video_url ? `
+                    <a href="${video.video_url}" target="_blank" 
+                       style="padding: 6px 12px; background: var(--accent-color); color: white; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="fas fa-play"></i> 영상 보기
+                    </a>
+                    <button onclick="downloadVideo('${video.video_url}', '${(video.menu_name || video.title || 'video').replace(/[^a-zA-Z0-9가-힣]/g, '_')}.mp4')" 
+                            style="padding: 6px 12px; background: var(--white); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="fas fa-download"></i> 다운로드
+                    </button>
+                  ` : ''}
+                  ${isProcessing ? `
+                    <button onclick="checkVideoStatus('${videoId}')" 
+                            style="padding: 6px 12px; background: var(--secondary); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="fas fa-sync-alt"></i> 상태 확인
+                    </button>
+                  ` : ''}
+                </div>
               </div>
             </div>
           `;
         }).join('');
+
+        // 생성 중인 영상이 있으면 주기적으로 상태 체크
+        const processingVideos = result.data.filter(v => v.status === 'processing');
+        if (processingVideos.length > 0) {
+          console.log(`🔄 생성 중인 영상 ${processingVideos.length}개 발견. 주기적 상태 체크 시작...`);
+          startVideoStatusPolling(userId);
+        }
 
         // #shorts 해시가 있으면 해당 섹션으로 스크롤
         if (window.location.hash === '#shorts') {
@@ -2627,6 +2735,150 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
         `;
       }
     }
+
+    // 영상 상태 체크 (단일)
+    async function checkVideoStatus(videoId) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          alert('로그인이 필요합니다.');
+          return;
+        }
+
+        const userId = session.user.id;
+        const response = await fetch(`/api/shorts/videos?userId=${encodeURIComponent(userId)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('상태 확인 실패');
+        }
+
+        const result = await response.json();
+        if (result.success && result.data) {
+          const video = result.data.find(v => v.id === videoId);
+          if (video) {
+            // 해당 영상만 업데이트
+            const videoElement = document.getElementById(`shorts-video-${videoId}`);
+            if (videoElement) {
+              // 전체 목록 다시 로드 (간단한 방법)
+              await loadShortsVideos(userId);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ 영상 상태 체크 실패:', error);
+        alert('상태 확인 중 오류가 발생했습니다.');
+      }
+    }
+
+    // 영상 상태 주기적 체크 (Polling)
+    let videoStatusPollingInterval = null;
+
+    function startVideoStatusPolling(userId) {
+      // 기존 인터벌이 있으면 정리
+      if (videoStatusPollingInterval) {
+        clearInterval(videoStatusPollingInterval);
+      }
+
+      // 10초마다 상태 체크
+      videoStatusPollingInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/shorts/videos?userId=${encodeURIComponent(userId)}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'user-id': userId
+            }
+          });
+
+          if (!response.ok) {
+            console.warn('⚠️ 영상 상태 체크 실패');
+            return;
+          }
+
+          const result = await response.json();
+          if (result.success && result.data) {
+            const processingVideos = result.data.filter(v => v.status === 'processing');
+            
+            // 생성 중인 영상이 없으면 폴링 중지
+            if (processingVideos.length === 0) {
+              console.log('✅ 모든 영상 생성 완료. 상태 체크 중지.');
+              clearInterval(videoStatusPollingInterval);
+              videoStatusPollingInterval = null;
+              return;
+            }
+
+            // 상태가 변경된 영상이 있으면 목록 새로고침
+            const currentVideos = Array.from(document.querySelectorAll('[data-video-id]'));
+            let needsRefresh = false;
+
+            for (const video of result.data) {
+              const element = document.getElementById(`shorts-video-${video.id}`);
+              if (element) {
+                const currentStatus = element.getAttribute('data-status');
+                if (currentStatus !== video.status) {
+                  needsRefresh = true;
+                  break;
+                }
+              }
+            }
+
+            if (needsRefresh) {
+              console.log('🔄 영상 상태 변경 감지. 목록 새로고침...');
+              await loadShortsVideos(userId);
+            }
+          }
+        } catch (error) {
+          console.error('❌ 영상 상태 체크 중 오류:', error);
+        }
+      }, 10000); // 10초마다 체크
+
+      console.log('✅ 영상 상태 주기적 체크 시작 (10초 간격)');
+    }
+
+    // 영상 다운로드 함수
+    async function downloadVideo(videoUrl, filename) {
+      try {
+        console.log('📥 영상 다운로드 시작:', videoUrl);
+        
+        // fetch로 영상 데이터 가져오기
+        const response = await fetch(videoUrl);
+        if (!response.ok) {
+          throw new Error('영상을 불러올 수 없습니다.');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // 다운로드 링크 생성
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // 정리
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('✅ 영상 다운로드 완료:', filename);
+      } catch (error) {
+        console.error('❌ 영상 다운로드 실패:', error);
+        alert('영상 다운로드 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    // 페이지 언로드 시 인터벌 정리
+    window.addEventListener('beforeunload', () => {
+      if (videoStatusPollingInterval) {
+        clearInterval(videoStatusPollingInterval);
+      }
+    });
 
     // 에러 표시
     function showError(message) {
