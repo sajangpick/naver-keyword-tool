@@ -223,7 +223,7 @@
         }
 
         .auth-token-info-inline {
-            display: none;
+            display: none !important;
             align-items: center;
             gap: 4px;
             padding: 4px 8px;
@@ -233,6 +233,10 @@
             font-size: 11px;
             font-weight: 700;
             color: var(--text-primary);
+        }
+
+        .auth-token-info-inline.show {
+            display: flex !important;
         }
 
         .auth-token-info-inline i {
@@ -2853,16 +2857,62 @@
 
                 // 영상 상태에 따라 처리
                 if (video.status === 'completed' && video.video_url) {
+                    // 폴링 중지
+                    if (videoStatusCheckInterval) {
+                        clearInterval(videoStatusCheckInterval);
+                        videoStatusCheckInterval = null;
+                    }
                     showVideoResult(video);
                 } else if (video.status === 'processing') {
                     // 아직 생성 중이면 5초 후 다시 확인
+                    // 최대 10분(120회) 대기
+                    const maxAttempts = 120;
+                    let attemptCount = parseInt(sessionStorage.getItem(`video_check_${currentVideoId}`) || '0');
+                    attemptCount++;
+                    sessionStorage.setItem(`video_check_${currentVideoId}`, attemptCount.toString());
+                    
+                    if (attemptCount > maxAttempts) {
+                        showVideoError('영상 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+                        if (videoStatusCheckInterval) {
+                            clearInterval(videoStatusCheckInterval);
+                            videoStatusCheckInterval = null;
+                        }
+                        return;
+                    }
+                    
                     if (!videoStatusCheckInterval) {
                         videoStatusCheckInterval = setInterval(checkVideoStatus, 5000);
                     }
+                    
+                    // 로딩 메시지 업데이트
+                    const loadingMsg = document.querySelector('#videoLoadingContainer p');
+                    if (loadingMsg) {
+                        loadingMsg.textContent = `영상을 생성하고 있습니다... (${attemptCount}/${maxAttempts})`;
+                    }
                 } else if (video.status === 'failed') {
+                    // 폴링 중지
+                    if (videoStatusCheckInterval) {
+                        clearInterval(videoStatusCheckInterval);
+                        videoStatusCheckInterval = null;
+                    }
+                    sessionStorage.removeItem(`video_check_${currentVideoId}`);
                     showVideoError(video.error_message || '영상 생성에 실패했습니다.');
                 } else {
-                    // 상태가 불명확하면 계속 확인
+                    // 상태가 불명확하면 계속 확인 (최대 5분)
+                    const maxAttempts = 60;
+                    let attemptCount = parseInt(sessionStorage.getItem(`video_check_${currentVideoId}`) || '0');
+                    attemptCount++;
+                    sessionStorage.setItem(`video_check_${currentVideoId}`, attemptCount.toString());
+                    
+                    if (attemptCount > maxAttempts) {
+                        showVideoError('영상 상태를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                        if (videoStatusCheckInterval) {
+                            clearInterval(videoStatusCheckInterval);
+                            videoStatusCheckInterval = null;
+                        }
+                        return;
+                    }
+                    
                     if (!videoStatusCheckInterval) {
                         videoStatusCheckInterval = setInterval(checkVideoStatus, 5000);
                     }

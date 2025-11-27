@@ -4140,8 +4140,12 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
     devLog("Gemini API로 이미지 분석 및 프롬프트 생성 시작:", { imageUrl, menuName, style });
 
     if (!GEMINI_API_KEY) {
-      throw new Error("Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경변수를 설정해주세요.");
+      const errorMsg = "Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경변수를 설정해주세요. .env 파일에 GEMINI_API_KEY=your_api_key 형식으로 추가하세요.";
+      devError(errorMsg);
+      throw new Error(errorMsg);
     }
+    
+    devLog("Gemini API 키 확인 완료 (키 길이: " + GEMINI_API_KEY.length + "자)");
 
     // 이미지 URL에서 이미지 데이터 가져오기
     const imageResponse = await axios.get(imageUrl, {
@@ -4221,13 +4225,44 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
       
       // 프롬프트 추출 (응답에서 "프롬프트:" 뒤의 텍스트 추출)
       let videoPrompt = geminiResponse;
-      const promptMatch = geminiResponse.match(/프롬프트:\s*(.+?)(?:\n|$)/i);
-      if (promptMatch) {
-        videoPrompt = promptMatch[1].trim();
-      } else {
-        // 프롬프트: 라벨이 없으면 마지막 문장을 프롬프트로 사용
+      
+      // 여러 패턴으로 프롬프트 추출 시도
+      const promptPatterns = [
+        /프롬프트:\s*(.+?)(?:\n|$)/i,
+        /프롬프트\s*:\s*(.+?)(?:\n|$)/i,
+        /Prompt:\s*(.+?)(?:\n|$)/i,
+        /영어 프롬프트:\s*(.+?)(?:\n|$)/i,
+        /영상 생성 프롬프트:\s*(.+?)(?:\n|$)/i,
+      ];
+      
+      for (const pattern of promptPatterns) {
+        const match = geminiResponse.match(pattern);
+        if (match && match[1]) {
+          videoPrompt = match[1].trim();
+          // 따옴표 제거
+          videoPrompt = videoPrompt.replace(/^["']|["']$/g, '');
+          devLog("프롬프트 추출 성공 (패턴 매칭):", videoPrompt.substring(0, 100));
+          break;
+        }
+      }
+      
+      // 패턴 매칭 실패 시 마지막 문장 또는 전체 응답 사용
+      if (videoPrompt === geminiResponse) {
         const lines = geminiResponse.split('\n').filter(line => line.trim());
-        videoPrompt = lines[lines.length - 1].trim();
+        // 마지막 3줄 중 영어로 된 부분 찾기
+        const lastLines = lines.slice(-3);
+        const englishLine = lastLines.find(line => /[a-zA-Z]/.test(line) && line.length > 20);
+        if (englishLine) {
+          videoPrompt = englishLine.trim().replace(/^["']|["']$/g, '');
+          devLog("프롬프트 추출 성공 (마지막 영어 문장):", videoPrompt.substring(0, 100));
+        } else {
+          // 영어가 없으면 전체 응답에서 영어 부분만 추출
+          const englishMatch = geminiResponse.match(/[A-Z][^.!?]*[.!?]/g);
+          if (englishMatch && englishMatch.length > 0) {
+            videoPrompt = englishMatch[englishMatch.length - 1].trim();
+            devLog("프롬프트 추출 성공 (영어 문장 추출):", videoPrompt.substring(0, 100));
+          }
+        }
       }
 
       // 기본 프롬프트와 결합
@@ -4329,18 +4364,30 @@ async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
   try {
     devLog("Runway HTTP API 호출 시작 (폴백 모드)");
 
+    if (!RUNWAY_API_KEY) {
+      throw new Error("Runway API 키가 설정되지 않았습니다. RUNWAY_API_KEY 환경변수를 설정해주세요.");
+    }
+
     const RUNWAY_API_BASE = "https://api.runwayml.com/v1";
 
     // Step 1: 이미지에서 동영상 생성 요청
+    const requestBody = {
+      image_url: imageUrl,
+      prompt: prompt || "cinematic food video, slow motion, professional lighting",
+      duration: Math.min(Math.max(duration, 3), 10),
+      aspect_ratio: "9:16",
+      watermark: false,
+    };
+    
+    devLog("Runway HTTP API 요청:", { 
+      imageUrl: imageUrl.substring(0, 100) + "...", 
+      prompt: prompt.substring(0, 100) + "...",
+      duration: requestBody.duration 
+    });
+    
     const response = await axios.post(
       `${RUNWAY_API_BASE}/image-to-video`,
-      {
-        image_url: imageUrl,
-        prompt: prompt || "cinematic food video, slow motion, professional lighting",
-        duration: Math.min(Math.max(duration, 3), 10),
-        aspect_ratio: "9:16",
-        watermark: false,
-      },
+      requestBody,
       {
         headers: {
           "Authorization": `Bearer ${RUNWAY_API_KEY}`,
@@ -4394,14 +4441,24 @@ async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
     }
 
     if (!videoUrl) {
-      throw new Error("영상 생성 시간이 초과되었습니다.");
+      throw new Error(`영상 생성 시간이 초과되었습니다. (최대 ${maxAttempts * 5}초 대기)`);
     }
 
     devLog("Runway 영상 생성 완료 (HTTP):", videoUrl);
     return { videoUrl, jobId };
   } catch (error) {
     devError("Runway HTTP API 오류:", error);
-    throw new Error(`Runway 영상 생성 실패: ${error.message}`);
+    
+    // 더 자세한 오류 메시지 제공
+    let errorMessage = `Runway 영상 생성 실패: ${error.message}`;
+    if (error.response) {
+      errorMessage += ` (상태 코드: ${error.response.status})`;
+      if (error.response.data) {
+        errorMessage += ` - ${JSON.stringify(error.response.data)}`;
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
 }
 
@@ -4476,15 +4533,33 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
 
         // Gemini API로 이미지 분석 및 영상 생성 프롬프트 생성
         devLog("Gemini로 이미지 분석 및 프롬프트 생성 시작...");
-        const { prompt, analysis } = await generateVideoPromptWithGemini(
-          imageUrl,
-          menuName,
-          menuFeatures,
-          style,
-          parseInt(duration) || 10
-        );
-        devLog("Gemini 프롬프트 생성 완료:", prompt);
-        devLog("Gemini 분석 결과:", analysis);
+        let prompt, analysis;
+        try {
+          const result = await generateVideoPromptWithGemini(
+            imageUrl,
+            menuName,
+            menuFeatures,
+            style,
+            parseInt(duration) || 10
+          );
+          prompt = result.prompt;
+          analysis = result.analysis;
+          devLog("Gemini 프롬프트 생성 완료:", prompt.substring(0, 200) + "...");
+          devLog("Gemini 분석 결과:", analysis.substring(0, 200) + "...");
+        } catch (geminiError) {
+          devError("Gemini API 오류:", geminiError);
+          // Gemini 실패 시 기본 프롬프트 사용
+          const stylePrompts = {
+            luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
+            fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
+            chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
+            plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
+            simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
+          };
+          prompt = `${stylePrompts[style] || stylePrompts.simple}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video, ${duration} seconds, vertical format (9:16 aspect ratio).`;
+          analysis = "Gemini 분석 실패, 기본 프롬프트 사용: " + geminiError.message;
+          devLog("기본 프롬프트 사용:", prompt);
+        }
 
         // 영상 데이터베이스에 저장 (처리 중 상태)
         const { data: videoData, error: dbError } = await supabase
@@ -4514,32 +4589,73 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
         }
 
         // Runway API로 영상 생성 (비동기)
-        generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5)
-          .then(async ({ videoUrl, jobId }) => {
+        // 주의: 영상 생성은 시간이 오래 걸릴 수 있으므로 비동기로 처리
+        (async () => {
+          try {
+            devLog("영상 생성 시작:", { videoId: videoData.id, imageUrl, prompt, duration });
+            
+            // Runway API로 영상 생성 시도
+            let videoUrl = null;
+            let jobId = null;
+            
+            try {
+              const result = await generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5);
+              videoUrl = result.videoUrl;
+              jobId = result.jobId;
+              devLog("Runway 영상 생성 성공:", { videoUrl, jobId });
+            } catch (runwayError) {
+              devError("Runway API 실패, HTTP 폴백 시도:", runwayError.message);
+              
+              // Runway SDK 실패 시 HTTP API로 폴백 시도
+              try {
+                const fallbackResult = await generateVideoWithRunwayHTTP(imageUrl, prompt, parseInt(duration) || 5);
+                videoUrl = fallbackResult.videoUrl;
+                jobId = fallbackResult.jobId;
+                devLog("Runway HTTP 폴백 성공:", { videoUrl, jobId });
+              } catch (httpError) {
+                devError("Runway HTTP 폴백도 실패:", httpError.message);
+                throw new Error(`영상 생성 실패: ${runwayError.message}. 폴백 시도도 실패: ${httpError.message}`);
+              }
+            }
+            
+            if (!videoUrl) {
+              throw new Error("영상 URL을 받지 못했습니다.");
+            }
+            
             // 영상 생성 완료로 업데이트
-            await supabase
+            const { error: updateError } = await supabase
               .from("shorts_videos")
               .update({
                 status: "completed",
                 video_url: videoUrl,
+                job_id: jobId,
                 updated_at: new Date().toISOString(),
               })
               .eq("id", videoData.id);
             
-            devLog("영상 생성 완료 및 DB 업데이트:", videoData.id);
-          })
-          .catch(async (error) => {
-            devError("Runway 영상 생성 실패:", error);
+            if (updateError) {
+              devError("영상 상태 업데이트 실패:", updateError);
+            } else {
+              devLog("영상 생성 완료 및 DB 업데이트:", { videoId: videoData.id, videoUrl });
+            }
+          } catch (error) {
+            devError("영상 생성 전체 프로세스 실패:", error);
+            
             // 실패 상태로 업데이트
-            await supabase
-              .from("shorts_videos")
-              .update({
-                status: "failed",
-                error_message: error.message,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", videoData.id);
-          });
+            try {
+              await supabase
+                .from("shorts_videos")
+                .update({
+                  status: "failed",
+                  error_message: error.message || "영상 생성 중 오류가 발생했습니다.",
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", videoData.id);
+            } catch (updateError) {
+              devError("실패 상태 업데이트도 실패:", updateError);
+            }
+          }
+        })();
 
       res.json({
         success: true,

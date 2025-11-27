@@ -110,9 +110,26 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('❌ 사용자 대시보드 API 오류:', error);
+    console.error('❌ 에러 상세 정보:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n') // 스택의 처음 5줄만
+    });
+    
+    // 에러 메시지 구성
+    let errorMessage = error.message || '대시보드 데이터 처리 중 오류가 발생했습니다';
+    if (error.code) {
+      errorMessage += ` (코드: ${error.code})`;
+    }
+    if (error.details) {
+      errorMessage += ` - ${error.details}`;
+    }
+    
     return res.status(500).json({
       success: false,
-      error: error.message || '대시보드 데이터 처리 중 오류가 발생했습니다'
+      error: errorMessage
     });
   }
 };
@@ -122,6 +139,10 @@ module.exports = async (req, res) => {
  */
 async function getDashboardData(user, res) {
   try {
+    if (!supabase) {
+      throw new Error('Supabase 클라이언트가 초기화되지 않았습니다');
+    }
+
     // 사용자 프로필 조회
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -129,7 +150,14 @@ async function getDashboardData(user, res) {
       .eq('id', user.id)
       .single();
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('❌ [user-dashboard] 프로필 조회 실패:', profileError);
+      throw profileError;
+    }
+
+    if (!profile) {
+      throw new Error('사용자 프로필을 찾을 수 없습니다');
+    }
 
     // 현재 구독 사이클 조회
     const { data: cycle, error: cycleError } = await supabase
@@ -150,23 +178,25 @@ async function getDashboardData(user, res) {
         const level = profile.membership_level || 'seed';
         const userType = profile.user_type || 'owner';
 
-        // 가격 및 토큰 설정 조회
+        // 가격 및 토큰 설정 조회 (에러 처리 포함)
         const { data: pricingConfig } = await supabase
           .from('pricing_config')
           .select('*')
-          .single();
+          .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
 
-        // 관리자 설정에서 최신 토큰 한도 조회
+        // 관리자 설정에서 최신 토큰 한도 조회 (에러 처리 포함)
         const { data: tokenConfigs } = await supabase
           .from('token_config')
           .select('*')
           .order('updated_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
         
         const tokenConfig = tokenConfigs || {};
         const tokenKey = `${userType}_${level}_limit`;
         const monthlyTokens = tokenConfig[tokenKey] || 100;
+        
+        console.log(`📊 [user-dashboard] 사이클 생성 설정: ${userType}_${level}, 토큰 한도: ${monthlyTokens}`);
 
         // 주기 날짜 계산
         const startDate = new Date();
@@ -252,19 +282,19 @@ async function getDashboardData(user, res) {
       .order('used_at', { ascending: false })
       .limit(10);
 
-    // 가격 정보 조회
+    // 가격 정보 조회 (에러 처리 포함)
     const { data: pricingConfig } = await supabase
       .from('pricing_config')
       .select('*')
-      .single();
+      .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
 
-    // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선)
+    // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선, 에러 처리 포함)
     const { data: tokenConfigs } = await supabase
       .from('token_config')
       .select('*')
       .order('updated_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
     
     const tokenConfig = tokenConfigs || {};
 
@@ -390,6 +420,13 @@ async function getDashboardData(user, res) {
     });
 
   } catch (error) {
+    console.error('❌ [user-dashboard] getDashboardData 함수 내부 오류:', error);
+    console.error('❌ 에러 상세:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     throw error;
   }
 }
@@ -414,6 +451,13 @@ async function getBillingHistory(user, res) {
     });
 
   } catch (error) {
+    console.error('❌ [user-dashboard] getDashboardData 함수 내부 오류:', error);
+    console.error('❌ 에러 상세:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     throw error;
   }
 }
@@ -447,6 +491,13 @@ async function getTokenUsage(user, req, res) {
     });
 
   } catch (error) {
+    console.error('❌ [user-dashboard] getDashboardData 함수 내부 오류:', error);
+    console.error('❌ 에러 상세:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     throw error;
   }
 }
@@ -501,6 +552,13 @@ async function requestUpgrade(user, body, res) {
     });
 
   } catch (error) {
+    console.error('❌ [user-dashboard] getDashboardData 함수 내부 오류:', error);
+    console.error('❌ 에러 상세:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     throw error;
   }
 }
@@ -539,6 +597,13 @@ async function cancelSubscription(user, res) {
     });
 
   } catch (error) {
+    console.error('❌ [user-dashboard] getDashboardData 함수 내부 오류:', error);
+    console.error('❌ 에러 상세:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     throw error;
   }
 }

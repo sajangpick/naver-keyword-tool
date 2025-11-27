@@ -332,8 +332,21 @@
 
   // 토큰 정보 업데이트 함수
   async function updateTokenInfo(userId) {
-    if (!authTokenInfo || !tokenRemaining || !tokenLimit) {
-      console.log('[Header] 토큰 정보 요소가 없습니다:', { authTokenInfo: !!authTokenInfo, tokenRemaining: !!tokenRemaining, tokenLimit: !!tokenLimit });
+    // 요소를 다시 찾기 (동적으로 추가될 수 있으므로)
+    let tokenInfoEl = document.getElementById("authTokenInfo");
+    let remainingEl = document.getElementById("tokenRemaining");
+    let limitEl = document.getElementById("tokenLimit");
+    
+    if (!tokenInfoEl || !remainingEl || !limitEl) {
+      console.log('[Header] 토큰 정보 요소가 없습니다:', { 
+        tokenInfoEl: !!tokenInfoEl, 
+        remainingEl: !!remainingEl, 
+        limitEl: !!limitEl 
+      });
+      // 1초 후 다시 시도
+      setTimeout(() => {
+        if (userId) updateTokenInfo(userId);
+      }, 1000);
       return;
     }
     
@@ -341,6 +354,8 @@
       console.log('[Header] 사용자 ID가 없습니다');
       return;
     }
+    
+    console.log('[Header] 토큰 정보 업데이트 시작, userId:', userId);
     
     try {
       // API 엔드포인트 확인 (상대 경로 처리)
@@ -397,28 +412,36 @@
         
         console.log('[Header] 토큰 정보:', { remaining, limit });
         
-        if (tokenRemaining) {
-          tokenRemaining.textContent = remaining.toLocaleString();
+        // 요소를 다시 확인
+        tokenInfoEl = document.getElementById("authTokenInfo");
+        remainingEl = document.getElementById("tokenRemaining");
+        limitEl = document.getElementById("tokenLimit");
+        
+        if (remainingEl) {
+          remainingEl.textContent = remaining.toLocaleString();
+          console.log('[Header] 남은 토큰 업데이트:', remaining);
         }
-        if (tokenLimit) {
-          tokenLimit.textContent = limit.toLocaleString();
+        if (limitEl) {
+          limitEl.textContent = limit.toLocaleString();
+          console.log('[Header] 전체 토큰 업데이트:', limit);
         }
-        if (authTokenInfo) {
-          authTokenInfo.style.display = "flex";
-          console.log('[Header] 토큰 정보 표시됨');
+        if (tokenInfoEl) {
+          tokenInfoEl.style.display = "flex";
+          tokenInfoEl.classList.add("show");
+          console.log('[Header] 토큰 정보 표시됨 (display: flex)');
         }
       } else {
         console.log('[Header] 사이클 데이터가 없습니다:', data);
         // 사이클이 없으면 숨김
-        if (authTokenInfo) {
-          authTokenInfo.style.display = "none";
+        if (tokenInfoEl) {
+          tokenInfoEl.style.display = "none";
         }
       }
     } catch (error) {
       console.error('[Header] 토큰 정보 조회 실패:', error);
       // 에러 발생 시 숨김
-      if (authTokenInfo) {
-        authTokenInfo.style.display = "none";
+      if (tokenInfoEl) {
+        tokenInfoEl.style.display = "none";
       }
     }
   }
@@ -440,6 +463,34 @@
   }, 100);
 
   window.addEventListener("auth:state-changed", updateAuthUI);
+  
+  // 페이지 로드 후 토큰 정보 다시 시도 (요소가 늦게 로드될 수 있음)
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user?.id) {
+            console.log('[Header] 페이지 로드 후 토큰 정보 재시도, userId:', user.id);
+            updateTokenInfo(user.id);
+          }
+        } catch (e) {
+          console.error('[Header] 사용자 데이터 파싱 실패:', e);
+        }
+      }
+      
+      // Supabase 세션도 확인
+      if (window.authState?.supabase) {
+        window.authState.supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user?.id) {
+            console.log('[Header] Supabase 세션에서 토큰 정보 재시도, userId:', session.user.id);
+            updateTokenInfo(session.user.id);
+          }
+        });
+      }
+    }, 500);
+  });
 
   // 모바일에서 스크롤 시 헤더 숨김/표시 (kmong 스타일)
   (function initHeaderAutoHide() {
