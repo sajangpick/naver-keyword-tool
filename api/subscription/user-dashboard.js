@@ -77,7 +77,7 @@ module.exports = async (req, res) => {
         case 'billing':
           return await getBillingHistory(user, res);
         case 'usage':
-          return await getTokenUsage(user, res);
+          return await getTokenUsage(user, req, res);
         default:
           return res.status(400).json({
             success: false,
@@ -349,10 +349,10 @@ async function getBillingHistory(user, res) {
 /**
  * 토큰 사용 내역 조회
  */
-async function getTokenUsage(user, res) {
+async function getTokenUsage(user, req, res) {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = parseInt(req.query?.limit) || 50;
+    const offset = parseInt(req.query?.offset) || 0;
 
     const { data: usage, error, count } = await supabase
       .from('token_usage')

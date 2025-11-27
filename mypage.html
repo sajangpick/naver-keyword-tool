@@ -1818,22 +1818,34 @@
     // 토큰 정보 로드
     async function loadTokenInfo(userId) {
       try {
+        // Supabase 세션 토큰 가져오기
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          console.error('❌ 세션 토큰이 없습니다');
+          throw new Error('로그인이 필요합니다');
+        }
+
         // 서버 API를 통해 토큰 정보 가져오기
         const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
           }
         });
 
         if (!response.ok) {
-          throw new Error('토큰 정보 로드 실패');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('❌ API 응답 오류:', response.status, errorData);
+          throw new Error(errorData.error || '토큰 정보 로드 실패');
         }
 
         const result = await response.json();
         
         if (result.success && result.data) {
           const { profile, cycle, recentUsage } = result.data;
+          
+          console.log('✅ 토큰 정보 로드 성공:', { profile, cycle, recentUsageCount: recentUsage?.length || 0 });
           
           // 플랜 정보 표시
           const planNames = {
@@ -1856,10 +1868,11 @@
             'master': '마스터'
           };
           
+          const membershipLevel = profile?.membership_level || 'seed';
           document.getElementById('currentPlan').textContent = 
-            planNames[profile.membership_level] || '씨앗';
+            planNames[membershipLevel] || '씨앗';
           document.getElementById('planBadge').textContent = 
-            planBadges[profile.membership_level] || '무료';
+            planBadges[membershipLevel] || '무료';
           
           if (cycle) {
             // 토큰 사용량 표시
@@ -1896,12 +1909,25 @@
                 upgradeSection.style.display = 'block';
               }
             }
+          } else {
+            // cycle이 없을 때 기본값 표시
+            console.warn('⚠️ 구독 사이클이 없습니다. 기본값을 표시합니다.');
+            document.getElementById('tokensUsed').textContent = '0';
+            document.getElementById('tokensLimit').textContent = '100';
+            document.getElementById('tokensRemaining').textContent = '100';
+            document.getElementById('usagePercent').textContent = '0%';
+            document.getElementById('daysLeft').textContent = '30일';
+            
+            const meterFill = document.getElementById('tokenMeterFill');
+            if (meterFill) {
+              meterFill.style.width = '0%';
+            }
           }
           
           // 최근 사용 내역 표시
-          if (recentUsage && recentUsage.length > 0) {
-            const usageList = document.getElementById('recentUsageList');
-            if (usageList) {
+          const usageList = document.getElementById('recentUsageList');
+          if (usageList) {
+            if (recentUsage && recentUsage.length > 0) {
               usageList.innerHTML = recentUsage.slice(0, 5).map(usage => {
                 const apiLabels = {
                   'chatgpt': 'ChatGPT',
@@ -1919,31 +1945,51 @@
                       <span class="usage-api">${apiLabels[usage.api_type] || usage.api_type}</span>
                       <span class="usage-time">${timeAgo}</span>
                     </div>
-                    <span class="usage-tokens">-${usage.tokens_used} 토큰</span>
+                    <span class="usage-tokens">-${usage.tokens_used || 0} 토큰</span>
                   </div>
                 `;
               }).join('');
-              
-              if (recentUsage.length === 0) {
-                usageList.innerHTML = `
-                  <div style="text-align: center; color: #999; padding: 20px;">
-                    <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
-                  </div>
-                `;
-              }
+            } else {
+              usageList.innerHTML = `
+                <div style="text-align: center; color: #999; padding: 20px;">
+                  <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
+                </div>
+              `;
             }
           }
         }
       } catch (error) {
         console.error('❌ 토큰 정보 로드 실패:', error);
         
+        // 에러 메시지 표시
+        const usageList = document.getElementById('recentUsageList');
+        if (usageList) {
+          usageList.innerHTML = `
+            <div style="text-align: center; color: #ef4444; padding: 20px;">
+              <i class="fas fa-exclamation-triangle"></i> 토큰 정보를 불러올 수 없습니다: ${error.message}
+            </div>
+          `;
+        }
+        
         // 기본값 표시
-        document.getElementById('currentPlan').textContent = '씨앗';
-        document.getElementById('planBadge').textContent = '무료';
-        document.getElementById('tokensUsed').textContent = '0';
-        document.getElementById('tokensLimit').textContent = '100';
-        document.getElementById('tokensRemaining').textContent = '100';
-        document.getElementById('usagePercent').textContent = '0%';
+        const currentPlanEl = document.getElementById('currentPlan');
+        const planBadgeEl = document.getElementById('planBadge');
+        const tokensUsedEl = document.getElementById('tokensUsed');
+        const tokensLimitEl = document.getElementById('tokensLimit');
+        const tokensRemainingEl = document.getElementById('tokensRemaining');
+        const usagePercentEl = document.getElementById('usagePercent');
+        
+        if (currentPlanEl) currentPlanEl.textContent = '씨앗';
+        if (planBadgeEl) planBadgeEl.textContent = '무료';
+        if (tokensUsedEl) tokensUsedEl.textContent = '0';
+        if (tokensLimitEl) tokensLimitEl.textContent = '100';
+        if (tokensRemainingEl) tokensRemainingEl.textContent = '100';
+        if (usagePercentEl) usagePercentEl.textContent = '0%';
+        
+        const meterFill = document.getElementById('tokenMeterFill');
+        if (meterFill) {
+          meterFill.style.width = '0%';
+        }
       }
     }
     
