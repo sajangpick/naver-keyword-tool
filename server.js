@@ -4620,37 +4620,131 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
         }
 
         // 영상 데이터베이스에 저장 (처리 중 상태)
-        const { data: videoData, error: dbError } = await supabase
+        let videoData = null;
+        let dbError = null;
+        
+        // 먼저 테이블 존재 여부 확인
+        const { error: tableCheckError } = await supabase
           .from("shorts_videos")
-          .insert({
-            user_id: userId,
-            title: menuName,
-            description: menuFeatures,
-            style: style,
-            duration_sec: parseInt(duration) || 10,
-            music_type: music,
-            menu_name: menuName,
-            menu_features: menuFeatures,
-            menu_price: menuPrice,
-            image_url: imageUrl,
-            status: "processing",
-          })
-          .select("*")
-          .single();
+          .select("id")
+          .limit(0);
+        
+        // 테이블이 없으면 자동 생성 시도
+        if (tableCheckError && tableCheckError.message.includes("Could not find the table")) {
+          devLog("⚠️  shorts_videos 테이블이 없습니다. 자동 생성 시도...");
+          
+          // 방법 1: Supabase RPC 함수 사용 시도 (exec_sql 같은 함수가 있다면)
+          try {
+            const { data: rpcData, error: rpcError } = await supabase.rpc('exec_sql', {
+              sql: `
+                CREATE TABLE IF NOT EXISTS public.shorts_videos (
+                  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+                  title text,
+                  description text,
+                  style text,
+                  duration_sec integer,
+                  music_type text,
+                  menu_name text NOT NULL,
+                  menu_features text,
+                  menu_price text,
+                  image_url text,
+                  video_url text,
+                  thumbnail_url text,
+                  job_id text,
+                  status text NOT NULL DEFAULT 'processing',
+                  error_message text,
+                  generation_time_ms integer,
+                  ai_model text,
+                  created_at timestamp with time zone DEFAULT now() NOT NULL,
+                  updated_at timestamp with time zone DEFAULT now() NOT NULL
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_shorts_videos_user_id ON public.shorts_videos(user_id);
+                CREATE INDEX IF NOT EXISTS idx_shorts_videos_status ON public.shorts_videos(status);
+                CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(created_at DESC);
+              `
+            });
+            
+            if (!rpcError) {
+              devLog("✅ RPC 함수로 테이블 생성 성공!");
+              // 테이블 생성 후 다시 시도
+            } else {
+              devLog("⚠️  RPC 함수 사용 불가:", rpcError.message);
+            }
+          } catch (rpcErr) {
+            devLog("⚠️  RPC 함수 없음");
+          }
+        }
+        
+        // 데이터 저장 시도
+        try {
+          const result = await supabase
+            .from("shorts_videos")
+            .insert({
+              user_id: userId,
+              title: menuName,
+              description: menuFeatures,
+              style: style,
+              duration_sec: parseInt(duration) || 10,
+              music_type: music,
+              menu_name: menuName,
+              menu_features: menuFeatures,
+              menu_price: menuPrice,
+              image_url: imageUrl,
+              status: "processing",
+            })
+            .select("*")
+            .single();
+          
+          videoData = result.data;
+          dbError = result.error;
+        } catch (insertError) {
+          dbError = insertError;
+        }
 
         if (dbError) {
           devError("영상 데이터 저장 실패:", dbError);
           
           // 테이블이 없는 경우 명확한 안내 메시지
           if (dbError.message && dbError.message.includes("Could not find the table")) {
+            const createTableSQL = `CREATE TABLE IF NOT EXISTS public.shorts_videos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title text,
+  description text,
+  style text,
+  duration_sec integer,
+  music_type text,
+  menu_name text NOT NULL,
+  menu_features text,
+  menu_price text,
+  image_url text,
+  video_url text,
+  thumbnail_url text,
+  job_id text,
+  status text NOT NULL DEFAULT 'processing',
+  error_message text,
+  generation_time_ms integer,
+  ai_model text,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_shorts_videos_user_id ON public.shorts_videos(user_id);
+CREATE INDEX IF NOT EXISTS idx_shorts_videos_status ON public.shorts_videos(status);
+CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(created_at DESC);`;
+            
             return res.status(500).json({
               success: false,
-              error: "데이터베이스 테이블이 없습니다. Supabase에서 'shorts_videos' 테이블을 생성해주세요.\n\n" +
-                     "해결 방법:\n" +
-                     "1. Supabase 대시보드 접속 (https://supabase.com/dashboard)\n" +
-                     "2. SQL Editor 열기\n" +
-                     "3. CHECK_AND_CREATE_TABLE.sql 파일의 SQL 실행\n" +
-                     "4. 페이지 새로고침 후 다시 시도",
+              error: "🚨 데이터베이스 테이블이 없습니다!\n\n" +
+                     "Supabase에서 테이블을 생성해야 합니다.\n\n" +
+                     "📋 해결 방법:\n" +
+                     "1. https://supabase.com/dashboard 접속\n" +
+                     "2. 프로젝트 선택 → SQL Editor 클릭\n" +
+                     "3. 아래 SQL을 복사해서 실행:\n\n" +
+                     createTableSQL + "\n\n" +
+                     "또는 프로젝트 폴더의 '🚨_이것만_복사해서_실행하세요.sql' 파일 사용",
               errorCode: "TABLE_NOT_FOUND",
               tableName: "shorts_videos"
             });
