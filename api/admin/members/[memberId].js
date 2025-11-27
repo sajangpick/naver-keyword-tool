@@ -102,21 +102,35 @@ module.exports = async (req, res) => {
                 });
             }
 
-            // 업데이트 실행 (role 에러 무시하고 계속 진행)
+            // 업데이트 실행 (role 필드는 이미 제외됨)
             dataToUpdate.updated_at = new Date().toISOString();
             
-            // 업데이트 시도 (에러가 나도 일단 실행)
+            // 최종 확인: role 필드가 포함되어 있으면 제거
+            if ('role' in dataToUpdate) {
+                console.warn('[Admin Member Update] role 필드가 포함되어 있어 제거합니다.');
+                delete dataToUpdate.role;
+            }
+            
+            // 업데이트 시도
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update(dataToUpdate)
                 .eq('id', memberId);
             
-            // role 관련 에러인 경우 무시하고 계속 진행
-            if (updateError && updateError.message && updateError.message.includes('role')) {
-                console.warn('[Admin Member Update] role 컬럼 에러 무시하고 계속 진행:', updateError.message);
-                // 에러를 무시하고 실제 업데이트 여부 확인
-            } else if (updateError) {
+            if (updateError) {
                 console.error('[Admin Member Update] 업데이트 에러:', updateError);
+                console.error('[Admin Member Update] 에러 코드:', updateError.code);
+                console.error('[Admin Member Update] 에러 상세:', updateError.details);
+                console.error('[Admin Member Update] 에러 힌트:', updateError.hint);
+                
+                // role 관련 에러인 경우 명확한 메시지 반환
+                if (updateError.message && updateError.message.includes('role')) {
+                    return res.status(500).json({
+                        success: false,
+                        error: 'role 컬럼이 profiles 테이블에 없습니다. role 필드는 전송하지 마세요.'
+                    });
+                }
+                
                 return res.status(500).json({
                     success: false,
                     error: updateError.message || 'Failed to update member'

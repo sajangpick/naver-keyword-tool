@@ -332,7 +332,15 @@
 
   // 토큰 정보 업데이트 함수
   async function updateTokenInfo(userId) {
-    if (!authTokenInfo || !tokenRemaining || !tokenLimit) return;
+    if (!authTokenInfo || !tokenRemaining || !tokenLimit) {
+      console.log('[Header] 토큰 정보 요소가 없습니다:', { authTokenInfo: !!authTokenInfo, tokenRemaining: !!tokenRemaining, tokenLimit: !!tokenLimit });
+      return;
+    }
+    
+    if (!userId) {
+      console.log('[Header] 사용자 ID가 없습니다');
+      return;
+    }
     
     try {
       // API 엔드포인트 확인 (상대 경로 처리)
@@ -340,20 +348,54 @@
         ? 'http://localhost:5000' 
         : window.location.origin;
       
-      const response = await fetch(`${apiBase}/api/subscription/cycle?user_id=${userId}`, {
+      const apiUrl = `${apiBase}/api/subscription/cycle?user_id=${userId}`;
+      console.log('[Header] 토큰 정보 조회 시작:', apiUrl);
+      
+      // Supabase 세션 토큰 가져오기 (선택적)
+      let authToken = null;
+      try {
+        if (window.authState?.supabase) {
+          const { data: { session } } = await window.authState.supabase.auth.getSession();
+          if (session?.access_token) {
+            authToken = session.access_token;
+            console.log('[Header] Supabase 세션 토큰 가져옴');
+          }
+        }
+      } catch (e) {
+        console.log('[Header] Supabase 세션 토큰 가져오기 실패 (무시):', e);
+      }
+      
+      // 헤더 설정
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
+      const response = await fetch(apiUrl, {
         method: 'GET',
+        headers: headers,
         credentials: 'include'
       });
       
+      console.log('[Header] API 응답 상태:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error('토큰 정보 조회 실패');
+        const errorText = await response.text();
+        console.error('[Header] API 응답 오류:', response.status, errorText);
+        throw new Error(`토큰 정보 조회 실패: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('[Header] API 응답 데이터:', data);
       
       if (data.success && data.cycle) {
-        const remaining = data.cycle.tokens_remaining || 0;
-        const limit = data.cycle.monthly_token_limit || 0;
+        const remaining = data.cycle.tokens_remaining ?? 0;
+        const limit = data.cycle.monthly_token_limit ?? 0;
+        
+        console.log('[Header] 토큰 정보:', { remaining, limit });
         
         if (tokenRemaining) {
           tokenRemaining.textContent = remaining.toLocaleString();
@@ -363,8 +405,10 @@
         }
         if (authTokenInfo) {
           authTokenInfo.style.display = "flex";
+          console.log('[Header] 토큰 정보 표시됨');
         }
       } else {
+        console.log('[Header] 사이클 데이터가 없습니다:', data);
         // 사이클이 없으면 숨김
         if (authTokenInfo) {
           authTokenInfo.style.display = "none";

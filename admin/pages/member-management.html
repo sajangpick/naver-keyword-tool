@@ -1343,14 +1343,14 @@
           showLoading(true);
           closeLevelModal();
 
-          // B안: API 호출
+          // B안: API 호출 (role은 profiles 테이블에 없으므로 전송하지 않음)
           const response = await fetch(`/api/admin/members/${memberId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               user_type: newUserType,
               membership_level: newLevel,
-              role: newRole,
+              // role: newRole, // profiles 테이블에 role 컬럼이 없으므로 전송하지 않음
               reset_usage: resetUsage 
             })
           });
