@@ -114,7 +114,8 @@
         source: source,
         file_path: error.filename || additionalData.filename || window.location.pathname,
         line_number: error.lineno || additionalData.lineno || null,
-        column_number: error.colno || additionalData.colno || null,
+        // column_number 컬럼이 테이블에 없으므로 제거
+        // column_number: error.colno || additionalData.colno || null,
         function_name: extractFunctionName(error.stack),
         user_id: userId,
         session_id: sessionId,

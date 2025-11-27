@@ -125,7 +125,8 @@ function errorHandler(err, req, res, next) {
     source: 'backend',
     file_path: stackInfo.filePath,
     line_number: stackInfo.lineNumber,
-    column_number: stackInfo.columnNumber,
+    // column_number 컬럼이 테이블에 없으므로 제거
+    // column_number: stackInfo.columnNumber,
     function_name: stackInfo.functionName,
     user_id: req.user?.id || null,
     ip_address: req.ip || req.connection.remoteAddress || null,
