@@ -1849,6 +1849,13 @@
 
         const result = await response.json();
         console.log('📊 API 응답 결과:', result);
+        console.log('📊 API 응답 상세:', {
+          success: result.success,
+          hasData: !!result.data,
+          hasCycle: !!result.data?.cycle,
+          cycleData: result.data?.cycle,
+          profileData: result.data?.profile
+        });
         
         if (!result.success) {
           const errorMsg = result.error || '토큰 정보 조회 실패';
@@ -1917,6 +1924,15 @@
             const tokensRemaining = cycle.tokens_remaining || tokensLimit;
             const usagePercent = tokensLimit > 0 ? 
               Math.round((tokensUsed / tokensLimit) * 100) : 0;
+            
+            console.log('📊 토큰 정보 표시:', {
+              tokensUsed,
+              tokensLimit,
+              tokensRemaining,
+              usagePercent,
+              daysRemaining: cycle.days_remaining,
+              cycleId: cycle.id
+            });
             
             document.getElementById('tokensUsed').textContent = tokensUsed;
             document.getElementById('tokensLimit').textContent = tokensLimit;
