@@ -4853,8 +4853,32 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
 
 app.get("/api/shorts/videos", async (req, res) => {
   try {
+    // Supabase 초기화 확인
+    if (!supabase) {
+      devError("⚠️  Supabase가 초기화되지 않았습니다.");
+      return res.status(503).json({
+        success: false,
+        error: "데이터베이스 연결이 설정되지 않았습니다. 서버 관리자에게 문의하세요.",
+        data: [],
+      });
+    }
+
     const userId = req.headers["user-id"] || req.query.userId;
-    ensureUserId(userId);
+    
+    // userId가 없으면 빈 배열 반환 (에러 대신)
+    if (!userId || typeof userId !== "string") {
+      devLog("⚠️  userId가 없습니다. 빈 배열 반환");
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0,
+        },
+      });
+    }
 
     // 테이블 존재 여부 확인
     const { error: tableCheckError } = await supabase
