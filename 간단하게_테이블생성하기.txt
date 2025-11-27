@@ -1,0 +1,78 @@
+====================================
+🎬 shorts_videos 테이블 생성하기
+====================================
+
+⚠️  현재 문제: 테이블이 없어서 영상 생성이 안 됩니다.
+
+====================================
+✅ 가장 쉬운 방법 (3단계)
+====================================
+
+1단계: Supabase 접속
+   → https://supabase.com/dashboard
+   → 로그인
+   → 사장픽 프로젝트 선택
+
+2단계: SQL Editor 열기
+   → 왼쪽 메뉴 "SQL Editor" 클릭
+   → "New query" 클릭
+
+3단계: SQL 복사 & 실행
+   → 아래 SQL 전체를 복사 (Ctrl + A → Ctrl + C)
+   → SQL Editor에 붙여넣기 (Ctrl + V)
+   → "RUN" 버튼 클릭
+   → "Success" 메시지 확인
+
+====================================
+📋 실행할 SQL (아래 전체 복사)
+====================================
+
+CREATE TABLE IF NOT EXISTS public.shorts_videos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title text,
+  description text,
+  style text,
+  duration_sec integer,
+  music_type text,
+  menu_name text NOT NULL,
+  menu_features text,
+  menu_price text,
+  image_url text,
+  video_url text,
+  thumbnail_url text,
+  job_id text,
+  status text NOT NULL DEFAULT 'processing',
+  error_message text,
+  generation_time_ms integer,
+  ai_model text,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_shorts_videos_user_id ON public.shorts_videos(user_id);
+CREATE INDEX IF NOT EXISTS idx_shorts_videos_status ON public.shorts_videos(status);
+CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(created_at DESC);
+
+====================================
+✅ 확인 방법
+====================================
+
+Supabase에서:
+→ 왼쪽 메뉴 "Table Editor" 클릭
+→ "shorts_videos" 테이블이 보이면 성공!
+
+그 다음:
+→ 브라우저에서 페이지 새로고침 (F5)
+→ 다시 영상 생성 시도
+
+====================================
+💡 다른 방법
+====================================
+
+프로젝트 폴더에 있는 파일들:
+→ QUICK_FIX_SHORTS_TABLE.sql (SQL 파일)
+→ RUN_THIS_TO_CREATE_TABLE.bat (자동 실행 스크립트)
+
+====================================
+

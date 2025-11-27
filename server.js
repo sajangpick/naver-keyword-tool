@@ -65,6 +65,9 @@ if (SUPABASE_URL && SUPABASE_SERVICE_KEY && SUPABASE_URL.trim() !== '' && SUPABA
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     devLog("✅ Supabase 클라이언트 초기화 성공");
+    
+    // 서버 시작 시 필요한 테이블 자동 생성
+    initializeShortsTable();
   } catch (error) {
     devError("❌ Supabase 클라이언트 초기화 실패:", error.message);
     devLog("⚠️ Supabase 없이 서버를 계속 실행합니다.");
@@ -4132,6 +4135,61 @@ app.delete("/api/shorts/plan-history/:id", async (req, res) => {
   }
 });
 
+// ==================== 테이블 존재 여부 확인 함수 ====================
+
+// shorts_videos 테이블이 있는지 확인 (서버 시작 시)
+async function initializeShortsTable() {
+  try {
+    devLog("🔍 shorts_videos 테이블 존재 여부 확인 중...");
+    
+    // 간단한 SELECT로 테이블 존재 여부 확인
+    const { error: testError } = await supabase
+      .from('shorts_videos')
+      .select('id')
+      .limit(0);
+    
+    // 테이블이 있으면 에러가 없거나 다른 에러
+    if (!testError || !testError.message.includes('Could not find the table')) {
+      devLog("✅ shorts_videos 테이블이 이미 존재합니다.");
+      return;
+    }
+    
+    // 테이블이 없으면 안내 메시지 출력
+    devLog("");
+    devLog("⚠️  ⚠️  ⚠️  중요: shorts_videos 테이블이 없습니다! ⚠️  ⚠️  ⚠️");
+    devLog("");
+    devLog("📋 해결 방법:");
+    devLog("   1. Supabase 대시보드 접속: https://supabase.com/dashboard");
+    devLog("   2. 프로젝트 선택 → SQL Editor 클릭");
+    devLog("   3. 다음 파일의 SQL을 복사해서 실행:");
+    devLog("      → QUICK_FIX_SHORTS_TABLE.sql");
+    devLog("      → 또는 database/schemas/features/shorts/shorts-videos.sql");
+    devLog("");
+    devLog("📝 또는 아래 SQL을 직접 실행:");
+    devLog("");
+    devLog("CREATE TABLE IF NOT EXISTS public.shorts_videos (");
+    devLog("  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),");
+    devLog("  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,");
+    devLog("  title text, description text, style text, duration_sec integer, music_type text,");
+    devLog("  menu_name text NOT NULL, menu_features text, menu_price text,");
+    devLog("  image_url text, video_url text, thumbnail_url text, job_id text,");
+    devLog("  status text NOT NULL DEFAULT 'processing', error_message text,");
+    devLog("  generation_time_ms integer, ai_model text,");
+    devLog("  created_at timestamp with time zone DEFAULT now() NOT NULL,");
+    devLog("  updated_at timestamp with time zone DEFAULT now() NOT NULL");
+    devLog(");");
+    devLog("");
+    devLog("CREATE INDEX IF NOT EXISTS idx_shorts_videos_user_id ON public.shorts_videos(user_id);");
+    devLog("CREATE INDEX IF NOT EXISTS idx_shorts_videos_status ON public.shorts_videos(status);");
+    devLog("CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(created_at DESC);");
+    devLog("");
+    devLog("⚠️  테이블을 생성한 후 서버를 재시작하세요!");
+    devLog("");
+  } catch (error) {
+    devError("❌ 테이블 확인 실패:", error.message);
+  }
+}
+
 // ==================== Gemini 영상 생성 API 설정 ====================
 
 // Gemini API로 이미지 분석 및 영상 생성 프롬프트 개선
@@ -4582,6 +4640,22 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
 
         if (dbError) {
           devError("영상 데이터 저장 실패:", dbError);
+          
+          // 테이블이 없는 경우 명확한 안내 메시지
+          if (dbError.message && dbError.message.includes("Could not find the table")) {
+            return res.status(500).json({
+              success: false,
+              error: "데이터베이스 테이블이 없습니다. Supabase에서 'shorts_videos' 테이블을 생성해주세요.\n\n" +
+                     "해결 방법:\n" +
+                     "1. Supabase 대시보드 접속 (https://supabase.com/dashboard)\n" +
+                     "2. SQL Editor 열기\n" +
+                     "3. CHECK_AND_CREATE_TABLE.sql 파일의 SQL 실행\n" +
+                     "4. 페이지 새로고침 후 다시 시도",
+              errorCode: "TABLE_NOT_FOUND",
+              tableName: "shorts_videos"
+            });
+          }
+          
           return res.status(500).json({
             success: false,
             error: "영상 데이터 저장 실패: " + dbError.message,
