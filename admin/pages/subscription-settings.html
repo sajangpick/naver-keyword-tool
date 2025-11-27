@@ -616,23 +616,6 @@
                 <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || getDefaultTokenLimit(level.tokenKey)}" min="0" placeholder="토큰 입력"/>
                 <span class="unit">토큰/월</span>
               </div>
-              <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding: 8px; background: #f3f4f6; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; flex: 1;">
-                    <div class="toggle-switch">
-                      <input type="checkbox" id="${level.tokenKey.replace('_limit', '_enabled')}" ${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? 'checked' : ''}>
-                      <span class="toggle-slider"></span>
-                    </div>
-                    <span style="font-weight: 600; color: #4b5563;">이 등급 토큰 사용 활성화</span>
-                  </label>
-                  <span class="${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? 'enabled-badge' : 'disabled-badge'}">
-                    ${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? '활성화' : '비활성화'}
-                  </span>
-                </div>
-                <small style="font-size: 11px; color: #6b7280; margin-left: 30px;">
-                  💡 비활성화 시 이 등급 사용자는 토큰을 사용할 수 없습니다
-                </small>
-              </div>
             </div>
           </div>
         `).join('');
@@ -662,23 +645,6 @@
                 <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || getDefaultTokenLimit(level.tokenKey)}" min="0" placeholder="토큰 입력"/>
                 <span class="unit">토큰/월</span>
               </div>
-              <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding: 8px; background: #f3f4f6; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; flex: 1;">
-                    <div class="toggle-switch">
-                      <input type="checkbox" id="${level.tokenKey.replace('_limit', '_enabled')}" ${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? 'checked' : ''}>
-                      <span class="toggle-slider"></span>
-                    </div>
-                    <span style="font-weight: 600; color: #4b5563;">이 등급 토큰 사용 활성화</span>
-                  </label>
-                  <span class="${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? 'enabled-badge' : 'disabled-badge'}">
-                    ${tokenData[level.tokenKey.replace('_limit', '_enabled')] !== false ? '활성화' : '비활성화'}
-                  </span>
-                </div>
-                <small style="font-size: 11px; color: #6b7280; margin-left: 30px;">
-                  💡 비활성화 시 이 등급 사용자는 토큰을 사용할 수 없습니다
-                </small>
-              </div>
             </div>
           </div>
         `).join('');
@@ -701,17 +667,6 @@
             tokenUpdate.owner_power_limit = parseInt(document.getElementById('owner_power_limit').value) || 0;
             tokenUpdate.owner_bigpower_limit = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
             tokenUpdate.owner_premium_limit = parseInt(document.getElementById('owner_premium_limit').value) || 0;
-            
-            // 토큰 사용 활성화/비활성화 설정 (식당 대표 등급)
-            const ownerSeedEnabled = document.getElementById('owner_seed_enabled');
-            const ownerPowerEnabled = document.getElementById('owner_power_enabled');
-            const ownerBigpowerEnabled = document.getElementById('owner_bigpower_enabled');
-            const ownerPremiumEnabled = document.getElementById('owner_premium_enabled');
-            
-            if (ownerSeedEnabled) tokenUpdate.owner_seed_enabled = ownerSeedEnabled.checked;
-            if (ownerPowerEnabled) tokenUpdate.owner_power_enabled = ownerPowerEnabled.checked;
-            if (ownerBigpowerEnabled) tokenUpdate.owner_bigpower_enabled = ownerBigpowerEnabled.checked;
-            if (ownerPremiumEnabled) tokenUpdate.owner_premium_enabled = ownerPremiumEnabled.checked;
           } else {
             pricingUpdate.agency_elite_price = parseInt(document.getElementById('agency_elite_price').value) || 0;
             pricingUpdate.agency_expert_price = parseInt(document.getElementById('agency_expert_price').value) || 0;
@@ -722,12 +677,6 @@
             tokenUpdate.agency_expert_limit = parseInt(document.getElementById('agency_expert_limit').value) || 0;
             tokenUpdate.agency_master_limit = parseInt(document.getElementById('agency_master_limit').value) || 0;
             tokenUpdate.agency_premium_limit = parseInt(document.getElementById('agency_premium_limit').value) || 0;
-            
-            // 토큰 사용 활성화/비활성화 설정
-            tokenUpdate.agency_elite_enabled = document.getElementById('agency_elite_enabled').checked;
-            tokenUpdate.agency_expert_enabled = document.getElementById('agency_expert_enabled').checked;
-            tokenUpdate.agency_master_enabled = document.getElementById('agency_master_enabled').checked;
-            tokenUpdate.agency_premium_enabled = document.getElementById('agency_premium_enabled').checked;
           }
 
           // 가격과 토큰 동시 저장
