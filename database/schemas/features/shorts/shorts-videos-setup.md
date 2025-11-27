@@ -1,3 +1,19 @@
+# 쇼츠 영상 테이블 생성 가이드
+
+## 문제
+에러 메시지: `Could not find the table 'public.shorts_videos' in the schema cache`
+
+## 해결 방법
+
+### 1. Supabase 대시보드 접속
+1. https://supabase.com/dashboard 접속
+2. 프로젝트 선택
+3. 왼쪽 메뉴에서 **SQL Editor** 클릭
+
+### 2. SQL 실행
+아래 SQL을 복사하여 SQL Editor에 붙여넣고 **RUN** 버튼 클릭:
+
+```sql
 -- ========================================
 -- 🎬 사장픽 쇼츠 영상 관리 시스템 데이터베이스 스키마
 -- ========================================
@@ -50,4 +66,39 @@ COMMENT ON COLUMN public.shorts_videos.status IS 'processing: 생성 중, comple
 CREATE INDEX IF NOT EXISTS idx_shorts_videos_user_id ON public.shorts_videos(user_id);
 CREATE INDEX IF NOT EXISTS idx_shorts_videos_status ON public.shorts_videos(status);
 CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(created_at DESC);
+```
+
+### 3. 확인
+SQL 실행 후 **Table Editor**에서 `shorts_videos` 테이블이 생성되었는지 확인하세요.
+
+### 4. RLS (Row Level Security) 설정 (선택사항)
+보안을 위해 RLS 정책을 설정할 수 있습니다:
+
+```sql
+-- RLS 활성화
+ALTER TABLE public.shorts_videos ENABLE ROW LEVEL SECURITY;
+
+-- 사용자는 자신의 영상만 조회 가능
+CREATE POLICY "Users can view their own videos"
+  ON public.shorts_videos
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- 사용자는 자신의 영상만 생성 가능
+CREATE POLICY "Users can insert their own videos"
+  ON public.shorts_videos
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- 사용자는 자신의 영상만 수정 가능
+CREATE POLICY "Users can update their own videos"
+  ON public.shorts_videos
+  FOR UPDATE
+  USING (auth.uid() = user_id);
+```
+
+## 주의사항
+- `profiles` 테이블이 먼저 생성되어 있어야 합니다.
+- 테이블 생성 후 서버를 재시작할 필요는 없습니다.
+- 이미 테이블이 있는 경우 `CREATE TABLE IF NOT EXISTS`로 인해 오류가 발생하지 않습니다.
 
