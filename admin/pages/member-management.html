@@ -845,28 +845,9 @@
           </div>
 
           <div class="form-group">
-            <label>새 등급</label>
+            <label>등급 선택</label>
             <select id="modal-new-level">
-              <optgroup label="식당 대표 (owner)">
-                <option value="owner:member:seed">씨앗 (월 10개)</option>
-                <option value="owner:member:power">파워 (월 50개)</option>
-                <option value="owner:member:big_power">빅파워 (월 200개)</option>
-                <option value="owner:member:premium">프리미엄 (무제한)</option>
-              </optgroup>
-              <optgroup label="대행사/블로거 (agency)">
-                <option value="agency:member:elite">엘리트 (월 100개)</option>
-                <option value="agency:member:expert">전문가 (월 500개)</option>
-                <option value="agency:member:master">마스터 (월 2000개)</option>
-                <option value="agency:member:platinum">플래티넘 (무제한)</option>
-              </optgroup>
-              <optgroup label="매니저 (manager)">
-                <option value="manager:general:admin">🙋 일반 매니저 (뷰만 가능)</option>
-                <option value="manager:super:admin">👑 수퍼 매니저 (제한된 편집)</option>
-              </optgroup>
-              <optgroup label="관리자 (admin)">
-                <option value="admin:general:admin">👔 일반 관리자 (오너가 제약)</option>
-                <option value="admin:owner:admin">👨‍💼 오너 관리자 (모든 권한)</option>
-              </optgroup>
+              <option value="">로딩 중...</option>
             </select>
           </div>
 
@@ -1085,6 +1066,10 @@
         if (normalized === 'free') {
           return 'seed';
         }
+        // big_power를 bigpower로 변환
+        if (normalized === 'big_power') {
+          return 'bigpower';
+        }
         return normalized;
       }
 
@@ -1100,8 +1085,120 @@
         console.log('🚀 페이지 로드 완료, 회원 목록 로드 시작');
         // B안 사용 시 Supabase 직접 호출 불필요 (API를 통해 처리)
         // ensureSupabase(); // 상세보기에서만 필요 시 호출
+        await loadLevelOptions(); // 등급 옵션 먼저 로드
         await loadMembers();
       });
+
+      // ==================== 등급 옵션 로드 ====================
+
+      async function loadLevelOptions() {
+        try {
+          console.log('🔄 등급 옵션 로드 시작...');
+          
+          // 토큰 설정과 가격 설정 동시 로드
+          const [tokenRes, pricingRes] = await Promise.all([
+            fetch('/api/subscription/token-config'),
+            fetch('/api/subscription/pricing-config')
+          ]);
+
+          const tokenResult = await tokenRes.json();
+          const pricingResult = await pricingRes.json();
+
+          if (!tokenResult.success || !pricingResult.success) {
+            throw new Error('등급 설정을 불러올 수 없습니다');
+          }
+
+          const tokenData = tokenResult.tokens || {};
+          const pricingData = pricingResult.pricing || {};
+
+          // 등급 드롭다운 생성
+          const select = document.getElementById('modal-new-level');
+          select.innerHTML = '';
+
+          // 식당 대표 등급
+          const ownerGroup = document.createElement('optgroup');
+          ownerGroup.label = '식당 대표 (owner)';
+          
+          const ownerLevels = [
+            { key: 'seed', label: '🌱 씨앗', tokenKey: 'owner_seed_limit', priceKey: 'owner_seed_price' },
+            { key: 'power', label: '⚡ 파워', tokenKey: 'owner_power_limit', priceKey: 'owner_power_price' },
+            { key: 'bigpower', label: '💪 빅파워', tokenKey: 'owner_bigpower_limit', priceKey: 'owner_bigpower_price' },
+            { key: 'premium', label: '⭐ 프리미엄', tokenKey: 'owner_premium_limit', priceKey: 'owner_premium_price' }
+          ];
+
+          ownerLevels.forEach(level => {
+            const tokenLimit = tokenData[level.tokenKey] || 0;
+            const price = pricingData[level.priceKey] || 0;
+            const option = document.createElement('option');
+            option.value = `owner:member:${level.key}`;
+            option.textContent = `${level.label} (${tokenLimit.toLocaleString()} 토큰/월, ${price.toLocaleString()}원/월)`;
+            ownerGroup.appendChild(option);
+          });
+
+          select.appendChild(ownerGroup);
+
+          // 대행사 등급
+          const agencyGroup = document.createElement('optgroup');
+          agencyGroup.label = '대행사/블로거 (agency)';
+          
+          const agencyLevels = [
+            { key: 'elite', label: '🏆 엘리트', tokenKey: 'agency_elite_limit', priceKey: 'agency_elite_price' },
+            { key: 'expert', label: '🎯 전문가', tokenKey: 'agency_expert_limit', priceKey: 'agency_expert_price' },
+            { key: 'master', label: '👑 마스터', tokenKey: 'agency_master_limit', priceKey: 'agency_master_price' },
+            { key: 'premium', label: '💎 프리미엄', tokenKey: 'agency_premium_limit', priceKey: 'agency_premium_price' }
+          ];
+
+          agencyLevels.forEach(level => {
+            const tokenLimit = tokenData[level.tokenKey] || 0;
+            const price = pricingData[level.priceKey] || 0;
+            const option = document.createElement('option');
+            option.value = `agency:member:${level.key}`;
+            option.textContent = `${level.label} (${tokenLimit.toLocaleString()} 토큰/월, ${price.toLocaleString()}원/월)`;
+            agencyGroup.appendChild(option);
+          });
+
+          select.appendChild(agencyGroup);
+
+          // 매니저 등급 (고정)
+          const managerGroup = document.createElement('optgroup');
+          managerGroup.label = '매니저 (manager)';
+          
+          const managerOption1 = document.createElement('option');
+          managerOption1.value = 'manager:general:admin';
+          managerOption1.textContent = '🙋 일반 매니저 (뷰만 가능)';
+          managerGroup.appendChild(managerOption1);
+          
+          const managerOption2 = document.createElement('option');
+          managerOption2.value = 'manager:super:admin';
+          managerOption2.textContent = '👑 수퍼 매니저 (제한된 편집)';
+          managerGroup.appendChild(managerOption2);
+          
+          select.appendChild(managerGroup);
+
+          // 관리자 등급 (고정)
+          const adminGroup = document.createElement('optgroup');
+          adminGroup.label = '관리자 (admin)';
+          
+          const adminOption1 = document.createElement('option');
+          adminOption1.value = 'admin:general:admin';
+          adminOption1.textContent = '👔 일반 관리자 (오너가 제약)';
+          adminGroup.appendChild(adminOption1);
+          
+          const adminOption2 = document.createElement('option');
+          adminOption2.value = 'admin:owner:admin';
+          adminOption2.textContent = '👨‍💼 오너 관리자 (모든 권한)';
+          adminGroup.appendChild(adminOption2);
+          
+          select.appendChild(adminGroup);
+
+          console.log('✅ 등급 옵션 로드 완료');
+        } catch (error) {
+          console.error('❌ 등급 옵션 로드 실패:', error);
+          // 실패 시 기본 옵션 표시
+          const select = document.getElementById('modal-new-level');
+          select.innerHTML = '<option value="">등급 설정을 불러올 수 없습니다</option>';
+        }
+      }
 
       // ==================== B안: Server API 호출 ====================
 
@@ -1183,13 +1280,47 @@
         selectedMember = { id: memberId, name: memberName, level: normalizedLevel, userType: currentUserType };
         
         document.getElementById('modal-member-name').value = memberName;
-        // 정규화된 등급으로 설정 (씨앗 = owner:member:seed)
-        if (normalizedLevel === 'seed' && currentUserType === 'owner') {
-          document.getElementById('modal-new-level').value = 'owner:member:seed';
-        } else {
-          // 다른 등급의 경우 기본값으로 설정
-          document.getElementById('modal-new-level').value = currentLevel || 'owner:member:seed';
+        
+        // 현재 등급을 드롭다운 value 형식으로 변환: "user_type:role:membership_level"
+        let dropdownValue = 'owner:member:seed'; // 기본값
+        
+        if (currentUserType === 'owner') {
+          // 식당 대표 등급: owner:member:seed, owner:member:power, owner:member:bigpower, owner:member:premium
+          dropdownValue = `owner:member:${normalizedLevel}`;
+        } else if (currentUserType === 'agency') {
+          // 대행사/블로거 등급: agency:member:elite, agency:member:expert, agency:member:master, agency:member:premium
+          // premium을 platinum으로 변환 (대행사 프리미엄은 platinum)
+          if (normalizedLevel === 'premium') {
+            dropdownValue = 'agency:member:premium';
+          } else {
+            dropdownValue = `agency:member:${normalizedLevel}`;
+          }
+        } else if (currentUserType === 'manager') {
+          // 매니저: manager:general:admin 또는 manager:super:admin
+          if (normalizedLevel === 'super' || normalizedLevel === 'super_admin') {
+            dropdownValue = 'manager:super:admin';
+          } else {
+            dropdownValue = 'manager:general:admin';
+          }
+        } else if (currentUserType === 'admin') {
+          // 관리자: admin:general:admin 또는 admin:owner:admin
+          if (normalizedLevel === 'owner' || normalizedLevel === 'owner_admin') {
+            dropdownValue = 'admin:owner:admin';
+          } else {
+            dropdownValue = 'admin:general:admin';
+          }
         }
+        
+        // 드롭다운에 현재 등급 설정
+        const dropdown = document.getElementById('modal-new-level');
+        dropdown.value = dropdownValue;
+        
+        // 만약 드롭다운에 해당 값이 없으면 기본값으로 설정
+        if (!dropdown.value || dropdown.value !== dropdownValue) {
+          console.warn(`⚠️ 드롭다운에 ${dropdownValue} 값이 없습니다. 기본값으로 설정합니다.`);
+          dropdown.value = 'owner:member:seed';
+        }
+        
         document.getElementById('modal-reset-usage').checked = false;
         
         document.getElementById('levelModal').classList.add('show');

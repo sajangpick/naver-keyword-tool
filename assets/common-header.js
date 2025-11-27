@@ -201,6 +201,9 @@
   const authUser = document.getElementById("authUser");
   const userEmailSpan = document.getElementById("userEmail");
   const userAvatar = document.getElementById("userAvatar");
+  const authTokenInfo = document.getElementById("authTokenInfo");
+  const tokenRemaining = document.getElementById("tokenRemaining");
+  const tokenLimit = document.getElementById("tokenLimit");
 
   async function updateAuthUI() {
     // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
@@ -236,6 +239,11 @@
             currentUser.email ||
             "U";
           userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
+        }
+        
+        // 토큰 정보 업데이트
+        if (currentUser?.id) {
+          updateTokenInfo(currentUser.id);
         }
       } catch (error) {
         console.error("[auth] failed to parse userData", error);
@@ -281,9 +289,15 @@
               "U";
             userAvatar.textContent = (base.trim()[0] || "U").toUpperCase();
           }
+          
+          // 토큰 정보 업데이트
+          if (currentUser?.id) {
+            updateTokenInfo(currentUser.id);
+          }
         } else if (!isLoggedIn || !rawUser) {
           // 세션이 없고 localStorage에도 없으면 로그아웃 상태
           if (authUser) authUser.style.display = "none";
+          if (authTokenInfo) authTokenInfo.style.display = "none";
           if (loginBtn) loginBtn.style.display = "inline-flex";
           if (signupBtn) signupBtn.style.display = "inline-flex";
           if (userEmailSpan) {
@@ -297,6 +311,7 @@
         // 에러 발생 시 localStorage 기반으로 유지
         if (!currentUser) {
           if (authUser) authUser.style.display = "none";
+          if (authTokenInfo) authTokenInfo.style.display = "none";
           if (loginBtn) loginBtn.style.display = "inline-flex";
           if (signupBtn) signupBtn.style.display = "inline-flex";
         }
@@ -304,12 +319,62 @@
     } else if (!currentUser) {
       // auth-state.js가 없고 localStorage에도 없으면 로그아웃 상태
       if (authUser) authUser.style.display = "none";
+      if (authTokenInfo) authTokenInfo.style.display = "none";
       if (loginBtn) loginBtn.style.display = "inline-flex";
       if (signupBtn) signupBtn.style.display = "inline-flex";
       if (userEmailSpan) {
         userEmailSpan.textContent = "";
         userEmailSpan.title = "";
         userEmailSpan.onclick = null;
+      }
+    }
+  }
+
+  // 토큰 정보 업데이트 함수
+  async function updateTokenInfo(userId) {
+    if (!authTokenInfo || !tokenRemaining || !tokenLimit) return;
+    
+    try {
+      // API 엔드포인트 확인 (상대 경로 처리)
+      const apiBase = window.location.origin.includes('localhost') 
+        ? 'http://localhost:5000' 
+        : window.location.origin;
+      
+      const response = await fetch(`${apiBase}/api/subscription/cycle?user_id=${userId}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('토큰 정보 조회 실패');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.cycle) {
+        const remaining = data.cycle.tokens_remaining || 0;
+        const limit = data.cycle.monthly_token_limit || 0;
+        
+        if (tokenRemaining) {
+          tokenRemaining.textContent = remaining.toLocaleString();
+        }
+        if (tokenLimit) {
+          tokenLimit.textContent = limit.toLocaleString();
+        }
+        if (authTokenInfo) {
+          authTokenInfo.style.display = "flex";
+        }
+      } else {
+        // 사이클이 없으면 숨김
+        if (authTokenInfo) {
+          authTokenInfo.style.display = "none";
+        }
+      }
+    } catch (error) {
+      console.error('[Header] 토큰 정보 조회 실패:', error);
+      // 에러 발생 시 숨김
+      if (authTokenInfo) {
+        authTokenInfo.style.display = "none";
       }
     }
   }

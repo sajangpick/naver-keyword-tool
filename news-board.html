@@ -790,6 +790,30 @@
         color: var(--accent-color);
       }
 
+      .auth-token-info {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 12px;
+        background: rgba(255, 123, 84, 0.08);
+        border: 1px solid rgba(255, 123, 84, 0.2);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-right: 12px;
+      }
+
+      .auth-token-text {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .auth-token-text span:first-child {
+        color: var(--accent-color);
+      }
+
       .auth-user__logout {
         height: 36px;
         padding: 0 16px;
@@ -1533,14 +1557,20 @@
 
         <div class="header-auth">
           <div class="auth-buttons" id="authButtons">
+            <div class="auth-token-info" id="authTokenInfo" style="display: none;">
+              <i class="fa-solid fa-coins" style="margin-right: 6px; color: var(--accent-color);"></i>
+              <span class="auth-token-text">
+                <span id="tokenRemaining">-</span> / <span id="tokenLimit">-</span>
+              </span>
+            </div>
             <div class="auth-user" id="authUser" style="display: none">
               <div class="auth-user__avatar" id="userAvatar">U</div>
               <div class="auth-user__meta">
                 <a
                   href="/mypage.html"
                   class="auth-user__label"
-                  style="cursor: pointer; text-decoration: none"
-                  >나의 페이지</a
+                  style="cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px;"
+                  ><i class="fa-solid fa-arrow-right" style="font-size: 10px;"></i>나의 페이지</a
                 >
                 <a
                   href="/mypage.html"
