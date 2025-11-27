@@ -1199,6 +1199,7 @@
         .uploaded-preview {
             display: none;
             margin-top: 16px;
+            text-align: center;
         }
 
         .uploaded-preview.show {
@@ -1206,10 +1207,28 @@
         }
 
         .preview-image {
-            max-width: 200px;
-            max-height: 200px;
+            max-width: 100%;
+            max-height: 300px;
+            width: auto;
+            height: auto;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            object-fit: contain;
+        }
+        
+        /* 업로드 영역에 파일이 있을 때 */
+        .upload-area.has-file {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-area.has-file .upload-icon,
+        .upload-area.has-file .upload-text,
+        .upload-area.has-file .upload-hint {
+            display: none !important;
         }
 
         /* 음악 선택 */
@@ -2073,6 +2092,9 @@
                         <div class="upload-hint">JPG, PNG 파일 (최대 10MB)</div>
                         <div class="uploaded-preview" id="imagePreview">
                             <img src="" alt="Preview" class="preview-image" id="previewImg">
+                            <button type="button" class="remove-image-btn" onclick="removeUploadedImage()" style="margin-top: 12px; padding: 8px 16px; background: var(--error); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                                <i class="fa-solid fa-trash"></i> 이미지 삭제
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2613,20 +2635,91 @@
 
                 if (file.size > 10 * 1024 * 1024) {
                     alert('파일 크기는 10MB 이하여야 합니다.');
+                    input.value = ''; // 파일 선택 초기화
+                    return;
+                }
+
+                // 파일 타입 확인
+                if (!file.type.match('image.*')) {
+                    alert('이미지 파일만 업로드 가능합니다.');
+                    input.value = ''; // 파일 선택 초기화
                     return;
                 }
 
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    document.getElementById('previewImg').src = e.target.result;
-                    document.getElementById('imagePreview').classList.add('show');
+                    const previewImg = document.getElementById('previewImg');
+                    const imagePreview = document.getElementById('imagePreview');
                     const uploadArea = document.querySelector('#selfMode .upload-area');
-                    if (uploadArea) uploadArea.classList.add('has-file');
+                    
+                    if (!previewImg || !imagePreview || !uploadArea) {
+                        console.error('이미지 미리보기 요소를 찾을 수 없습니다.');
+                        return;
+                    }
+                    
+                    // 이미지 미리보기 설정
+                    previewImg.src = e.target.result;
+                    imagePreview.classList.add('show');
+                    
+                    // 업로드 영역 스타일 변경
+                    uploadArea.classList.add('has-file');
+                    
+                    // 업로드 텍스트 숨기기
+                    const uploadText = uploadArea.querySelector('.upload-text');
+                    const uploadHint = uploadArea.querySelector('.upload-hint');
+                    const uploadIcon = uploadArea.querySelector('.upload-icon');
+                    
+                    if (uploadText) uploadText.style.display = 'none';
+                    if (uploadHint) uploadHint.style.display = 'none';
+                    if (uploadIcon) uploadIcon.style.display = 'none';
+                    
+                    console.log('이미지 업로드 완료:', file.name);
                 };
+                
+                reader.onerror = function (error) {
+                    console.error('이미지 읽기 실패:', error);
+                    alert('이미지를 불러올 수 없습니다. 다시 시도해주세요.');
+                    input.value = ''; // 파일 선택 초기화
+                };
+                
                 reader.readAsDataURL(file);
 
                 uploadedImage = file;
+            } else {
+                // 파일이 선택되지 않은 경우
+                console.warn('파일이 선택되지 않았습니다.');
             }
+        }
+
+        function removeUploadedImage() {
+            const input = document.getElementById('mainImage');
+            const previewImg = document.getElementById('previewImg');
+            const imagePreview = document.getElementById('imagePreview');
+            const uploadArea = document.querySelector('#selfMode .upload-area');
+            
+            // 파일 입력 초기화
+            if (input) input.value = '';
+            uploadedImage = null;
+            
+            // 미리보기 숨기기
+            if (previewImg) previewImg.src = '';
+            if (imagePreview) imagePreview.classList.remove('show');
+            
+            // 업로드 영역 스타일 복원
+            if (uploadArea) {
+                uploadArea.classList.remove('has-file');
+                
+                // 업로드 텍스트 다시 보이기
+                const uploadText = uploadArea.querySelector('.upload-text');
+                const uploadHint = uploadArea.querySelector('.upload-hint');
+                const uploadIcon = uploadArea.querySelector('.upload-icon');
+                
+                if (uploadText) uploadText.style.display = 'block';
+                if (uploadHint) uploadHint.style.display = 'block';
+                if (uploadIcon) uploadIcon.style.display = 'block';
+            }
+            
+            console.log('이미지 삭제 완료');
         }
 
         function selectMusic(music) {
