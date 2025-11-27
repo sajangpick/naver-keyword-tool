@@ -218,38 +218,37 @@
       .auth-token-info-inline {
         display: none;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 10px;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 8px;
         background: rgba(255, 123, 84, 0.1);
         border: 1px solid rgba(255, 123, 84, 0.25);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         color: var(--text-primary);
-        margin: 0 8px;
       }
 
       .auth-token-info-inline i {
-        font-size: 14px;
+        font-size: 12px;
         color: var(--accent-color);
       }
 
       .auth-token-text {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
         font-weight: 700;
       }
 
       .auth-token-text span:first-child {
         color: var(--accent-color);
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 800;
       }
 
       .auth-token-text span:last-child {
         color: var(--text-secondary);
-        font-size: 11px;
+        font-size: 10px;
         opacity: 0.7;
       }
 
@@ -1015,26 +1014,28 @@
           <div class="auth-user" id="authUser" style="display: none">
             <div class="auth-user__avatar" id="userAvatar">U</div>
             <div class="auth-user__meta">
-              <a
-                href="./mypage.html"
-                class="auth-user__label"
-                style="cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px;"
-                ><i class="fa-solid fa-door-open" style="font-size: 14px;"></i>나의 페이지</a
-              >
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <a
+                  href="./mypage.html"
+                  class="auth-user__label"
+                  style="cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px;"
+                  ><i class="fa-solid fa-door-open" style="font-size: 14px;"></i>나의 페이지</a
+                >
+                <div class="auth-token-info-inline" id="authTokenInfo" style="display: none;">
+                  <i class="fa-solid fa-coins"></i>
+                  <span class="auth-token-text">
+                    <span id="tokenRemaining">-</span>
+                    <span style="color: var(--text-secondary); font-weight: 400;">/</span>
+                    <span id="tokenLimit">-</span>
+                  </span>
+                </div>
+              </div>
               <a
                 href="./mypage.html"
                 class="auth-user__email"
                 id="userEmail"
                 style="cursor: pointer"
               ></a>
-            </div>
-            <div class="auth-token-info-inline" id="authTokenInfo" style="display: none;">
-              <i class="fa-solid fa-coins"></i>
-              <span class="auth-token-text">
-                <span id="tokenRemaining">-</span>
-                <span style="color: var(--text-secondary); font-weight: 400;">/</span>
-                <span id="tokenLimit">-</span>
-              </span>
             </div>
             <button class="auth-user__logout" id="logoutBtn" type="button">
               로그아웃

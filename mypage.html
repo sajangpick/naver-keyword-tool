@@ -1835,14 +1835,50 @@
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('❌ API 응답 오류:', response.status, errorData);
-          throw new Error(errorData.error || '토큰 정보 로드 실패');
+          let errorMessage = '토큰 정보 로드 실패';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+            console.error('❌ API 응답 오류:', response.status, errorData);
+          } catch (parseError) {
+            console.error('❌ 응답 파싱 오류:', response.status, response.statusText);
+            errorMessage = `서버 오류 (${response.status}): ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
 
         const result = await response.json();
+        console.log('📊 API 응답 결과:', result);
         
-        if (result.success && result.data) {
+        if (!result.success) {
+          const errorMsg = result.error || '토큰 정보 조회 실패';
+          console.error('❌ API 응답 실패:', errorMsg);
+          
+          // 에러가 발생해도 기본값은 표시
+          document.getElementById('currentPlan').textContent = '씨앗';
+          document.getElementById('planBadge').textContent = '무료';
+          document.getElementById('tokensUsed').textContent = '0';
+          document.getElementById('tokensLimit').textContent = '100';
+          document.getElementById('tokensRemaining').textContent = '100';
+          document.getElementById('usagePercent').textContent = '0%';
+          document.getElementById('daysLeft').textContent = '30일';
+          
+          const usageList = document.getElementById('recentUsageList');
+          if (usageList) {
+            usageList.innerHTML = `
+              <div style="text-align: center; color: #ef4444; padding: 20px;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <div style="margin-top: 8px; font-size: 14px;">${errorMsg}</div>
+                <button onclick="refreshTokenInfo()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                  <i class="fas fa-sync-alt"></i> 다시 시도
+                </button>
+              </div>
+            `;
+          }
+          return;
+        }
+        
+        if (result.data) {
           const { profile, cycle, recentUsage } = result.data;
           
           console.log('✅ 토큰 정보 로드 성공:', { profile, cycle, recentUsageCount: recentUsage?.length || 0 });
@@ -1960,13 +1996,24 @@
         }
       } catch (error) {
         console.error('❌ 토큰 정보 로드 실패:', error);
+        console.error('❌ 에러 상세 정보:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         
         // 에러 메시지 표시
         const usageList = document.getElementById('recentUsageList');
         if (usageList) {
+          const errorMessage = error.message || '알 수 없는 오류가 발생했습니다';
           usageList.innerHTML = `
             <div style="text-align: center; color: #ef4444; padding: 20px;">
-              <i class="fas fa-exclamation-triangle"></i> 토큰 정보를 불러올 수 없습니다: ${error.message}
+              <i class="fas fa-exclamation-triangle"></i> 
+              <div style="margin-top: 8px; font-size: 14px;">토큰 정보를 불러올 수 없습니다</div>
+              <div style="margin-top: 4px; font-size: 12px; color: #999;">${errorMessage}</div>
+              <button onclick="refreshTokenInfo()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-sync-alt"></i> 다시 시도
+              </button>
             </div>
           `;
         }

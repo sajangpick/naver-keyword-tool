@@ -139,27 +139,99 @@ async function getDashboardData(user, res) {
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle(); // single() 대신 maybeSingle() 사용하여 데이터가 없어도 에러 없이 null 반환
 
     // 사이클이 없으면 새로 생성
     if (!cycle) {
-      const response = await fetch(`${process.env.API_BASE_URL || 'http://localhost:5000'}/api/subscription/cycle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id })
-      });
+      console.log(`⚠️ [user-dashboard] 사이클이 없음. 새 사이클 생성 시도: ${user.id}`);
       
-      const cycleResult = await response.json();
-      if (!cycleResult.success) throw new Error(cycleResult.error);
-      
-      return res.json({
-        success: true,
-        data: {
-          profile,
-          cycle: cycleResult.cycle,
-          isNew: true
+      try {
+        // 사이클 생성 로직을 직접 구현 (fetch 대신)
+        const level = profile.membership_level || 'seed';
+        const userType = profile.user_type || 'owner';
+
+        // 가격 및 토큰 설정 조회
+        const { data: pricingConfig } = await supabase
+          .from('pricing_config')
+          .select('*')
+          .single();
+
+        // 관리자 설정에서 최신 토큰 한도 조회
+        const { data: tokenConfigs } = await supabase
+          .from('token_config')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        const tokenConfig = tokenConfigs || {};
+        const tokenKey = `${userType}_${level}_limit`;
+        const monthlyTokens = tokenConfig[tokenKey] || 100;
+
+        // 주기 날짜 계산
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 30);
+
+        // 새 사이클 생성
+        const { data: newCycle, error: createError } = await supabase
+          .from('subscription_cycle')
+          .insert({
+            user_id: user.id,
+            user_type: userType,
+            cycle_start_date: startDate.toISOString().split('T')[0],
+            cycle_end_date: endDate.toISOString().split('T')[0],
+            days_in_cycle: 30,
+            monthly_token_limit: monthlyTokens,
+            tokens_used: 0,
+            tokens_remaining: monthlyTokens,
+            status: 'active',
+            billing_amount: 0,
+            payment_status: 'completed'
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('❌ 사이클 생성 실패:', createError);
+          throw createError;
         }
-      });
+
+        console.log('✅ [user-dashboard] 새 사이클 생성 완료:', newCycle?.id);
+        
+        // 새 사이클로 데이터 반환
+        const today = new Date();
+        const cycleEndDate = new Date(newCycle.cycle_end_date);
+        const daysRemaining = Math.ceil((cycleEndDate - today) / (1000 * 60 * 60 * 24));
+
+        return res.json({
+          success: true,
+          data: {
+            profile,
+            cycle: {
+              ...newCycle,
+              tokens_used: 0,
+              tokens_remaining: monthlyTokens,
+              days_remaining: daysRemaining
+            },
+            recentUsage: [],
+            isNew: true
+          }
+        });
+      } catch (createError) {
+        console.error('❌ [user-dashboard] 사이클 생성 실패:', createError);
+        // 사이클 생성 실패해도 기본 정보는 반환
+        return res.json({
+          success: true,
+          data: {
+            profile,
+            cycle: null,
+            recentUsage: [],
+            isNew: false,
+            warning: '구독 사이클을 생성할 수 없습니다. 관리자에게 문의해주세요.'
+          }
+        });
+      }
     }
 
     // 토큰 사용 통계
