@@ -226,31 +226,292 @@ module.exports = async (req, res) => {
  * 대시보드 데이터 조회
  */
 async function getDashboardData(user, res) {
-  // 최상위 에러 처리: 어떤 에러가 발생해도 기본값 반환
   console.log(`📊 [user-dashboard] getDashboardData 함수 시작: userId=${user?.id || 'unknown'}`);
   
-  // 즉시 기본값 반환 (모든 복잡한 로직 우회)
-  return res.json({
-    success: true,
-    data: {
-      profile: {
-        id: user?.id || 'unknown',
-        email: user?.email || '',
-        name: user?.user_metadata?.name || '',
-        user_type: 'owner',
-        membership_level: 'seed'
-      },
-      cycle: {
-        id: null,
-        monthly_token_limit: 100,
-        tokens_used: 0,
-        tokens_remaining: 100,
-        days_remaining: 30
-      },
-      recentUsage: [],
-      plans: []
+  // 기본값 정의
+  const defaultProfile = {
+    id: user?.id || 'unknown',
+    email: user?.email || '',
+    name: user?.user_metadata?.name || '',
+    user_type: 'owner',
+    membership_level: 'seed'
+  };
+  
+  const defaultCycle = {
+    id: null,
+    monthly_token_limit: 100,
+    tokens_used: 0,
+    tokens_remaining: 100,
+    days_remaining: 30
+  };
+  
+  try {
+    // 1. 사용자 프로필 조회
+    let profile = defaultProfile;
+    try {
+      if (supabase) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (!profileError && profileData) {
+          profile = profileData;
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ 프로필 조회 실패, 기본값 사용:', err.message);
     }
-  });
+    
+    // 2. 현재 구독 사이클 조회
+    let currentCycle = null;
+    try {
+      if (supabase) {
+        const { data: cycleData, error: cycleError } = await supabase
+          .from('subscription_cycle')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (!cycleError && cycleData) {
+          currentCycle = cycleData;
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ 사이클 조회 실패:', err.message);
+    }
+    
+    // 3. 사이클이 없으면 새로 생성 시도
+    if (!currentCycle) {
+      try {
+        const level = profile.membership_level || 'seed';
+        const userType = profile.user_type || 'owner';
+        
+        // 토큰 설정 조회
+        let monthlyTokens = 100;
+        if (supabase) {
+          try {
+            const { data: tokenConfigs } = await supabase
+              .from('token_config')
+              .select('*')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (tokenConfigs) {
+              const tokenKey = `${userType}_${level}_limit`;
+              monthlyTokens = tokenConfigs[tokenKey] || 100;
+            }
+          } catch (err) {
+            console.warn('⚠️ 토큰 설정 조회 실패, 기본값 사용:', err.message);
+          }
+        }
+        
+        // 새 사이클 생성
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 30);
+        
+        if (supabase) {
+          const { data: newCycle, error: createError } = await supabase
+            .from('subscription_cycle')
+            .insert({
+              user_id: user.id,
+              user_type: userType,
+              cycle_start_date: startDate.toISOString().split('T')[0],
+              cycle_end_date: endDate.toISOString().split('T')[0],
+              days_in_cycle: 30,
+              monthly_token_limit: monthlyTokens,
+              tokens_used: 0,
+              tokens_remaining: monthlyTokens,
+              status: 'active',
+              billing_amount: 0,
+              payment_status: 'completed'
+            })
+            .select()
+            .maybeSingle();
+          
+          if (!createError && newCycle) {
+            currentCycle = newCycle;
+            console.log('✅ 새 사이클 생성 완료');
+          }
+        }
+      } catch (err) {
+        console.warn('⚠️ 사이클 생성 실패:', err.message);
+      }
+    }
+    
+    // 사이클이 여전히 없으면 기본값 사용
+    if (!currentCycle) {
+      const startDate = new Date();
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 30);
+      
+      currentCycle = {
+        ...defaultCycle,
+        user_id: user.id,
+        cycle_start_date: startDate.toISOString().split('T')[0],
+        cycle_end_date: endDate.toISOString().split('T')[0]
+      };
+    }
+    
+    // 4. 토큰 사용 통계 조회
+    let totalUsed = 0;
+    let recentUsage = [];
+    try {
+      if (supabase && currentCycle.cycle_start_date) {
+        // 토큰 사용 통계 (여러 행 반환 가능)
+        const { data: tokenStats } = await supabase
+          .from('token_usage')
+          .select('tokens_used, used_at')
+          .eq('user_id', user.id)
+          .gte('used_at', currentCycle.cycle_start_date);
+        
+        if (tokenStats && Array.isArray(tokenStats)) {
+          totalUsed = tokenStats.reduce((sum, t) => sum + (t.tokens_used || 0), 0);
+        }
+        
+        // 최근 사용 내역
+        const { data: usageData } = await supabase
+          .from('token_usage')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('used_at', { ascending: false })
+          .limit(10);
+        
+        if (usageData && Array.isArray(usageData)) {
+          recentUsage = usageData;
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ 토큰 사용 통계 조회 실패:', err.message);
+    }
+    
+    // 5. 관리자 설정에서 최신 토큰 한도 확인
+    let currentTokenLimit = currentCycle.monthly_token_limit || 100;
+    try {
+      if (supabase) {
+        const { data: tokenConfigs } = await supabase
+          .from('token_config')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (tokenConfigs) {
+          const userType = profile.user_type || 'owner';
+          const membershipLevel = profile.membership_level || 'seed';
+          const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+          
+          if (tokenConfigs[tokenLimitKey] !== undefined && tokenConfigs[tokenLimitKey] !== null) {
+            currentTokenLimit = Number(tokenConfigs[tokenLimitKey]);
+            
+            // 사이클 업데이트 (사이클이 실제로 존재할 때만)
+            if (currentCycle.id && currentCycle.monthly_token_limit !== currentTokenLimit) {
+              await supabase
+                .from('subscription_cycle')
+                .update({
+                  monthly_token_limit: currentTokenLimit,
+                  tokens_remaining: currentTokenLimit - totalUsed,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', currentCycle.id);
+              
+              currentCycle.monthly_token_limit = currentTokenLimit;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ 토큰 한도 업데이트 실패:', err.message);
+    }
+    
+    // 6. 플랜 정보 구성
+    let plans = [];
+    try {
+      if (supabase) {
+        const { data: pricingConfig } = await supabase
+          .from('pricing_config')
+          .select('*')
+          .maybeSingle();
+        
+        const { data: tokenConfigs } = await supabase
+          .from('token_config')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        const tokenConfig = tokenConfigs || {};
+        const userType = profile.user_type || 'owner';
+        
+        plans = userType === 'owner' ? [
+          { id: 'seed', name: '씨앗', price: pricingConfig?.owner_seed_price || 0, tokens: tokenConfig?.owner_seed_limit || 100, description: '무료 플랜' },
+          { id: 'power', name: '파워', price: pricingConfig?.owner_power_price || 30000, tokens: tokenConfig?.owner_power_limit || 500, description: '기본 플랜' },
+          { id: 'bigpower', name: '빅파워', price: pricingConfig?.owner_bigpower_price || 50000, tokens: tokenConfig?.owner_bigpower_limit || 833, description: '인기 플랜' },
+          { id: 'premium', name: '프리미엄', price: pricingConfig?.owner_premium_price || 70000, tokens: tokenConfig?.owner_premium_limit || 1166, description: '최고 플랜' }
+        ] : [
+          { id: 'elite', name: '엘리트', price: pricingConfig?.agency_elite_price || 100000, tokens: tokenConfig?.agency_elite_limit || 1000, description: '시작 플랜' },
+          { id: 'expert', name: '전문가', price: pricingConfig?.agency_expert_price || 300000, tokens: tokenConfig?.agency_expert_limit || 3000, description: '기본 플랜' },
+          { id: 'master', name: '마스터', price: pricingConfig?.agency_master_price || 500000, tokens: tokenConfig?.agency_master_limit || 5000, description: '인기 플랜' },
+          { id: 'premium', name: '프리미엄', price: pricingConfig?.agency_premium_price || 1000000, tokens: tokenConfig?.agency_premium_limit || 10000, description: '최고 플랜' }
+        ];
+      }
+    } catch (err) {
+      console.warn('⚠️ 플랜 정보 조회 실패:', err.message);
+    }
+    
+    // 7. 갱신일까지 남은 일수 계산
+    const cycleEndDate = new Date(currentCycle.cycle_end_date);
+    const today = new Date();
+    const daysRemaining = Math.ceil((cycleEndDate - today) / (1000 * 60 * 60 * 24));
+    
+    // 최종 응답
+    return res.json({
+      success: true,
+      data: {
+        profile: {
+          id: profile.id,
+          email: profile.email || user.email || '',
+          name: profile.name || user.user_metadata?.name || '',
+          user_type: profile.user_type || 'owner',
+          membership_level: profile.membership_level || 'seed',
+          created_at: profile.created_at
+        },
+        cycle: {
+          ...currentCycle,
+          monthly_token_limit: currentTokenLimit,
+          tokens_used: totalUsed,
+          tokens_remaining: Math.max(0, currentTokenLimit - totalUsed),
+          days_remaining: daysRemaining,
+          usage_rate: currentTokenLimit > 0 ? Math.round((totalUsed / currentTokenLimit) * 100) : 0
+        },
+        recentUsage: recentUsage || [],
+        plans: plans || [],
+        stats: {
+          total_tokens_used: totalUsed,
+          daily_average: recentUsage?.length > 0 ? Math.round(totalUsed / Math.max(1, Math.ceil((today - new Date(currentCycle.cycle_start_date)) / (1000 * 60 * 60 * 24)))) : 0
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ [user-dashboard] getDashboardData 함수 내부 오류:', error);
+    // 에러 발생 시 기본값 반환
+    return res.json({
+      success: true,
+      data: {
+        profile: defaultProfile,
+        cycle: defaultCycle,
+        recentUsage: [],
+        plans: []
+      }
+    });
+  }
 }
 
 /**
