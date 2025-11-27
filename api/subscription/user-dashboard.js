@@ -24,9 +24,15 @@ if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL.trim() !== '' && SUPABASE_KEY.t
  */
 async function authenticateUser(req) {
   try {
+    if (!supabase) {
+      console.error('❌ [user-dashboard] Supabase 클라이언트가 없어 인증할 수 없습니다');
+      return null;
+    }
+    
     // Authorization 헤더에서 토큰 추출
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('⚠️ [user-dashboard] Authorization 헤더가 없습니다');
       return null;
     }
 
@@ -34,13 +40,20 @@ async function authenticateUser(req) {
     
     // Supabase 토큰 검증
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) {
+    if (error) {
+      console.error('❌ [user-dashboard] 토큰 검증 실패:', error.message);
+      return null;
+    }
+    
+    if (!user) {
+      console.warn('⚠️ [user-dashboard] 사용자를 찾을 수 없습니다');
       return null;
     }
 
+    console.log(`✅ [user-dashboard] 인증 성공: userId=${user.id}`);
     return user;
   } catch (error) {
-    console.error('인증 오류:', error);
+    console.error('❌ [user-dashboard] 인증 오류:', error);
     return null;
   }
 }
@@ -70,10 +83,38 @@ module.exports = async (req, res) => {
     // GET: 대시보드 데이터 조회
     if (req.method === 'GET') {
       const action = req.query.action || 'dashboard';
+      console.log(`📊 [user-dashboard] GET 요청: action=${action}, userId=${user.id}`);
 
       switch (action) {
         case 'dashboard':
-          return await getDashboardData(user, res);
+          try {
+            return await getDashboardData(user, res);
+          } catch (dashboardError) {
+            console.error('❌ [user-dashboard] getDashboardData 호출 중 에러:', dashboardError);
+            // 에러 발생 시 기본값 반환
+            return res.json({
+              success: true,
+              data: {
+                profile: {
+                  id: user.id,
+                  email: user.email || '',
+                  name: user.user_metadata?.name || '',
+                  user_type: 'owner',
+                  membership_level: 'seed'
+                },
+                cycle: {
+                  id: null,
+                  monthly_token_limit: 100,
+                  tokens_used: 0,
+                  tokens_remaining: 100,
+                  days_remaining: 30
+                },
+                recentUsage: [],
+                plans: [],
+                error: dashboardError.message
+              }
+            });
+          }
         case 'billing':
           return await getBillingHistory(user, res);
         case 'usage':
@@ -138,6 +179,8 @@ module.exports = async (req, res) => {
  * 대시보드 데이터 조회
  */
 async function getDashboardData(user, res) {
+  console.log(`📊 [user-dashboard] getDashboardData 함수 시작: userId=${user.id}`);
+  
   try {
     console.log(`📊 [user-dashboard] 대시보드 데이터 조회 시작: ${user.id}`);
     
