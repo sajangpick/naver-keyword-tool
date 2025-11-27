@@ -169,7 +169,9 @@ async function getDashboardData(user, res) {
       .limit(1)
       .maybeSingle(); // single() 대신 maybeSingle() 사용하여 데이터가 없어도 에러 없이 null 반환
 
-    // 사이클이 없으면 새로 생성
+    // 사이클이 없으면 새로 생성 (하지만 실패해도 계속 진행)
+    let currentCycle = cycle;
+    
     if (!cycle) {
       console.log(`⚠️ [user-dashboard] 사이클이 없음. 새 사이클 생성 시도: ${user.id}`);
       
@@ -179,18 +181,26 @@ async function getDashboardData(user, res) {
         const userType = profile.user_type || 'owner';
 
         // 가격 및 토큰 설정 조회 (에러 처리 포함)
-        const { data: pricingConfig } = await supabase
+        const { data: pricingConfig, error: pricingError } = await supabase
           .from('pricing_config')
           .select('*')
-          .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
+          .maybeSingle();
+        
+        if (pricingError) {
+          console.warn('⚠️ [user-dashboard] pricing_config 조회 실패 (무시하고 계속):', pricingError.message);
+        }
 
         // 관리자 설정에서 최신 토큰 한도 조회 (에러 처리 포함)
-        const { data: tokenConfigs } = await supabase
+        const { data: tokenConfigs, error: tokenConfigError } = await supabase
           .from('token_config')
           .select('*')
           .order('updated_at', { ascending: false })
           .limit(1)
-          .maybeSingle(); // 데이터가 없어도 에러 없이 null 반환
+          .maybeSingle();
+        
+        if (tokenConfigError) {
+          console.warn('⚠️ [user-dashboard] token_config 조회 실패 (무시하고 계속):', tokenConfigError.message);
+        }
         
         const tokenConfig = tokenConfigs || {};
         const tokenKey = `${userType}_${level}_limit`;
@@ -224,63 +234,79 @@ async function getDashboardData(user, res) {
 
         if (createError) {
           console.error('❌ 사이클 생성 실패:', createError);
-          throw createError;
+          // 사이클 생성 실패해도 계속 진행 (기본값 사용)
+          console.warn('⚠️ 사이클 생성 실패했지만 기본값으로 계속 진행합니다.');
+        } else {
+          console.log('✅ [user-dashboard] 새 사이클 생성 완료:', newCycle?.id);
+          currentCycle = newCycle;
         }
-
-        console.log('✅ [user-dashboard] 새 사이클 생성 완료:', newCycle?.id);
-        
-        // 새 사이클로 데이터 반환
-        const today = new Date();
-        const cycleEndDate = new Date(newCycle.cycle_end_date);
-        const daysRemaining = Math.ceil((cycleEndDate - today) / (1000 * 60 * 60 * 24));
-
-        return res.json({
-          success: true,
-          data: {
-            profile,
-            cycle: {
-              ...newCycle,
-              tokens_used: 0,
-              tokens_remaining: monthlyTokens,
-              days_remaining: daysRemaining
-            },
-            recentUsage: [],
-            isNew: true
-          }
-        });
       } catch (createError) {
-        console.error('❌ [user-dashboard] 사이클 생성 실패:', createError);
-        // 사이클 생성 실패해도 기본 정보는 반환
-        return res.json({
-          success: true,
-          data: {
-            profile,
-            cycle: null,
-            recentUsage: [],
-            isNew: false,
-            warning: '구독 사이클을 생성할 수 없습니다. 관리자에게 문의해주세요.'
-          }
-        });
+        console.error('❌ [user-dashboard] 사이클 생성 중 예외 발생:', createError);
+        // 사이클 생성 실패해도 계속 진행
+        console.warn('⚠️ 사이클 생성 실패했지만 기본값으로 계속 진행합니다.');
       }
     }
+    
+    // 사이클이 여전히 없으면 기본값으로 계속 진행
+    if (!currentCycle) {
+      console.warn('⚠️ [user-dashboard] 사이클이 없어 기본값을 사용합니다.');
+      
+      const level = profile.membership_level || 'seed';
+      const userType = profile.user_type || 'owner';
+      
+      // 기본 사이클 객체 생성
+      const startDate = new Date();
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 30);
+      
+      currentCycle = {
+        id: null,
+        user_id: user.id,
+        user_type: userType,
+        cycle_start_date: startDate.toISOString().split('T')[0],
+        cycle_end_date: endDate.toISOString().split('T')[0],
+        monthly_token_limit: 100,
+        tokens_used: 0,
+        tokens_remaining: 100,
+        status: 'active'
+      };
+    }
 
-    // 토큰 사용 통계
-    const startDate = cycle.cycle_start_date;
-    const { data: tokenStats, error: statsError } = await supabase
-      .from('token_usage')
-      .select('tokens_used, used_at')
-      .eq('user_id', user.id)
-      .gte('used_at', startDate);
+    // 토큰 사용 통계 (에러 처리 포함)
+    let totalUsed = 0;
+    let recentUsage = [];
+    
+    try {
+      const startDate = currentCycle.cycle_start_date;
+      const { data: tokenStats, error: statsError } = await supabase
+        .from('token_usage')
+        .select('tokens_used, used_at')
+        .eq('user_id', user.id)
+        .gte('used_at', startDate);
 
-    const totalUsed = tokenStats?.reduce((sum, t) => sum + t.tokens_used, 0) || 0;
+      if (statsError) {
+        console.warn('⚠️ [user-dashboard] 토큰 사용 통계 조회 실패 (무시하고 계속):', statsError.message);
+      } else {
+        totalUsed = tokenStats?.reduce((sum, t) => sum + (t.tokens_used || 0), 0) || 0;
+      }
 
-    // 최근 사용 내역
-    const { data: recentUsage } = await supabase
-      .from('token_usage')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('used_at', { ascending: false })
-      .limit(10);
+      // 최근 사용 내역 (에러 처리 포함)
+      const { data: usageData, error: usageError } = await supabase
+        .from('token_usage')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('used_at', { ascending: false })
+        .limit(10);
+      
+      if (usageError) {
+        console.warn('⚠️ [user-dashboard] 최근 사용 내역 조회 실패 (무시하고 계속):', usageError.message);
+      } else {
+        recentUsage = usageData || [];
+      }
+    } catch (usageStatsError) {
+      console.error('❌ [user-dashboard] 사용 통계 조회 중 예외 발생:', usageStatsError);
+      // 에러 발생해도 계속 진행 (기본값 사용)
+    }
 
     // 가격 정보 조회 (에러 처리 포함)
     const { data: pricingConfig } = await supabase
@@ -365,28 +391,34 @@ async function getDashboardData(user, res) {
     const membershipLevel = profile.membership_level || 'seed';
     const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
     
-    let currentTokenLimit = cycle.monthly_token_limit; // 기본값: 사이클 값
+    let currentTokenLimit = currentCycle.monthly_token_limit || 100; // 기본값: 사이클 값
     if (tokenConfig[tokenLimitKey] !== undefined && tokenConfig[tokenLimitKey] !== null) {
       currentTokenLimit = Number(tokenConfig[tokenLimitKey]);
       console.log(`✅ [user-dashboard] 관리자 설정 한도 사용: ${currentTokenLimit} (${tokenLimitKey})`);
       
-      // 사이클의 한도와 다르면 사이클 업데이트
-      if (cycle.monthly_token_limit !== currentTokenLimit) {
-        console.log(`🔄 [user-dashboard] 사이클 한도 업데이트: ${cycle.monthly_token_limit} → ${currentTokenLimit}`);
-        await supabase
+      // 사이클의 한도와 다르면 사이클 업데이트 (사이클이 실제로 존재할 때만)
+      if (currentCycle.id && currentCycle.monthly_token_limit !== currentTokenLimit) {
+        console.log(`🔄 [user-dashboard] 사이클 한도 업데이트: ${currentCycle.monthly_token_limit} → ${currentTokenLimit}`);
+        const { error: updateError } = await supabase
           .from('subscription_cycle')
           .update({
             monthly_token_limit: currentTokenLimit,
             tokens_remaining: currentTokenLimit - totalUsed,
             updated_at: new Date().toISOString()
           })
-          .eq('id', cycle.id);
-        console.log('✅ [user-dashboard] 사이클 한도 업데이트 완료');
+          .eq('id', currentCycle.id);
+        
+        if (updateError) {
+          console.error('❌ 사이클 업데이트 실패:', updateError);
+        } else {
+          console.log('✅ [user-dashboard] 사이클 한도 업데이트 완료');
+          currentCycle.monthly_token_limit = currentTokenLimit;
+        }
       }
     }
 
     // 다음 갱신일 계산
-    const cycleEndDate = new Date(cycle.cycle_end_date);
+    const cycleEndDate = new Date(currentCycle.cycle_end_date);
     const today = new Date();
     const daysRemaining = Math.ceil((cycleEndDate - today) / (1000 * 60 * 60 * 24));
 
@@ -402,19 +434,19 @@ async function getDashboardData(user, res) {
           created_at: profile.created_at
         },
         cycle: {
-          ...cycle,
+          ...currentCycle,
           monthly_token_limit: currentTokenLimit, // 관리자 설정 값 사용
           tokens_used: totalUsed,
-          tokens_remaining: currentTokenLimit - totalUsed, // 관리자 설정 기준
+          tokens_remaining: Math.max(0, currentTokenLimit - totalUsed), // 관리자 설정 기준
           days_remaining: daysRemaining,
-          usage_rate: Math.round((totalUsed / currentTokenLimit) * 100) // 관리자 설정 기준
+          usage_rate: currentTokenLimit > 0 ? Math.round((totalUsed / currentTokenLimit) * 100) : 0 // 관리자 설정 기준
         },
         plans,
         recentUsage,
         stats: {
           total_tokens_used: totalUsed,
           daily_average: recentUsage?.length > 0 ? 
-            Math.round(totalUsed / Math.max(1, Math.ceil((today - new Date(cycle.cycle_start_date)) / (1000 * 60 * 60 * 24)))) : 0
+            Math.round(totalUsed / Math.max(1, Math.ceil((today - new Date(currentCycle.cycle_start_date)) / (1000 * 60 * 60 * 24)))) : 0
         }
       }
     });
