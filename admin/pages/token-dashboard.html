@@ -567,6 +567,97 @@
         }
       }
 
+      // ==================== 차트 생성 헬퍼 함수 ====================
+
+      function createChart(labels, data, maxRotation = 0, stepSize = undefined) {
+        const ctx = document.getElementById('usageChart');
+        
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+
+        ctx.innerHTML = '<canvas id="tokenChart"></canvas>';
+        const canvas = document.getElementById('tokenChart');
+        
+        chartInstance = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '토큰 사용량',
+              data: data,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.4,
+              borderWidth: 3,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: '#3b82f6',
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 2,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                titleFont: {
+                  weight: 'bold',
+                  size: 14
+                },
+                bodyFont: {
+                  weight: 'bold',
+                  size: 13
+                },
+                callbacks: {
+                  label: function(context) {
+                    return `토큰 사용량: ${context.parsed.y.toLocaleString('ko-KR')}개`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: {
+                  color: '#000000',
+                  font: {
+                    weight: 'bold',
+                    size: 11
+                  },
+                  maxRotation: maxRotation,
+                  minRotation: 0
+                },
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.1)',
+                  display: true
+                }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: '#000000',
+                  font: {
+                    weight: 'bold',
+                    size: 12
+                  },
+                  callback: function(value) {
+                    return value.toLocaleString('ko-KR');
+                  },
+                  stepSize: stepSize
+                },
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.1)',
+                  display: true
+                }
+              }
+            }
+          }
+        });
+      }
+
       // ==================== 차트 로드 ====================
 
       async function loadChartData(period) {
@@ -610,114 +701,61 @@
             grouped[dateKey] = (grouped[dateKey] || 0) + item.tokens_used;
           });
 
-          // 최근 7일간의 모든 날짜 생성 (데이터가 없어도 표시)
+          // 기간에 따라 표시할 날짜 범위 결정
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           
+          let daysToShow = 7; // 기본값: 최근 7일
+          if (period === 'today') {
+            daysToShow = 1;
+          } else if (period === 'week') {
+            daysToShow = 7;
+          } else if (period === 'month') {
+            daysToShow = 30; // 이번 달은 최근 30일
+          } else {
+            // 전체 기간일 때는 실제 데이터가 있는 날짜만 표시
+            const sortedDates = Object.keys(grouped).sort();
+            const labels = sortedDates.map(date => {
+              const d = new Date(date);
+              const dayName = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+              return `${d.getMonth() + 1}/${d.getDate()}(${dayName})`;
+            });
+            const data = sortedDates.map(date => grouped[date]);
+            
+            console.log('📊 차트 데이터 (전체):', { labels, data });
+            
+            // 차트 생성 (전체 기간)
+            createChart(labels, data, 45, undefined);
+            return;
+          }
+
+          // 지정된 기간의 모든 날짜 생성 (데이터가 없어도 표시)
           const dateRange = [];
-          for (let i = 6; i >= 0; i--) {
+          for (let i = daysToShow - 1; i >= 0; i--) {
             const date = new Date(today);
             date.setDate(date.getDate() - i);
             const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             dateRange.push(dateKey);
           }
 
-          // 차트 데이터 준비 (최근 7일 기준)
+          // 차트 데이터 준비
           const labels = dateRange.map(dateKey => {
             const d = new Date(dateKey);
             const dayName = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
-            return `${d.getMonth() + 1}/${d.getDate()}(${dayName})`;
+            if (daysToShow <= 7) {
+              return `${d.getMonth() + 1}/${d.getDate()}(${dayName})`;
+            } else {
+              return `${d.getMonth() + 1}/${d.getDate()}`;
+            }
           });
           
           const data = dateRange.map(dateKey => grouped[dateKey] || 0);
 
-          console.log('📊 차트 데이터 (최근 7일):', { labels, data });
+          console.log(`📊 차트 데이터 (최근 ${daysToShow}일):`, { labels, data });
 
-          // 차트 업데이트 또는 생성
-          if (chartInstance) {
-            chartInstance.destroy();
-          }
-
-          ctx.innerHTML = '<canvas id="tokenChart"></canvas>';
-          const canvas = document.getElementById('tokenChart');
-          
-          chartInstance = new Chart(canvas, {
-            type: 'line',
-            data: {
-              labels: labels,
-              datasets: [{
-                label: '토큰 사용량',
-                data: data,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                borderWidth: 3,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                fill: true
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false },
-                tooltip: {
-                  titleFont: {
-                    weight: 'bold',
-                    size: 14
-                  },
-                  bodyFont: {
-                    weight: 'bold',
-                    size: 13
-                  },
-                  callbacks: {
-                    label: function(context) {
-                      return `토큰 사용량: ${context.parsed.y.toLocaleString('ko-KR')}개`;
-                    }
-                  }
-                }
-              },
-              scales: {
-                x: {
-                  ticks: {
-                    color: '#000000',
-                    font: {
-                      weight: 'bold',
-                      size: 11
-                    },
-                    maxRotation: 0,
-                    minRotation: 0
-                  },
-                  grid: {
-                    color: 'rgba(0, 0, 0, 0.1)',
-                    display: true
-                  }
-                },
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    color: '#000000',
-                    font: {
-                      weight: 'bold',
-                      size: 12
-                    },
-                    callback: function(value) {
-                      return value.toLocaleString('ko-KR');
-                    },
-                    stepSize: 5000
-                  },
-                  grid: {
-                    color: 'rgba(0, 0, 0, 0.1)',
-                    display: true
-                  }
-                }
-              }
-            }
-          });
+          // 차트 생성
+          const stepSize = daysToShow <= 7 ? 5000 : undefined;
+          createChart(labels, data, 0, stepSize);
         } catch (error) {
           console.error('❌ 차트 로드 실패:', error);
           document.getElementById('usageChart').innerHTML = 
