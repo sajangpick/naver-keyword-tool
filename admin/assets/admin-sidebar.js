@@ -25,6 +25,12 @@
       badge: null
     },
     {
+      icon: '📚',
+      title: '전자책 다운로드',
+      path: '/admin/pages/ebook-downloads.html',
+      badge: 'NEW'
+    },
+    {
       icon: '🔔',
       title: '리뷰 모니터링',
       path: '/admin/pages/review-monitoring.html',

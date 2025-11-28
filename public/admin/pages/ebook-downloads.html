@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>전자책 다운로드 현황 - 사장픽 관리자</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    <style>
+      .ebook-stats .stat-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+
+      .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .stat-hint {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .range-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .range-chip {
+        border: 1px solid var(--border);
+        background: white;
+        color: var(--text);
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+      }
+
+      .range-chip.active {
+        background: var(--naver-green);
+        border-color: var(--naver-green);
+        color: white;
+        box-shadow: 0 6px 14px rgba(3, 199, 90, 0.25);
+      }
+
+      .chip-count {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+      }
+
+      .filter-controls {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        min-width: 260px;
+      }
+
+      .filter-controls input,
+      .filter-controls select {
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: white;
+        font-size: 14px;
+      }
+
+      .filter-controls select {
+        max-width: 220px;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+      }
+
+      .download-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 960px;
+      }
+
+      .download-table th,
+      .download-table td {
+        padding: 14px 12px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        font-size: 14px;
+      }
+
+      .download-table th {
+        background: #f9fafb;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      .user-name {
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .user-email {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-right: 6px;
+      }
+
+      .badge.user-type.owner {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .badge.user-type.agency {
+        background: #fef3c7;
+        color: #c2410c;
+      }
+
+      .badge.user-type.admin {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      .badge.user-type.manager,
+      .badge.user-type.unknown {
+        background: #e5e7eb;
+        color: #4b5563;
+      }
+
+      .badge.membership {
+        background: #ecfeff;
+        color: #0e7490;
+        margin-right: 0;
+      }
+
+      .source-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #eef2ff;
+        color: #3730a3;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .device-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        background: #f3f4f6;
+        color: #374151;
+        margin-bottom: 4px;
+      }
+
+      .device-chip.mobile {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .device-chip.desktop {
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+
+      .device-chip.tablet {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+
+      .method-text {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .empty-row td {
+        text-align: center;
+        padding: 40px 12px;
+        color: var(--text-muted);
+      }
+
+      .pagination {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .page-btn {
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .page-info {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .activity-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .activity-list li {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        background: #f9fafb;
+      }
+
+      .activity-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .activity-title {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .activity-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .activity-time {
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      .activity-empty {
+        text-align: center;
+        color: var(--text-muted);
+      }
+
+      .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.75);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        z-index: 2000;
+      }
+
+      .loading-overlay.hidden {
+        display: none;
+      }
+
+      .loading-overlay .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid var(--naver-green);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @media (max-width: 1024px) {
+        .filter-controls {
+          flex-direction: column;
+        }
+
+        .filter-controls select {
+          max-width: 100%;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .filters-row {
+          flex-direction: column;
+        }
+
+        .range-tabs {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <div class="page-icon">
+            <i class="fa-solid fa-book-open-reader"></i>
+          </div>
+          <div class="page-info">
+            <h1 class="page-title">전자책 다운로드 현황</h1>
+            <p class="page-subtitle">
+              로그인 회원의 전자책 다운로드 로그를 실시간으로 추적합니다.
+            </p>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="header-btn" id="refreshBtn" title="새로고침">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+      </header>
+      <div class="content">
+        <section class="stats-grid ebook-stats">
+          <article class="stat-card">
+            <p class="stat-label">전체 다운로드</p>
+            <p class="stat-value" id="stat-total">0</p>
+            <span class="stat-hint">누적 기준</span>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">오늘 다운로드</p>
+            <p class="stat-value" id="stat-today">0</p>
+            <span class="stat-hint">금일 00시 기준</span>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">최근 7일</p>
+            <p class="stat-value" id="stat-week">0</p>
+            <span class="stat-hint">Rolling 7일</span>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">이번 달</p>
+            <p class="stat-value" id="stat-month">0</p>
+            <span class="stat-hint">1일 ~ 현재</span>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">유니크 회원수</p>
+            <p class="stat-value" id="stat-unique">0</p>
+            <span class="stat-hint">누적 기준</span>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <i class="fa-solid fa-filter"></i> 다운로드 로그
+            </h2>
+            <div class="panel-actions">
+              <button class="btn btn-secondary" id="resetFiltersBtn">
+                <i class="fa-solid fa-arrow-rotate-left"></i> 필터 초기화
+              </button>
+            </div>
+          </div>
+
+          <div class="filters-row">
+            <div class="range-tabs" id="rangeTabs">
+              <button class="range-chip active" data-range="all">
+                전체 <span class="chip-count" id="count-all">0</span>
+              </button>
+              <button class="range-chip" data-range="today">
+                오늘 <span class="chip-count" id="count-today">0</span>
+              </button>
+              <button class="range-chip" data-range="7d">
+                7일 <span class="chip-count" id="count-7d">0</span>
+              </button>
+              <button class="range-chip" data-range="30d">
+                30일 <span class="chip-count" id="count-30d">0</span>
+              </button>
+              <button class="range-chip" data-range="month">
+                이번 달 <span class="chip-count" id="count-month">0</span>
+              </button>
+            </div>
+            <div class="filter-controls">
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="이메일, 이름 검색"
+                autocomplete="off"
+              />
+              <select id="sourceSelect">
+                <option value="all">전체 경로</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="download-table">
+              <thead>
+                <tr>
+                  <th>회원 정보</th>
+                  <th>회원 유형</th>
+                  <th>다운로드 경로</th>
+                  <th>기기 · 방식</th>
+                  <th>IP</th>
+                  <th>다운로드 시각</th>
+                </tr>
+              </thead>
+              <tbody id="downloadTableBody">
+                <tr class="empty-row">
+                  <td colspan="6">데이터를 불러오는 중입니다...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination" id="pagination"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <i class="fa-solid fa-timeline"></i> 최근 다운로드 활동
+            </h2>
+          </div>
+          <ul class="activity-list" id="activityList">
+            <li class="activity-empty">아직 표시할 로그가 없습니다.</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="spinner"></div>
+      <p>데이터를 불러오는 중입니다...</p>
+    </div>
+
+    <script src="/admin/assets/admin-sidebar.js?v=20251128" defer></script>
+    <script src="/assets/analytics.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        const RANGE_LABELS = {
+          all: "전체",
+          today: "오늘",
+          "7d": "최근 7일",
+          "30d": "최근 30일",
+          month: "이번 달",
+        };
+
+        const SOURCE_LABELS = {
+          hero_primary: "히어로 CTA",
+          cta_bottom: "하단 CTA",
+          cta_panel: "패널 CTA",
+          cta_footer: "푸터 CTA",
+          side_nav: "사이드 메뉴",
+          guide_banner: "가이드 배너",
+          naver_search_widget: "네이버 검색 위젯",
+          unknown: "기타",
+        };
+
+        const USER_TYPE_LABELS = {
+          owner: "식당 대표",
+          agency: "대행사/블로거",
+          admin: "관리자",
+          manager: "매니저",
+          unknown: "미분류",
+        };
+
+        const LEVEL_LABELS = {
+          seed: "씨앗",
+          power: "파워",
+          big_power: "빅파워",
+          premium: "프리미엄",
+          elite: "엘리트",
+          expert: "엑스퍼트",
+          master: "마스터",
+          platinum: "플래티넘",
+          admin: "관리자",
+        };
+
+        const DEVICE_LABELS = {
+          mobile: "모바일",
+          desktop: "데스크톱",
+          tablet: "태블릿",
+          unknown: "기타",
+        };
+
+        const METHOD_LABELS = {
+          desktop_window: "새 창 (데스크톱)",
+          mobile_direct: "직접 다운로드 (모바일)",
+          preview_window: "미리보기 창",
+          direct_link: "링크 다운로드",
+          unknown: "기타",
+        };
+
+        const state = {
+          range: "all",
+          source: "all",
+          search: "",
+          page: 1,
+          limit: 25,
+          isLoading: false,
+          sourceOptions: new Set(),
+        };
+
+        const elements = {
+          stats: {
+            total: document.getElementById("stat-total"),
+            today: document.getElementById("stat-today"),
+            week: document.getElementById("stat-week"),
+            month: document.getElementById("stat-month"),
+            unique: document.getElementById("stat-unique"),
+          },
+          rangeButtons: document.querySelectorAll(".range-chip"),
+          search: document.getElementById("searchInput"),
+          source: document.getElementById("sourceSelect"),
+          tableBody: document.getElementById("downloadTableBody"),
+          pagination: document.getElementById("pagination"),
+          activityList: document.getElementById("activityList"),
+          overlay: document.getElementById("loadingOverlay"),
+          refreshBtn: document.getElementById("refreshBtn"),
+          resetBtn: document.getElementById("resetFiltersBtn"),
+        };
+
+        function formatNumber(value) {
+          return Number(value || 0).toLocaleString("ko-KR");
+        }
+
+        function escapeHtml(value) {
+          if (value === undefined || value === null) return "";
+          return value
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        }
+
+        function formatDateTime(isoString) {
+          if (!isoString) return "-";
+          try {
+            return new Date(isoString).toLocaleString("ko-KR", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            });
+          } catch {
+            return isoString;
+          }
+        }
+
+        function formatRelativeTime(isoString) {
+          if (!isoString) return "-";
+          const target = new Date(isoString);
+          const diffMs = Date.now() - target.getTime();
+          if (Number.isNaN(diffMs)) return isoString;
+
+          const minutes = Math.floor(diffMs / 60000);
+          if (minutes < 1) return "방금 전";
+          if (minutes < 60) return `${minutes}분 전`;
+
+          const hours = Math.floor(minutes / 60);
+          if (hours < 24) return `${hours}시간 전`;
+
+          const days = Math.floor(hours / 24);
+          if (days < 30) return `${days}일 전`;
+
+          return target.toLocaleDateString("ko-KR");
+        }
+
+        function setLoading(isLoading) {
+          if (!elements.overlay) return;
+          elements.overlay.classList.toggle("hidden", !isLoading);
+        }
+
+        function updateRangeButtons() {
+          elements.rangeButtons.forEach((button) => {
+            const buttonRange = button.dataset.range;
+            if (buttonRange === state.range) {
+              button.classList.add("active");
+            } else {
+              button.classList.remove("active");
+            }
+          });
+        }
+
+        function renderStats(summary = {}) {
+          elements.stats.total.textContent = formatNumber(
+            summary.totalDownloads
+          );
+          elements.stats.today.textContent = formatNumber(
+            summary.todayDownloads
+          );
+          elements.stats.week.textContent = formatNumber(
+            summary.weekDownloads
+          );
+          elements.stats.month.textContent = formatNumber(
+            summary.monthDownloads
+          );
+          elements.stats.unique.textContent = formatNumber(
+            summary.uniqueUsers
+          );
+        }
+
+        function renderRangeCounts(counts = {}) {
+          Object.entries(counts).forEach(([key, value]) => {
+            const holder = document.getElementById(`count-${key}`);
+            if (holder) {
+              holder.textContent = formatNumber(value);
+            }
+          });
+        }
+
+        function clearTable(message) {
+          if (!elements.tableBody) return;
+          elements.tableBody.innerHTML = `<tr class="empty-row"><td colspan="6">${escapeHtml(
+            message || "조회된 데이터가 없습니다."
+          )}</td></tr>`;
+        }
+
+        function renderTable(downloads) {
+          if (!elements.tableBody) return;
+          if (!Array.isArray(downloads) || downloads.length === 0) {
+            clearTable("조회된 다운로드 기록이 없습니다.");
+            return;
+          }
+
+          const rows = downloads
+            .map((item) => {
+              const userTypeClass = item.user_type || "unknown";
+              const levelClass = item.membership_level || "unknown";
+              const sourceLabel =
+                SOURCE_LABELS[item.download_source] ||
+                item.download_source ||
+                "기타";
+              const deviceClass = item.device_type || "unknown";
+              const deviceLabel =
+                DEVICE_LABELS[item.device_type] || "기타";
+              const methodLabel =
+                METHOD_LABELS[item.download_method] ||
+                item.download_method ||
+                "기타";
+
+              return `
+                <tr>
+                  <td>
+                    <div class="user-name">${escapeHtml(
+                      item.name || item.email || "이름 없음"
+                    )}</div>
+                    <div class="user-email">${escapeHtml(
+                      item.email || " - "
+                    )}</div>
+                  </td>
+                  <td>
+                    <span class="badge user-type ${escapeHtml(
+                      userTypeClass
+                    )}">
+                      ${escapeHtml(
+                        USER_TYPE_LABELS[item.user_type] || "미분류"
+                      )}
+                    </span>
+                    <span class="badge membership ${escapeHtml(levelClass)}">
+                      ${escapeHtml(
+                        LEVEL_LABELS[item.membership_level] || "기본"
+                      )}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="source-badge">
+                      <i class="fa-solid fa-link"></i>
+                      ${escapeHtml(sourceLabel)}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="device-chip ${escapeHtml(deviceClass)}">
+                      <i class="fa-solid fa-mobile-screen-button"></i>
+                      ${escapeHtml(deviceLabel)}
+                    </div>
+                    <div class="method-text">${escapeHtml(methodLabel)}</div>
+                  </td>
+                  <td>${escapeHtml(item.ip_address || "-")}</td>
+                  <td>${escapeHtml(formatDateTime(item.created_at))}</td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          elements.tableBody.innerHTML = rows;
+        }
+
+        function renderActivity(downloads) {
+          if (!elements.activityList) return;
+          const recentItems = Array.isArray(downloads)
+            ? downloads.slice(0, 8)
+            : [];
+
+          if (!recentItems.length) {
+            elements.activityList.innerHTML =
+              '<li class="activity-empty">아직 표시할 로그가 없습니다.</li>';
+            return;
+          }
+
+          elements.activityList.innerHTML = recentItems
+            .map((item) => {
+              const sourceLabel =
+                SOURCE_LABELS[item.download_source] ||
+                item.download_source ||
+                "기타";
+              const deviceLabel =
+                DEVICE_LABELS[item.device_type] || "기타";
+
+              return `
+                <li>
+                  <div class="activity-row">
+                    <div>
+                      <div class="activity-title">${escapeHtml(
+                        item.name || item.email || "알 수 없음"
+                      )}</div>
+                      <div class="activity-meta">
+                        <span><i class="fa-solid fa-tag"></i> ${escapeHtml(
+                          sourceLabel
+                        )}</span>
+                        <span><i class="fa-solid fa-mobile-screen"></i> ${escapeHtml(
+                          deviceLabel
+                        )}</span>
+                      </div>
+                    </div>
+                    <div class="activity-time">${escapeHtml(
+                      formatRelativeTime(item.created_at)
+                    )}</div>
+                  </div>
+                </li>
+              `;
+            })
+            .join("");
+        }
+
+        function renderPagination(pagination) {
+          if (!elements.pagination) return;
+          if (
+            !pagination ||
+            !pagination.totalPages ||
+            pagination.totalPages <= 1
+          ) {
+            elements.pagination.style.display = "none";
+            elements.pagination.innerHTML = "";
+            return;
+          }
+
+          elements.pagination.style.display = "flex";
+          elements.pagination.innerHTML = "";
+
+          const prevBtn = document.createElement("button");
+          prevBtn.className = "page-btn";
+          prevBtn.textContent = "이전";
+          prevBtn.disabled = pagination.page <= 1 || state.isLoading;
+          prevBtn.addEventListener("click", () => {
+            if (pagination.page > 1) {
+              state.page = pagination.page - 1;
+              loadDownloads();
+            }
+          });
+
+          const pageInfo = document.createElement("span");
+          pageInfo.className = "page-info";
+          pageInfo.textContent = `${pagination.page} / ${pagination.totalPages}`;
+
+          const nextBtn = document.createElement("button");
+          nextBtn.className = "page-btn";
+          nextBtn.textContent = "다음";
+          nextBtn.disabled =
+            pagination.page >= pagination.totalPages || state.isLoading;
+          nextBtn.addEventListener("click", () => {
+            if (pagination.page < pagination.totalPages) {
+              state.page = pagination.page + 1;
+              loadDownloads();
+            }
+          });
+
+          elements.pagination.append(prevBtn, pageInfo, nextBtn);
+        }
+
+        function populateSourceSelect(options) {
+          if (!elements.source) return;
+          const optionSet = new Set(["all"]);
+          if (Array.isArray(options)) {
+            options.forEach((value) => optionSet.add(value));
+          } else {
+            Object.keys(SOURCE_LABELS).forEach((value) =>
+              optionSet.add(value)
+            );
+          }
+
+          const hasChanged =
+            optionSet.size !== state.sourceOptions.size ||
+            [...optionSet].some((value) => !state.sourceOptions.has(value));
+
+          if (!hasChanged) return;
+
+          state.sourceOptions = optionSet;
+          elements.source.innerHTML = "";
+
+          optionSet.forEach((value) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent =
+              value === "all"
+                ? "전체 경로"
+                : SOURCE_LABELS[value] || value;
+            elements.source.appendChild(option);
+          });
+
+          elements.source.value = state.source;
+        }
+
+        async function loadDownloads() {
+          if (state.isLoading) return;
+          state.isLoading = true;
+          setLoading(true);
+
+          try {
+            const params = new URLSearchParams({
+              range: state.range,
+              page: state.page,
+              limit: state.limit,
+            });
+
+            if (state.source !== "all") {
+              params.set("source", state.source);
+            }
+
+            if (state.search.trim()) {
+              params.set("search", state.search.trim());
+            }
+
+            const response = await fetch(
+              `/api/admin/ebook-downloads?${params.toString()}`
+            );
+            if (!response.ok) {
+              throw new Error("전자책 다운로드 데이터를 불러오지 못했습니다.");
+            }
+
+            const result = await response.json();
+            if (!result.success) {
+              throw new Error(
+                result.error || "전자책 다운로드 데이터를 불러오지 못했습니다."
+              );
+            }
+
+            populateSourceSelect(result.sourceOptions || []);
+            renderStats(result.summary || {});
+            renderRangeCounts(result.summary?.rangeCounts || {});
+            renderTable(result.downloads || []);
+            renderActivity(result.downloads || []);
+            renderPagination(result.pagination || null);
+          } catch (error) {
+            console.error("[ebook-admin] 데이터 로드 실패:", error);
+            clearTable(error.message);
+            renderActivity([]);
+          } finally {
+            state.isLoading = false;
+            setLoading(false);
+          }
+        }
+
+        function resetFilters() {
+          state.range = "all";
+          state.source = "all";
+          state.search = "";
+          state.page = 1;
+          if (elements.search) elements.search.value = "";
+          if (elements.source) elements.source.value = "all";
+          updateRangeButtons();
+          loadDownloads();
+        }
+
+        let searchTimer = null;
+        if (elements.search) {
+          elements.search.addEventListener("input", (event) => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+              state.search = event.target.value || "";
+              state.page = 1;
+              loadDownloads();
+            }, 300);
+          });
+        }
+
+        if (elements.source) {
+          elements.source.addEventListener("change", (event) => {
+            state.source = event.target.value || "all";
+            state.page = 1;
+            loadDownloads();
+          });
+        }
+
+        elements.rangeButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const range = button.dataset.range || "all";
+            if (range === state.range) return;
+            state.range = range;
+            state.page = 1;
+            updateRangeButtons();
+            loadDownloads();
+          });
+        });
+
+        if (elements.refreshBtn) {
+          elements.refreshBtn.addEventListener("click", () => {
+            loadDownloads();
+          });
+        }
+
+        if (elements.resetBtn) {
+          elements.resetBtn.addEventListener("click", resetFilters);
+        }
+
+        updateRangeButtons();
+        loadDownloads();
+      })();
+    </script>
+  </body>
+</html>
+

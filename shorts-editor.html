@@ -2119,7 +2119,7 @@
             document.getElementById('menuName').value = '';
             document.getElementById('menuFeatures').value = '';
             selectedStyle = null;
-            document.querySelectorAll('#selfMode .style-option').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('#selfMode .style-card').forEach(el => el.classList.remove('selected'));
             const nextBtn = document.getElementById('nextToStep2');
             if (nextBtn) nextBtn.disabled = true;
             goToStep(1);
