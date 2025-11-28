@@ -828,6 +828,37 @@ module.exports = async (req, res) => {
                     res.json({ success: true, monitoring: data, created: true });
                 }
                 
+            } else if (action === 'fetch_recent_reviews') {
+                const { placeUrl, limit = 5 } = req.body;
+                if (!placeUrl) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'placeUrl is required'
+                    });
+                }
+
+                const normalizedLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10);
+                const crawlResult = await crawlPlaceReviews(placeUrl, false);
+
+                if (!crawlResult.success) {
+                    return res.status(500).json({
+                        success: false,
+                        error: crawlResult.error || '리뷰를 불러오지 못했습니다.'
+                    });
+                }
+
+                const reviews = Array.isArray(crawlResult.reviews) ? crawlResult.reviews : [];
+                const prioritized = reviews.filter(r => ['visitor', 'receipt'].includes(r.type));
+                const selected = (prioritized.length > 0 ? prioritized : reviews).slice(0, normalizedLimit);
+
+                res.json({
+                    success: true,
+                    placeUrl,
+                    total: crawlResult.total,
+                    fetchedAt: new Date().toISOString(),
+                    reviews: selected
+                });
+
             } else {
                 res.status(400).json({ error: 'Invalid action' });
             }

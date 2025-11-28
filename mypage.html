@@ -759,6 +759,88 @@
       align-items: center;
       gap: 8px;
     }
+
+    /* 리뷰 카드 */
+    .monitoring-review-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .monitoring-review-card .review-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .monitoring-review-card .rating-badge {
+      background: #fff1eb;
+      color: #ff7b54;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .monitoring-review-card .type-badge {
+      background: #eef2ff;
+      color: #4f46e5;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .monitoring-review-card .urgent-badge {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .monitoring-review-card .review-content {
+      color: var(--text-primary);
+      line-height: 1.5;
+      font-size: 14px;
+      margin-bottom: 10px;
+      white-space: pre-line;
+    }
+
+    .monitoring-review-card .review-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .monitoring-review-card .review-keywords {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .monitoring-review-card .review-keyword {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+    }
+
+    .monitoring-review-source {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: right;
+    }
   </style>
   <!-- Meta Pixel Code -->
   <script>
@@ -1072,10 +1154,18 @@
             <h4 style="margin: 0 0 15px 0; color: #333; font-size: 15px;">
               <i class="fas fa-list"></i> 최근 리뷰
             </h4>
-            <div id="recentReviews">
+            <div id="monitoringRecentReviews">
               <p style="color: #999; text-align: center; padding: 20px;">
                 플레이스 URL을 입력하고 저장하면 자동으로 리뷰를 수집합니다
               </p>
+            </div>
+            <div id="monitoringReviewActions" style="margin-top: 12px; text-align: right;">
+              <button type="button" class="btn btn-secondary" onclick="refreshMonitoringReviews()">
+                <i class="fas fa-sync-alt"></i> 최신 리뷰 새로고침
+              </button>
+              <small style="display: block; margin-top: 6px; color: #94a3b8; font-size: 12px;">
+                네이버 플레이스에서 최대 5개의 최신 리뷰를 가져옵니다.
+              </small>
             </div>
           </div>
 
@@ -1279,7 +1369,7 @@
             <i class="fas fa-comment-dots"></i>
             최근 리뷰 답글 (10개)
           </h3>
-          <div id="recentReviews" class="activity-list">
+          <div id="recentReviewReplies" class="activity-list">
             <div class="loading">
               <div class="spinner"></div>
             </div>
@@ -1352,6 +1442,10 @@
     // Supabase 클라이언트
     let supabase;
     let currentUser = null;
+    let currentMonitoring = null;
+    let liveReviewFetchAttempted = false;
+    let isLiveReviewLoading = false;
+    let cachedStorePlaceUrl = '';
 
     // 등급 한글명
     const LEVEL_NAMES = {
@@ -1443,7 +1537,7 @@
         // ⚡ 모든 데이터를 병렬로 로드 (빠름!)
         await Promise.all([
           loadUserProfile(user.id),
-          loadRecentReviews(user.id),
+          loadRecentReviewReplies(user.id),
           loadRecentBlogs(user.id),
           loadTokenInfo(user.id),  // 토큰 정보 추가
           loadShortsVideos(user.id)  // 쇼츠 영상 목록 추가
@@ -1562,8 +1656,8 @@
     }
 
     // 최근 리뷰 답글 로드
-    async function loadRecentReviews(userId) {
-      const container = document.getElementById('recentReviews');
+    async function loadRecentReviewReplies(userId) {
+      const container = document.getElementById('recentReviewReplies');
       
       try {
         const { data: reviews, error } = await supabase
@@ -1817,6 +1911,7 @@
         const result = await response.json();
         if (result.success) {
           let message = '✅ 가게 정보가 저장되었습니다!\n블로그 작성 시 자동으로 입력됩니다.';
+          cachedStorePlaceUrl = storeInfo.placeUrl || cachedStorePlaceUrl;
           
           // 크롤링 결과 표시
           if (result.crawlResult) {
@@ -2137,6 +2232,38 @@
       if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
       return date.toLocaleDateString('ko-KR');
     }
+
+    function formatKoreanDate(dateString) {
+      if (!dateString) return '아직 실행 전';
+      const date = new Date(dateString);
+      return date.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function reviewTypeLabel(type) {
+      const map = {
+        visitor: '방문자 리뷰',
+        receipt: '영수증 리뷰',
+        blog: '블로그 리뷰',
+        news: '새소식'
+      };
+      return map[type] || '리뷰';
+    }
     
     // 업그레이드 페이지로 이동
     function goToUpgrade() {
@@ -2159,10 +2286,16 @@
 
       try {
         const response = await fetch(`/api/store-info?userId=${currentUser.id}`);
-        if (!response.ok) return;
+        if (!response.ok) {
+          await loadMonitoringSettings();
+          return;
+        }
 
         const result = await response.json();
-        if (!result.success || !result.data) return;
+        if (!result.success || !result.data) {
+          await loadMonitoringSettings();
+          return;
+        }
 
         const data = result.data;
         
@@ -2207,19 +2340,62 @@
         if (cleanedData.storeLandmarks) document.getElementById('editStoreLandmarks').value = cleanedData.storeLandmarks;
         if (cleanedData.storeKeywords) document.getElementById('editStoreKeywords').value = cleanedData.storeKeywords;
 
+        cachedStorePlaceUrl = cleanedData.storeUrl || '';
+
         // 리뷰 모니터링 설정도 로드
-        loadMonitoringSettings();
+        await loadMonitoringSettings(true);
       } catch (error) {
         console.error('가게 정보 로드 오류:', error);
+        await loadMonitoringSettings();
       }
     }
 
     // ==================== 리뷰 모니터링 기능 ====================
 
-    // 키워드 입력 토글
-    document.getElementById('alertKeywords')?.addEventListener('change', function(e) {
-      document.getElementById('keywordsInput').style.display = e.target.checked ? 'block' : 'none';
+    const keywordToggle = document.getElementById('alertKeywords');
+    keywordToggle?.addEventListener('change', () => {
+      document.getElementById('keywordsInput').style.display = keywordToggle.checked ? 'block' : 'none';
     });
+
+    function updateKeywordInputVisibility() {
+      if (!keywordToggle) return;
+      document.getElementById('keywordsInput').style.display = keywordToggle.checked ? 'block' : 'none';
+    }
+
+    async function fetchMonitoringRecord(forceRefresh = false) {
+      if (!currentUser || !supabase) return null;
+      if (!forceRefresh && currentMonitoring) return currentMonitoring;
+
+      const { data, error } = await supabase
+        .from('review_monitoring')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw new Error(error.message);
+      }
+
+      currentMonitoring = data || null;
+      return currentMonitoring;
+    }
+
+    function updateMonitoringStatusUI(monitoring) {
+      const activeBox = document.getElementById('monitoringStatus');
+      const inactiveBox = document.getElementById('monitoringInactive');
+      if (!activeBox || !inactiveBox) return;
+
+      if (monitoring && monitoring.monitoring_enabled) {
+        activeBox.style.display = 'block';
+        inactiveBox.style.display = 'none';
+        document.getElementById('lastCrawled').textContent = monitoring.last_crawled_at
+          ? `${formatKoreanDate(monitoring.last_crawled_at)} · ${getTimeAgo(new Date(monitoring.last_crawled_at))}`
+          : '아직 실행 전';
+      } else {
+        activeBox.style.display = 'none';
+        inactiveBox.style.display = 'block';
+      }
+    }
 
     // 모니터링 활성화/비활성화 토글
     async function toggleMonitoring(enable) {
@@ -2229,21 +2405,25 @@
       }
 
       try {
-        const storeUrl = document.getElementById('editStoreUrl').value;
-        if (!storeUrl) {
-          alert('플레이스 URL을 먼저 입력해주세요.');
+        const monitoring = await fetchMonitoringRecord();
+        if (!monitoring) {
+          alert('먼저 "모니터링 설정 저장" 버튼으로 설정을 저장해주세요.');
           return;
         }
 
-        // API 호출 (준비중)
-        // TODO: API 구현 후 연동
-        
-        // 임시로 localStorage에 저장
-        localStorage.setItem('monitoring_enabled', enable);
+        const { error } = await supabase
+          .from('review_monitoring')
+          .update({
+            monitoring_enabled: enable,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', monitoring.id);
 
-        // UI 업데이트
-        document.getElementById('monitoringStatus').style.display = enable ? 'block' : 'none';
-        document.getElementById('monitoringInactive').style.display = enable ? 'none' : 'block';
+        if (error) throw error;
+
+        currentMonitoring = { ...monitoring, monitoring_enabled: enable };
+        updateMonitoringStatusUI(currentMonitoring);
+        await loadMonitoringReviews(currentMonitoring);
 
         alert(enable ? '✅ 리뷰 모니터링이 활성화되었습니다!' : '⏸️ 리뷰 모니터링이 일시 정지되었습니다.');
       } catch (error) {
@@ -2260,13 +2440,12 @@
       }
 
       try {
-        const storeUrl = document.getElementById('editStoreUrl').value;
+        const storeUrl = document.getElementById('editStoreUrl').value.trim();
         if (!storeUrl) {
           alert('먼저 "내 가게 정보"에서 플레이스 URL을 입력하고 저장해주세요.');
           return;
         }
 
-        // 설정 수집
         const storeName = document.getElementById('editStoreName').value;
         const settings = {
           action: 'create_monitoring',
@@ -2275,11 +2454,10 @@
           placeName: storeName || '내 가게',
           alertLowRating: document.getElementById('alertLowRating').checked,
           alertHighRating: document.getElementById('alertHighRating').checked,
-          alertKeywords: document.getElementById('alertKeywords').checked,
+          alertKeywords: keywordToggle?.checked || false,
           keywordsList: document.getElementById('alertKeywordsList').value
         };
 
-        // API 호출
         const response = await fetch('/api/review-monitoring', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2298,13 +2476,8 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
 
 자동으로 리뷰를 수집하고, 긴급 리뷰 발생 시 카카오톡으로 알림을 받습니다.`);
 
-        // 모니터링 활성화 UI 업데이트
-        document.getElementById('monitoringStatus').style.display = 'block';
-        document.getElementById('monitoringInactive').style.display = 'none';
-        document.getElementById('lastCrawled').textContent = '방금 전';
-
-        // 최근 리뷰 로드
-        await loadRecentReviews();
+        currentMonitoring = null;
+        await loadMonitoringSettings(true);
 
       } catch (error) {
         console.error('모니터링 설정 저장 오류:', error);
@@ -2313,60 +2486,213 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
     }
 
     // 모니터링 설정 로드
-    async function loadMonitoringSettings() {
+    async function loadMonitoringSettings(forceRefresh = false) {
       if (!currentUser) return;
+      liveReviewFetchAttempted = false;
+
+      let monitoring = null;
 
       try {
-        // API 호출 (준비중)
-        // TODO: API 구현 후 연동
+        monitoring = await fetchMonitoringRecord(forceRefresh);
 
-        // 임시로 localStorage에서 로드
-        const saved = localStorage.getItem('review_monitoring_settings');
-        if (saved) {
-          const settings = JSON.parse(saved);
-          
-          document.getElementById('alertLowRating').checked = settings.alertLowRating !== false;
-          document.getElementById('alertHighRating').checked = settings.alertHighRating !== false;
-          document.getElementById('alertKeywords').checked = settings.alertKeywords || false;
-          document.getElementById('alertKeywordsList').value = settings.keywordsList || '';
-          
-          if (settings.alertKeywords) {
-            document.getElementById('keywordsInput').style.display = 'block';
-          }
+        const lowToggle = document.getElementById('alertLowRating');
+        const highToggle = document.getElementById('alertHighRating');
+        const keywordInput = document.getElementById('alertKeywordsList');
+
+        if (lowToggle) lowToggle.checked = monitoring?.alert_on_low_rating !== false;
+        if (highToggle) highToggle.checked = monitoring?.alert_on_high_rating !== false;
+
+        if (keywordToggle) {
+          keywordToggle.checked = monitoring?.alert_on_keywords || false;
         }
 
-        // 모니터링 활성화 상태 확인
-        const enabled = localStorage.getItem('monitoring_enabled') === 'true';
-        document.getElementById('monitoringStatus').style.display = enabled ? 'block' : 'none';
-        document.getElementById('monitoringInactive').style.display = enabled ? 'none' : 'block';
+        if (keywordInput) {
+          keywordInput.value = monitoring?.alert_keywords?.join(', ') || '';
+        }
+        updateKeywordInputVisibility();
 
-        // 최근 리뷰 로드
-        loadRecentReviews();
-
+        updateMonitoringStatusUI(monitoring);
       } catch (error) {
         console.error('모니터링 설정 로드 오류:', error);
       }
+
+      await loadMonitoringReviews(monitoring || null);
     }
 
-    // 최근 리뷰 로드
-    async function loadRecentReviews() {
-      if (!currentUser) return;
+    function renderMonitoringReviews(reviews, options = {}) {
+      const container = document.getElementById('monitoringRecentReviews');
+      if (!container) return;
 
-      try {
-        // API 호출 (준비중)
-        // TODO: API 구현 후 연동
-
-        // 임시 데이터
-        const recentReviewsDiv = document.getElementById('recentReviews');
-        recentReviewsDiv.innerHTML = `
+      if (!reviews || reviews.length === 0) {
+        container.innerHTML = `
           <p style="color: #999; text-align: center; padding: 20px;">
-            크롤링 시스템 개발 중입니다.<br>
-            곧 자동으로 리뷰를 수집하고 표시합니다!
+            아직 표시할 리뷰가 없습니다.
           </p>
         `;
+        return;
+      }
 
+      const html = reviews.map(review => {
+        const rating = review.rating ? `${review.rating}점` : '평점 정보 없음';
+        const keywords = Array.isArray(review.detected_keywords) ? review.detected_keywords : [];
+        return `
+          <div class="monitoring-review-card">
+            <div class="review-header">
+              <span class="rating-badge">⭐ ${rating}</span>
+              <span class="type-badge">${reviewTypeLabel(review.review_type || review.type)}</span>
+              ${review.is_urgent ? '<span class="urgent-badge">긴급</span>' : ''}
+            </div>
+            <div class="review-content">${escapeHtml(review.content || '-')}</div>
+            <div class="review-footer">
+              <span>${escapeHtml(review.reviewer_name || '익명')}</span>
+              <span>${review.reviewed_at ? getTimeAgo(new Date(review.reviewed_at)) : '-'}</span>
+            </div>
+            ${keywords.length ? `
+              <div class="review-keywords">
+                ${keywords.map(k => `<span class="review-keyword">${escapeHtml(k)}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      const sourceLabel = options.sourceLabel
+        ? `<div class="monitoring-review-source">${options.sourceLabel}</div>`
+        : '';
+
+      container.innerHTML = html + sourceLabel;
+    }
+
+    // 최근 리뷰 로드 (DB)
+    async function loadMonitoringReviews(existingMonitoring = null) {
+      const container = document.getElementById('monitoringRecentReviews');
+      if (!container || !currentUser) return;
+
+      try {
+        const monitoring = existingMonitoring || await fetchMonitoringRecord();
+
+        if (!monitoring) {
+          container.innerHTML = `
+            <p style="color: #999; text-align: center; padding: 20px;">
+              아직 모니터링이 설정되지 않았습니다.<br>
+              "모니터링 설정 저장" 버튼을 눌러 플레이스 URL을 등록해 주세요.
+            </p>
+          `;
+          return;
+        }
+
+        if (!monitoring.monitoring_enabled) {
+          container.innerHTML = `
+            <p style="color: #999; text-align: center; padding: 20px;">
+              현재 모니터링이 일시 정지 상태입니다.<br>
+              "활성화하기" 버튼을 눌러 자동 수집을 다시 시작하세요.
+            </p>
+          `;
+          return;
+        }
+
+        const { data: alerts, error } = await supabase
+          .from('review_alerts')
+          .select('id, review_type, rating, content, reviewer_name, reviewed_at, is_urgent, detected_keywords')
+          .eq('monitoring_id', monitoring.id)
+          .order('reviewed_at', { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+
+        if (!alerts || alerts.length === 0) {
+          container.innerHTML = `
+            <p style="color: #999; text-align: center; padding: 20px;">
+              아직 저장된 리뷰가 없습니다.<br>
+              아래 "최신 리뷰 새로고침" 버튼을 눌러 실시간으로 불러오실 수 있습니다.
+            </p>
+          `;
+
+          if (!liveReviewFetchAttempted && (cachedStorePlaceUrl || document.getElementById('editStoreUrl').value.trim())) {
+            await refreshMonitoringReviews({ silent: true });
+          }
+          return;
+        }
+
+        renderMonitoringReviews(alerts, { sourceLabel: '자동 수집 데이터' });
       } catch (error) {
         console.error('최근 리뷰 로드 오류:', error);
+        container.innerHTML = `
+          <p style="color: #ef4444; text-align: center; padding: 20px;">
+            최근 리뷰를 불러오지 못했습니다: ${escapeHtml(error.message)}
+          </p>
+        `;
+      }
+    }
+
+    // 실시간 크롤링
+    async function refreshMonitoringReviews(options = {}) {
+      const { silent = false } = options;
+      const container = document.getElementById('monitoringRecentReviews');
+      if (!currentUser || !container) return;
+
+      const placeUrl = document.getElementById('editStoreUrl').value.trim() || cachedStorePlaceUrl;
+      if (!placeUrl) {
+        if (!silent) alert('먼저 "내 가게 정보"에서 플레이스 URL을 입력해주세요.');
+        return;
+      }
+
+      if (isLiveReviewLoading) {
+        if (!silent) {
+          alert('이미 최신 리뷰를 불러오는 중입니다. 잠시만 기다려주세요.');
+        }
+        return;
+      }
+
+      liveReviewFetchAttempted = true;
+      isLiveReviewLoading = true;
+
+      if (!silent) {
+        container.innerHTML = `
+          <div class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 16px;">네이버 플레이스에서 최신 리뷰를 가져오는 중입니다...</p>
+          </div>
+        `;
+      }
+
+      try {
+        const response = await fetch('/api/review-monitoring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'fetch_recent_reviews',
+            placeUrl,
+            limit: 5
+          })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || '크롤링 실패');
+        }
+
+        if (!result.reviews || result.reviews.length === 0) {
+          container.innerHTML = `
+            <p style="color: #999; text-align: center; padding: 20px;">
+              가져올 수 있는 최신 리뷰가 없습니다.
+            </p>
+          `;
+          return;
+        }
+
+        renderMonitoringReviews(result.reviews, { sourceLabel: silent ? '실시간 크롤링 (자동)' : '실시간 크롤링' });
+      } catch (error) {
+        console.error('실시간 리뷰 크롤링 실패:', error);
+        if (!silent) {
+          container.innerHTML = `
+            <p style="color: #ef4444; text-align: center; padding: 20px;">
+              실시간 크롤링 중 오류가 발생했습니다: ${escapeHtml(error.message)}
+            </p>
+          `;
+        }
+      } finally {
+        isLiveReviewLoading = false;
       }
     }
 

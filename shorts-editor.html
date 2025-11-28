@@ -424,6 +424,14 @@
             opacity: 0.7;
         }
 
+        .style-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
         @media (max-width: 992px) {
             .style-card {
                 flex: 1 1 calc(50% - 24px);
@@ -1410,35 +1418,45 @@
                         <div class="style-emoji">📱</div>
                         <div class="style-name">인스타 릴스</div>
                         <div class="style-desc">세로형 최적화, 트렌디한 편집, 감각적인 색감</div>
-                        <div class="style-preview">샘플 영상 (준비 중)</div>
+                        <div class="style-preview" aria-label="인스타 릴스 샘플 영상">
+                            <video src="./assets/videos/인스타.mp4" autoplay muted loop playsinline></video>
+                        </div>
             </div>
 
                     <div class="style-card tiktok" data-style="tiktok" onclick="selectStyle('tiktok')">
                         <div class="style-emoji">🎵</div>
                         <div class="style-name">틱톡</div>
                         <div class="style-desc">빠른 템포, 중독성 있는 구성, 바이럴 요소</div>
-                        <div class="style-preview">샘플 영상 (준비 중)</div>
+                        <div class="style-preview" aria-label="틱톡 샘플 영상">
+                            <video src="./assets/videos/틱톡.mp4" autoplay muted loop playsinline></video>
+                        </div>
             </div>
 
                     <div class="style-card youtube_shorts" data-style="youtube_shorts" onclick="selectStyle('youtube_shorts')">
                         <div class="style-emoji">📺</div>
                         <div class="style-name">유튜브 쇼츠</div>
                         <div class="style-desc">정보 전달형, 자막 강조, 명확한 메시지</div>
-                        <div class="style-preview">샘플 영상 (준비 중)</div>
+                        <div class="style-preview" aria-label="유튜브 쇼츠 샘플 영상">
+                            <video src="./assets/videos/유튜브.mp4" autoplay muted loop playsinline></video>
+                        </div>
                 </div>
 
                     <div class="style-card business" data-style="business" onclick="selectStyle('business')">
                         <div class="style-emoji">💼</div>
                         <div class="style-name">비즈니스</div>
                         <div class="style-desc">메뉴 소개용, 전문적이고 신뢰감 있는 구성</div>
-                        <div class="style-preview">샘플 영상 (준비 중)</div>
+                        <div class="style-preview" aria-label="비즈니스 샘플 영상">
+                            <video src="./assets/videos/비즈니스.mp4" autoplay muted loop playsinline></video>
+                        </div>
                 </div>
 
                     <div class="style-card portfolio" data-style="portfolio" onclick="selectStyle('portfolio')">
                         <div class="style-emoji">🎨</div>
                         <div class="style-name">포트폴리오</div>
                         <div class="style-desc">작품성 중심, 고퀄리티, 시네마틱한 느낌</div>
-                        <div class="style-preview">샘플 영상 (준비 중)</div>
+                        <div class="style-preview" aria-label="포트폴리오 샘플 영상">
+                            <video src="./assets/videos/포트폴리오.mp4" autoplay muted loop playsinline></video>
+                        </div>
                 </div>
             </div>
 
@@ -2114,6 +2132,7 @@
 
         function startNewVideo() {
             hideSuccessBanner();
+            stopVideoStatusWatcher();
             resetResultSection();
             removeAllImages();
             document.getElementById('menuName').value = '';
@@ -2122,30 +2141,22 @@
             document.querySelectorAll('#selfMode .style-card').forEach(el => el.classList.remove('selected'));
             const nextBtn = document.getElementById('nextToStep2');
             if (nextBtn) nextBtn.disabled = true;
-            goToStep(1);
+            goToStep1();
         }
 
         function showResultSection() {
             const section = document.getElementById('resultSection');
-            if (section) {
-                section.classList.add('show');
-            }
+            if (section) section.classList.add('show');
         }
 
         function hideResultSection() {
             const section = document.getElementById('resultSection');
-            if (section) {
-                section.classList.remove('show');
-            }
+            if (section) section.classList.remove('show');
         }
 
         function resetResultSection() {
             hideResultSection();
-            const placeholder = document.getElementById('resultPlaceholder');
-            if (placeholder) {
-                placeholder.classList.remove('hidden');
-                placeholder.innerHTML = `<i class="fa-solid fa-hourglass-half"></i><span>영상 생성 준비 중입니다...</span>`;
-            }
+            showResultPlaceholder('영상 생성 준비 중입니다...');
             const videoEl = document.getElementById('resultVideo');
             if (videoEl) {
                 videoEl.pause();
@@ -2153,13 +2164,7 @@
                 videoEl.load();
                 videoEl.classList.add('hidden');
             }
-            const badge = document.getElementById('resultStatusBadge');
-            if (badge) {
-                badge.className = 'result-status';
-                badge.innerHTML = `<i class="fa-solid fa-clock"></i> 대기 중`;
-            }
-            const statusText = document.getElementById('resultStatusText');
-            if (statusText) statusText.textContent = '대기 중';
+            setResultStatus('idle', '대기 중');
             const downloadBtn = document.getElementById('downloadVideoBtn');
             if (downloadBtn) downloadBtn.disabled = true;
             latestVideoData = null;
@@ -2171,7 +2176,142 @@
                 menuTarget.textContent = meta?.menuName || '-';
             }
             const styleLabel = meta?.style ? (platformInfo[meta.style]?.name || '맞춤형') : '-';
-            const styleTarget = Pro_탓;
+            const styleTarget = document.getElementById('resultStyleName');
+            if (styleTarget) {
+                styleTarget.textContent = styleLabel;
+            }
+            const durationTarget = document.getElementById('resultDuration');
+            if (durationTarget) {
+                durationTarget.textContent = meta?.duration ? `${meta.duration}초` : '-';
+            }
+            const titleTarget = document.getElementById('resultTitle');
+            if (titleTarget) {
+                titleTarget.textContent = `${styleLabel} · ${meta?.menuName || 'AI 영상'}`;
+            }
+            showResultPlaceholder('AI가 영상 생성 준비를 하고 있습니다...');
+        }
+
+        function setResultStatus(state, text) {
+            const badge = document.getElementById('resultStatusBadge');
+            const statusText = document.getElementById('resultStatusText');
+            let icon = 'fa-gear fa-spin';
+            let className = 'result-status';
+            if (state === 'success') {
+                icon = 'fa-circle-check';
+                className += ' success';
+            } else if (state === 'error') {
+                icon = 'fa-triangle-exclamation';
+                className += ' error';
+            } else if (state === 'timeout') {
+                icon = 'fa-hourglass-half';
+            } else if (state === 'idle') {
+                icon = 'fa-clock';
+            }
+            if (badge) {
+                badge.className = className;
+                badge.innerHTML = `<i class="fa-solid ${icon}"></i> ${text}`;
+            }
+            if (statusText) statusText.textContent = text;
+        }
+
+        function showResultPlaceholder(message) {
+            const placeholder = document.getElementById('resultPlaceholder');
+            const videoEl = document.getElementById('resultVideo');
+            if (placeholder) {
+                placeholder.classList.remove('hidden');
+                placeholder.innerHTML = `<i class="fa-solid fa-hourglass-half"></i><span>${message}</span>`;
+            }
+            if (videoEl) videoEl.classList.add('hidden');
+        }
+
+        function showResultVideo(url) {
+            const placeholder = document.getElementById('resultPlaceholder');
+            const videoEl = document.getElementById('resultVideo');
+            if (placeholder) placeholder.classList.add('hidden');
+            if (videoEl) {
+                videoEl.src = url;
+                videoEl.classList.remove('hidden');
+                videoEl.load();
+            }
+            const downloadBtn = document.getElementById('downloadVideoBtn');
+            if (downloadBtn) downloadBtn.disabled = false;
+        }
+
+        function startVideoStatusWatcher(videoId, meta) {
+            currentVideoId = videoId;
+            pendingResultMeta = meta;
+            prepareResultSection(meta);
+            showResultSection();
+            setResultStatus('processing', '렌더링 중입니다...');
+            fetchLatestVideoStatus();
+            videoStatusAttempts = 0;
+            if (videoStatusCheckInterval) clearInterval(videoStatusCheckInterval);
+            videoStatusCheckInterval = setInterval(() => {
+                videoStatusAttempts++;
+                if (videoStatusAttempts > MAX_VIDEO_STATUS_CHECKS) {
+                    setResultStatus('timeout', '영상 생성이 지연되고 있습니다. 잠시 후 다시 확인해주세요.');
+                    stopVideoStatusWatcher();
+                    return;
+                }
+                fetchLatestVideoStatus();
+            }, 5000);
+        }
+
+        function stopVideoStatusWatcher() {
+            if (videoStatusCheckInterval) {
+                clearInterval(videoStatusCheckInterval);
+                videoStatusCheckInterval = null;
+            }
+        }
+
+        async function fetchLatestVideoStatus() {
+            if (!currentVideoId) return;
+            const userId = getCurrentUserId();
+            if (!userId) return;
+            try {
+                const response = await fetch(`${API_BASE}/api/shorts/videos?userId=${encodeURIComponent(userId)}&limit=20`, {
+                    headers: { 'user-id': userId }
+                });
+                if (!response.ok) throw new Error('영상 정보를 불러올 수 없습니다.');
+                const payload = await response.json();
+                const video = Array.isArray(payload?.data)
+                    ? payload.data.find(item => item.id === currentVideoId)
+                    : null;
+                if (video) {
+                    latestVideoData = video;
+                    updateResultMetadata({
+                        menuName: video.menu_name,
+                        style: video.style,
+                        duration: video.duration_sec || pendingResultMeta?.duration
+                    });
+                    if (video.status === 'completed' && video.video_url) {
+                        setResultStatus('success', '영상 생성이 완료되었습니다!');
+                        showResultVideo(video.video_url);
+                        stopVideoStatusWatcher();
+                    } else if (video.status === 'failed') {
+                        setResultStatus('error', video.error_message || '영상 생성에 실패했습니다.');
+                        showResultPlaceholder('문제가 발생했습니다. 다시 시도해주세요.');
+                        stopVideoStatusWatcher();
+                    } else {
+                        setResultStatus('processing', '렌더링 중입니다...');
+                    }
+                }
+            } catch (error) {
+                console.error('영상 상태 조회 실패:', error);
+            }
+        }
+
+        function downloadLatestVideo() {
+            const url = latestVideoData?.video_url;
+            if (!url) return;
+            const link = document.createElement('a');
+            link.href = url;
+            const filename = (latestVideoData?.menu_name || 'sajangpick-short').replace(/\s+/g, '-') + '.mp4';
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         // 에러 화면 표시
         function showErrorScreen(message) {

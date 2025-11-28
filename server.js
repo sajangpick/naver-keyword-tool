@@ -1075,8 +1075,10 @@ app.get("/api/rank-list-crawl", rankListCrawlHandler);
 
 // 상세 정보 크롤링
 const placeDetailCrawlHandler = require("./api/place-detail-crawl");
+const reviewMonitoringHandler = require("./api/review-monitoring");
 app.post("/api/place-detail-crawl", placeDetailCrawlHandler);
 app.get("/api/place-detail-crawl", placeDetailCrawlHandler);
+app.all("/api/review-monitoring", reviewMonitoringHandler);
 
 // ==================== 관리자 통계 API ====================
 const adminAnalyticsHandler = require("./api/admin/analytics");
