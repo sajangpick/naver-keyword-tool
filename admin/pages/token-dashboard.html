@@ -501,7 +501,7 @@
           await loadChartData(period);
           
           // 3. 상위 사용자 로드
-          await loadTopUsers();
+          await loadTopUsers(period);
           
           // 4. 한도 초과 사용자 로드
           await loadExceededUsers();
@@ -579,28 +579,48 @@
             startDate.setHours(0, 0, 0, 0);
           } else if (period === 'week') {
             startDate.setDate(startDate.getDate() - 7);
+            startDate.setHours(0, 0, 0, 0);
           } else if (period === 'month') {
-            startDate.setMonth(startDate.getMonth() - 1);
+            startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
           } else {
             startDate = new Date('2025-01-01');
           }
 
-          const { data: usageData } = await supabase
+          console.log('📊 차트 기간 필터:', period, '시작일:', startDate.toISOString());
+
+          const { data: usageData, error } = await supabase
             .from('token_usage')
             .select('tokens_used, used_at')
             .gte('used_at', startDate.toISOString())
             .order('used_at');
 
-          // 날짜별로 그룹핑
+          if (error) {
+            console.error('❌ 데이터 조회 오류:', error);
+            throw error;
+          }
+
+          console.log('📊 조회된 데이터 수:', usageData?.length || 0);
+
+          // 날짜별로 그룹핑 (YYYY-MM-DD 형식으로 통일)
           const grouped = {};
           usageData?.forEach(item => {
-            const date = new Date(item.used_at).toLocaleDateString('ko-KR');
-            grouped[date] = (grouped[date] || 0) + item.tokens_used;
+            const date = new Date(item.used_at);
+            const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            grouped[dateKey] = (grouped[dateKey] || 0) + item.tokens_used;
           });
 
+          // 날짜순으로 정렬
+          const sortedDates = Object.keys(grouped).sort();
+          
           // 차트 데이터 준비
-          const labels = Object.keys(grouped);
-          const data = Object.values(grouped);
+          const labels = sortedDates.map(date => {
+            const d = new Date(date);
+            return `${d.getMonth() + 1}/${d.getDate()}`;
+          });
+          const data = sortedDates.map(date => grouped[date]);
+
+          console.log('📊 차트 데이터:', { labels, data });
 
           // 차트 업데이트 또는 생성
           if (chartInstance) {
@@ -619,22 +639,53 @@
                 data: data,
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4
+                tension: 0.4,
+                borderWidth: 2
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
               plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                  titleFont: {
+                    weight: 'bold',
+                    size: 14
+                  },
+                  bodyFont: {
+                    weight: 'bold',
+                    size: 13
+                  }
+                }
               },
               scales: {
+                x: {
+                  ticks: {
+                    color: '#000000',
+                    font: {
+                      weight: 'bold',
+                      size: 12
+                    }
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                },
                 y: {
                   beginAtZero: true,
                   ticks: {
+                    color: '#000000',
+                    font: {
+                      weight: 'bold',
+                      size: 12
+                    },
                     callback: function(value) {
                       return value.toLocaleString('ko-KR');
                     }
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
                   }
                 }
               }
@@ -649,44 +700,102 @@
 
       // ==================== 상위 사용자 로드 ====================
 
-      async function loadTopUsers() {
+      async function loadTopUsers(period) {
         try {
-          // 구독 사이클과 프로필 조인
-          const { data: cycles } = await supabase
-            .from('subscription_cycle')
-            .select(`
-              *,
-              profiles:user_id (email)
-            `)
-            .eq('status', 'active')
-            .order('tokens_used', { ascending: false })
-            .limit(10);
+          // 기간별 시작일 계산
+          let startDate = new Date();
+          if (period === 'today') {
+            startDate.setHours(0, 0, 0, 0);
+          } else if (period === 'week') {
+            startDate.setDate(startDate.getDate() - 7);
+            startDate.setHours(0, 0, 0, 0);
+          } else if (period === 'month') {
+            startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
+          } else {
+            startDate = new Date('2025-01-01');
+          }
 
-          const tbody = document.getElementById('topUsersTable');
-          
-          if (!cycles || cycles.length === 0) {
+          console.log('📊 상위 사용자 기간 필터:', period, '시작일:', startDate.toISOString());
+
+          // 기간별 토큰 사용량 집계
+          const { data: usageData, error: usageError } = await supabase
+            .from('token_usage')
+            .select('user_id, tokens_used')
+            .gte('used_at', startDate.toISOString());
+
+          if (usageError) {
+            console.error('❌ 토큰 사용량 조회 오류:', usageError);
+            throw usageError;
+          }
+
+          // 사용자별로 토큰 사용량 합계 계산
+          const userUsageMap = {};
+          usageData?.forEach(item => {
+            if (item.user_id) {
+              userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + item.tokens_used;
+            }
+          });
+
+          // 사용량 순으로 정렬
+          const sortedUsers = Object.entries(userUsageMap)
+            .map(([userId, totalUsage]) => ({ userId, totalUsage }))
+            .sort((a, b) => b.totalUsage - a.totalUsage)
+            .slice(0, 10); // 상위 10명
+
+          if (sortedUsers.length === 0) {
+            const tbody = document.getElementById('topUsersTable');
             tbody.innerHTML = `
               <tr>
                 <td colspan="7" class="empty-state">
                   <i class="fas fa-users"></i>
-                  <div>활성 사용자가 없습니다</div>
+                  <div>해당 기간에 사용자가 없습니다</div>
                 </td>
               </tr>
             `;
             return;
           }
 
-          tbody.innerHTML = cycles.map((cycle, index) => {
-            const usageRate = (cycle.tokens_used / cycle.monthly_token_limit * 100).toFixed(1);
+          // 사용자 정보와 구독 정보 조회
+          const userIds = sortedUsers.map(u => u.userId);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, email')
+            .in('id', userIds);
+
+          const { data: cycles } = await supabase
+            .from('subscription_cycle')
+            .select('user_id, user_type, monthly_token_limit, status')
+            .in('user_id', userIds)
+            .eq('status', 'active');
+
+          // 프로필과 구독 정보를 맵으로 변환
+          const profileMap = {};
+          profiles?.forEach(p => {
+            profileMap[p.id] = p;
+          });
+
+          const cycleMap = {};
+          cycles?.forEach(c => {
+            cycleMap[c.user_id] = c;
+          });
+
+          // 테이블 렌더링
+          const tbody = document.getElementById('topUsersTable');
+          tbody.innerHTML = sortedUsers.map((user, index) => {
+            const profile = profileMap[user.userId];
+            const cycle = cycleMap[user.userId];
+            const limit = cycle?.monthly_token_limit || 0;
+            const usageRate = limit > 0 ? (user.totalUsage / limit * 100).toFixed(1) : 0;
             const statusClass = usageRate >= 90 ? 'danger' : usageRate >= 70 ? 'warning' : 'success';
             
             return `
               <tr>
                 <td><strong>${index + 1}</strong></td>
-                <td>${cycle.profiles?.email || 'Unknown'}</td>
-                <td><span class="badge info">${getMembershipName(cycle.user_type)}</span></td>
-                <td>${cycle.tokens_used.toLocaleString('ko-KR')}</td>
-                <td>${cycle.monthly_token_limit.toLocaleString('ko-KR')}</td>
+                <td>${profile?.email || 'Unknown'}</td>
+                <td><span class="badge info">${cycle ? getMembershipName(cycle.user_type) : '-'}</span></td>
+                <td>${user.totalUsage.toLocaleString('ko-KR')}</td>
+                <td>${limit.toLocaleString('ko-KR')}</td>
                 <td>
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <div class="progress-bar" style="width: 100px;">
@@ -699,8 +808,19 @@
               </tr>
             `;
           }).join('');
+
+          console.log('📊 상위 사용자 로드 완료:', sortedUsers.length, '명');
         } catch (error) {
           console.error('❌ 상위 사용자 로드 실패:', error);
+          const tbody = document.getElementById('topUsersTable');
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>데이터를 불러올 수 없습니다</div>
+              </td>
+            </tr>
+          `;
         }
       }
 
