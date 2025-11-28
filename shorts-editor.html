@@ -829,6 +829,38 @@
             margin-top: 48px;
         }
 
+        .success-banner {
+            display: none;
+            margin-top: 32px;
+            padding: 32px;
+            border-radius: 16px;
+            background: rgba(76, 175, 80, 0.08);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+            text-align: center;
+        }
+
+        .success-banner.show {
+            display: block;
+        }
+
+        .success-banner h3 {
+            font-size: 22px;
+            color: var(--success);
+            margin-bottom: 12px;
+        }
+
+        .success-banner p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .success-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
         .btn {
             min-width: 160px;
             height: 48px;
@@ -1392,6 +1424,21 @@
                         영상 생성하기
                     </button>
                 </div>
+
+                <div class="success-banner" id="successBanner">
+                    <h3>영상 생성이 시작되었습니다!</h3>
+                    <p>렌더링이 완료되면 마이페이지 &gt; 영상에서 확인할 수 있습니다.</p>
+                    <div class="success-actions">
+                        <button class="btn btn-primary" onclick="goToMypage()">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            마이페이지에서 확인
+                        </button>
+                        <button class="btn btn-secondary" onclick="startNewVideo()">
+                            <i class="fa-solid fa-plus"></i>
+                            새 영상 계속 만들기
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 에러 화면 -->
@@ -1738,6 +1785,7 @@
 
         // 영상 생성
         async function generateVideo() {
+            hideSuccessBanner();
             // 유효성 검사
             if (uploadedImages.length === 0) {
                 alert('음식 사진을 최소 1장 이상 업로드해주세요.');
@@ -1812,11 +1860,9 @@
                 // 생성된 영상 정보 저장
                 if (result.data && result.data.id) {
                     currentVideoId = result.data.id;
-                    // 마이페이지로 이동
-                    window.location.href = '/mypage.html#shorts';
+                    showSuccessBanner();
                 } else {
-                    alert('영상이 성공적으로 생성되었습니다! 마이페이지에서 확인하세요.');
-                    window.location.href = '/mypage.html#shorts';
+                    showSuccessBanner();
                 }
             } catch (error) {
                 console.error('영상 생성 실패:', error);
@@ -1849,6 +1895,36 @@
         // 로딩 화면 숨기기
         function hideLoadingScreen() {
             document.getElementById('loadingScreen').classList.remove('active');
+        }
+
+        function showSuccessBanner() {
+            const banner = document.getElementById('successBanner');
+            if (banner) {
+                banner.classList.add('show');
+                banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function hideSuccessBanner() {
+            const banner = document.getElementById('successBanner');
+            if (banner) {
+                banner.classList.remove('show');
+            }
+        }
+
+        function goToMypage() {
+            window.open('/mypage.html#shorts', '_blank', 'noopener');
+        }
+
+        function startNewVideo() {
+            hideSuccessBanner();
+            removeAllImages();
+            document.getElementById('menuName').value = '';
+            document.getElementById('menuFeatures').value = '';
+            selectedStyle = null;
+            document.querySelectorAll('#selfMode .style-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById('nextToStep3').disabled = true;
+            goToStep(1);
         }
 
         // 에러 화면 표시
