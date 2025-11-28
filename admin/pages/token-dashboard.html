@@ -11,6 +11,12 @@
       rel="stylesheet"
     />
     
+    <!-- Flatpickr (날짜 선택기) -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    
     <!-- 공통 스타일 -->
     <link rel="stylesheet" href="/admin/assets/admin-common.css" />
     
@@ -341,15 +347,32 @@
           </div>
         </div>
 
+        <!-- 날짜 범위 선택기 -->
+        <div class="filter-bar" style="margin-bottom: 24px; padding: 16px; background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+          <div class="filter-item" style="flex: 1;">
+            <label class="filter-label">기간 선택</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input 
+                type="text" 
+                id="dateRangePicker" 
+                class="filter-select" 
+                placeholder="날짜 범위를 선택하세요"
+                style="flex: 1; cursor: pointer;"
+                readonly
+              />
+              <button class="btn secondary" onclick="setQuickPeriod('today')" style="white-space: nowrap;">오늘</button>
+              <button class="btn secondary" onclick="setQuickPeriod('week')" style="white-space: nowrap;">이번 주</button>
+              <button class="btn secondary" onclick="setQuickPeriod('month')" style="white-space: nowrap;">이번 달</button>
+            </div>
+          </div>
+        </div>
+
         <!-- 필터 -->
         <div class="filter-bar">
-          <div class="filter-item">
+          <div class="filter-item" style="display: none;">
             <label class="filter-label">기간</label>
             <select class="filter-select" id="periodFilter" onchange="loadDashboardData()">
-              <option value="today">오늘</option>
-              <option value="week" selected>이번 주</option>
-              <option value="month">이번 달</option>
-              <option value="all">전체</option>
+              <option value="custom" selected>사용자 지정</option>
             </select>
           </div>
           <div class="filter-item">
@@ -477,12 +500,21 @@
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Flatpickr (날짜 선택기) -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
 
     <script>
       // ==================== 설정 ====================
       
       let supabase;
       let chartInstance = null;
+      let dateRangePicker = null;
+      let selectedDateRange = {
+        start: null,
+        end: null
+      };
 
       // ==================== 초기화 ====================
 
@@ -490,28 +522,103 @@
         supabase = await AdminBootstrap.getSupabaseClient();
         await AdminBootstrap.initializeHeader();
         await AdminBootstrap.initializeSidebar();
+        
+        // 날짜 선택기 초기화
+        initDateRangePicker();
+        
+        // 기본값: 이번 주
+        setQuickPeriod('week');
+        
         await loadDashboardData();
         
         // 30초마다 자동 새로고침
         setInterval(loadDashboardData, 30000);
       });
 
+      // ==================== 날짜 선택기 초기화 ====================
+
+      function initDateRangePicker() {
+        dateRangePicker = flatpickr("#dateRangePicker", {
+          mode: "range",
+          dateFormat: "Y. m. d.",
+          locale: "ko",
+          defaultDate: [new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), new Date()], // 기본값: 최근 7일
+          onChange: function(selectedDates, dateStr, instance) {
+            if (selectedDates.length === 2) {
+              selectedDateRange.start = new Date(selectedDates[0]);
+              selectedDateRange.start.setHours(0, 0, 0, 0);
+              selectedDateRange.end = new Date(selectedDates[1]);
+              selectedDateRange.end.setHours(23, 59, 59, 999);
+              
+              console.log('📅 날짜 범위 선택:', selectedDateRange.start, '~', selectedDateRange.end);
+              loadDashboardData();
+            }
+          },
+          onReady: function(selectedDates, dateStr, instance) {
+            // 초기 날짜 범위 설정
+            if (selectedDates.length === 2) {
+              selectedDateRange.start = new Date(selectedDates[0]);
+              selectedDateRange.start.setHours(0, 0, 0, 0);
+              selectedDateRange.end = new Date(selectedDates[1]);
+              selectedDateRange.end.setHours(23, 59, 59, 999);
+            }
+          }
+        });
+      }
+
+      // ==================== 빠른 기간 선택 ====================
+
+      function setQuickPeriod(period) {
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        let startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+
+        if (period === 'today') {
+          // 오늘
+          selectedDateRange.start = new Date(startDate);
+          selectedDateRange.end = new Date(today);
+        } else if (period === 'week') {
+          // 이번 주 (최근 7일)
+          startDate.setDate(startDate.getDate() - 6);
+          selectedDateRange.start = new Date(startDate);
+          selectedDateRange.end = new Date(today);
+        } else if (period === 'month') {
+          // 이번 달
+          startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          selectedDateRange.start = new Date(startDate);
+          selectedDateRange.end = new Date(today);
+        }
+
+        // 날짜 선택기 업데이트
+        if (dateRangePicker) {
+          dateRangePicker.setDate([selectedDateRange.start, selectedDateRange.end], false);
+        }
+
+        loadDashboardData();
+      }
+
       // ==================== 대시보드 데이터 로드 ====================
 
       async function loadDashboardData() {
         try {
-          const period = document.getElementById('periodFilter').value;
-          const userType = document.getElementById('userTypeFilter').value;
-          const membership = document.getElementById('membershipFilter').value;
+          // 날짜 범위가 설정되지 않았으면 기본값 사용
+          if (!selectedDateRange.start || !selectedDateRange.end) {
+            setQuickPeriod('week');
+            return;
+          }
+
+          const userType = document.getElementById('userTypeFilter')?.value || 'all';
+          const membership = document.getElementById('membershipFilter')?.value || 'all';
 
           // 1. 통계 데이터 로드
-          await loadStatistics(period, userType, membership);
+          await loadStatistics(userType, membership);
           
           // 2. 차트 데이터 로드
-          await loadChartData(period);
+          await loadChartData();
           
           // 3. 상위 사용자 로드
-          await loadTopUsers(period);
+          await loadTopUsers();
           
           // 4. 한도 초과 사용자 로드
           await loadExceededUsers();
@@ -526,7 +633,7 @@
 
       // ==================== 통계 로드 ====================
 
-      async function loadStatistics(period, userType, membership) {
+      async function loadStatistics(userType, membership) {
         try {
           // 활성 사용자 수
           let query = supabase
@@ -541,20 +648,18 @@
           const { count: activeCount } = await query;
           document.getElementById('activeUsers').textContent = activeCount || 0;
 
-          // 오늘 사용 토큰
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          const { data: todayUsage } = await supabase
+          // 선택한 기간의 토큰 사용량
+          const { data: periodUsage } = await supabase
             .from('token_usage')
             .select('tokens_used')
-            .gte('used_at', today.toISOString());
+            .gte('used_at', selectedDateRange.start.toISOString())
+            .lte('used_at', selectedDateRange.end.toISOString());
           
-          const todayTotal = todayUsage?.reduce((sum, u) => sum + u.tokens_used, 0) || 0;
-          document.getElementById('todayTokens').textContent = todayTotal.toLocaleString('ko-KR');
+          const periodTotal = periodUsage?.reduce((sum, u) => sum + u.tokens_used, 0) || 0;
+          document.getElementById('todayTokens').textContent = periodTotal.toLocaleString('ko-KR');
 
-          // 월간 총 사용량
-          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          // 월간 총 사용량 (이번 달)
+          const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
           const { data: monthlyUsage } = await supabase
             .from('token_usage')
             .select('tokens_used')
@@ -670,30 +775,21 @@
 
       // ==================== 차트 로드 ====================
 
-      async function loadChartData(period) {
+      async function loadChartData() {
         try {
           const ctx = document.getElementById('usageChart');
           
-          // 기간별 데이터 조회
-          let startDate = new Date();
-          if (period === 'today') {
-            startDate.setHours(0, 0, 0, 0);
-          } else if (period === 'week') {
-            startDate.setDate(startDate.getDate() - 7);
-            startDate.setHours(0, 0, 0, 0);
-          } else if (period === 'month') {
-            startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-            startDate.setHours(0, 0, 0, 0);
-          } else {
-            startDate = new Date('2025-01-01');
-          }
+          // 선택한 날짜 범위 사용
+          const startDate = selectedDateRange.start;
+          const endDate = selectedDateRange.end;
 
-          console.log('📊 차트 기간 필터:', period, '시작일:', startDate.toISOString());
+          console.log('📊 차트 날짜 범위:', startDate.toISOString(), '~', endDate.toISOString());
 
           const { data: usageData, error } = await supabase
             .from('token_usage')
             .select('tokens_used, used_at')
             .gte('used_at', startDate.toISOString())
+            .lte('used_at', endDate.toISOString())
             .order('used_at');
 
           if (error) {
@@ -711,48 +807,25 @@
             grouped[dateKey] = (grouped[dateKey] || 0) + item.tokens_used;
           });
 
-          // 기간에 따라 표시할 날짜 범위 결정
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+          // 선택한 날짜 범위의 모든 날짜 생성 (데이터가 없어도 표시)
+          const dateRange = [];
+          const currentDate = new Date(startDate);
+          const endDateOnly = new Date(endDate);
+          endDateOnly.setHours(0, 0, 0, 0);
           
-          let daysToShow = 7; // 기본값: 최근 7일
-          if (period === 'today') {
-            daysToShow = 1;
-          } else if (period === 'week') {
-            daysToShow = 7;
-          } else if (period === 'month') {
-            daysToShow = 30; // 이번 달은 최근 30일
-          } else {
-            // 전체 기간일 때는 실제 데이터가 있는 날짜만 표시
-            const sortedDates = Object.keys(grouped).sort();
-            const labels = sortedDates.map(date => {
-              const d = new Date(date);
-              const dayName = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
-              return `${d.getMonth() + 1}/${d.getDate()}(${dayName})`;
-            });
-            const data = sortedDates.map(date => grouped[date]);
-            
-            console.log('📊 차트 데이터 (전체):', { labels, data });
-            
-            // 차트 생성 (전체 기간)
-            createChart(labels, data, 45, undefined);
-            return;
+          while (currentDate <= endDateOnly) {
+            const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+            dateRange.push(dateKey);
+            currentDate.setDate(currentDate.getDate() + 1);
           }
 
-          // 지정된 기간의 모든 날짜 생성 (데이터가 없어도 표시)
-          const dateRange = [];
-          for (let i = daysToShow - 1; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            dateRange.push(dateKey);
-          }
+          const daysToShow = dateRange.length;
 
           // 차트 데이터 준비
           const labels = dateRange.map(dateKey => {
             const d = new Date(dateKey);
             const dayName = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
-            if (daysToShow <= 7) {
+            if (daysToShow <= 14) {
               return `${d.getMonth() + 1}/${d.getDate()}(${dayName})`;
             } else {
               return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -761,11 +834,12 @@
           
           const data = dateRange.map(dateKey => grouped[dateKey] || 0);
 
-          console.log(`📊 차트 데이터 (최근 ${daysToShow}일):`, { labels, data });
+          console.log(`📊 차트 데이터 (${daysToShow}일):`, { labels, data });
 
           // 차트 생성
-          const stepSize = daysToShow <= 7 ? 5000 : undefined;
-          createChart(labels, data, 0, stepSize);
+          const stepSize = daysToShow <= 14 ? 5000 : undefined;
+          const maxRotation = daysToShow > 30 ? 45 : 0;
+          createChart(labels, data, maxRotation, stepSize);
         } catch (error) {
           console.error('❌ 차트 로드 실패:', error);
           document.getElementById('usageChart').innerHTML = 
@@ -775,7 +849,7 @@
 
       // ==================== 상위 사용자 로드 ====================
 
-      async function loadTopUsers(period) {
+      async function loadTopUsers() {
         const tbody = document.getElementById('topUsersTable');
         const groupBy = document.getElementById('topUsersGroupBy')?.value || 'month';
         
@@ -790,34 +864,28 @@
 
         try {
           // 집계 방식에 따라 시작일 계산
-          let startDate = new Date();
+          let startDate, endDate;
           
           if (groupBy === 'month') {
-            // 월별: 이번 달 1일부터
-            startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+            // 월별: 이번 달 1일부터 오늘까지
+            startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
             startDate.setHours(0, 0, 0, 0);
+            endDate = new Date();
+            endDate.setHours(23, 59, 59, 999);
           } else {
-            // 일별: 선택한 기간에 따라
-            if (period === 'today') {
-              startDate.setHours(0, 0, 0, 0);
-            } else if (period === 'week') {
-              startDate.setDate(startDate.getDate() - 7);
-              startDate.setHours(0, 0, 0, 0);
-            } else if (period === 'month') {
-              startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-              startDate.setHours(0, 0, 0, 0);
-            } else {
-              startDate = new Date('2025-01-01');
-            }
+            // 일별: 선택한 날짜 범위 사용
+            startDate = selectedDateRange.start;
+            endDate = selectedDateRange.end;
           }
 
-          console.log('📊 상위 사용자 집계 방식:', groupBy, '기간 필터:', period, '시작일:', startDate.toISOString());
+          console.log('📊 상위 사용자 집계 방식:', groupBy, '시작일:', startDate.toISOString(), '종료일:', endDate.toISOString());
 
           // 기간별 토큰 사용량 집계
           const { data: usageData, error: usageError } = await supabase
             .from('token_usage')
             .select('user_id, tokens_used, used_at')
             .gte('used_at', startDate.toISOString())
+            .lte('used_at', endDate.toISOString())
             .order('used_at', { ascending: false });
 
           if (usageError) {
