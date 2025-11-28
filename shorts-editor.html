@@ -43,6 +43,10 @@
             box-sizing: border-box;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         body {
             font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             background: var(--bg);
@@ -294,11 +298,11 @@
         }
 
         .style-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
+                content: '';
+                position: absolute;
+                top: 0;
             left: 0;
-            right: 0;
+                right: 0;
             bottom: 0;
             border-radius: 24px;
             padding: 2px;
@@ -307,8 +311,8 @@
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             opacity: 0;
-            transition: opacity 0.3s ease;
-        }
+                transition: opacity 0.3s ease;
+            }
 
         .style-card:hover {
             transform: translateY(-6px);
@@ -416,7 +420,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+                font-size: 12px;
             opacity: 0.7;
         }
 
@@ -861,6 +865,138 @@
             flex-wrap: wrap;
         }
 
+        .result-section {
+            display: none;
+            margin-top: 32px;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8 25px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            background: rgba(255, 123, 84, 0.15);
+            color: var(--accent-color);
+        }
+
+        .result-status.success {
+            background: rgba(76, 175, 80, 0.18);
+            color: var(--success);
+        }
+
+        .result-status.error {
+            background: rgba(244, 67, 54, 0.15);
+            color: var(--error);
+        }
+
+        .result-body {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .result-video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .result-video-wrapper video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .result-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            font-size: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .result-placeholder i {
+            font-size: 30px;
+            color: var(--accent-color);
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        .result-info p {
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        .result-info p span {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .result-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .result-body {
+                grid-template-columns: 1fr;
+            }
+            .result-actions {
+                flex-direction: column;
+            }
+        }
+
         .btn {
             min-width: 160px;
             height: 48px;
@@ -1092,7 +1228,7 @@
 
         .side-nav .menu-item {
             display: flex;
-            flex-direction: column;
+                flex-direction: column;
             align-items: center;
             gap: 3px;
             padding: 9px 6px;
@@ -1117,7 +1253,7 @@
             border-radius: 7px;
             display: grid;
             place-items: center;
-            font-size: 13px;
+                font-size: 13px;
         }
 
         .main-content {
@@ -1214,42 +1350,42 @@
 
     <!-- 사이드 네비게이션 -->
     <aside class="side-nav" aria-label="사이드 네비게이션">
-        <a class="menu-item" href="./index.html">
-            <span class="ico"><i class="fa-solid fa-house"></i></span>
-            <span>홈</span>
-        </a>
-        <a class="menu-item" href="./naver_search.html">
-            <span class="ico"><i class="fa-solid fa-key"></i></span>
-            <span>키워드</span>
-        </a>
-        <a class="menu-item" href="./AI-Review.html">
-            <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
-            <span>리뷰</span>
-        </a>
-        <a class="menu-item" href="./Blog-Editor.html">
-            <span class="ico"><i class="fa-solid fa-blog"></i></span>
-            <span>블로그</span>
-        </a>
-        <a class="menu-item" href="./recipe-manager.html">
-            <span class="ico"><i class="fa-solid fa-utensils"></i></span>
-            <span>레시피</span>
-        </a>
-        <a class="menu-item active" href="./shorts-editor.html">
-            <span class="ico"><i class="fa-solid fa-film"></i></span>
-            <span>영상</span>
-        </a>
-        <a class="menu-item" href="./sajangpick-book.html">
-            <span class="ico"><i class="fa-solid fa-book-open"></i></span>
-            <span>전자책</span>
-        </a>
-        <a class="menu-item" href="./news-board.html">
-            <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
-            <span>뉴스</span>
-        </a>
-        <a class="menu-item" href="./policy-support.html">
-            <span class="ico"><i class="fa-solid fa-coins"></i></span>
-            <span>정책</span>
-        </a>
+      <a class="menu-item" href="./index.html">
+        <span class="ico"><i class="fa-solid fa-house"></i></span>
+        <span>홈</span>
+      </a>
+      <a class="menu-item" href="./naver_search.html">
+        <span class="ico"><i class="fa-solid fa-key"></i></span>
+        <span>키워드</span>
+      </a>
+      <a class="menu-item" href="./AI-Review.html">
+        <span class="ico"><i class="fa-solid fa-pen-nib"></i></span>
+        <span>리뷰</span>
+      </a>
+      <a class="menu-item" href="./Blog-Editor.html">
+        <span class="ico"><i class="fa-solid fa-blog"></i></span>
+        <span>블로그</span>
+      </a>
+      <a class="menu-item" href="./recipe-manager.html">
+        <span class="ico"><i class="fa-solid fa-utensils"></i></span>
+        <span>레시피</span>
+      </a>
+      <a class="menu-item active" href="./shorts-editor.html">
+        <span class="ico"><i class="fa-solid fa-film"></i></span>
+        <span>영상</span>
+      </a>
+      <a class="menu-item" href="./sajangpick-book.html">
+        <span class="ico"><i class="fa-solid fa-book-open"></i></span>
+        <span>전자책</span>
+      </a>
+      <a class="menu-item" href="./news-board.html">
+        <span class="ico"><i class="fa-solid fa-newspaper"></i></span>
+        <span>뉴스</span>
+      </a>
+      <a class="menu-item" href="./policy-support.html">
+        <span class="ico"><i class="fa-solid fa-coins"></i></span>
+        <span>정책</span>
+      </a>
     </aside>
 
     <!-- 메인 컨텐츠 -->
@@ -1275,44 +1411,44 @@
                         <div class="style-name">인스타 릴스</div>
                         <div class="style-desc">세로형 최적화, 트렌디한 편집, 감각적인 색감</div>
                         <div class="style-preview">샘플 영상 (준비 중)</div>
-                    </div>
+            </div>
 
                     <div class="style-card tiktok" data-style="tiktok" onclick="selectStyle('tiktok')">
                         <div class="style-emoji">🎵</div>
                         <div class="style-name">틱톡</div>
                         <div class="style-desc">빠른 템포, 중독성 있는 구성, 바이럴 요소</div>
                         <div class="style-preview">샘플 영상 (준비 중)</div>
-                    </div>
+            </div>
 
                     <div class="style-card youtube_shorts" data-style="youtube_shorts" onclick="selectStyle('youtube_shorts')">
                         <div class="style-emoji">📺</div>
                         <div class="style-name">유튜브 쇼츠</div>
                         <div class="style-desc">정보 전달형, 자막 강조, 명확한 메시지</div>
                         <div class="style-preview">샘플 영상 (준비 중)</div>
-                    </div>
+                </div>
 
                     <div class="style-card business" data-style="business" onclick="selectStyle('business')">
                         <div class="style-emoji">💼</div>
                         <div class="style-name">비즈니스</div>
                         <div class="style-desc">메뉴 소개용, 전문적이고 신뢰감 있는 구성</div>
                         <div class="style-preview">샘플 영상 (준비 중)</div>
-                    </div>
+                </div>
 
                     <div class="style-card portfolio" data-style="portfolio" onclick="selectStyle('portfolio')">
                         <div class="style-emoji">🎨</div>
                         <div class="style-name">포트폴리오</div>
                         <div class="style-desc">작품성 중심, 고퀄리티, 시네마틱한 느낌</div>
                         <div class="style-preview">샘플 영상 (준비 중)</div>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn btn-primary" id="nextToStep2" onclick="goToStep2()" disabled>
-                        다음
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
                 </div>
             </div>
+
+            <div class="action-buttons">
+                    <button class="btn btn-primary" id="nextToStep2" onclick="goToStep2()" disabled>
+                        다음
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
 
             <!-- Step 2: 콘텐츠 입력 -->
             <div class="content-input" id="step2">
@@ -1321,18 +1457,18 @@
                     <div class="selected-style-info">
                         <span class="selected-style-emoji" id="selectedStyleEmoji">📱</span>
                         <span class="selected-style-text" id="selectedStyleText">인스타 릴스</span>
-                    </div>
+                </div>
                     <button class="change-style-btn" onclick="goToStep1()">
                         변경하기
-                    </button>
-                </div>
+                </button>
+        </div>
 
-                <!-- 이미지 업로드 -->
+            <!-- 이미지 업로드 -->
                 <div class="upload-section">
                     <h3 class="section-title">
-                        <i class="fa-solid fa-image"></i>
-                        음식 사진 업로드
-                    </h3>
+                    <i class="fa-solid fa-image"></i>
+                    음식 사진 업로드
+                </h3>
                     <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageInput').click()">
                         <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png" multiple style="display: none;" onchange="handleImageUpload(this)">
                         <div class="upload-icon" id="uploadIcon">
@@ -1343,100 +1479,144 @@
                         <div class="upload-preview" id="uploadPreview">
                             <div class="upload-preview-grid" id="previewGrid">
                                 <!-- 동적으로 생성 -->
-                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- 메뉴 정보 -->
                 <div class="menu-section">
                     <h3 class="section-title">
-                        <i class="fa-solid fa-keyboard"></i>
+                    <i class="fa-solid fa-keyboard"></i>
                         메뉴 정보
-                    </h3>
-                    <div class="form-group">
-                        <label class="form-label">
-                            메뉴명 <span class="required">*</span>
-                        </label>
+                </h3>
+                <div class="form-group">
+                    <label class="form-label">
+                        메뉴명 <span class="required">*</span>
+                    </label>
                         <input type="text" class="form-input" id="menuName" placeholder="예: 새우 파스타" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
                             메뉴 설명
-                        </label>
-                        <textarea class="form-input form-textarea" id="menuFeatures" 
+                    </label>
+                    <textarea class="form-input form-textarea" id="menuFeatures" 
                             placeholder="예: 신선한 재료로 만든 시그니처 메뉴입니다. 특별한 조리법과 비법 소스가 포인트!"></textarea>
                         <button class="ai-generate-btn" disabled>
                             <i class="fa-solid fa-robot"></i> AI로 자동 생성 (준비 중)
                         </button>
-                    </div>
                 </div>
+            </div>
 
-                <!-- 배경음악 선택 -->
+            <!-- 배경음악 선택 -->
                 <div class="menu-section">
                     <h3 class="section-title">
-                        <i class="fa-solid fa-music"></i>
-                        배경음악 선택
-                    </h3>
+                    <i class="fa-solid fa-music"></i>
+                    배경음악 선택
+                </h3>
                     <div class="music-grid">
                         <div class="music-card selected" data-music="auto" onclick="selectMusic('auto')">
                             <div class="music-icon">🤖</div>
                             <div class="music-name">자동 선택</div>
                         </div>
                         <div class="music-card" data-music="upbeat" onclick="selectMusic('upbeat')">
-                            <div class="music-icon">🎵</div>
-                            <div class="music-name">경쾌한</div>
-                        </div>
+                        <div class="music-icon">🎵</div>
+                        <div class="music-name">경쾌한</div>
+                    </div>
                         <div class="music-card" data-music="elegant" onclick="selectMusic('elegant')">
-                            <div class="music-icon">🎼</div>
-                            <div class="music-name">우아한</div>
-                        </div>
+                        <div class="music-icon">🎼</div>
+                        <div class="music-name">우아한</div>
+                    </div>
                         <div class="music-card" data-music="trendy" onclick="selectMusic('trendy')">
-                            <div class="music-icon">🎸</div>
-                            <div class="music-name">트렌디</div>
-                        </div>
+                        <div class="music-icon">🎸</div>
+                        <div class="music-name">트렌디</div>
+                    </div>
                         <div class="music-card" data-music="calm" onclick="selectMusic('calm')">
-                            <div class="music-icon">🎹</div>
-                            <div class="music-name">차분한</div>
-                        </div>
+                        <div class="music-icon">🎹</div>
+                        <div class="music-name">차분한</div>
                     </div>
                 </div>
+            </div>
 
                 <!-- 영상 길이 -->
                 <div class="menu-section">
                     <h3 class="section-title">
-                        <i class="fa-solid fa-clock"></i>
-                        영상 길이
-                    </h3>
+                    <i class="fa-solid fa-clock"></i>
+                    영상 길이
+                </h3>
                     <div class="duration-buttons" id="durationButtons">
                         <!-- JavaScript로 동적 생성 -->
-                    </div>
                 </div>
+            </div>
 
                 <!-- 액션 버튼 -->
-                <div class="action-buttons">
+            <div class="action-buttons">
                     <button class="btn btn-secondary" onclick="goToStep1()">
-                        <i class="fa-solid fa-arrow-left"></i>
-                        이전
-                    </button>
+                    <i class="fa-solid fa-arrow-left"></i>
+                    이전
+                </button>
                     <button class="btn btn-primary" onclick="generateVideo()" id="generateBtn">
-                        <i class="fa-solid fa-magic"></i>
-                        영상 생성하기
-                    </button>
-                </div>
+                    <i class="fa-solid fa-magic"></i>
+                    영상 생성하기
+                </button>
+        </div>
 
                 <div class="success-banner" id="successBanner">
                     <h3>영상 생성이 시작되었습니다!</h3>
-                    <p>렌더링이 완료되면 마이페이지 &gt; 영상에서 확인할 수 있습니다.</p>
+                    <p>AI가 영상을 만드는 동안 아래의 미리보기 영역에서 진행 상황을 확인할 수 있습니다.</p>
                     <div class="success-actions">
                         <button class="btn btn-primary" onclick="goToMypage()">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                             마이페이지에서 확인
-                        </button>
+                    </button>
                         <button class="btn btn-secondary" onclick="startNewVideo()">
-                            <i class="fa-solid fa-plus"></i>
+                        <i class="fa-solid fa-plus"></i>
                             새 영상 계속 만들기
+                    </button>
+                </div>
+            </div>
+
+                <div class="result-section" id="resultSection">
+                    <h3 class="section-title">
+                        <i class="fa-solid fa-film"></i>
+                        생성된 영상 미리보기
+                    </h3>
+                    <div class="result-card">
+                        <div class="result-header">
+                            <div class="result-title">
+                                <i class="fa-solid fa-clapperboard"></i>
+                                <span id="resultTitle">AI 영상</span>
+            </div>
+                            <div class="result-status" id="resultStatusBadge">
+                                <i class="fa-solid fa-gear fa-spin"></i>
+                                렌더링 중...
+                </div>
+            </div>
+                        <div class="result-body">
+                            <div class="result-video-wrapper">
+                                <div class="result-placeholder" id="resultPlaceholder">
+                                    <i class="fa-solid fa-hourglass-half"></i>
+                                    <span>AI가 영상을 만드는 중입니다...</span>
+        </div>
+                                <video id="resultVideo" controls class="hidden"></video>
+                </div>
+                            <div class="result-info">
+                                <p><span>메뉴명</span>: <span id="resultMenuName">-</span></p>
+                                <p><span>스타일</span>: <span id="resultStyleName">-</span></p>
+                                <p><span>영상 길이</span>: <span id="resultDuration">-</span></p>
+                                <p><span>상태</span>: <span id="resultStatusText">대기 중</span></p>
+                                <div class="result-actions">
+                                    <button class="btn btn-primary" id="downloadVideoBtn" disabled onclick="downloadLatestVideo()">
+                                        <i class="fa-solid fa-download"></i>
+                                        영상 다운로드
+                    </button>
+                                    <button class="btn btn-secondary" onclick="startNewVideo()">
+                                        <i class="fa-solid fa-plus"></i>
+                                        새 영상 만들기
                         </button>
+                    </div>
+                    </div>
+                </div>
                     </div>
                 </div>
             </div>
@@ -1454,22 +1634,22 @@
                         <li>문제가 계속되면 고객센터로 문의해주세요</li>
                     </ul>
                 </div>
-                <div class="action-buttons">
+            <div class="action-buttons">
                     <button class="btn btn-primary" onclick="retryGeneration()">
                         <i class="fa-solid fa-refresh"></i>
                         다시 시도
-                    </button>
+                </button>
                     <button class="btn btn-secondary" onclick="goToStep1()">
                         <i class="fa-solid fa-home"></i>
                         처음으로
-                    </button>
-                </div>
+                </button>
+            </div>
                 <div class="error-contact">
                     고객센터: <a href="mailto:support@sajangpick.co.kr">support@sajangpick.co.kr</a>
-                </div>
-            </div>
         </div>
     </div>
+            </div>
+            </div>
 
     <!-- 로딩 화면 -->
     <div class="loading-screen" id="loadingScreen">
@@ -1494,6 +1674,10 @@
         let selectedDuration = 15;
         let currentVideoId = null;
         let videoStatusCheckInterval = null;
+        let videoStatusAttempts = 0;
+        const MAX_VIDEO_STATUS_CHECKS = 60; // 약 5분
+        let latestVideoData = null;
+        let pendingResultMeta = null;
 
         // 플랫폼별 정보
         const platformInfo = {
@@ -1786,29 +1970,39 @@
         // 영상 생성
         async function generateVideo() {
             hideSuccessBanner();
+            stopVideoStatusWatcher();
+            resetResultSection();
             // 유효성 검사
             if (uploadedImages.length === 0) {
                 alert('음식 사진을 최소 1장 이상 업로드해주세요.');
                 return;
             }
-            
+
             const menuName = document.getElementById('menuName').value.trim();
             if (!menuName || menuName.length < 2) {
                 alert('메뉴명을 2자 이상 입력해주세요.');
                 return;
             }
-            
+
             if (!selectedStyle) {
                 alert('플랫폼 스타일을 선택해주세요.');
                 goToStep1();
                 return;
             }
-            
+
             const userId = getCurrentUserId();
             if (!userId) {
                 alert('로그인이 필요합니다.');
                 return;
             }
+
+            pendingResultMeta = {
+                menuName,
+                style: selectedStyle,
+                duration: selectedDuration,
+                music: selectedMusic
+            };
+            prepareResultSection(pendingResultMeta);
             
             // 로딩 화면 표시
             showLoadingScreen();
@@ -1841,7 +2035,7 @@
                     },
                     body: formData
                 });
-                
+
                 let result;
                 try {
                     result = await response.json();
@@ -1850,23 +2044,25 @@
                     console.error('응답 파싱 실패:', text);
                     throw new Error(`서버 응답 오류 (${response.status}): ${text.substring(0, 100)}`);
                 }
-                
+
                 if (!response.ok || !result.success) {
                     throw new Error(result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`);
                 }
-                
+
                 hideLoadingScreen();
                 
                 // 생성된 영상 정보 저장
                 if (result.data && result.data.id) {
-                    currentVideoId = result.data.id;
                     showSuccessBanner();
+                    startVideoStatusWatcher(result.data.id, pendingResultMeta);
                 } else {
                     showSuccessBanner();
+                    showResultSection();
                 }
             } catch (error) {
                 console.error('영상 생성 실패:', error);
                 hideLoadingScreen();
+                resetResultSection();
                 showErrorScreen(error.message);
             }
         }
@@ -1923,7 +2119,8 @@
             document.getElementById('menuFeatures').value = '';
             selectedStyle = null;
             document.querySelectorAll('#selfMode .style-option').forEach(el => el.classList.remove('selected'));
-            document.getElementById('nextToStep3').disabled = true;
+            const nextBtn = document.getElementById('nextToStep2');
+            if (nextBtn) nextBtn.disabled = true;
             goToStep(1);
         }
 
@@ -1993,19 +2190,19 @@
                 if (loginBtn) loginBtn.style.display = 'none';
                 if (signupBtn) signupBtn.style.display = 'none';
                 if (userEmail) userEmail.textContent = user.email;
-                if (userAvatar) {
+        if (userAvatar) {
                     const initial = (user.email[0] || 'U').toUpperCase();
-                    userAvatar.textContent = initial;
-                }
-                if (logoutBtn) {
+          userAvatar.textContent = initial;
+        }
+        if (logoutBtn) {
                     logoutBtn.onclick = async function() {
                         if (!confirm('로그아웃 하시겠습니까?')) return;
                         localStorage.removeItem('isLoggedIn');
                         localStorage.removeItem('userData');
                         location.href = 'login.html';
                     };
-                }
-            } else {
+          }
+        } else {
                 if (authUser) authUser.style.display = 'none';
                 if (loginBtn) loginBtn.style.display = 'inline-flex';
                 if (signupBtn) signupBtn.style.display = 'inline-flex';
@@ -2013,10 +2210,10 @@
         }
 
         // 페이지 로드 시 인증 UI 업데이트
-        if (document.readyState === 'loading') {
+      if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', updateAuthUI);
-        } else {
-            updateAuthUI();
+      } else {
+          updateAuthUI();
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>

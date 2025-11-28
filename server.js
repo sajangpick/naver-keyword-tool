@@ -4,6 +4,7 @@ const axios = require("axios");
 const cors = require("cors");
 const crypto = require("crypto");
 const path = require("path");
+const fs = require("fs");
 const { spawn } = require("child_process");
 const helmet = require("helmet");
 const { createClient } = require("@supabase/supabase-js");
@@ -27,6 +28,19 @@ const devError = (...args) => {
     console.error(...args);
   }
 };
+
+const EBOOK_FILE_NAME = "Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+const PROTECTED_EBOOK_DIR = path.join(__dirname, "protected", "ebooks");
+const EBOOK_FILE_PATH = path.join(PROTECTED_EBOOK_DIR, EBOOK_FILE_NAME);
+
+try {
+  if (!fs.existsSync(PROTECTED_EBOOK_DIR)) {
+    fs.mkdirSync(PROTECTED_EBOOK_DIR, { recursive: true });
+    devLog("[ebook] 보호 디렉터리를 생성했습니다:", PROTECTED_EBOOK_DIR);
+  }
+} catch (error) {
+  devError("[ebook] 보호 디렉터리 생성 실패:", error.message);
+}
 
 // 환경변수에서 설정 읽기 (Render/Vercel/로컬 모두 호환)
 // PORT가 지정되어 있으면 해당 포트 사용, 없으면 3003 사용 (3000 충돌 방지)
@@ -259,6 +273,207 @@ app.get("/api/config", (req, res) => {
   });
 });
 
+app.options("/api/ebook/download", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.status(200).end();
+});
+
+app.get("/api/ebook/download", async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (!supabase) {
+    return res.status(503).json({
+      success: false,
+      error: "다운로드 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.",
+    });
+  }
+
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      success: false,
+      error: "로그인한 회원만 전자책을 내려받을 수 있습니다.",
+    });
+  }
+
+  const token = authHeader.replace("Bearer", "").trim();
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: "유효하지 않은 인증 정보입니다.",
+    });
+  }
+
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) {
+      return res.status(401).json({
+        success: false,
+        error: "로그인 세션이 만료되었습니다. 다시 로그인해주세요.",
+      });
+    }
+    user = data.user;
+  } catch (error) {
+    devError("[ebook] 인증 확인 실패:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: "로그인 상태를 확인하는 중 오류가 발생했습니다.",
+    });
+  }
+
+  if (!fs.existsSync(EBOOK_FILE_PATH)) {
+    devError("[ebook] 파일을 찾을 수 없습니다:", EBOOK_FILE_PATH);
+    return res.status(404).json({
+      success: false,
+      error: "전자책 파일을 찾을 수 없습니다. 관리자에게 문의해주세요.",
+    });
+  }
+
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+
+  return res.download(EBOOK_FILE_PATH, EBOOK_FILE_NAME, (err) => {
+    if (err) {
+      devError("[ebook] 파일 전송 실패:", err.message);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          error: "전자책 다운로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        });
+      }
+    } else {
+      devLog("[ebook] 다운로드 완료:", user?.email || "unknown");
+    }
+  });
+});
+
+app.options("/api/ebook/downloads", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.status(200).end();
+});
+
+app.post("/api/ebook/downloads", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({
+        success: false,
+        error: "Supabase가 설정되지 않았습니다",
+      });
+    }
+
+    const {
+      userId,
+      email,
+      name,
+      downloadSource,
+      deviceType,
+      downloadMethod,
+      metadata,
+      pageUrl,
+      userAgent,
+    } = req.body || {};
+
+    if (!isNonEmptyString(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: "userId는 필수입니다",
+      });
+    }
+
+    const normalizedDevice = normalizeDeviceType(deviceType);
+    const normalizedMethod = normalizeDownloadMethod(
+      downloadMethod,
+      normalizedDevice
+    );
+    const normalizedSource = normalizeEbookDownloadSource(downloadSource);
+    const ipAddress = getClientIp(req);
+    const uaHeader = isNonEmptyString(userAgent)
+      ? userAgent
+      : req.headers["user-agent"] || null;
+    const safeUserAgent = uaHeader ? uaHeader.slice(0, 500) : null;
+
+    let profileSnapshot = null;
+    const { data: profileRows, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, email, name, membership_level, user_type")
+      .eq("id", userId)
+      .limit(1);
+
+    if (profileError && profileError.code !== "PGRST116") {
+      devError("[ebook-log] 프로필 조회 실패:", profileError.message);
+    }
+
+    if (Array.isArray(profileRows) && profileRows.length > 0) {
+      profileSnapshot = profileRows[0];
+    }
+
+    const normalizedEmail = isNonEmptyString(profileSnapshot?.email)
+      ? profileSnapshot.email.toLowerCase()
+      : isNonEmptyString(email)
+      ? email.toLowerCase()
+      : null;
+
+    const normalizedName = isNonEmptyString(profileSnapshot?.name)
+      ? profileSnapshot.name
+      : isNonEmptyString(name)
+      ? name
+      : null;
+
+    const payloadMetadata = sanitizeMetadataPayload(metadata);
+    const safePageUrl = isNonEmptyString(pageUrl, 500) ? pageUrl : null;
+    if (safePageUrl) {
+      payloadMetadata.page_url = safePageUrl;
+    }
+    if (!payloadMetadata.referrer) {
+      const refHeader = req.headers.referer || req.headers.referrer || null;
+      if (refHeader) {
+        payloadMetadata.referrer = refHeader;
+      }
+    }
+
+    const record = {
+      user_id: userId,
+      email: normalizedEmail,
+      name: normalizedName,
+      membership_level: profileSnapshot?.membership_level || null,
+      user_type: profileSnapshot?.user_type || null,
+      download_source: normalizedSource,
+      download_method: normalizedMethod,
+      device_type: normalizedDevice,
+      user_agent: safeUserAgent,
+      ip_address: ipAddress,
+      metadata:
+        Object.keys(payloadMetadata).length > 0 ? payloadMetadata : null,
+    };
+
+    const { error: insertError } = await supabase
+      .from("ebook_downloads")
+      .insert(record);
+
+    if (insertError) {
+      devError("[ebook-log] 기록 저장 실패:", insertError.message);
+      return res.status(500).json({
+        success: false,
+        error: "다운로드 로그 저장에 실패했습니다",
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    devError("[ebook-log] 알 수 없는 오류:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
 // 정적 파일 제공 (안전한 디렉터리만 공개)
 // 정적 파일 서빙 (루트 경로도 추가)
 app.use(express.static(path.join(__dirname)));
@@ -371,6 +586,195 @@ function sanitizeString(value) {
   return value
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
     .trim();
+}
+
+const VALID_EBOOK_DOWNLOAD_SOURCES = [
+  "hero_primary",
+  "cta_bottom",
+  "cta_panel",
+  "cta_footer",
+  "side_nav",
+  "guide_banner",
+  "naver_search_widget",
+  "unknown",
+];
+
+const VALID_EBOOK_DEVICE_TYPES = ["mobile", "desktop", "tablet"];
+
+const VALID_EBOOK_DOWNLOAD_METHODS = [
+  "desktop_window",
+  "mobile_direct",
+  "preview_window",
+  "direct_link",
+  "unknown",
+];
+
+function normalizeEbookDownloadSource(source) {
+  if (!isNonEmptyString(source)) {
+    return "hero_primary";
+  }
+  const normalized = source.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+  return VALID_EBOOK_DOWNLOAD_SOURCES.includes(normalized)
+    ? normalized
+    : "unknown";
+}
+
+function normalizeDeviceType(type) {
+  if (!isNonEmptyString(type)) {
+    return "unknown";
+  }
+  const normalized = type.toLowerCase();
+  return VALID_EBOOK_DEVICE_TYPES.includes(normalized)
+    ? normalized
+    : "unknown";
+}
+
+function normalizeDownloadMethod(method, deviceType = "desktop") {
+  if (isNonEmptyString(method)) {
+    const normalized = method.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    if (VALID_EBOOK_DOWNLOAD_METHODS.includes(normalized)) {
+      return normalized;
+    }
+  }
+  return deviceType === "mobile" ? "mobile_direct" : "desktop_window";
+}
+
+function getClientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (isNonEmptyString(forwarded)) {
+    return forwarded.split(",")[0].trim();
+  }
+  return req.ip || req.connection?.remoteAddress || null;
+}
+
+function resolveRangeBounds(rangeOrBounds) {
+  if (!rangeOrBounds) {
+    return getRangeBounds("all");
+  }
+  if (typeof rangeOrBounds === "string") {
+    return getRangeBounds(rangeOrBounds);
+  }
+  return {
+    start: rangeOrBounds.start || null,
+    end: rangeOrBounds.end || null,
+  };
+}
+
+function getRangeBounds(rangeKey = "all") {
+  const key = typeof rangeKey === "string" ? rangeKey.toLowerCase() : "all";
+  const now = new Date();
+  let start = null;
+  let end = null;
+
+  switch (key) {
+    case "today": {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      break;
+    }
+    case "7d": {
+      start = new Date(now);
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      break;
+    }
+    case "30d": {
+      start = new Date(now);
+      start.setDate(start.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      break;
+    }
+    case "month": {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      break;
+    }
+    default:
+      start = null;
+      end = null;
+  }
+
+  return {
+    start: start ? start.toISOString() : null,
+    end: end ? end.toISOString() : null,
+  };
+}
+
+function applyRangeBounds(query, bounds) {
+  if (!query || !bounds) return query;
+  if (bounds.start) {
+    query = query.gte("created_at", bounds.start);
+  }
+  if (bounds.end) {
+    query = query.lt("created_at", bounds.end);
+  }
+  return query;
+}
+
+async function countEbookDownloads(rangeOrBounds = "all") {
+  if (!supabase) return 0;
+  const bounds = resolveRangeBounds(rangeOrBounds);
+  try {
+    let query = supabase
+      .from("ebook_downloads")
+      .select("*", { count: "exact", head: true });
+    query = applyRangeBounds(query, bounds);
+    const { count, error } = await query;
+    if (error) {
+      devError("[ebook] 다운로드 집계 실패:", error.message);
+      return 0;
+    }
+    return count || 0;
+  } catch (error) {
+    devError("[ebook] 다운로드 집계 예외:", error.message);
+    return 0;
+  }
+}
+
+async function countUniqueEbookUsers(rangeOrBounds = "all") {
+  if (!supabase) return 0;
+  const bounds = resolveRangeBounds(rangeOrBounds);
+  try {
+    let query = supabase
+      .from("ebook_downloads")
+      .select("user_id")
+      .not("user_id", "is", null);
+    query = applyRangeBounds(query, bounds);
+    const { data, error } = await query;
+    if (error) {
+      devError("[ebook] 유니크 회원 집계 실패:", error.message);
+      return 0;
+    }
+    const unique = new Set((data || []).map((row) => row.user_id)).size;
+    return unique;
+  } catch (error) {
+    devError("[ebook] 유니크 회원 집계 예외:", error.message);
+    return 0;
+  }
+}
+
+function sanitizeMetadataPayload(meta = {}) {
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+    return {};
+  }
+  const clean = {};
+  const entries = Object.entries(meta).slice(0, 12);
+  entries.forEach(([key, value]) => {
+    if (typeof key !== "string") return;
+    const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40);
+    if (!safeKey) return;
+    if (typeof value === "string") {
+      clean[safeKey] = value.slice(0, 500);
+    } else if (
+      typeof value === "number" ||
+      typeof value === "boolean" ||
+      value === null
+    ) {
+      clean[safeKey] = value;
+    }
+  });
+  return clean;
 }
 
 // ===== JWT helpers (HS256) =====

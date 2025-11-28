@@ -1323,27 +1323,13 @@
     </script>
     <script>
       (function () {
-        // 전자책 PDF 파일 경로 (영문 파일명) - 2026 버전 사용
-        // 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf
-        let ebookPath =
-          "./docs/Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+        const CORRECT_FILENAME =
+          "Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
+        const DOWNLOAD_ENDPOINT = "/api/ebook/download";
 
-        // 중복 확장자 방지
-        if (ebookPath.includes(".pdf.pdf")) {
-          console.error(
-            "[전자책] ❌ 중복 확장자 감지! .pdf.pdf를 .pdf로 변경합니다."
-          );
-          ebookPath = ebookPath.replace(".pdf.pdf", ".pdf");
-        }
-
-        // 최종 검증된 경로를 상수로 설정
-        const EBOOK_PATH = ebookPath;
-
-        // 파일명 검증 (디버깅용)
-        console.log("[전자책] ✅ 파일 경로 설정:", EBOOK_PATH);
-        console.log(
-          "[전자책] ✅ 예상 파일명: Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf"
-        );
+        console.log("[전자책] ✅ 보호 다운로드 모드 활성화");
+        console.log("[전자책] ✅ 예상 파일명:", CORRECT_FILENAME);
+        console.log("[전자책] ✅ 다운로드 API:", DOWNLOAD_ENDPOINT);
         const downloadBtn = document.getElementById("downloadBtn");
         const loginCta = document.getElementById("loginCta");
         const statusText = document.getElementById("downloadStatus");
@@ -1505,6 +1491,41 @@
           return true;
         }
 
+        async function getAccessTokenOrRedirect() {
+          let waitCount = 0;
+          const maxWait = 30; // 최대 3초 대기
+          while (!window.authState?.supabase && waitCount < maxWait) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            waitCount++;
+          }
+
+          if (!window.authState?.supabase) {
+            console.warn("[전자책] authState가 아직 준비되지 않았습니다.");
+            alert(
+              "로그인 정보를 확인하고 있습니다. 페이지를 새로고침한 뒤 다시 시도해주세요."
+            );
+            return null;
+          }
+
+          try {
+            const { data } = await window.authState.supabase.auth.getSession();
+            const session = data?.session;
+            if (!session?.access_token) {
+              alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+              setLoggedOutUI();
+              window.location.href = "./login.html?redirect=./sajangpick-book.html";
+              return null;
+            }
+            return session.access_token;
+          } catch (error) {
+            console.error("[전자책] 액세스 토큰 확인 실패:", error);
+            alert(
+              "로그인 상태를 확인하는 중 오류가 발생했습니다. 새로고침 후 다시 시도해주세요."
+            );
+            return null;
+          }
+        }
+
         // 모바일 기기 감지 함수
         function isMobileDevice() {
           return (
@@ -1514,107 +1535,113 @@
           );
         }
 
-        async function handleDownload() {
+        async function handleDownload(event) {
+          event?.preventDefault();
           if (!requireLogin()) return;
 
+          const targetBtn = event?.currentTarget || null;
+
+          if (targetBtn) {
+            targetBtn.disabled = true;
+            targetBtn.classList.add("loading");
+          }
+
+          if (statusText) {
+            statusText.textContent = "다운로드를 준비 중입니다...";
+            statusText.style.color = "#d9480f";
+          }
+
           try {
-            // ⚠️ 강제로 올바른 파일명 사용 (2026 버전)
-            const CORRECT_FILENAME =
-              "Naver_Place_Introduction_Guide_2026_Sajangpick_vol1.pdf";
-            let finalPath = "./docs/" + CORRECT_FILENAME;
-
-            // 중복 확장자 제거
-            finalPath = finalPath.replace(/\.pdf\.pdf/g, ".pdf");
-
-            // 상대 경로 사용 (로컬 서버 대응)
-            const absolutePath = finalPath;
-
-            console.log("========================================");
-            console.log("[전자책] ✅ 다운로드 시작");
-            console.log("[전자책] ✅ 최종 다운로드 경로:", absolutePath);
-            console.log("[전자책] ✅ 파일명:", CORRECT_FILENAME);
-            console.log("[전자책] ✅ 모바일 기기:", isMobileDevice());
-            console.log("========================================");
-
-            // 파일 존재 여부 확인
-            const response = await fetch(absolutePath, {
-              method: "HEAD",
-              cache: "no-cache",
-            });
-
-            console.log(
-              "[전자책] 파일 확인 응답:",
-              response.status,
-              response.statusText
-            );
-
-            if (!response.ok) {
-              console.error(
-                "[전자책] 파일을 찾을 수 없습니다:",
-                absolutePath,
-                response.status
-              );
+            const accessToken = await getAccessTokenOrRedirect();
+            if (!accessToken) {
               if (statusText) {
-                statusText.textContent = `파일을 찾을 수 없습니다. (${response.status}) 관리자에게 문의해주세요.`;
+                statusText.textContent =
+                  "로그인 상태를 확인한 뒤 다시 시도해주세요.";
                 statusText.style.color = "#b91c1c";
               }
-              alert(
-                `전자책 파일을 찾을 수 없습니다. (오류 코드: ${response.status})\n\n파일 경로: ${absolutePath}\n\n관리자에게 문의해주세요.`
-              );
               return;
             }
 
-            // PDF 다운로드 (캐시 방지를 위해 타임스탬프 추가)
-            const downloadUrl =
-              absolutePath +
-              (absolutePath.includes("?") ? "&" : "?") +
-              "_t=" +
-              Date.now();
-            console.log("[전자책] PDF 다운로드 URL:", downloadUrl);
-            console.log("[전자책] 원본 경로:", absolutePath);
+            console.log("========================================");
+            console.log("[전자책] ✅ 보호 다운로드 API 호출");
+            console.log("[전자책] ✅ 엔드포인트:", DOWNLOAD_ENDPOINT);
+            console.log("[전자책] ✅ 모바일 기기:", isMobileDevice());
+            console.log("========================================");
 
-            // 모바일과 데스크톱에서 다른 방식으로 처리
+            const response = await fetch(DOWNLOAD_ENDPOINT, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
+
+            if (!response.ok) {
+              if (response.status === 401) {
+                alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+                setLoggedOutUI();
+                window.location.href =
+                  "./login.html?redirect=./sajangpick-book.html";
+                return;
+              }
+
+              let message = response.statusText || "전자책 다운로드에 실패했습니다.";
+              try {
+                const payload = await response.clone().json();
+                if (payload?.error) {
+                  message = payload.error;
+                }
+              } catch (err) {
+                // JSON 파싱 실패 시 무시
+              }
+
+              if (statusText) {
+                statusText.textContent = message;
+                statusText.style.color = "#b91c1c";
+              }
+              throw new Error(message);
+            }
+
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = CORRECT_FILENAME;
+            link.rel = "noopener noreferrer";
+            link.style.display = "none";
             if (isMobileDevice()) {
-              // 모바일: 숨겨진 <a> 태그를 생성하여 다운로드 (팝업 차단 방지)
-              console.log(
-                "[전자책] 모바일 기기 감지 - 직접 다운로드 방식 사용"
-              );
-              const link = document.createElement("a");
-              link.href = downloadUrl;
-              link.download = CORRECT_FILENAME; // 다운로드 파일명 지정
               link.target = "_blank";
-              link.rel = "noopener noreferrer";
-              link.style.display = "none";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+            }
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-              if (statusText) {
-                statusText.textContent =
-                  "PDF 다운로드가 시작됩니다. 이메일로도 곧 발송될 예정입니다.";
-                statusText.style.color = "#d9480f";
-              }
-            } else {
-              // 데스크톱: 새 창에서 열기
-              console.log("[전자책] 데스크톱 기기 감지 - 새 창에서 열기");
-              window.open(downloadUrl, "_blank", "noopener");
-              if (statusText) {
-                statusText.textContent =
-                  "PDF가 새 창에서 열립니다. 이메일로도 곧 발송될 예정입니다.";
-                statusText.style.color = "#d9480f";
-              }
+            setTimeout(() => {
+              window.URL.revokeObjectURL(blobUrl);
+            }, 2000);
+
+            if (statusText) {
+              statusText.textContent =
+                "다운로드가 시작되었습니다. 이메일로도 링크를 보내드릴게요.";
+              statusText.style.color = "#d9480f";
             }
           } catch (error) {
             console.error("[전자책] 다운로드 실패:", error);
-            console.error("[전자책] 오류 상세:", error.message, error.stack);
             if (statusText) {
               statusText.textContent =
                 "다운로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
               statusText.style.color = "#b91c1c";
             }
             alert(
-              `다운로드 중 오류가 발생했습니다.\n\n오류: ${error.message}\n\n잠시 후 다시 시도해주세요.`
+              `다운로드 중 오류가 발생했습니다.\n\n사유: ${
+                error.message || "알 수 없는 오류"
+              }\n\n잠시 후 다시 시도해주세요.`
             );
+          } finally {
+            if (targetBtn) {
+              targetBtn.disabled = false;
+              targetBtn.classList.remove("loading");
+            }
           }
         }
 
