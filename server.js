@@ -63,6 +63,7 @@ const NAVER_SEARCH = {
 // AI API 키 설정
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_VEO_MODEL = process.env.GEMINI_VEO_MODEL || "veo-1.5";
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const OPENAI_SHORTS_MODEL =
   process.env.OPENAI_SHORTS_MODEL ||
@@ -4915,11 +4916,8 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
       throw new Error("Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경변수를 설정해주세요.");
     }
 
-    // 참고: Veo 3.1 API 엔드포인트는 공식 문서 확인 필요
-    // 예상 엔드포인트: https://generativelanguage.googleapis.com/v1beta/models/veo-3.1:generateVideo
-    // 또는: https://ai.google.dev/api/rest/v1beta/models/veo-3.1:generateVideo
-    
-    const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1:generateVideo?key=${GEMINI_API_KEY}`;
+    const veoModel = GEMINI_VEO_MODEL;
+    const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:generateVideo?key=${GEMINI_API_KEY}`;
     
     // 이미지 URL에서 이미지 데이터 가져오기
     const imageResponse = await axios.get(imageUrl, {
@@ -4930,20 +4928,29 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
     const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
     const imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
 
-    // Veo 3.1 API 요청 본문
-    // 참고: 실제 API 스펙은 Google 공식 문서 확인 필요
     const requestBody = {
-      prompt: prompt || "cinematic food video, slow motion, professional lighting",
-      image: {
-        inline_data: {
-          mime_type: imageMimeType,
-          data: imageBase64,
-        },
-      },
-      duration: Math.min(Math.max(duration, 5), 8), // Veo는 5-8초 지원
-      resolution: "720p", // 또는 "1080p" (유료 계정 필요)
-      aspect_ratio: "9:16", // 쇼츠 형식 (세로)
-      include_audio: true, // 오디오 포함 (대사, 효과음, 음악)
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: prompt || "Cinematic food video, slow motion, professional lighting, appetizing close-up shots."
+            },
+            {
+              inline_data: {
+                mime_type: imageMimeType,
+                data: imageBase64
+              }
+            }
+          ]
+        }
+      ],
+      videoConfig: {
+        aspectRatio: "VERTICAL_9_16",
+        durationSeconds: Math.min(Math.max(duration, 5), 8),
+        resolution: "RESOLUTION_720P",
+        enableAudio: true
+      }
     };
 
     devLog("Gemini Veo API 요청 전송 중...");
@@ -4959,12 +4966,12 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
       }
     );
 
-    if (!response.data || !response.data.video_url) {
-      throw new Error("Gemini Veo API 응답에 영상 URL이 없습니다.");
+    const videoUrl = extractGeminiVideoUrl(response.data);
+    if (!videoUrl) {
+      throw new Error("Gemini Veo API 응답에서 영상 URL을 찾을 수 없습니다.");
     }
 
-    const videoUrl = response.data.video_url;
-    const jobId = response.data.job_id || null;
+    const jobId = response.data?.job_id || response.data?.jobId || null;
     
     devLog("Gemini Veo 영상 생성 완료:", { videoUrl, jobId });
     
@@ -4984,6 +4991,49 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
     
     throw new Error(`Gemini Veo 영상 생성 실패: ${error.message}`);
   }
+}
+
+function extractGeminiVideoUrl(payload) {
+  if (!payload || typeof payload !== "object") return null;
+
+  const direct =
+    payload.video_url ||
+    payload.video?.uri ||
+    payload.video?.url ||
+    payload.result?.video_url ||
+    payload.result?.video?.uri;
+
+  if (direct) return direct;
+
+  const collections = [
+    payload.candidates,
+    payload.outputs,
+    payload.results,
+  ].filter(Array.isArray);
+
+  for (const list of collections) {
+    for (const item of list) {
+      const parts =
+        item?.content?.parts ||
+        item?.parts ||
+        item?.output?.parts ||
+        [];
+
+      for (const part of parts) {
+        if (part?.fileData?.fileUri) {
+          return part.fileData.fileUri;
+        }
+        if (part?.video?.uri) {
+          return part.video.uri;
+        }
+        if (typeof part?.text === "string" && part.text.startsWith("http")) {
+          return part.text.trim();
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 // ==================== Runway API 설정 (폴백용) ====================

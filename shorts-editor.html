@@ -2243,6 +2243,31 @@
             if (downloadBtn) downloadBtn.disabled = false;
         }
 
+        function updateResultMetadata(meta) {
+            if (!meta) return;
+            const styleLabel = meta.style ? (platformInfo[meta.style]?.name || '맞춤형') : '-';
+
+            const titleTarget = document.getElementById('resultTitle');
+            if (titleTarget) {
+                titleTarget.textContent = `${styleLabel} · ${meta.menuName || 'AI 영상'}`;
+            }
+
+            const styleTarget = document.getElementById('resultStyleName');
+            if (styleTarget) {
+                styleTarget.textContent = styleLabel;
+            }
+
+            const menuTarget = document.getElementById('resultMenuName');
+            if (menuTarget) {
+                menuTarget.textContent = meta.menuName || '-';
+            }
+
+            const durationTarget = document.getElementById('resultDuration');
+            if (durationTarget) {
+                durationTarget.textContent = meta.duration ? `${meta.duration}초` : '-';
+            }
+        }
+
         function startVideoStatusWatcher(videoId, meta) {
             currentVideoId = videoId;
             pendingResultMeta = meta;
