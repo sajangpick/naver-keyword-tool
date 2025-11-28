@@ -2264,6 +2264,27 @@
       };
       return map[type] || '리뷰';
     }
+
+    function extractPlaceIdFromUrl(url) {
+      if (!url) return null;
+      const patterns = [
+        /\/(restaurant|place|shop|cafe|hotel)\/(\d+)/i,
+        /\/entry\/place\/(\d+)/i
+      ];
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) {
+          return match[match.length - 1];
+        }
+      }
+      return null;
+    }
+
+    function isValidPlaceUrl(url) {
+      if (!url) return false;
+      if (!url.includes('naver.com')) return false;
+      return !!extractPlaceIdFromUrl(url);
+    }
     
     // 업그레이드 페이지로 이동
     function goToUpgrade() {
@@ -2522,6 +2543,11 @@
           return;
         }
 
+        if (!isValidPlaceUrl(storeUrl)) {
+          alert('네이버 플레이스 URL 형식이 아닙니다.\n예) https://m.place.naver.com/restaurant/1234567890');
+          return;
+        }
+
         const storeName = document.getElementById('editStoreName').value;
         const settings = {
           action: 'create_monitoring',
@@ -2616,6 +2642,20 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
 
       if (!placeUrl) {
         if (!silent) alert('먼저 "내 가게 정보"에서 플레이스 URL을 입력해주세요.');
+        return;
+      }
+
+      if (!isValidPlaceUrl(placeUrl)) {
+        const message = `
+          <p style="color: #ef4444; text-align: center; padding: 20px;">
+            유효하지 않은 네이버 플레이스 URL입니다.<br>
+            예) https://m.place.naver.com/restaurant/1234567890
+          </p>
+        `;
+        container.innerHTML = message;
+        if (!silent) {
+          alert('네이버 플레이스 URL 형식이 아닙니다. 주소창에서 "공유 > 링크복사" 기능으로 전체 URL을 붙여넣어 주세요.');
+        }
         return;
       }
 

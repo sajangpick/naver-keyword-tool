@@ -27,6 +27,7 @@
   // 에러 로깅 큐 (배치 전송을 위해)
   let errorQueue = [];
   let isProcessing = false;
+  let errorLoggingDisabled = false;
   
   /**
    * 에러 정보 수집
@@ -171,6 +172,9 @@
    */
   async function sendErrorLog(errorData) {
     try {
+      if (errorLoggingDisabled) {
+        return;
+      }
       const supabase = getSupabaseClient();
       
       // Supabase 클라이언트가 없으면 로그만 출력
@@ -193,7 +197,12 @@
         .insert(errorData);
       
       if (error) {
-        console.error('에러 로그 저장 실패:', error);
+        if (error.code === '42501' || /row-level security/i.test(error.message || '')) {
+          errorLoggingDisabled = true;
+          console.warn('⚠️ error_logs 테이블 RLS 정책으로 인해 클라이언트 에러 로깅을 중단합니다. (관리자 전용 정책)');
+        } else {
+          console.error('에러 로그 저장 실패:', error);
+        }
       } else if (process.env.NODE_ENV === 'development') {
         // 개발 환경에서만 로그 출력
         console.log('🔴 에러 로그 저장 완료:', {
