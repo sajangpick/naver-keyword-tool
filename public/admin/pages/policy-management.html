@@ -555,6 +555,148 @@
       .confirm-btn-secondary:hover {
         background: var(--bg);
       }
+
+      /* 결과 모달 스타일 */
+      .result-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10002;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .result-modal.active {
+        display: flex;
+      }
+
+      .result-modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 500px;
+        padding: 32px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transform: translateY(-20px);
+        animation: modalSlideIn 0.3s ease-out forwards;
+      }
+
+      .result-modal-icon {
+        font-size: 48px;
+        text-align: center;
+        margin-bottom: 16px;
+      }
+
+      .result-modal-icon.success {
+        color: var(--accent);
+      }
+
+      .result-modal-icon.error {
+        color: var(--danger);
+      }
+
+      .result-modal-title {
+        font-size: 20px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 20px;
+        color: var(--text);
+      }
+
+      .result-modal-body {
+        font-size: 14px;
+        color: var(--text);
+        line-height: 1.8;
+        margin-bottom: 24px;
+      }
+
+      .result-modal-stats {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .result-modal-stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .result-modal-stat-item:last-child {
+        border-bottom: none;
+      }
+
+      .result-modal-stat-label {
+        color: var(--text-secondary);
+      }
+
+      .result-modal-stat-value {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .result-modal-errors {
+        background: #FFF3E0;
+        border-left: 4px solid #FF9800;
+        border-radius: 4px;
+        padding: 12px;
+        margin-top: 16px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-size: 13px;
+        color: #E65100;
+      }
+
+      .result-modal-errors-title {
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .result-modal-errors-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .result-modal-errors-list li {
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(255, 152, 0, 0.2);
+      }
+
+      .result-modal-errors-list li:last-child {
+        border-bottom: none;
+      }
+
+      .result-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+
+      .result-btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        font-size: 14px;
+      }
+
+      .result-btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .result-btn-primary:hover {
+        background: #02b350;
+      }
     </style>
   </head>
   <body>
@@ -812,6 +954,23 @@
         <div class="confirm-modal-actions">
           <button class="confirm-btn confirm-btn-primary" id="confirmBtn">확인</button>
           <button class="confirm-btn confirm-btn-secondary" id="cancelBtn">취소</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 결과 모달 -->
+    <div class="result-modal" id="resultModal">
+      <div class="result-modal-content">
+        <div class="result-modal-icon success" id="resultIcon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="result-modal-title" id="resultTitle">데이터 수집 완료!</div>
+        <div class="result-modal-body" id="resultBody">
+          <div class="result-modal-stats" id="resultStats"></div>
+          <div id="resultErrors"></div>
+        </div>
+        <div class="result-modal-actions">
+          <button class="result-btn result-btn-primary" id="resultConfirmBtn">확인</button>
         </div>
       </div>
     </div>
@@ -1435,6 +1594,88 @@
         }
       }
 
+      // 결과 모달 표시
+      function showResultModal({ success, title, message, stats, errors }) {
+        const modal = document.getElementById('resultModal');
+        const icon = document.getElementById('resultIcon');
+        const titleEl = document.getElementById('resultTitle');
+        const bodyEl = document.getElementById('resultBody');
+        const statsEl = document.getElementById('resultStats');
+        const errorsEl = document.getElementById('resultErrors');
+        const confirmBtn = document.getElementById('resultConfirmBtn');
+        
+        // 아이콘 설정
+        if (success) {
+          icon.className = 'result-modal-icon success';
+          icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+        } else {
+          icon.className = 'result-modal-icon error';
+          icon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+        }
+        
+        // 제목 설정
+        titleEl.textContent = title;
+        
+        // 통계 표시
+        if (stats) {
+          statsEl.innerHTML = `
+            <div class="result-modal-stat-item">
+              <span class="result-modal-stat-label">새로 추가</span>
+              <span class="result-modal-stat-value">${stats.saved}개</span>
+            </div>
+            <div class="result-modal-stat-item">
+              <span class="result-modal-stat-label">건너뜀 (중복/오류)</span>
+              <span class="result-modal-stat-value">${stats.skipped}개</span>
+            </div>
+            <div class="result-modal-stat-item">
+              <span class="result-modal-stat-label">총 수집</span>
+              <span class="result-modal-stat-value">${stats.total}개</span>
+            </div>
+          `;
+        } else {
+          statsEl.innerHTML = '';
+        }
+        
+        // 오류 표시
+        if (errors && errors.length > 0) {
+          const errorList = errors.slice(0, 10).map(err => `<li>${err}</li>`).join('');
+          const moreText = errors.length > 10 ? `<li style="color: var(--text-secondary); font-style: italic;">... 외 ${errors.length - 10}개 오류 (콘솔 확인)</li>` : '';
+          errorsEl.innerHTML = `
+            <div class="result-modal-errors">
+              <div class="result-modal-errors-title">⚠️ 오류 상세</div>
+              <ul class="result-modal-errors-list">
+                ${errorList}
+                ${moreText}
+              </ul>
+            </div>
+          `;
+          console.error('📋 저장 오류 전체 목록:', errors);
+        } else if (message) {
+          errorsEl.innerHTML = `<div style="color: var(--text-secondary); white-space: pre-line;">${message}</div>`;
+        } else {
+          errorsEl.innerHTML = '';
+        }
+        
+        // 모달 열기
+        modal.classList.add('active');
+        
+        // 확인 버튼 클릭 시 닫기
+        const handleConfirm = () => {
+          modal.classList.remove('active');
+          confirmBtn.removeEventListener('click', handleConfirm);
+        };
+        confirmBtn.addEventListener('click', handleConfirm);
+        
+        // ESC 키로 닫기
+        const handleEsc = (e) => {
+          if (e.key === 'Escape') {
+            handleConfirm();
+            document.removeEventListener('keydown', handleEsc);
+          }
+        };
+        document.addEventListener('keydown', handleEsc);
+      }
+
       // 확인 모달 열기
       function openConfirmModal() {
         return new Promise((resolve) => {
@@ -1723,20 +1964,16 @@
           }
 
           // 4. 결과 표시
-          let message = `✅ 데이터 수집 완료!\n\n`;
-          message += `• 새로 추가: ${savedCount}개\n`;
-          message += `• 건너뜀 (중복/오류): ${skippedCount}개\n`;
-          message += `• 총 수집: ${policies.length}개\n`;
-          
-          if (errors.length > 0) {
-            message += `\n⚠️ 오류 상세:\n${errors.slice(0, 10).join('\n')}`;
-            if (errors.length > 10) {
-              message += `\n... 외 ${errors.length - 10}개 오류 (콘솔 확인)`;
-            }
-            console.error('📋 저장 오류 전체 목록:', errors);
-          }
-
-          alert(message);
+          showResultModal({
+            success: true,
+            title: '데이터 수집 완료!',
+            stats: {
+              saved: savedCount,
+              skipped: skippedCount,
+              total: policies.length
+            },
+            errors: errors
+          });
           
           // 5. 목록 및 통계 새로고침
           await loadPolicies();
@@ -1748,7 +1985,11 @@
 
         } catch (error) {
           console.error('Fetch real policies error:', error);
-          alert('❌ 데이터 가져오기 실패: ' + error.message + '\n\n콘솔에서 자세한 오류를 확인하세요.');
+          showResultModal({
+            success: false,
+            title: '데이터 가져오기 실패',
+            message: error.message + '\n\n콘솔에서 자세한 오류를 확인하세요.'
+          });
         } finally {
           btn.disabled = false;
           btn.innerHTML = '<i class="fas fa-download"></i> 실제 데이터 가져오기';

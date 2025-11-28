@@ -4213,8 +4213,14 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
     const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
     const imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
 
-    // 스타일별 기본 프롬프트
+    // 스타일별 기본 프롬프트 (플랫폼 기반 - 상세 버전)
     const styleDescriptions = {
+      insta_reels: `세로형 비율(9:16)에 최적화된 음식 영상. 트렌디하고 감각적인 색감으로 시선을 사로잡습니다. 빠른 컷 편집과 리드미컬한 전환 효과를 사용합니다. 밝고 생동감 넘치는 조명으로 음식을 더욱 매력적으로 표현합니다. 현재 유행하는 필터와 효과를 적용하여 인스타그램 피드에 어울리는 감성을 연출합니다. 클로즈업과 와이드 샷을 적절히 섞어 역동적인 구성을 만듭니다. 음식의 질감과 색감이 돋보이도록 채도를 살짝 높입니다.`,
+      tiktok: `중독성 있고 바이럴하기 좋은 음식 영상. 빠른 템포와 리드미컬한 편집으로 시청자의 시선을 사로잡습니다. 트렌디한 전환 효과와 줌인/줌아웃을 적극 활용합니다. 첫 1-2초에 강렬한 훅(hook)을 만들어 스크롤을 멈추게 합니다. 음악 비트에 맞춰 컷이 전환되는 역동적인 구성입니다. 밝고 선명한 색감, 높은 대비로 눈에 띄는 비주얼을 만듭니다. 음식이 완성되는 순간, 소스가 뿌려지는 순간 등 만족감을 주는 장면을 강조합니다. 재미있고 유쾌한 분위기, 젊은 감성의 영상입니다.`,
+      youtube_shorts: `정보 전달과 스토리텔링이 있는 음식 영상. 명확한 메시지와 구성으로 시청자에게 가치를 전달합니다. 자막이나 텍스트가 들어갈 공간을 고려한 촬영 구도를 만듭니다. 간결하면서도 핵심을 담은 편집 스타일입니다. 음식의 특징, 조리 과정, 완성품을 논리적인 순서로 보여줍니다. 깔끔하고 전문적인 느낌을 유지하면서도 친근한 분위기를 연출합니다. 시청자가 끝까지 보고 싶게 만드는 스토리 구조를 가집니다. 적당한 템포로 정보를 소화하기 쉽게 전달합니다.`,
+      business: `메뉴 소개 및 홍보용 전문 음식 영상. 신뢰감과 전문성을 주는 깔끔하고 세련된 구성입니다. 안정적인 카메라 워크와 부드러운 전환 효과를 사용합니다. 음식의 품질과 정성을 강조하는 클로즈업 샷이 포함됩니다. 레스토랑이나 카페의 브랜드 이미지에 맞는 고급스러운 색감과 조명을 사용합니다. 메뉴의 재료, 조리법의 특별함을 은은하게 드러냅니다. 고객에게 신뢰를 주고 구매 욕구를 자극하는 전문적인 영상입니다. 과하지 않으면서도 메뉴의 매력을 효과적으로 전달합니다.`,
+      portfolio: `작품성과 예술성을 강조한 최고 퀄리티의 음식 영상. 시네마틱한 촬영 기법과 영화 같은 색감 보정을 적용합니다. 느린 모션과 우아한 카메라 무브먼트로 음식의 아름다움을 극대화합니다. 조명과 구도에 세심한 주의를 기울여 예술 작품 같은 비주얼을 만듭니다. 음식의 디테일, 질감, 색감을 최상으로 표현합니다. 배경과 음식의 조화, 플레이팅의 완성도를 강조합니다. 감성적이고 몰입감 있는 분위기로 시청자에게 감동을 전달합니다. 셰프나 레스토랑의 철학과 정체성이 담긴 고품격 영상입니다.`,
+      // 기존 스타일 (하위 호환성)
       luxury: "고급스럽고 우아한 느낌, 느린 모션, 프리미엄 레스토랑 품질, 영화적인 조명, 세련된 분위기",
       fast: "역동적인 음식 영상, 빠른 편집, 트렌디한 SNS 스타일, 생동감 있는 색상, 활기찬 움직임",
       chef: "셰프의 손으로 음식을 준비하는 모습, 요리 과정 클로즈업, 전문 주방, 상세한 음식 준비, 진정성 있는 요리",
@@ -4322,8 +4328,14 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
         }
       }
 
-      // 스타일별 영어 키워드 추가 (최종 프롬프트에 명시적으로 포함)
+      // 스타일별 영어 키워드 추가 (최종 프롬프트에 명시적으로 포함 - 상세 버전)
       const styleKeywords = {
+        insta_reels: "vertical 9:16 aspect ratio optimized, trendy and stylish color grading, fast-paced rhythmic cuts, bright vibrant lighting, Instagram feed aesthetic, trendy filters and effects, dynamic composition mixing close-ups and wide shots, enhanced saturation for texture and color, engaging transitions, social media optimized",
+        tiktok: "addictive viral-worthy food video, fast tempo rhythmic editing, trendy transition effects, aggressive zoom in/out, strong hook in first 1-2 seconds, beat-synced cuts, bright vivid colors high contrast, satisfying moments like food completion and sauce drizzling, fun cheerful atmosphere, young energetic vibe",
+        youtube_shorts: "informative storytelling food video, clear messaging and structure, text and subtitle space consideration, concise essential editing, logical sequence showing features, cooking process, and final dish, clean professional yet friendly tone, engaging story structure, moderate tempo for easy information digestion",
+        business: "professional menu introduction and promotion video, clean sophisticated trustworthy composition, stable camera work smooth transitions, quality and care emphasizing close-ups, elegant color grading and lighting matching brand image, subtle highlighting of special ingredients and cooking methods, professional video that builds trust and stimulates purchase desire, effective menu appeal without being excessive",
+        portfolio: "artistic high-quality food video emphasizing craftsmanship, cinematic techniques film-like color grading, slow motion elegant camera movement, meticulous attention to lighting and composition, art-piece visual, maximum expression of food details texture and color, harmony of background and food, plating perfection emphasis, emotional immersive atmosphere, high-end video containing chef and restaurant philosophy and identity",
+        // 기존 스타일 (하위 호환성)
         luxury: "luxurious, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated",
         fast: "dynamic, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
         chef: "chef's hands preparing food, close-up cooking process, professional kitchen, authentic cooking",
@@ -4703,14 +4715,20 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
           devLog("Gemini 분석 결과:", analysis.substring(0, 200) + "...");
         } catch (geminiError) {
           devError("Gemini API 오류:", geminiError);
-          // Gemini 실패 시 기본 프롬프트 사용
-          const stylePrompts = {
-            luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
-            fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
-            chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
-            plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
-            simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
-          };
+    // Gemini 실패 시 기본 프롬프트 사용 (상세 버전)
+    const stylePrompts = {
+      insta_reels: "vertical 9:16 aspect ratio optimized food video, trendy stylish color grading, fast-paced rhythmic cuts, bright vibrant lighting, Instagram feed aesthetic, trendy filters and effects, dynamic composition mixing close-ups and wide shots, enhanced saturation for texture and color, engaging transitions, social media optimized",
+      tiktok: "addictive viral-worthy food video, fast tempo rhythmic editing, trendy transition effects, aggressive zoom in/out, strong hook in first 1-2 seconds, beat-synced cuts, bright vivid colors high contrast, satisfying moments like food completion and sauce drizzling, fun cheerful atmosphere, young energetic vibe",
+      youtube_shorts: "informative storytelling food video, clear messaging and structure, text and subtitle space consideration, concise essential editing, logical sequence showing features cooking process and final dish, clean professional yet friendly tone, engaging story structure, moderate tempo for easy information digestion",
+      business: "professional menu introduction and promotion food video, clean sophisticated trustworthy composition, stable camera work smooth transitions, quality and care emphasizing close-ups, elegant color grading and lighting matching brand image, subtle highlighting of special ingredients and cooking methods, professional video that builds trust and stimulates purchase desire, effective menu appeal without being excessive",
+      portfolio: "artistic high-quality food video emphasizing craftsmanship, cinematic techniques film-like color grading, slow motion elegant camera movement, meticulous attention to lighting and composition, art-piece visual, maximum expression of food details texture and color, harmony of background and food, plating perfection emphasis, emotional immersive atmosphere, high-end video containing chef and restaurant philosophy and identity",
+      // 기존 스타일 (하위 호환성)
+      luxury: "luxurious food presentation, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated atmosphere",
+      fast: "dynamic food video, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
+      chef: "chef's hands preparing food, close-up cooking process, professional kitchen, detailed food preparation, authentic cooking",
+      plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement, professional food styling",
+      simple: "clean food video, simple and elegant, minimalist style, natural lighting, professional quality"
+    };
           prompt = `${stylePrompts[style] || stylePrompts.simple}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video, ${duration} seconds, vertical format (9:16 aspect ratio).`;
           analysis = "Gemini 분석 실패, 기본 프롬프트 사용: " + geminiError.message;
           devLog("기본 프롬프트 사용:", prompt);
