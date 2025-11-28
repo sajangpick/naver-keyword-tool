@@ -4356,6 +4356,90 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
   }
 }
 
+// ==================== Gemini Veo 3.1 영상 생성 API ====================
+
+// Gemini Veo 3.1: Google의 영상 생성 모델
+// 참고: Veo 3.1은 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한 필요
+// 가격: Veo 3는 초당 $0.40, Veo 3 Fast는 초당 $0.15
+async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
+  try {
+    devLog("Gemini Veo 3.1 API 호출 시작:", { imageUrl, prompt, duration });
+
+    if (!GEMINI_API_KEY) {
+      throw new Error("Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경변수를 설정해주세요.");
+    }
+
+    // 참고: Veo 3.1 API 엔드포인트는 공식 문서 확인 필요
+    // 예상 엔드포인트: https://generativelanguage.googleapis.com/v1beta/models/veo-3.1:generateVideo
+    // 또는: https://ai.google.dev/api/rest/v1beta/models/veo-3.1:generateVideo
+    
+    const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1:generateVideo?key=${GEMINI_API_KEY}`;
+    
+    // 이미지 URL에서 이미지 데이터 가져오기
+    const imageResponse = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 30000,
+    });
+    
+    const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+    const imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
+
+    // Veo 3.1 API 요청 본문
+    // 참고: 실제 API 스펙은 Google 공식 문서 확인 필요
+    const requestBody = {
+      prompt: prompt || "cinematic food video, slow motion, professional lighting",
+      image: {
+        inline_data: {
+          mime_type: imageMimeType,
+          data: imageBase64,
+        },
+      },
+      duration: Math.min(Math.max(duration, 5), 8), // Veo는 5-8초 지원
+      resolution: "720p", // 또는 "1080p" (유료 계정 필요)
+      aspect_ratio: "9:16", // 쇼츠 형식 (세로)
+      include_audio: true, // 오디오 포함 (대사, 효과음, 음악)
+    };
+
+    devLog("Gemini Veo API 요청 전송 중...");
+    
+    const response = await axios.post(
+      VEO_API_URL,
+      requestBody,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 120000, // 2분 타임아웃 (영상 생성은 시간이 걸림)
+      }
+    );
+
+    if (!response.data || !response.data.video_url) {
+      throw new Error("Gemini Veo API 응답에 영상 URL이 없습니다.");
+    }
+
+    const videoUrl = response.data.video_url;
+    const jobId = response.data.job_id || null;
+    
+    devLog("Gemini Veo 영상 생성 완료:", { videoUrl, jobId });
+    
+    return { videoUrl, jobId };
+  } catch (error) {
+    devError("Gemini Veo API 오류:", error);
+    
+    // API 엔드포인트가 다르거나 접근 권한이 없는 경우
+    if (error.response) {
+      if (error.response.status === 404) {
+        throw new Error("Gemini Veo 3.1 API가 아직 공개되지 않았거나 엔드포인트가 다릅니다. Google AI Studio에서 최신 API 문서를 확인해주세요.");
+      }
+      if (error.response.status === 403) {
+        throw new Error("Gemini Veo 3.1 사용 권한이 없습니다. 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한이 필요합니다.");
+      }
+    }
+    
+    throw new Error(`Gemini Veo 영상 생성 실패: ${error.message}`);
+  }
+}
+
 // ==================== Runway API 설정 (폴백용) ====================
 
 const RUNWAY_API_KEY = process.env.RUNWAY_API_KEY || "key_8f7dd7e27cc2ed2a9bbb19893c6636fab1d008334adf301de3074d2f739f4e894440353d83e15c4bc272a78237bc201ceca2d9032ae168ae5bd97f98c1b5d2b7";
@@ -4762,14 +4846,17 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
           try {
             devLog("영상 생성 시작:", { videoId: videoData.id, imageUrl, prompt, duration });
             
-            // Runway API로 영상 생성 시도
+            // 영상 생성 시도 (우선순위: Runway → Gemini Veo)
             let videoUrl = null;
             let jobId = null;
+            let aiModel = "runway";
             
+            // 1순위: Runway API 시도
             try {
               const result = await generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5);
               videoUrl = result.videoUrl;
               jobId = result.jobId;
+              aiModel = "runway";
               devLog("Runway 영상 생성 성공:", { videoUrl, jobId });
             } catch (runwayError) {
               devError("Runway API 실패, HTTP 폴백 시도:", runwayError.message);
@@ -4779,10 +4866,22 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
                 const fallbackResult = await generateVideoWithRunwayHTTP(imageUrl, prompt, parseInt(duration) || 5);
                 videoUrl = fallbackResult.videoUrl;
                 jobId = fallbackResult.jobId;
+                aiModel = "runway-http";
                 devLog("Runway HTTP 폴백 성공:", { videoUrl, jobId });
               } catch (httpError) {
-                devError("Runway HTTP 폴백도 실패:", httpError.message);
-                throw new Error(`영상 생성 실패: ${runwayError.message}. 폴백 시도도 실패: ${httpError.message}`);
+                devError("Runway HTTP 폴백도 실패, Gemini Veo 시도:", httpError.message);
+                
+                // 2순위: Gemini Veo 3.1 시도
+                try {
+                  const veoResult = await generateVideoWithGeminiVeo(imageUrl, prompt, Math.min(parseInt(duration) || 8, 8));
+                  videoUrl = veoResult.videoUrl;
+                  jobId = veoResult.jobId;
+                  aiModel = "gemini-veo-3.1";
+                  devLog("Gemini Veo 3.1 영상 생성 성공:", { videoUrl, jobId });
+                } catch (veoError) {
+                  devError("Gemini Veo 3.1도 실패:", veoError.message);
+                  throw new Error(`모든 영상 생성 API 실패:\n- Runway: ${runwayError.message}\n- Runway HTTP: ${httpError.message}\n- Gemini Veo: ${veoError.message}`);
+                }
               }
             }
             
@@ -4797,6 +4896,7 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
                 status: "completed",
                 video_url: videoUrl,
                 job_id: jobId,
+                ai_model: aiModel, // 사용된 AI 모델 저장
                 updated_at: new Date().toISOString(),
               })
               .eq("id", videoData.id);

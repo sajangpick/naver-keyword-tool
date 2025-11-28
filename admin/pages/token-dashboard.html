@@ -610,17 +610,28 @@
             grouped[dateKey] = (grouped[dateKey] || 0) + item.tokens_used;
           });
 
-          // 날짜순으로 정렬
-          const sortedDates = Object.keys(grouped).sort();
+          // 최근 7일간의 모든 날짜 생성 (데이터가 없어도 표시)
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
           
-          // 차트 데이터 준비
-          const labels = sortedDates.map(date => {
-            const d = new Date(date);
-            return `${d.getMonth() + 1}/${d.getDate()}`;
-          });
-          const data = sortedDates.map(date => grouped[date]);
+          const dateRange = [];
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            dateRange.push(dateKey);
+          }
 
-          console.log('📊 차트 데이터:', { labels, data });
+          // 차트 데이터 준비 (최근 7일 기준)
+          const labels = dateRange.map(dateKey => {
+            const d = new Date(dateKey);
+            const dayName = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+            return `${d.getMonth() + 1}/${d.getDate()}(${dayName})`;
+          });
+          
+          const data = dateRange.map(dateKey => grouped[dateKey] || 0);
+
+          console.log('📊 차트 데이터 (최근 7일):', { labels, data });
 
           // 차트 업데이트 또는 생성
           if (chartInstance) {
@@ -640,7 +651,13 @@
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.4,
-                borderWidth: 2
+                borderWidth: 3,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                fill: true
               }]
             },
             options: {
@@ -656,6 +673,11 @@
                   bodyFont: {
                     weight: 'bold',
                     size: 13
+                  },
+                  callbacks: {
+                    label: function(context) {
+                      return `토큰 사용량: ${context.parsed.y.toLocaleString('ko-KR')}개`;
+                    }
                   }
                 }
               },
@@ -665,11 +687,14 @@
                     color: '#000000',
                     font: {
                       weight: 'bold',
-                      size: 12
-                    }
+                      size: 11
+                    },
+                    maxRotation: 0,
+                    minRotation: 0
                   },
                   grid: {
-                    color: 'rgba(0, 0, 0, 0.1)'
+                    color: 'rgba(0, 0, 0, 0.1)',
+                    display: true
                   }
                 },
                 y: {
@@ -682,10 +707,12 @@
                     },
                     callback: function(value) {
                       return value.toLocaleString('ko-KR');
-                    }
+                    },
+                    stepSize: 5000
                   },
                   grid: {
-                    color: 'rgba(0, 0, 0, 0.1)'
+                    color: 'rgba(0, 0, 0, 0.1)',
+                    display: true
                   }
                 }
               }
@@ -701,6 +728,17 @@
       // ==================== 상위 사용자 로드 ====================
 
       async function loadTopUsers(period) {
+        const tbody = document.getElementById('topUsersTable');
+        
+        // 로딩 상태 표시
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="loading">
+              <i class="fas fa-spinner fa-spin"></i> 데이터 로딩 중...
+            </td>
+          </tr>
+        `;
+
         try {
           // 기간별 시작일 계산
           let startDate = new Date();
@@ -721,21 +759,38 @@
           // 기간별 토큰 사용량 집계
           const { data: usageData, error: usageError } = await supabase
             .from('token_usage')
-            .select('user_id, tokens_used')
-            .gte('used_at', startDate.toISOString());
+            .select('user_id, tokens_used, used_at')
+            .gte('used_at', startDate.toISOString())
+            .order('used_at', { ascending: false });
 
           if (usageError) {
             console.error('❌ 토큰 사용량 조회 오류:', usageError);
             throw usageError;
           }
 
+          console.log('📊 조회된 토큰 사용 기록 수:', usageData?.length || 0);
+
+          if (!usageData || usageData.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" class="empty-state">
+                  <i class="fas fa-users"></i>
+                  <div>해당 기간에 토큰 사용 기록이 없습니다</div>
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
           // 사용자별로 토큰 사용량 합계 계산
           const userUsageMap = {};
-          usageData?.forEach(item => {
+          usageData.forEach(item => {
             if (item.user_id) {
-              userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + item.tokens_used;
+              userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + (item.tokens_used || 0);
             }
           });
+
+          console.log('📊 사용자별 집계 완료:', Object.keys(userUsageMap).length, '명');
 
           // 사용량 순으로 정렬
           const sortedUsers = Object.entries(userUsageMap)
@@ -744,7 +799,6 @@
             .slice(0, 10); // 상위 10명
 
           if (sortedUsers.length === 0) {
-            const tbody = document.getElementById('topUsersTable');
             tbody.innerHTML = `
               <tr>
                 <td colspan="7" class="empty-state">
@@ -758,30 +812,45 @@
 
           // 사용자 정보와 구독 정보 조회
           const userIds = sortedUsers.map(u => u.userId);
-          const { data: profiles } = await supabase
+          
+          const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('id, email')
             .in('id', userIds);
 
-          const { data: cycles } = await supabase
+          if (profileError) {
+            console.error('❌ 프로필 조회 오류:', profileError);
+          }
+
+          const { data: cycles, error: cycleError } = await supabase
             .from('subscription_cycle')
             .select('user_id, user_type, monthly_token_limit, status')
             .in('user_id', userIds)
             .eq('status', 'active');
 
+          if (cycleError) {
+            console.error('❌ 구독 정보 조회 오류:', cycleError);
+          }
+
+          console.log('📊 프로필 조회:', profiles?.length || 0, '명');
+          console.log('📊 구독 정보 조회:', cycles?.length || 0, '명');
+
           // 프로필과 구독 정보를 맵으로 변환
           const profileMap = {};
-          profiles?.forEach(p => {
-            profileMap[p.id] = p;
-          });
+          if (profiles) {
+            profiles.forEach(p => {
+              profileMap[p.id] = p;
+            });
+          }
 
           const cycleMap = {};
-          cycles?.forEach(c => {
-            cycleMap[c.user_id] = c;
-          });
+          if (cycles) {
+            cycles.forEach(c => {
+              cycleMap[c.user_id] = c;
+            });
+          }
 
           // 테이블 렌더링
-          const tbody = document.getElementById('topUsersTable');
           tbody.innerHTML = sortedUsers.map((user, index) => {
             const profile = profileMap[user.userId];
             const cycle = cycleMap[user.userId];
@@ -792,9 +861,9 @@
             return `
               <tr>
                 <td><strong>${index + 1}</strong></td>
-                <td>${profile?.email || 'Unknown'}</td>
+                <td>${profile?.email || user.userId.substring(0, 8) + '...'}</td>
                 <td><span class="badge info">${cycle ? getMembershipName(cycle.user_type) : '-'}</span></td>
-                <td>${user.totalUsage.toLocaleString('ko-KR')}</td>
+                <td><strong>${user.totalUsage.toLocaleString('ko-KR')}</strong></td>
                 <td>${limit.toLocaleString('ko-KR')}</td>
                 <td>
                   <div style="display: flex; align-items: center; gap: 8px;">
@@ -809,15 +878,14 @@
             `;
           }).join('');
 
-          console.log('📊 상위 사용자 로드 완료:', sortedUsers.length, '명');
+          console.log('✅ 상위 사용자 로드 완료:', sortedUsers.length, '명');
         } catch (error) {
           console.error('❌ 상위 사용자 로드 실패:', error);
-          const tbody = document.getElementById('topUsersTable');
           tbody.innerHTML = `
             <tr>
               <td colspan="7" class="empty-state">
                 <i class="fas fa-exclamation-triangle"></i>
-                <div>데이터를 불러올 수 없습니다</div>
+                <div>데이터를 불러올 수 없습니다: ${error.message}</div>
               </td>
             </tr>
           `;
