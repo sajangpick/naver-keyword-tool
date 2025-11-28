@@ -4631,7 +4631,13 @@ async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
 
 // ==================== 쇼츠 영상 생성 API ====================
 
-app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
+app.post("/api/shorts/generate", upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'image2', maxCount: 1 },
+  { name: 'image3', maxCount: 1 },
+  { name: 'image4', maxCount: 1 },
+  { name: 'image5', maxCount: 1 }
+]), async (req, res) => {
   try {
     const userId = req.headers["user-id"] || req.body.userId;
     ensureUserId(userId);
@@ -4652,9 +4658,12 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
         menuPrice = "",
         music = "auto",
         duration = "10",
+        imageCount = "1",
       } = req.body;
 
-        if (!req.file) {
+        // 메인 이미지 확인 (첫 번째 이미지)
+        const mainImage = req.files && req.files['image'] && req.files['image'][0];
+        if (!mainImage) {
           return res.status(400).json({
             success: false,
             error: "이미지 파일이 필요합니다.",
@@ -4675,15 +4684,15 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
           });
         }
 
-        // 이미지를 Supabase Storage에 업로드
-        const fileExt = req.file.originalname.split(".").pop();
+        // 메인 이미지를 Supabase Storage에 업로드 (첫 번째 이미지만 사용)
+        const fileExt = mainImage.originalname.split(".").pop();
         const fileName = `${userId}/${Date.now()}.${fileExt}`;
         const filePath = `shorts-images/${fileName}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("uploads")
-          .upload(filePath, req.file.buffer, {
-            contentType: req.file.mimetype,
+          .upload(filePath, mainImage.buffer, {
+            contentType: mainImage.mimetype,
             upsert: false,
           });
 
@@ -4697,6 +4706,41 @@ app.post("/api/shorts/generate", upload.single("image"), async (req, res) => {
           .from("uploads")
           .getPublicUrl(filePath);
         const imageUrl = urlData?.publicUrl || "";
+
+        // 추가 이미지들도 업로드 (선택적, 나중에 사용 가능)
+        const additionalImages = [];
+        const imageCountNum = parseInt(imageCount) || 1;
+        for (let i = 2; i <= imageCountNum && i <= 5; i++) {
+          const fieldName = `image${i}`;
+          if (req.files && req.files[fieldName] && req.files[fieldName][0]) {
+            const additionalFile = req.files[fieldName][0];
+            const additionalExt = additionalFile.originalname.split(".").pop();
+            const additionalFileName = `${userId}/${Date.now()}_${i}.${additionalExt}`;
+            const additionalFilePath = `shorts-images/${additionalFileName}`;
+            
+            try {
+              const { data: addUploadData, error: addUploadError } = await supabase.storage
+                .from("uploads")
+                .upload(additionalFilePath, additionalFile.buffer, {
+                  contentType: additionalFile.mimetype,
+                  upsert: false,
+                });
+              
+              if (!addUploadError && addUploadData) {
+                const { data: addUrlData } = supabase.storage
+                  .from("uploads")
+                  .getPublicUrl(additionalFilePath);
+                if (addUrlData?.publicUrl) {
+                  additionalImages.push(addUrlData.publicUrl);
+                }
+              }
+            } catch (err) {
+              devError(`추가 이미지 ${i} 업로드 실패:`, err);
+            }
+          }
+        }
+        
+        devLog(`이미지 업로드 완료: 메인 1장, 추가 ${additionalImages.length}장`);
 
         // Gemini API로 이미지 분석 및 영상 생성 프롬프트 생성
         devLog("Gemini로 이미지 분석 및 프롬프트 생성 시작...");

@@ -759,8 +759,9 @@
 
         /* 음악 선택 */
         .music-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 16px;
         }
 
@@ -771,6 +772,8 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
+            min-width: 120px;
+            flex: 0 0 auto;
         }
 
         .music-card:hover {
@@ -1357,51 +1360,44 @@
                     </div>
                 </div>
 
-                <!-- 기타 설정 (아코디언) -->
-                <div class="settings-accordion">
-                    <div class="accordion-header" onclick="toggleAccordion('musicAccordion')">
-                        <div class="accordion-title">
-                            <i class="fa-solid fa-music"></i> 배경음악 선택
+                <!-- 배경음악 선택 -->
+                <div class="menu-section">
+                    <h3 class="section-title">
+                        <i class="fa-solid fa-music"></i>
+                        배경음악 선택
+                    </h3>
+                    <div class="music-grid">
+                        <div class="music-card selected" data-music="auto" onclick="selectMusic('auto')">
+                            <div class="music-icon">🤖</div>
+                            <div class="music-name">자동 선택</div>
                         </div>
-                        <i class="fa-solid fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-content" id="musicAccordion">
-                        <div class="music-grid">
-                            <div class="music-card selected" data-music="auto" onclick="selectMusic('auto')">
-                                <div class="music-icon">🤖</div>
-                                <div class="music-name">자동 선택</div>
-                            </div>
-                            <div class="music-card" data-music="upbeat" onclick="selectMusic('upbeat')">
-                                <div class="music-icon">🎵</div>
-                                <div class="music-name">경쾌한</div>
-                            </div>
-                            <div class="music-card" data-music="elegant" onclick="selectMusic('elegant')">
-                                <div class="music-icon">🎼</div>
-                                <div class="music-name">우아한</div>
-                            </div>
-                            <div class="music-card" data-music="trendy" onclick="selectMusic('trendy')">
-                                <div class="music-icon">🎸</div>
-                                <div class="music-name">트렌디</div>
-                            </div>
-                            <div class="music-card" data-music="calm" onclick="selectMusic('calm')">
-                                <div class="music-icon">🎹</div>
-                                <div class="music-name">차분한</div>
-                            </div>
+                        <div class="music-card" data-music="upbeat" onclick="selectMusic('upbeat')">
+                            <div class="music-icon">🎵</div>
+                            <div class="music-name">경쾌한</div>
+                        </div>
+                        <div class="music-card" data-music="elegant" onclick="selectMusic('elegant')">
+                            <div class="music-icon">🎼</div>
+                            <div class="music-name">우아한</div>
+                        </div>
+                        <div class="music-card" data-music="trendy" onclick="selectMusic('trendy')">
+                            <div class="music-icon">🎸</div>
+                            <div class="music-name">트렌디</div>
+                        </div>
+                        <div class="music-card" data-music="calm" onclick="selectMusic('calm')">
+                            <div class="music-icon">🎹</div>
+                            <div class="music-name">차분한</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="settings-accordion">
-                    <div class="accordion-header" onclick="toggleAccordion('durationAccordion')">
-                        <div class="accordion-title">
-                            <i class="fa-solid fa-clock"></i> 영상 길이
-                        </div>
-                        <i class="fa-solid fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-content" id="durationAccordion">
-                        <div class="duration-buttons" id="durationButtons">
-                            <!-- JavaScript로 동적 생성 -->
-                        </div>
+                <!-- 영상 길이 -->
+                <div class="menu-section">
+                    <h3 class="section-title">
+                        <i class="fa-solid fa-clock"></i>
+                        영상 길이
+                    </h3>
+                    <div class="duration-buttons" id="durationButtons">
+                        <!-- JavaScript로 동적 생성 -->
                     </div>
                 </div>
 
@@ -1477,31 +1473,31 @@
             insta_reels: {
                 emoji: '📱',
                 name: '인스타 릴스',
-                recommendedDurations: [15, 30],
+                recommendedDurations: [15, 20],
                 loadingMessage: 'Instagram Reels 스타일로 영상을 제작 중입니다...'
             },
             tiktok: {
                 emoji: '🎵',
                 name: '틱톡',
-                recommendedDurations: [15],
+                recommendedDurations: [10],
                 loadingMessage: 'TikTok 트렌드에 맞춰 편집 중입니다...'
             },
             youtube_shorts: {
                 emoji: '📺',
                 name: '유튜브 쇼츠',
-                recommendedDurations: [30, 60],
+                recommendedDurations: [20, 25],
                 loadingMessage: 'YouTube Shorts 최적화 중입니다...'
             },
             business: {
                 emoji: '💼',
                 name: '비즈니스',
-                recommendedDurations: [30],
+                recommendedDurations: [20],
                 loadingMessage: '비즈니스용 전문 영상을 만들고 있습니다...'
             },
             portfolio: {
                 emoji: '🎨',
                 name: '포트폴리오',
-                recommendedDurations: [60],
+                recommendedDurations: [25],
                 loadingMessage: '포트폴리오 퀄리티로 렌더링 중입니다...'
             }
         };
@@ -1595,7 +1591,7 @@
         function updateDurationButtons() {
             const container = document.getElementById('durationButtons');
             const info = platformInfo[selectedStyle];
-            const durations = [15, 30, 60];
+            const durations = [10, 15, 20, 25];
             
             container.innerHTML = durations.map(duration => {
                 const isRecommended = info?.recommendedDurations?.includes(duration);
