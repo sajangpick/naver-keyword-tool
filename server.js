@@ -3586,7 +3586,6 @@ app.put('/api/admin/members/:id', async (req, res) => {
     // if (role) {
     //   updateData.role = role;
     // }
-    }
     
     // 사용량 초기화 옵션
     if (reset_usage) {
@@ -4470,9 +4469,10 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5) {
 
     // Gen-4 Image to Video 또는 Gen-3 모델 사용
     // 공식 문서: https://docs.dev.runwayml.com/
+    // 허용된 모델: "gen3a_turbo", "gen4_turbo", "gen4", "gen4.5", "veo3", "veo3.1", "veo3.1_fast"
     const task = await runwayClient.imageToVideo
       .create({
-        model: "gen4_aleph", // 또는 "gen3_alpha_turbo" 등 사용 가능한 모델
+        model: "gen4", // 허용된 모델: gen4, gen4_turbo, gen4.5, veo3, veo3.1, veo3.1_fast
         imageUrl: imageUrl,
         promptText: prompt || "cinematic food video, slow motion, professional lighting",
         duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
