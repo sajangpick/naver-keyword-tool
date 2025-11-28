@@ -1057,6 +1057,13 @@
         gap: 8px;
         margin-bottom: 20px;
         padding: 0 4px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .view-tabs-group {
+        display: flex;
+        gap: 8px;
       }
 
       .view-tab {
@@ -1072,6 +1079,11 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        white-space: nowrap;
+      }
+
+      .view-tab i {
+        margin-right: 6px;
       }
 
       .view-tab:hover {
@@ -1090,13 +1102,63 @@
         background: var(--primary-dark);
       }
 
+      /* 출처 필터 버튼 스타일 (view-tab과 동일하게 통일) */
+      .source-filter-group {
+        display: flex;
+        gap: 8px;
+        margin-left: 12px;
+        flex-wrap: wrap;
+      }
+
+      .source-filter-btn {
+        padding: 10px 20px;
+        border: 2px solid var(--border);
+        background: white;
+        color: var(--text-primary);
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .source-filter-btn:hover {
+        background: var(--bg);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .source-filter-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      .source-filter-btn.active:hover {
+        background: var(--primary-dark);
+      }
+
       @media (max-width: 768px) {
         .view-tabs {
           gap: 6px;
           margin-bottom: 16px;
         }
+
+        .view-tabs-group {
+          gap: 6px;
+        }
+
+        .source-filter-group {
+          gap: 6px;
+          margin-left: 8px;
+        }
         
-        .view-tab {
+        .view-tab,
+        .source-filter-btn {
           padding: 8px 16px;
           font-size: 13px;
         }
@@ -1107,8 +1169,18 @@
           gap: 4px;
           margin-bottom: 12px;
         }
+
+        .view-tabs-group {
+          gap: 4px;
+        }
+
+        .source-filter-group {
+          gap: 4px;
+          margin-left: 6px;
+        }
         
-        .view-tab {
+        .view-tab,
+        .source-filter-btn {
           padding: 7px 12px;
           font-size: 12px;
         }
@@ -1901,38 +1973,38 @@
       </div>
 
       <!-- 전체 정책 탭 -->
-      <div class="view-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; padding: 0 4px; align-items: center; flex-wrap: wrap;">
-        <div style="display: flex; gap: 8px;">
-          <button class="view-tab active" id="allPoliciesTab" onclick="showAllPolicies()" style="padding: 10px 20px; border: 2px solid var(--primary); background: var(--primary); color: white; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-            <i class="fas fa-list" style="margin-right: 6px;"></i> 전체 정책
+      <div class="view-tabs">
+        <div class="view-tabs-group">
+          <button class="view-tab active" id="allPoliciesTab" onclick="showAllPolicies()">
+            <i class="fas fa-list"></i> 전체 정책
           </button>
-          <button class="view-tab" id="bookmarkedPoliciesTab" onclick="showBookmarkedPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-            <i class="fas fa-bookmark" style="margin-right: 6px;"></i> 저장된 정책
+          <button class="view-tab" id="bookmarkedPoliciesTab" onclick="showBookmarkedPolicies()">
+            <i class="fas fa-bookmark"></i> 저장된 정책
           </button>
-          <button class="view-tab" id="myPoliciesTab" onclick="showMyPolicies()" style="padding: 10px 20px; border: 2px solid var(--border); background: white; color: var(--text-primary); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-            <i class="fas fa-check-circle" style="margin-right: 6px;"></i> MY정책
+          <button class="view-tab" id="myPoliciesTab" onclick="showMyPolicies()">
+            <i class="fas fa-check-circle"></i> MY정책
           </button>
         </div>
-        <div style="display: flex; gap: 6px; margin-left: 12px; flex-wrap: wrap;">
-          <button class="source-filter-btn" data-source="kstartup" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+        <div class="source-filter-group">
+          <button class="source-filter-btn" data-source="kstartup" onclick="filterBySource(this)">
             K-Startup
           </button>
-          <button class="source-filter-btn" data-source="bizinfo" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button class="source-filter-btn" data-source="bizinfo" onclick="filterBySource(this)">
             기업마당
           </button>
-          <button class="source-filter-btn" data-source="sbiz" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button class="source-filter-btn" data-source="sbiz" onclick="filterBySource(this)">
             소상공인마당
           </button>
-          <button class="source-filter-btn" data-source="public" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button class="source-filter-btn" data-source="public" onclick="filterBySource(this)">
             공공기관
           </button>
-          <button class="source-filter-btn" data-source="agency" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button class="source-filter-btn" data-source="agency" onclick="filterBySource(this)">
             진흥기관
           </button>
-          <button class="source-filter-btn" data-source="local" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button class="source-filter-btn" data-source="local" onclick="filterBySource(this)">
             지자체
           </button>
-          <button class="source-filter-btn" data-source="private" onclick="filterBySource(this)" style="padding: 8px 16px; border: 1px solid var(--border); background: white; color: var(--text-primary); border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+          <button class="source-filter-btn" data-source="private" onclick="filterBySource(this)">
             민간
           </button>
         </div>
@@ -2114,23 +2186,14 @@
         
         if (allPoliciesTab) {
           allPoliciesTab.classList.add('active');
-          allPoliciesTab.style.background = 'var(--primary)';
-          allPoliciesTab.style.color = 'white';
-          allPoliciesTab.style.borderColor = 'var(--primary)';
         }
         
         if (bookmarkedPoliciesTab) {
           bookmarkedPoliciesTab.classList.remove('active');
-          bookmarkedPoliciesTab.style.background = 'white';
-          bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
-          bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
         }
         
         if (myPoliciesTab) {
           myPoliciesTab.classList.remove('active');
-          myPoliciesTab.style.background = 'white';
-          myPoliciesTab.style.color = 'var(--text-primary)';
-          myPoliciesTab.style.borderColor = 'var(--border)';
         }
       }
 
@@ -2420,27 +2483,18 @@
         // 탭 스타일 업데이트
         const allPoliciesTab = document.getElementById('allPoliciesTab');
         const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
         
         if (allPoliciesTab) {
           allPoliciesTab.classList.add('active');
-          allPoliciesTab.style.background = 'var(--primary)';
-          allPoliciesTab.style.color = 'white';
-          allPoliciesTab.style.borderColor = 'var(--primary)';
         }
         
         if (bookmarkedPoliciesTab) {
           bookmarkedPoliciesTab.classList.remove('active');
-          bookmarkedPoliciesTab.style.background = 'white';
-          bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
-          bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
         }
         
-        const myPoliciesTab = document.getElementById('myPoliciesTab');
         if (myPoliciesTab) {
           myPoliciesTab.classList.remove('active');
-          myPoliciesTab.style.background = 'white';
-          myPoliciesTab.style.color = 'var(--text-primary)';
-          myPoliciesTab.style.borderColor = 'var(--border)';
         }
         
         // 정책 목록 로드 (로딩 화면 없이)
@@ -2491,27 +2545,18 @@
         // 탭 스타일 업데이트
         const allPoliciesTab = document.getElementById('allPoliciesTab');
         const bookmarkedPoliciesTab = document.getElementById('bookmarkedPoliciesTab');
+        const myPoliciesTab = document.getElementById('myPoliciesTab');
         
         if (bookmarkedPoliciesTab) {
           bookmarkedPoliciesTab.classList.add('active');
-          bookmarkedPoliciesTab.style.background = 'var(--primary)';
-          bookmarkedPoliciesTab.style.color = 'white';
-          bookmarkedPoliciesTab.style.borderColor = 'var(--primary)';
         }
         
         if (allPoliciesTab) {
           allPoliciesTab.classList.remove('active');
-          allPoliciesTab.style.background = 'white';
-          allPoliciesTab.style.color = 'var(--text-primary)';
-          allPoliciesTab.style.borderColor = 'var(--border)';
         }
         
-        const myPoliciesTab = document.getElementById('myPoliciesTab');
         if (myPoliciesTab) {
           myPoliciesTab.classList.remove('active');
-          myPoliciesTab.style.background = 'white';
-          myPoliciesTab.style.color = 'var(--text-primary)';
-          myPoliciesTab.style.borderColor = 'var(--border)';
         }
         
         // 클라이언트 사이드에서 저장된 정책만 필터링 (로딩 화면 없이)
@@ -2572,23 +2617,14 @@
         
         if (myPoliciesTab) {
           myPoliciesTab.classList.add('active');
-          myPoliciesTab.style.background = 'var(--primary)';
-          myPoliciesTab.style.color = 'white';
-          myPoliciesTab.style.borderColor = 'var(--primary)';
         }
         
         if (allPoliciesTab) {
           allPoliciesTab.classList.remove('active');
-          allPoliciesTab.style.background = 'white';
-          allPoliciesTab.style.color = 'var(--text-primary)';
-          allPoliciesTab.style.borderColor = 'var(--border)';
         }
         
         if (bookmarkedPoliciesTab) {
           bookmarkedPoliciesTab.classList.remove('active');
-          bookmarkedPoliciesTab.style.background = 'white';
-          bookmarkedPoliciesTab.style.color = 'var(--text-primary)';
-          bookmarkedPoliciesTab.style.borderColor = 'var(--border)';
         }
         
         // 클라이언트 사이드에서 신청완료한 정책만 필터링 (로딩 화면 없이)
@@ -2761,15 +2797,13 @@
 
       // 데이터 출처 필터
       function filterBySource(element) {
+        // 모든 출처 필터 버튼에서 active 클래스 제거
         document.querySelectorAll('.source-filter-btn').forEach(btn => {
-          btn.style.background = 'white';
-          btn.style.color = 'var(--text-primary)';
-          btn.style.borderColor = 'var(--border)';
+          btn.classList.remove('active');
         });
         
-        element.style.background = 'var(--primary)';
-        element.style.color = 'white';
-        element.style.borderColor = 'var(--primary)';
+        // 클릭한 버튼에 active 클래스 추가
+        element.classList.add('active');
         
         currentSource = element.dataset.source;
         loadPolicies(1);
