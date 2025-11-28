@@ -464,6 +464,97 @@
         color: var(--text-secondary);
         margin-top: 4px;
       }
+
+      /* 확인 모달 스타일 */
+      .confirm-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .confirm-modal.active {
+        display: flex;
+      }
+
+      .confirm-modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 500px;
+        padding: 32px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transform: translateY(-20px);
+        animation: modalSlideIn 0.3s ease-out forwards;
+      }
+
+      @keyframes modalSlideIn {
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      .confirm-modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .confirm-modal-question {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text);
+      }
+
+      .confirm-modal-description {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+        line-height: 1.6;
+      }
+
+      .confirm-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+
+      .confirm-btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        font-size: 14px;
+      }
+
+      .confirm-btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .confirm-btn-primary:hover {
+        background: #02b350;
+      }
+
+      .confirm-btn-secondary {
+        background: white;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .confirm-btn-secondary:hover {
+        background: var(--bg);
+      }
     </style>
   </head>
   <body>
@@ -709,6 +800,19 @@
             <button type="submit" class="btn btn-primary">저장</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- 확인 모달 -->
+    <div class="confirm-modal" id="confirmModal">
+      <div class="confirm-modal-content">
+        <div class="confirm-modal-title">www.sajangpick.co.kr 내용:</div>
+        <div class="confirm-modal-question">실제 정부 정책 데이터를 가져오시겠습니까?</div>
+        <div class="confirm-modal-description">공공데이터포털과 정책브리핑에서 실시간 데이터를 수집합니다.</div>
+        <div class="confirm-modal-actions">
+          <button class="confirm-btn confirm-btn-primary" id="confirmBtn">확인</button>
+          <button class="confirm-btn confirm-btn-secondary" id="cancelBtn">취소</button>
+        </div>
       </div>
     </div>
 
@@ -1331,9 +1435,47 @@
         }
       }
 
+      // 확인 모달 열기
+      function openConfirmModal() {
+        return new Promise((resolve) => {
+          const modal = document.getElementById('confirmModal');
+          const confirmBtn = document.getElementById('confirmBtn');
+          const cancelBtn = document.getElementById('cancelBtn');
+          
+          modal.classList.add('active');
+          
+          const handleConfirm = () => {
+            modal.classList.remove('active');
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            resolve(true);
+          };
+          
+          const handleCancel = () => {
+            modal.classList.remove('active');
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            resolve(false);
+          };
+          
+          confirmBtn.addEventListener('click', handleConfirm);
+          cancelBtn.addEventListener('click', handleCancel);
+          
+          // ESC 키로 닫기
+          const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+              handleCancel();
+              document.removeEventListener('keydown', handleEsc);
+            }
+          };
+          document.addEventListener('keydown', handleEsc);
+        });
+      }
+
       // 실제 데이터 가져오기
       async function fetchRealPolicies() {
-        if (!confirm('실제 정부 정책 데이터를 가져오시겠습니까?\n\n공공데이터포털과 정책브리핑에서 실시간 데이터를 수집합니다.')) {
+        const confirmed = await openConfirmModal();
+        if (!confirmed) {
           return;
         }
 
