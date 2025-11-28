@@ -404,7 +404,17 @@
             <h2 class="chart-title">
               <i class="fas fa-trophy" style="color: #f59e0b; margin-right: 8px;"></i>
               상위 토큰 사용자
+              <span id="topUsersPeriodInfo" style="font-size: 14px; color: #6b7280; font-weight: normal; margin-left: 8px;"></span>
             </h2>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div class="filter-item" style="margin: 0;">
+                <label class="filter-label" style="margin-bottom: 4px;">집계 방식</label>
+                <select class="filter-select" id="topUsersGroupBy" onchange="loadTopUsers(document.getElementById('periodFilter').value)" style="min-width: 120px;">
+                  <option value="day">일별</option>
+                  <option value="month" selected>월별</option>
+                </select>
+              </div>
+            </div>
           </div>
           <table class="data-table">
             <thead>
@@ -767,6 +777,7 @@
 
       async function loadTopUsers(period) {
         const tbody = document.getElementById('topUsersTable');
+        const groupBy = document.getElementById('topUsersGroupBy')?.value || 'month';
         
         // 로딩 상태 표시
         tbody.innerHTML = `
@@ -778,21 +789,29 @@
         `;
 
         try {
-          // 기간별 시작일 계산
+          // 집계 방식에 따라 시작일 계산
           let startDate = new Date();
-          if (period === 'today') {
-            startDate.setHours(0, 0, 0, 0);
-          } else if (period === 'week') {
-            startDate.setDate(startDate.getDate() - 7);
-            startDate.setHours(0, 0, 0, 0);
-          } else if (period === 'month') {
+          
+          if (groupBy === 'month') {
+            // 월별: 이번 달 1일부터
             startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
             startDate.setHours(0, 0, 0, 0);
           } else {
-            startDate = new Date('2025-01-01');
+            // 일별: 선택한 기간에 따라
+            if (period === 'today') {
+              startDate.setHours(0, 0, 0, 0);
+            } else if (period === 'week') {
+              startDate.setDate(startDate.getDate() - 7);
+              startDate.setHours(0, 0, 0, 0);
+            } else if (period === 'month') {
+              startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+              startDate.setHours(0, 0, 0, 0);
+            } else {
+              startDate = new Date('2025-01-01');
+            }
           }
 
-          console.log('📊 상위 사용자 기간 필터:', period, '시작일:', startDate.toISOString());
+          console.log('📊 상위 사용자 집계 방식:', groupBy, '기간 필터:', period, '시작일:', startDate.toISOString());
 
           // 기간별 토큰 사용량 집계
           const { data: usageData, error: usageError } = await supabase
@@ -820,13 +839,30 @@
             return;
           }
 
-          // 사용자별로 토큰 사용량 합계 계산
+          // 집계 방식에 따라 사용자별 토큰 사용량 합계 계산
           const userUsageMap = {};
-          usageData.forEach(item => {
-            if (item.user_id) {
-              userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + (item.tokens_used || 0);
-            }
-          });
+          
+          if (groupBy === 'month') {
+            // 월별: 이번 달 데이터만 집계
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            usageData.forEach(item => {
+              if (item.user_id) {
+                const itemDate = new Date(item.used_at);
+                if (itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear) {
+                  userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + (item.tokens_used || 0);
+                }
+              }
+            });
+          } else {
+            // 일별: 선택한 기간의 모든 데이터 집계
+            usageData.forEach(item => {
+              if (item.user_id) {
+                userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + (item.tokens_used || 0);
+              }
+            });
+          }
 
           console.log('📊 사용자별 집계 완료:', Object.keys(userUsageMap).length, '명');
 
@@ -886,6 +922,27 @@
             cycles.forEach(c => {
               cycleMap[c.user_id] = c;
             });
+          }
+
+          // 집계 기간 정보 표시
+          const periodInfoEl = document.getElementById('topUsersPeriodInfo');
+          if (periodInfoEl) {
+            if (groupBy === 'month') {
+              const now = new Date();
+              periodInfoEl.textContent = `(${now.getFullYear()}년 ${now.getMonth() + 1}월 기준)`;
+            } else {
+              let periodText = '';
+              if (period === 'today') {
+                periodText = '오늘';
+              } else if (period === 'week') {
+                periodText = '최근 7일';
+              } else if (period === 'month') {
+                periodText = '이번 달';
+              } else {
+                periodText = '전체';
+              }
+              periodInfoEl.textContent = `(${periodText} 기준)`;
+            }
           }
 
           // 테이블 렌더링

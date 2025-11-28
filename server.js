@@ -4846,41 +4846,41 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
           try {
             devLog("영상 생성 시작:", { videoId: videoData.id, imageUrl, prompt, duration });
             
-            // 영상 생성 시도 (우선순위: Runway → Gemini Veo)
+            // 영상 생성 시도 (우선순위: Gemini Veo → Runway)
             let videoUrl = null;
             let jobId = null;
-            let aiModel = "runway";
+            let aiModel = "gemini-veo-3.1";
             
-            // 1순위: Runway API 시도
+            // 1순위: Gemini Veo 3.1 시도 (제미나이 키 사용)
             try {
-              const result = await generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5);
-              videoUrl = result.videoUrl;
-              jobId = result.jobId;
-              aiModel = "runway";
-              devLog("Runway 영상 생성 성공:", { videoUrl, jobId });
-            } catch (runwayError) {
-              devError("Runway API 실패, HTTP 폴백 시도:", runwayError.message);
+              const veoResult = await generateVideoWithGeminiVeo(imageUrl, prompt, Math.min(parseInt(duration) || 8, 8));
+              videoUrl = veoResult.videoUrl;
+              jobId = veoResult.jobId;
+              aiModel = "gemini-veo-3.1";
+              devLog("✅ Gemini Veo 3.1 영상 생성 성공:", { videoUrl, jobId });
+            } catch (veoError) {
+              devError("Gemini Veo 3.1 실패, Runway API 시도:", veoError.message);
               
-              // Runway SDK 실패 시 HTTP API로 폴백 시도
+              // 2순위: Runway API 시도 (폴백)
               try {
-                const fallbackResult = await generateVideoWithRunwayHTTP(imageUrl, prompt, parseInt(duration) || 5);
-                videoUrl = fallbackResult.videoUrl;
-                jobId = fallbackResult.jobId;
-                aiModel = "runway-http";
-                devLog("Runway HTTP 폴백 성공:", { videoUrl, jobId });
-              } catch (httpError) {
-                devError("Runway HTTP 폴백도 실패, Gemini Veo 시도:", httpError.message);
+                const result = await generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5);
+                videoUrl = result.videoUrl;
+                jobId = result.jobId;
+                aiModel = "runway";
+                devLog("Runway 영상 생성 성공 (폴백):", { videoUrl, jobId });
+              } catch (runwayError) {
+                devError("Runway API 실패, HTTP 폴백 시도:", runwayError.message);
                 
-                // 2순위: Gemini Veo 3.1 시도
+                // 3순위: Runway HTTP API 폴백 시도
                 try {
-                  const veoResult = await generateVideoWithGeminiVeo(imageUrl, prompt, Math.min(parseInt(duration) || 8, 8));
-                  videoUrl = veoResult.videoUrl;
-                  jobId = veoResult.jobId;
-                  aiModel = "gemini-veo-3.1";
-                  devLog("Gemini Veo 3.1 영상 생성 성공:", { videoUrl, jobId });
-                } catch (veoError) {
-                  devError("Gemini Veo 3.1도 실패:", veoError.message);
-                  throw new Error(`모든 영상 생성 API 실패:\n- Runway: ${runwayError.message}\n- Runway HTTP: ${httpError.message}\n- Gemini Veo: ${veoError.message}`);
+                  const fallbackResult = await generateVideoWithRunwayHTTP(imageUrl, prompt, parseInt(duration) || 5);
+                  videoUrl = fallbackResult.videoUrl;
+                  jobId = fallbackResult.jobId;
+                  aiModel = "runway-http";
+                  devLog("Runway HTTP 폴백 성공:", { videoUrl, jobId });
+                } catch (httpError) {
+                  devError("모든 영상 생성 API 실패:", httpError.message);
+                  throw new Error(`모든 영상 생성 API 실패:\n- Gemini Veo: ${veoError.message}\n- Runway: ${runwayError.message}\n- Runway HTTP: ${httpError.message}`);
                 }
               }
             }
