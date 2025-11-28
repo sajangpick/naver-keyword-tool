@@ -2353,47 +2353,119 @@
     // ==================== 리뷰 모니터링 기능 ====================
 
     const keywordToggle = document.getElementById('alertKeywords');
-    keywordToggle?.addEventListener('change', () => {
-      document.getElementById('keywordsInput').style.display = keywordToggle.checked ? 'block' : 'none';
-    });
+    keywordToggle?.addEventListener('change', updateKeywordInputVisibility);
 
     function updateKeywordInputVisibility() {
-      if (!keywordToggle) return;
-      document.getElementById('keywordsInput').style.display = keywordToggle.checked ? 'block' : 'none';
-    }
-
-    async function fetchMonitoringRecord(forceRefresh = false) {
-      if (!currentUser || !supabase) return null;
-      if (!forceRefresh && currentMonitoring) return currentMonitoring;
-
-      const { data, error } = await supabase
-        .from('review_monitoring')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw new Error(error.message);
-      }
-
-      currentMonitoring = data || null;
-      return currentMonitoring;
+      const keywordsInput = document.getElementById('keywordsInput');
+      if (!keywordsInput) return;
+      keywordsInput.style.display = keywordToggle?.checked ? 'block' : 'none';
     }
 
     function updateMonitoringStatusUI(monitoring) {
       const activeBox = document.getElementById('monitoringStatus');
       const inactiveBox = document.getElementById('monitoringInactive');
+      const lastCrawledEl = document.getElementById('lastCrawled');
       if (!activeBox || !inactiveBox) return;
 
-      if (monitoring && monitoring.monitoring_enabled) {
+      if (monitoring?.monitoring_enabled) {
         activeBox.style.display = 'block';
         inactiveBox.style.display = 'none';
-        document.getElementById('lastCrawled').textContent = monitoring.last_crawled_at
-          ? `${formatKoreanDate(monitoring.last_crawled_at)} · ${getTimeAgo(new Date(monitoring.last_crawled_at))}`
-          : '아직 실행 전';
+        if (lastCrawledEl) {
+          lastCrawledEl.textContent = monitoring.last_crawled_at
+            ? `${formatKoreanDate(monitoring.last_crawled_at)} · ${getTimeAgo(new Date(monitoring.last_crawled_at))}`
+            : '아직 실행 전';
+        }
       } else {
         activeBox.style.display = 'none';
         inactiveBox.style.display = 'block';
+        if (lastCrawledEl) {
+          lastCrawledEl.textContent = '아직 실행 전';
+        }
+      }
+    }
+
+    async function fetchMonitoringData({ includeAlerts = false, limit = 5 } = {}) {
+      if (!currentUser) return null;
+      const params = new URLSearchParams({ userId: currentUser.id });
+      if (includeAlerts) params.set('includeAlerts', 'true');
+      if (limit) params.set('limit', limit);
+
+      const response = await fetch(`/api/review-monitoring?${params.toString()}`);
+      if (!response.ok) {
+        let errorMessage = '모니터링 정보를 불러오지 못했습니다.';
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) errorMessage = errorData.error;
+        } catch (err) {
+          console.error('모니터링 응답 파싱 실패:', err);
+        }
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    }
+
+    async function loadMonitoringSettings(forceRefresh = false) {
+      if (!currentUser) return;
+      liveReviewFetchAttempted = false;
+
+      const lowToggle = document.getElementById('alertLowRating');
+      const highToggle = document.getElementById('alertHighRating');
+      const keywordInput = document.getElementById('alertKeywordsList');
+      const reviewsContainer = document.getElementById('monitoringRecentReviews');
+
+      try {
+        const result = await fetchMonitoringData({ includeAlerts: true, limit: 5 });
+        currentMonitoring = result?.monitoring || null;
+
+        if (currentMonitoring?.place_url) {
+          cachedStorePlaceUrl = currentMonitoring.place_url;
+        }
+
+        if (lowToggle) lowToggle.checked = currentMonitoring?.alert_on_low_rating !== false;
+        if (highToggle) highToggle.checked = currentMonitoring?.alert_on_high_rating !== false;
+        if (keywordToggle) keywordToggle.checked = currentMonitoring?.alert_on_keywords || false;
+        if (keywordInput) {
+          keywordInput.value = (currentMonitoring?.alert_keywords || []).join(', ');
+        }
+        updateKeywordInputVisibility();
+
+        updateMonitoringStatusUI(currentMonitoring);
+
+        const alerts = result?.alerts || [];
+        if (alerts.length > 0) {
+          renderMonitoringReviews(alerts, { sourceLabel: '자동 수집 데이터' });
+        } else if (reviewsContainer) {
+          reviewsContainer.innerHTML = `
+            <p style="color: #999; text-align: center; padding: 20px;">
+              아직 저장된 리뷰가 없습니다.<br>
+              아래 "최신 리뷰 새로고침" 버튼으로 즉시 확인할 수 있습니다.
+            </p>
+          `;
+
+          const storeUrlInput = document.getElementById('editStoreUrl')?.value.trim();
+          if (currentMonitoring?.monitoring_enabled && (cachedStorePlaceUrl || storeUrlInput)) {
+            await refreshMonitoringReviews({ silent: true });
+          }
+        }
+      } catch (error) {
+        console.error('모니터링 설정 로드 오류:', error);
+
+        if (lowToggle) lowToggle.checked = true;
+        if (highToggle) highToggle.checked = true;
+        if (keywordToggle) keywordToggle.checked = false;
+        if (keywordInput) keywordInput.value = '';
+        updateKeywordInputVisibility();
+        updateMonitoringStatusUI(null);
+
+        if (reviewsContainer) {
+          reviewsContainer.innerHTML = `
+            <p style="color: #ef4444; text-align: center; padding: 20px;">
+              모니터링 정보를 불러오지 못했습니다.<br>
+              ${escapeHtml(error.message)}
+            </p>
+          `;
+        }
       }
     }
 
@@ -2404,26 +2476,30 @@
         return;
       }
 
+      if (!currentMonitoring) {
+        alert('먼저 "모니터링 설정 저장" 버튼으로 설정을 저장해주세요.');
+        return;
+      }
+
       try {
-        const monitoring = await fetchMonitoringRecord();
-        if (!monitoring) {
-          alert('먼저 "모니터링 설정 저장" 버튼으로 설정을 저장해주세요.');
-          return;
+        const response = await fetch('/api/review-monitoring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'toggle_monitoring',
+            monitoringId: currentMonitoring.id,
+            enable
+          })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || '상태 변경에 실패했습니다.');
         }
 
-        const { error } = await supabase
-          .from('review_monitoring')
-          .update({
-            monitoring_enabled: enable,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', monitoring.id);
-
-        if (error) throw error;
-
-        currentMonitoring = { ...monitoring, monitoring_enabled: enable };
+        currentMonitoring = result.monitoring;
         updateMonitoringStatusUI(currentMonitoring);
-        await loadMonitoringReviews(currentMonitoring);
+        await loadMonitoringSettings(true);
 
         alert(enable ? '✅ 리뷰 모니터링이 활성화되었습니다!' : '⏸️ 리뷰 모니터링이 일시 정지되었습니다.');
       } catch (error) {
@@ -2476,47 +2552,12 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
 
 자동으로 리뷰를 수집하고, 긴급 리뷰 발생 시 카카오톡으로 알림을 받습니다.`);
 
-        currentMonitoring = null;
         await loadMonitoringSettings(true);
 
       } catch (error) {
         console.error('모니터링 설정 저장 오류:', error);
         alert('설정 저장 실패: ' + error.message);
       }
-    }
-
-    // 모니터링 설정 로드
-    async function loadMonitoringSettings(forceRefresh = false) {
-      if (!currentUser) return;
-      liveReviewFetchAttempted = false;
-
-      let monitoring = null;
-
-      try {
-        monitoring = await fetchMonitoringRecord(forceRefresh);
-
-        const lowToggle = document.getElementById('alertLowRating');
-        const highToggle = document.getElementById('alertHighRating');
-        const keywordInput = document.getElementById('alertKeywordsList');
-
-        if (lowToggle) lowToggle.checked = monitoring?.alert_on_low_rating !== false;
-        if (highToggle) highToggle.checked = monitoring?.alert_on_high_rating !== false;
-
-        if (keywordToggle) {
-          keywordToggle.checked = monitoring?.alert_on_keywords || false;
-        }
-
-        if (keywordInput) {
-          keywordInput.value = monitoring?.alert_keywords?.join(', ') || '';
-        }
-        updateKeywordInputVisibility();
-
-        updateMonitoringStatusUI(monitoring);
-      } catch (error) {
-        console.error('모니터링 설정 로드 오류:', error);
-      }
-
-      await loadMonitoringReviews(monitoring || null);
     }
 
     function renderMonitoringReviews(reviews, options = {}) {
@@ -2563,75 +2604,16 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
       container.innerHTML = html + sourceLabel;
     }
 
-    // 최근 리뷰 로드 (DB)
-    async function loadMonitoringReviews(existingMonitoring = null) {
-      const container = document.getElementById('monitoringRecentReviews');
-      if (!container || !currentUser) return;
-
-      try {
-        const monitoring = existingMonitoring || await fetchMonitoringRecord();
-
-        if (!monitoring) {
-          container.innerHTML = `
-            <p style="color: #999; text-align: center; padding: 20px;">
-              아직 모니터링이 설정되지 않았습니다.<br>
-              "모니터링 설정 저장" 버튼을 눌러 플레이스 URL을 등록해 주세요.
-            </p>
-          `;
-          return;
-        }
-
-        if (!monitoring.monitoring_enabled) {
-          container.innerHTML = `
-            <p style="color: #999; text-align: center; padding: 20px;">
-              현재 모니터링이 일시 정지 상태입니다.<br>
-              "활성화하기" 버튼을 눌러 자동 수집을 다시 시작하세요.
-            </p>
-          `;
-          return;
-        }
-
-        const { data: alerts, error } = await supabase
-          .from('review_alerts')
-          .select('id, review_type, rating, content, reviewer_name, reviewed_at, is_urgent, detected_keywords')
-          .eq('monitoring_id', monitoring.id)
-          .order('reviewed_at', { ascending: false })
-          .limit(5);
-
-        if (error) throw error;
-
-        if (!alerts || alerts.length === 0) {
-          container.innerHTML = `
-            <p style="color: #999; text-align: center; padding: 20px;">
-              아직 저장된 리뷰가 없습니다.<br>
-              아래 "최신 리뷰 새로고침" 버튼을 눌러 실시간으로 불러오실 수 있습니다.
-            </p>
-          `;
-
-          if (!liveReviewFetchAttempted && (cachedStorePlaceUrl || document.getElementById('editStoreUrl').value.trim())) {
-            await refreshMonitoringReviews({ silent: true });
-          }
-          return;
-        }
-
-        renderMonitoringReviews(alerts, { sourceLabel: '자동 수집 데이터' });
-      } catch (error) {
-        console.error('최근 리뷰 로드 오류:', error);
-        container.innerHTML = `
-          <p style="color: #ef4444; text-align: center; padding: 20px;">
-            최근 리뷰를 불러오지 못했습니다: ${escapeHtml(error.message)}
-          </p>
-        `;
-      }
-    }
-
     // 실시간 크롤링
     async function refreshMonitoringReviews(options = {}) {
       const { silent = false } = options;
       const container = document.getElementById('monitoringRecentReviews');
       if (!currentUser || !container) return;
 
-      const placeUrl = document.getElementById('editStoreUrl').value.trim() || cachedStorePlaceUrl;
+      const placeUrl = currentMonitoring?.place_url
+        || cachedStorePlaceUrl
+        || document.getElementById('editStoreUrl').value.trim();
+
       if (!placeUrl) {
         if (!silent) alert('먼저 "내 가게 정보"에서 플레이스 URL을 입력해주세요.');
         return;

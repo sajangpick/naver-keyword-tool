@@ -705,26 +705,45 @@ module.exports = async (req, res) => {
     try {
         // GET: 크롤링 상태 조회
         if (req.method === 'GET') {
-            const { userId } = req.query;
+            const { userId, includeAlerts, limit } = req.query;
             
             if (!userId) {
                 return res.status(400).json({ error: 'userId is required' });
             }
             
             // 사용자의 모니터링 정보 조회
-            const { data, error } = await supabase
+            const { data: monitoring, error } = await supabase
                 .from('review_monitoring')
                 .select('*')
                 .eq('user_id', userId)
-                .single();
+                .maybeSingle();
             
             if (error && error.code !== 'PGRST116') {
                 throw error;
             }
+
+            let alerts = [];
+            const shouldIncludeAlerts = includeAlerts === 'true' && monitoring?.id;
+            if (shouldIncludeAlerts) {
+                const alertLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 20);
+                const { data: alertRows, error: alertError } = await supabase
+                    .from('review_alerts')
+                    .select('id, review_type, rating, content, reviewer_name, reviewed_at, is_urgent, detected_keywords')
+                    .eq('monitoring_id', monitoring.id)
+                    .order('reviewed_at', { ascending: false })
+                    .limit(alertLimit);
+                
+                if (alertError) {
+                    console.error('[리뷰 알림 조회 실패]', alertError);
+                } else {
+                    alerts = alertRows || [];
+                }
+            }
             
             res.json({
                 success: true,
-                monitoring: data || null
+                monitoring: monitoring || null,
+                alerts
             });
             return;
         }
@@ -828,6 +847,29 @@ module.exports = async (req, res) => {
                     res.json({ success: true, monitoring: data, created: true });
                 }
                 
+            } else if (action === 'toggle_monitoring') {
+                const { monitoringId, enable } = req.body;
+                if (!monitoringId || typeof enable !== 'boolean') {
+                    return res.status(400).json({ success: false, error: 'monitoringId and enable(boolean) are required' });
+                }
+
+                const { data, error } = await supabase
+                    .from('review_monitoring')
+                    .update({
+                        monitoring_enabled: enable,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', monitoringId)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                res.json({
+                    success: true,
+                    monitoring: data
+                });
+
             } else if (action === 'fetch_recent_reviews') {
                 const { placeUrl, limit = 5 } = req.body;
                 if (!placeUrl) {
