@@ -267,19 +267,11 @@
         }
 
         .style-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            flex-wrap: wrap;
             gap: 24px;
             margin-bottom: 48px;
-        }
-
-        /* 하단 두 카드 가로 배치 및 가운데 정렬 */
-        .style-card:nth-child(4) {
-            grid-column: 2;
-        }
-
-        .style-card:nth-child(5) {
-            grid-column: 3;
+            justify-content: center;
         }
 
         .style-card {
@@ -297,6 +289,8 @@
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            flex: 0 1 320px;
+            max-width: 360px;
         }
 
         .style-card::before {
@@ -427,30 +421,16 @@
         }
 
         @media (max-width: 992px) {
-            .style-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            /* 태블릿에서 하단 두 카드 가로 배치 */
-            .style-card:nth-child(4) {
-                grid-column: 1;
-            }
-            .style-card:nth-child(5) {
-                grid-column: 2;
+            .style-card {
+                flex: 1 1 calc(50% - 24px);
+                min-height: 260px;
             }
         }
 
         @media (max-width: 768px) {
-            .style-grid {
-                grid-template-columns: 1fr;
-            }
             .style-card {
+                flex: 1 1 100%;
                 min-height: 250px;
-            }
-            /* 모바일에서는 중앙 정렬 불필요 */
-            .style-card:nth-child(4),
-            .style-card:nth-child(5) {
-                grid-column: span 1;
-                grid-column-start: 1;
             }
         }
 
