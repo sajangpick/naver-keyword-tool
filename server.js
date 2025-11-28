@@ -4322,10 +4322,21 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
         }
       }
 
-      // 기본 프롬프트와 결합
-      const finalPrompt = `${videoPrompt}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video, ${duration} seconds, vertical format (9:16 aspect ratio).`;
+      // 스타일별 영어 키워드 추가 (최종 프롬프트에 명시적으로 포함)
+      const styleKeywords = {
+        luxury: "luxurious, elegant slow motion, premium restaurant quality, cinematic lighting, sophisticated",
+        fast: "dynamic, fast-paced editing, trendy social media style, vibrant colors, energetic movement",
+        chef: "chef's hands preparing food, close-up cooking process, professional kitchen, authentic cooking",
+        plating: "beautiful food plating, artistic presentation, restaurant-quality dish, elegant arrangement",
+        simple: "clean, simple and elegant, minimalist style, natural lighting, professional quality"
+      };
+      
+      const styleKeyword = styleKeywords[style] || styleKeywords.simple;
+      
+      // 기본 프롬프트와 결합 (스타일 키워드 명시적으로 추가)
+      const finalPrompt = `${videoPrompt}. ${styleKeyword}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video, ${duration} seconds, vertical format (9:16 aspect ratio).`;
 
-      devLog("Gemini 프롬프트 생성 완료:", finalPrompt);
+      devLog("Gemini 프롬프트 생성 완료 (스타일 반영):", finalPrompt);
       return {
         prompt: finalPrompt,
         analysis: geminiResponse,
