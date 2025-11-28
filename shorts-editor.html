@@ -2114,6 +2114,7 @@
 
         function startNewVideo() {
             hideSuccessBanner();
+            resetResultSection();
             removeAllImages();
             document.getElementById('menuName').value = '';
             document.getElementById('menuFeatures').value = '';
@@ -2123,6 +2124,54 @@
             if (nextBtn) nextBtn.disabled = true;
             goToStep(1);
         }
+
+        function showResultSection() {
+            const section = document.getElementById('resultSection');
+            if (section) {
+                section.classList.add('show');
+            }
+        }
+
+        function hideResultSection() {
+            const section = document.getElementById('resultSection');
+            if (section) {
+                section.classList.remove('show');
+            }
+        }
+
+        function resetResultSection() {
+            hideResultSection();
+            const placeholder = document.getElementById('resultPlaceholder');
+            if (placeholder) {
+                placeholder.classList.remove('hidden');
+                placeholder.innerHTML = `<i class="fa-solid fa-hourglass-half"></i><span>영상 생성 준비 중입니다...</span>`;
+            }
+            const videoEl = document.getElementById('resultVideo');
+            if (videoEl) {
+                videoEl.pause();
+                videoEl.removeAttribute('src');
+                videoEl.load();
+                videoEl.classList.add('hidden');
+            }
+            const badge = document.getElementById('resultStatusBadge');
+            if (badge) {
+                badge.className = 'result-status';
+                badge.innerHTML = `<i class="fa-solid fa-clock"></i> 대기 중`;
+            }
+            const statusText = document.getElementById('resultStatusText');
+            if (statusText) statusText.textContent = '대기 중';
+            const downloadBtn = document.getElementById('downloadVideoBtn');
+            if (downloadBtn) downloadBtn.disabled = true;
+            latestVideoData = null;
+        }
+
+        function prepareResultSection(meta) {
+            const menuTarget = document.getElementById('resultMenuName');
+            if (menuTarget) {
+                menuTarget.textContent = meta?.menuName || '-';
+            }
+            const styleLabel = meta?.style ? (platformInfo[meta.style]?.name || '맞춤형') : '-';
+            const styleTarget = Pro_탓;
 
         // 에러 화면 표시
         function showErrorScreen(message) {

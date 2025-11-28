@@ -3909,6 +3909,124 @@ app.get('/api/admin/members', async (req, res) => {
   }
 });
 
+app.get("/api/admin/ebook-downloads", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({
+        success: false,
+        error: "Supabase가 설정되지 않았습니다",
+      });
+    }
+
+    const allowedRanges = new Set(["all", "today", "7d", "30d", "month"]);
+    const {
+      range = "all",
+      search = "",
+      page = 1,
+      limit = 25,
+      source = "all",
+    } = req.query;
+
+    const normalizedRange = allowedRanges.has(range) ? range : "all";
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 25, 1), 200);
+    const offset = (pageNum - 1) * limitNum;
+    const sanitizedSearch = sanitizeString(search).replace(/[%_]/g, "");
+    const normalizedSource =
+      source && source !== "all"
+        ? normalizeEbookDownloadSource(source)
+        : null;
+
+    const bounds = getRangeBounds(normalizedRange);
+
+    let query = supabase
+      .from("ebook_downloads")
+      .select("*", { count: "exact" });
+
+    query = applyRangeBounds(query, bounds);
+
+    if (sanitizedSearch) {
+      query = query.or(
+        `email.ilike.%${sanitizedSearch}%,name.ilike.%${sanitizedSearch}%`
+      );
+    }
+
+    if (normalizedSource) {
+      query = query.eq("download_source", normalizedSource);
+    }
+
+    const { data: downloads, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limitNum - 1);
+
+    if (error) {
+      devError("[ebook-admin] 다운로드 목록 조회 실패:", error.message);
+      return res.status(500).json({
+        success: false,
+        error: "전자책 다운로드 목록을 불러오지 못했습니다",
+      });
+    }
+
+    const [
+      totalDownloads,
+      todayDownloads,
+      sevenDayDownloads,
+      thirtyDayDownloads,
+      monthDownloads,
+      uniqueUsers,
+    ] = await Promise.all([
+      countEbookDownloads("all"),
+      countEbookDownloads("today"),
+      countEbookDownloads("7d"),
+      countEbookDownloads("30d"),
+      countEbookDownloads("month"),
+      countUniqueEbookUsers("all"),
+    ]);
+
+    res.json({
+      success: true,
+      downloads: downloads || [],
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || 0,
+        totalPages: Math.max(1, Math.ceil((count || 0) / limitNum)),
+      },
+      summary: {
+        totalDownloads,
+        todayDownloads,
+        weekDownloads: sevenDayDownloads,
+        thirtyDayDownloads,
+        monthDownloads,
+        uniqueUsers,
+        filteredTotal: count || 0,
+        range: normalizedRange,
+        rangeCounts: {
+          all: totalDownloads,
+          today: todayDownloads,
+          "7d": sevenDayDownloads,
+          "30d": thirtyDayDownloads,
+          month: monthDownloads,
+        },
+      },
+      filters: {
+        range: normalizedRange,
+        search: sanitizedSearch,
+        source: normalizedSource || "all",
+      },
+      sourceOptions: Array.from(
+        new Set(["all", ...VALID_EBOOK_DOWNLOAD_SOURCES])
+      ),
+    });
+  } catch (error) {
+    devError("[ebook-admin] 알 수 없는 오류:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
 // 회원 등급 및 유형 변경 (관리자만)
 app.put('/api/admin/members/:id', async (req, res) => {
   try {

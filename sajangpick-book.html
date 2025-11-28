@@ -1337,13 +1337,56 @@
         const ctaLoginBtn = document.getElementById("ctaLoginBtn");
         const footerYear = document.getElementById("footerYear");
         let currentUser = null;
+        window.currentUser = null;
         let sessionCheckAttempts = 0;
         const MAX_SESSION_CHECK_ATTEMPTS = 50; // 최대 5초 대기 (50 * 100ms)
 
         footerYear.textContent = new Date().getFullYear();
 
+        function normalizeUserPayload(rawUser) {
+          if (!rawUser || typeof rawUser !== "object") {
+            return null;
+          }
+          const id =
+            rawUser.id ||
+            rawUser.user_id ||
+            rawUser.userId ||
+            rawUser.uid ||
+            rawUser?.user_metadata?.sub ||
+            null;
+          const email =
+            rawUser.email ||
+            rawUser.user_metadata?.email ||
+            rawUser.user_metadata?.email_address ||
+            null;
+          const displayName =
+            rawUser.displayName ||
+            rawUser.name ||
+            rawUser.user_metadata?.full_name ||
+            rawUser.user_metadata?.name ||
+            email ||
+            "사장님";
+          const provider =
+            rawUser.provider ||
+            rawUser.app_metadata?.provider ||
+            "unknown";
+          return {
+            id,
+            email,
+            displayName,
+            provider,
+          };
+        }
+
         function setLoggedInUI(user) {
-          currentUser = user;
+          const normalizedUser = normalizeUserPayload(user);
+          if (!normalizedUser) {
+            console.warn("[전자책] 로그인 정보를 불러오지 못했습니다.");
+            return;
+          }
+
+          currentUser = normalizedUser;
+          window.currentUser = normalizedUser;
 
           // 다운로드 버튼 영역 업데이트
           if (loginCta) loginCta.style.display = "none";
@@ -1368,14 +1411,20 @@
           if (logoutBtn) logoutBtn.style.display = "inline-flex";
 
           if (userEmail) {
-            const email = user?.email || user?.displayName || "마이페이지";
-            userEmail.textContent = email;
-            userEmail.title = email !== "마이페이지" ? `${email} (마이페이지로 이동)` : "클릭하여 마이페이지로 이동";
+            const emailText = normalizedUser.email || "마이페이지";
+            userEmail.textContent = emailText;
+            userEmail.title =
+              emailText !== "마이페이지"
+                ? `${emailText} (마이페이지로 이동)`
+                : "클릭하여 마이페이지로 이동";
           }
 
           if (userAvatar) {
-            const base = user?.email || user?.displayName || user?.user_metadata?.full_name || "U";
-            const initial = (base.trim()[0] || "U").toUpperCase();
+            const baseValue =
+              normalizedUser.displayName ||
+              normalizedUser.email ||
+              "U";
+            const initial = (baseValue.toString().trim()[0] || "U").toUpperCase();
             userAvatar.textContent = initial;
           }
 
@@ -1398,6 +1447,7 @@
 
         function setLoggedOutUI() {
           currentUser = null;
+          window.currentUser = null;
 
           // 다운로드 버튼 영역 업데이트
           if (loginCta) loginCta.style.display = "inline-flex";
@@ -1429,12 +1479,7 @@
               console.log("[전자책] localStorage 사용자 정보:", { email: user.email });
               
               // 즉시 UI 업데이트
-              setLoggedInUI({
-                email: user.email,
-                displayName: user.displayName,
-                user_metadata: { full_name: user.displayName },
-                app_metadata: { provider: user.provider || 'kakao' }
-              });
+              setLoggedInUI(user);
             } catch (error) {
               console.error("[전자책] userData 파싱 오류:", error);
             }
@@ -1535,7 +1580,62 @@
           );
         }
 
-        async function handleDownload(event) {
+        async function logEbookDownload(triggerSource) {
+          if (!currentUser?.id) {
+            console.warn("[전자책] 사용자 정보가 없어 다운로드 로그를 생략합니다.");
+            return;
+          }
+
+          try {
+            const response = await fetch("/api/ebook/downloads", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId: currentUser.id,
+                email: currentUser.email,
+                name: currentUser.displayName,
+                downloadSource: triggerSource,
+                deviceType: isMobileDevice() ? "mobile" : "desktop",
+                downloadMethod: isMobileDevice()
+                  ? "mobile_direct"
+                  : "desktop_window",
+                pageUrl: window.location.href,
+                metadata: {
+                  section: triggerSource,
+                  screen: `${window.screen.width}x${window.screen.height}`,
+                  referrer: document.referrer || undefined,
+                },
+                userAgent: navigator.userAgent,
+              }),
+            });
+
+            if (!response.ok) {
+              const payload = await response.json().catch(() => ({}));
+              console.warn(
+                "[전자책] 다운로드 로그 저장 실패:",
+                payload.error || response.status
+              );
+            }
+          } catch (error) {
+            console.warn("[전자책] 다운로드 로그 요청 오류:", error);
+          }
+        }
+
+        async function handleDownload(arg) {
+          let event = null;
+          let triggerSource = "hero_primary";
+
+          if (typeof arg === "string") {
+            triggerSource = arg;
+          } else if (arg && typeof arg.preventDefault === "function") {
+            event = arg;
+            if (arg.currentTarget?.dataset?.downloadSource) {
+              triggerSource = arg.currentTarget.dataset.downloadSource;
+            }
+          }
+
           event?.preventDefault();
           if (!requireLogin()) return;
 
@@ -1550,6 +1650,8 @@
             statusText.textContent = "다운로드를 준비 중입니다...";
             statusText.style.color = "#d9480f";
           }
+
+          await logEbookDownload(triggerSource);
 
           try {
             const accessToken = await getAccessTokenOrRedirect();
@@ -1645,8 +1747,14 @@
           }
         }
 
-        downloadBtn?.addEventListener("click", handleDownload);
-        ctaDownloadBtn?.addEventListener("click", handleDownload);
+        if (downloadBtn) {
+          downloadBtn.dataset.downloadSource = "hero_primary";
+          downloadBtn.addEventListener("click", handleDownload);
+        }
+        if (ctaDownloadBtn) {
+          ctaDownloadBtn.dataset.downloadSource = "cta_bottom";
+          ctaDownloadBtn.addEventListener("click", handleDownload);
+        }
 
         // auth:state-changed 이벤트 리스너 등록
         window.addEventListener("auth:state-changed", () => {
