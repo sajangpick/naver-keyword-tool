@@ -907,30 +907,13 @@
             return;
           }
 
-          // 집계 방식에 따라 사용자별 토큰 사용량 합계 계산
+          // 사용자별 토큰 사용량 합계 계산
           const userUsageMap = {};
-          
-          if (groupBy === 'month') {
-            // 월별: 이번 달 데이터만 집계
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            usageData.forEach(item => {
-              if (item.user_id) {
-                const itemDate = new Date(item.used_at);
-                if (itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear) {
-                  userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + (item.tokens_used || 0);
-                }
-              }
-            });
-          } else {
-            // 일별: 선택한 기간의 모든 데이터 집계
-            usageData.forEach(item => {
-              if (item.user_id) {
-                userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + (item.tokens_used || 0);
-              }
-            });
-          }
+          usageData.forEach(item => {
+            if (item.user_id) {
+              userUsageMap[item.user_id] = (userUsageMap[item.user_id] || 0) + (item.tokens_used || 0);
+            }
+          });
 
           console.log('📊 사용자별 집계 완료:', Object.keys(userUsageMap).length, '명');
 
@@ -999,17 +982,9 @@
               const now = new Date();
               periodInfoEl.textContent = `(${now.getFullYear()}년 ${now.getMonth() + 1}월 기준)`;
             } else {
-              let periodText = '';
-              if (period === 'today') {
-                periodText = '오늘';
-              } else if (period === 'week') {
-                periodText = '최근 7일';
-              } else if (period === 'month') {
-                periodText = '이번 달';
-              } else {
-                periodText = '전체';
-              }
-              periodInfoEl.textContent = `(${periodText} 기준)`;
+              const startStr = `${startDate.getFullYear()}. ${startDate.getMonth() + 1}. ${startDate.getDate()}.`;
+              const endStr = `${endDate.getFullYear()}. ${endDate.getMonth() + 1}. ${endDate.getDate()}.`;
+              periodInfoEl.textContent = `(${startStr} ~ ${endStr} 기준)`;
             }
           }
 
