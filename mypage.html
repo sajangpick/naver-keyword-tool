@@ -1888,8 +1888,23 @@
       const days = document.getElementById('editStoreDays').value;
       const businessHours = formatBusinessHours(openHour, closeHour, days);
 
+      const placeUrlInput = document.getElementById('editStoreUrl').value.trim();
+      let normalizedPlaceUrl = placeUrlInput;
+      if (placeUrlInput) {
+        if (!isValidPlaceUrl(placeUrlInput)) {
+          alert('네이버 플레이스 URL 형식이 아닙니다.\n주소창의 "공유 > 링크 복사" 기능을 이용해 전체 주소를 붙여넣어 주세요.');
+          return;
+        }
+        normalizedPlaceUrl = normalizePlaceUrl(placeUrlInput);
+        if (!normalizedPlaceUrl) {
+          alert('네이버 플레이스 URL을 해석하지 못했습니다. 모바일 버전 링크를 입력해 주세요.');
+          return;
+        }
+        document.getElementById('editStoreUrl').value = normalizedPlaceUrl;
+      }
+
       const storeInfo = {
-        placeUrl: document.getElementById('editStoreUrl').value.trim(),
+        placeUrl: normalizedPlaceUrl,
         companyName: document.getElementById('editStoreName').value.trim(),
         companyAddress: document.getElementById('editStoreAddress').value.trim(),
         businessHours: businessHours,
@@ -1911,7 +1926,7 @@
         const result = await response.json();
         if (result.success) {
           let message = '✅ 가게 정보가 저장되었습니다!\n블로그 작성 시 자동으로 입력됩니다.';
-          cachedStorePlaceUrl = storeInfo.placeUrl || cachedStorePlaceUrl;
+          cachedStorePlaceUrl = storeInfo.placeUrl || '';
           
           // 크롤링 결과 표시
           if (result.crawlResult) {
@@ -2265,25 +2280,57 @@
       return map[type] || '리뷰';
     }
 
-    function extractPlaceIdFromUrl(url) {
-      if (!url) return null;
-      const patterns = [
-        /\/(restaurant|place|shop|cafe|hotel)\/(\d+)/i,
-        /\/entry\/place\/(\d+)/i
+    const SUPPORTED_PLACE_TYPES = ['restaurant', 'cafe', 'shop', 'hotel', 'accommodation', 'beauty', 'activity'];
+
+    function extractPlaceMeta(url) {
+      if (!url || typeof url !== 'string') return null;
+      const trimmed = url.trim();
+      if (!trimmed.toLowerCase().includes('naver.')) return null;
+
+      const patternConfigs = [
+        { regex: /\/(restaurant|cafe|shop|hotel|accommodation|beauty|activity)\/(\d+)/i, typeIndex: 1, idIndex: 2 },
+        { regex: /\/(place)\/(\d+)/i, typeIndex: 1, idIndex: 2 },
+        { regex: /\/p\/entry\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /\/entry\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /\/v5\/entry\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /[?&](?:placeId|entry|id)=(\d+)/i, typeIndex: null, idIndex: 1 }
       ];
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
+
+      for (const config of patternConfigs) {
+        const match = trimmed.match(config.regex);
         if (match) {
-          return match[match.length - 1];
+          let type = config.typeIndex != null ? match[config.typeIndex].toLowerCase() : null;
+          const placeId = match[config.idIndex];
+          if (!placeId) continue;
+
+          if (!type || type === 'place') {
+            type = 'restaurant';
+          }
+
+          if (!SUPPORTED_PLACE_TYPES.includes(type)) {
+            type = 'restaurant';
+          }
+
+          return { placeId, placeType: type };
         }
       }
+
       return null;
     }
 
+    function extractPlaceIdFromUrl(url) {
+      return extractPlaceMeta(url)?.placeId || null;
+    }
+
     function isValidPlaceUrl(url) {
-      if (!url) return false;
-      if (!url.includes('naver.com')) return false;
-      return !!extractPlaceIdFromUrl(url);
+      return !!extractPlaceMeta(url);
+    }
+
+    function normalizePlaceUrl(url) {
+      const meta = extractPlaceMeta(url);
+      if (!meta) return null;
+      return `https://m.place.naver.com/${meta.placeType}/${meta.placeId}`;
     }
     
     // 업그레이드 페이지로 이동
@@ -2344,7 +2391,13 @@
         console.log('✅ 가게 정보 로드 완료 (정제됨):', cleanedData);
         
         // 빈 문자열이 아닌 경우만 입력
-        if (cleanedData.storeUrl) document.getElementById('editStoreUrl').value = cleanedData.storeUrl;
+        if (cleanedData.storeUrl) {
+          const normalizedLoadedUrl = normalizePlaceUrl(cleanedData.storeUrl) || cleanedData.storeUrl;
+          document.getElementById('editStoreUrl').value = normalizedLoadedUrl;
+          cachedStorePlaceUrl = normalizedLoadedUrl;
+        } else {
+          cachedStorePlaceUrl = '';
+        }
         if (cleanedData.storeName) document.getElementById('editStoreName').value = cleanedData.storeName;
         if (cleanedData.storeAddress) document.getElementById('editStoreAddress').value = cleanedData.storeAddress;
         
@@ -2440,7 +2493,9 @@
         currentMonitoring = result?.monitoring || null;
 
         if (currentMonitoring?.place_url) {
-          cachedStorePlaceUrl = currentMonitoring.place_url;
+          const normalizedMonitoringUrl = normalizePlaceUrl(currentMonitoring.place_url) || currentMonitoring.place_url;
+          cachedStorePlaceUrl = normalizedMonitoringUrl;
+          currentMonitoring.place_url = normalizedMonitoringUrl;
         }
 
         if (lowToggle) lowToggle.checked = currentMonitoring?.alert_on_low_rating !== false;
@@ -2548,11 +2603,19 @@
           return;
         }
 
+        const normalizedUrl = normalizePlaceUrl(storeUrl);
+        if (!normalizedUrl) {
+          alert('네이버 플레이스 URL을 해석하지 못했습니다. 모바일 버전 링크를 입력해주세요.');
+          return;
+        }
+        document.getElementById('editStoreUrl').value = normalizedUrl;
+        cachedStorePlaceUrl = normalizedUrl;
+
         const storeName = document.getElementById('editStoreName').value;
         const settings = {
           action: 'create_monitoring',
           userId: currentUser.id,
-          placeUrl: storeUrl,
+          placeUrl: normalizedUrl,
           placeName: storeName || '내 가게',
           alertLowRating: document.getElementById('alertLowRating').checked,
           alertHighRating: document.getElementById('alertHighRating').checked,
@@ -2645,7 +2708,8 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
         return;
       }
 
-      if (!isValidPlaceUrl(placeUrl)) {
+      const normalizedPlaceUrl = normalizePlaceUrl(placeUrl);
+      if (!normalizedPlaceUrl) {
         const message = `
           <p style="color: #ef4444; text-align: center; padding: 20px;">
             유효하지 않은 네이버 플레이스 URL입니다.<br>
@@ -2657,6 +2721,11 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
           alert('네이버 플레이스 URL 형식이 아닙니다. 주소창에서 "공유 > 링크복사" 기능으로 전체 URL을 붙여넣어 주세요.');
         }
         return;
+      }
+
+      cachedStorePlaceUrl = normalizedPlaceUrl;
+      if (currentMonitoring) {
+        currentMonitoring.place_url = normalizedPlaceUrl;
       }
 
       if (isLiveReviewLoading) {
@@ -2684,7 +2753,7 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'fetch_recent_reviews',
-            placeUrl,
+            placeUrl: normalizedPlaceUrl,
             limit: 5
           })
         });
