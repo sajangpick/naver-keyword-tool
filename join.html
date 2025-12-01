@@ -7,12 +7,20 @@
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>회원가입 - 사장픽</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ff7b54'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
+    />
     <style>
       :root {
-        --naver-green: #03c75a;
-        --naver-green-dark: #02b14f;
-        --bg: #f7f9fb;
+        --brand-primary: #ff7b54;
+        --brand-primary-dark: #ff5c2e;
+        --brand-ink: #201a17;
+        --brand-muted: #7a6a60;
+        --brand-cream: #fff7f0;
+        --brand-line: rgba(255, 123, 84, 0.25);
+        --brand-soft: #ffe3d5;
       }
       * {
         margin: 0;
@@ -21,418 +29,340 @@
       }
 
       body {
-        font-family: "Noto Sans KR", Arial, sans-serif;
-        background: var(--bg);
+        font-family: "Pretendard Variable", Pretendard, "Noto Sans KR", Arial,
+          sans-serif;
+        background: radial-gradient(
+              circle at 20% 20%,
+              rgba(255, 123, 84, 0.12),
+              transparent 50%
+            ),
+          radial-gradient(
+              circle at 80% 0%,
+              rgba(255, 208, 188, 0.35),
+              transparent 42%
+            )
+            var(--brand-cream);
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 40px 0;
+        padding: 40px 16px;
+        color: var(--brand-ink);
+      }
+
+      .signup-shell {
+        width: 100%;
+        max-width: 540px;
       }
 
       .signup-container {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        padding: 40px;
+        background: #fff;
+        border-radius: 32px;
+        border: 1px solid var(--brand-line);
+        box-shadow: 0 45px 80px rgba(32, 26, 23, 0.08);
+        padding: 52px 44px 40px;
         width: 100%;
-        max-width: 450px;
         position: relative;
+        overflow: hidden;
+      }
+
+      .signup-container::after {
+        content: "";
+        position: absolute;
+        inset: 30px -180px auto auto;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(
+          circle at 40% 40%,
+          rgba(255, 123, 84, 0.22),
+          transparent 65%
+        );
+        transform: rotate(18deg);
+      }
+
+      .signup-container > * {
+        position: relative;
+        z-index: 1;
       }
 
       .back-btn {
         position: absolute;
-        top: 20px;
-        left: 20px;
-        background: none;
+        top: 22px;
+        left: 22px;
         border: none;
-        font-size: 24px;
+        background: rgba(255, 123, 84, 0.08);
+        color: var(--brand-primary);
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 18px;
         cursor: pointer;
-        color: #666;
+        transition: transform 0.2s ease, background 0.2s ease;
+      }
+
+      .back-btn:hover {
+        transform: translateX(-3px);
+        background: rgba(255, 123, 84, 0.15);
+      }
+
+      .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(255, 123, 84, 0.1);
+        color: var(--brand-primary);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
       }
 
       .logo {
-        text-align: center;
-        font-size: 32px;
-        font-weight: 800;
-        color: #111827;
+        text-align: left;
+        font-size: 38px;
+        font-weight: 900;
+        color: var(--brand-ink);
         margin-bottom: 10px;
+        letter-spacing: -0.02em;
       }
 
       .subtitle {
-        text-align: center;
-        color: #666;
-        margin-bottom: 40px;
-        font-size: 14px;
-      }
-
-      .form-group {
-        margin-bottom: 20px;
-      }
-
-      .form-label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: #333;
-      }
-
-      .form-input {
-        width: 100%;
-        padding: 15px;
-        border: 2px solid #e1e5e9;
-        border-radius: 10px;
+        color: var(--brand-muted);
+        margin-bottom: 30px;
         font-size: 16px;
-        transition: border-color 0.3s;
+        line-height: 1.6;
       }
 
-      .form-input:focus {
-        outline: none;
-        border-color: #6c5ce7;
-      }
-
-      .form-row {
+      .brand-hero {
         display: flex;
-        gap: 10px;
+        gap: 16px;
+        padding: 20px;
+        border-radius: 26px;
+        background: var(--brand-cream);
+        border: 1px solid var(--brand-line);
+        margin-bottom: 22px;
       }
 
-      .form-row .form-group {
-        flex: 1;
-      }
-
-      .password-strength {
-        margin-top: 5px;
-        font-size: 12px;
-        color: #666;
-      }
-
-      .strength-bar {
-        height: 4px;
-        background: #e1e5e9;
-        border-radius: 2px;
-        margin-top: 5px;
-        overflow: hidden;
-      }
-
-      .strength-fill {
-        height: 100%;
-        width: 0%;
-        transition: all 0.3s;
-        border-radius: 2px;
-      }
-
-      .strength-weak {
-        background: #ff4757;
-        width: 25%;
-      }
-      .strength-fair {
-        background: #ffa502;
-        width: 50%;
-      }
-      .strength-good {
-        background: #2ed573;
-        width: 75%;
-      }
-      .strength-strong {
-        background: #26de81;
-        width: 100%;
-      }
-
-      .checkbox-group {
+      .brand-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 20px;
+        background: var(--brand-primary);
+        color: #fff;
+        font-weight: 800;
+        font-size: 20px;
         display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        margin-bottom: 20px;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 18px 30px rgba(255, 123, 84, 0.35);
       }
 
-      .checkbox-group input[type="checkbox"] {
-        margin-top: 3px;
+      .brand-hero__title {
+        font-size: 19px;
+        font-weight: 700;
+        margin-bottom: 6px;
       }
 
-      .checkbox-group label {
+      .brand-hero__desc {
         font-size: 14px;
-        line-height: 1.4;
-        color: #666;
+        color: var(--brand-muted);
+        line-height: 1.6;
       }
 
-      .checkbox-group a {
-        color: #6c5ce7;
-        text-decoration: none;
+      .brand-benefits {
+        list-style: none;
+        margin-bottom: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
 
-      .signup-btn {
-        width: 100%;
-        background: var(--naver-green);
-        color: white;
-        padding: 15px;
-        border: none;
-        border-radius: 10px;
-        font-size: 16px;
+      .brand-benefits li {
+        display: flex;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(32, 26, 23, 0.06);
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255, 123, 84, 0.05);
+      }
+
+      .brand-benefits span {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: rgba(255, 123, 84, 0.12);
+        color: var(--brand-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .benefit-title {
+        font-size: 14px;
         font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        margin-bottom: 20px;
+        margin-bottom: 2px;
       }
 
-      .signup-btn:hover {
-        background: var(--naver-green-dark);
-        transform: translateY(-2px);
-      }
-
-      .signup-btn:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      .divider {
-        text-align: center;
-        margin: 30px 0;
-        position: relative;
-        color: #666;
-      }
-
-      .divider::before {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: #e1e5e9;
-      }
-
-      .divider span {
-        background: white;
-        padding: 0 20px;
+      .benefit-desc {
+        font-size: 13px;
+        color: var(--brand-muted);
+        line-height: 1.4;
       }
 
       .social-login {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 14px;
       }
 
-      .terms-note {
-        margin-top: 16px;
-        font-size: 12px;
-        color: #666;
-        line-height: 1.5;
-        text-align: center;
-      }
-      .terms-note a {
-        color: #6c5ce7;
-        text-decoration: none;
-        font-weight: 600;
-      }
-
-      .google-btn,
       .kakao-btn {
         width: 100%;
-        padding: 15px;
-        border: 2px solid #e1e5e9;
-        border-radius: 10px;
-        background: white;
-        cursor: pointer;
+        padding: 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: linear-gradient(
+          135deg,
+          #fee500 0%,
+          #fde768 55%,
+          #fee500 100%
+        );
+        color: #3c1e1e;
         font-size: 16px;
-        font-weight: 500;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        transition: all 0.3s;
-      }
-
-      .google-btn:hover {
-        border-color: #db4437;
-        color: #db4437;
-      }
-
-      .kakao-btn {
-        background: #fee500;
-        border-color: #fee500;
-        color: #3c1e1e;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
 
       .kakao-btn:hover {
-        background: #fdd835;
+        transform: translateY(-2px);
+        box-shadow: 0 14px 24px rgba(253, 231, 104, 0.45);
+      }
+
+      .kakao-emoji {
+        font-size: 18px;
+      }
+
+      .terms-note {
+        margin-top: 18px;
+        font-size: 13px;
+        color: var(--brand-muted);
+        line-height: 1.6;
+        text-align: center;
+        background: rgba(255, 123, 84, 0.05);
+        border-radius: 18px;
+        padding: 14px 18px;
+        border: 1px dashed var(--brand-line);
+      }
+
+      .terms-note a {
+        color: var(--brand-primary);
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .terms-note a:hover {
+        text-decoration: underline;
       }
 
       .login-link {
         text-align: center;
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #e1e5e9;
-        color: #666;
+        margin-top: 34px;
+        padding-top: 22px;
+        border-top: 1px dashed var(--brand-line);
+        color: var(--brand-muted);
+        font-size: 14px;
       }
 
       .login-link a {
-        color: #6c5ce7;
+        color: var(--brand-primary);
         text-decoration: none;
-        font-weight: 600;
+        font-weight: 700;
+        margin-left: 6px;
+      }
+
+      .login-link a:hover {
+        text-decoration: underline;
+      }
+
+      .error-message,
+      .success-message {
+        padding: 12px 14px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: none;
       }
 
       .error-message {
-        background: #fee;
-        color: #c33;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        font-size: 14px;
-        display: none;
+        background: rgba(255, 107, 107, 0.12);
+        border: 1px solid rgba(255, 107, 107, 0.4);
+        color: #b42318;
       }
 
       .success-message {
-        background: #efe;
-        color: #363;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        font-size: 14px;
-        display: none;
-      }
-
-      .loading {
-        display: none;
-        text-align: center;
-        margin: 20px 0;
-      }
-
-      .spinner {
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid var(--naver-green);
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      .input-error {
-        border-color: #ff4757 !important;
-      }
-
-      .field-error {
-        color: #ff4757;
-        font-size: 12px;
-        margin-top: 5px;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        color: #047857;
       }
 
       @media (max-width: 768px) {
         body {
-          padding: 10px;
+          padding: 28px 12px;
         }
 
         .signup-container {
-          margin: 10px;
-          padding: 30px 20px;
-          border-radius: 16px;
+          padding: 38px 26px 28px;
+          border-radius: 26px;
+        }
+
+        .brand-hero {
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .signup-container {
+          padding: 32px 22px 24px;
         }
 
         .logo {
-          font-size: 24px;
-          margin-bottom: 8px;
+          font-size: 30px;
         }
 
-        .subtitle {
-          font-size: 12px;
-          margin-bottom: 30px;
+        .brand-icon {
+          width: 48px;
+          height: 48px;
         }
 
-        .back-btn {
-          font-size: 20px;
-          top: 15px;
-          left: 15px;
-        }
-
-        .form-input {
-          padding: 12px;
-          font-size: 14px;
-        }
-
-        .signup-btn {
-          padding: 12px;
-          font-size: 14px;
-        }
-
-        .kakao-btn {
-          padding: 12px;
-          font-size: 14px;
-        }
-
-        .form-row {
+        .brand-benefits li {
           flex-direction: column;
-          gap: 0;
         }
       }
 
       @media (max-width: 360px) {
         body {
-          padding: 5px;
+          padding: 18px 10px;
         }
 
         .signup-container {
-          margin: 5px;
-          padding: 20px 15px;
-          border-radius: 12px;
+          padding: 24px 18px 20px;
+          border-radius: 20px;
         }
 
-        .logo {
-          font-size: 20px;
-          margin-bottom: 6px;
-        }
-
-        .subtitle {
-          font-size: 11px;
-          margin-bottom: 24px;
-        }
-
-        .back-btn {
-          font-size: 18px;
-          top: 12px;
-          left: 12px;
-        }
-
-        .form-input {
-          padding: 10px;
-          font-size: 13px;
-        }
-
-        .signup-btn {
-          padding: 10px;
-          font-size: 13px;
-        }
-
-        .kakao-btn {
-          padding: 10px;
-          font-size: 13px;
-        }
-
-        .form-label {
-          font-size: 13px;
-          margin-bottom: 6px;
-        }
-
-        .checkbox-group label {
-          font-size: 12px;
-        }
-
-        .terms-note {
+        .brand-pill {
           font-size: 11px;
         }
 
         .login-link {
-          margin-top: 20px;
-          padding-top: 15px;
           font-size: 12px;
         }
       }
@@ -456,36 +386,80 @@
     <!-- End Meta Pixel Code -->
   </head>
   <body>
-    <div class="signup-container">
-      <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div class="signup-shell">
+      <div class="signup-container">
+        <button class="back-btn" onclick="location.href='index.html'">←</button>
 
-      <div class="logo">사장픽</div>
-      <div class="subtitle">새로운 체험의 시작, 지금 가입하세요</div>
+        <div class="brand-pill">SAJANGPICK MEMBERS</div>
+        <div class="logo">사장픽</div>
+        <div class="subtitle">
+          사장님의 브랜드를 지키는 AI 운영 파트너, 지금 함께하세요.
+        </div>
 
-      <div class="error-message" id="errorMessage"></div>
-      <div class="success-message" id="successMessage"></div>
+        <div class="brand-hero" aria-hidden="true">
+          <div class="brand-icon">SP</div>
+          <div>
+            <p class="brand-hero__title">사장님 커뮤니티 전용 혜택</p>
+            <p class="brand-hero__desc">
+              매일 쌓이는 블로그·리뷰·정책지원금 정보를 한 계정으로 관리하세요.
+            </p>
+          </div>
+        </div>
 
-      <!-- 카카오 회원가입 -->
-      <div class="social-login">
-        <button class="kakao-btn" id="kakaoSignup">
-          <span>💬</span>
-          카카오톡 아이디로 회원가입
-        </button>
-      </div>
+        <ul class="brand-benefits">
+          <li>
+            <span>🧑‍🍳</span>
+            <div>
+              <p class="benefit-title">업종별 맞춤 데이터</p>
+              <p class="benefit-desc">
+                업종, 지역, 리뷰 패턴에 맞춘 AI 추천값을 자동으로 제공합니다.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span>🤝</span>
+            <div>
+              <p class="benefit-title">팀 공유 로그인</p>
+              <p class="benefit-desc">
+                한 계정으로 직원과 함께 로그인/로그아웃하며 실시간으로 기록을 남깁니다.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span>🛡️</span>
+            <div>
+              <p class="benefit-title">안전한 카카오 인증</p>
+              <p class="benefit-desc">
+                별도 비밀번호 없이 카카오 로그인만으로 가입과 로그아웃을 안전하게 처리합니다.
+              </p>
+            </div>
+          </li>
+        </ul>
 
-      <div class="terms-note">
-        계속 진행하면
-        <a href="https://www.sajangpick.co.kr/terms" target="_blank"
-          >이용약관</a
-        >
-        및
-        <a href="https://www.sajangpick.co.kr/privacy" target="_blank"
-          >개인정보처리방침</a
-        >에 동의한 것으로 간주됩니다. 카카오 계정 정보 제공에 동의가 필요합니다.
-      </div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
 
-      <div class="login-link">
-        이미 계정이 있으신가요? <a href="login.html">로그인</a>
+        <div class="social-login">
+          <button class="kakao-btn" id="kakaoSignup">
+            <span class="kakao-emoji">💬</span>
+            카카오톡 아이디로 회원가입
+          </button>
+        </div>
+
+        <div class="terms-note">
+          계속 진행하면
+          <a href="https://www.sajangpick.co.kr/terms" target="_blank">이용약관</a>
+          과
+          <a href="https://www.sajangpick.co.kr/privacy" target="_blank"
+            >개인정보처리방침</a
+          >
+          및 카카오 계정 정보 제공에 동의한 것으로 간주됩니다.
+        </div>
+
+        <div class="login-link">
+          이미 계정이 있으신가요?
+          <a href="login.html">사장픽 로그인</a>
+        </div>
       </div>
     </div>
 
