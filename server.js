@@ -5068,6 +5068,7 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additiona
     // 공식 문서: https://docs.dev.runwayml.com/
     // 허용된 모델: "gen3a_turbo", "gen4_turbo", "gen4", "gen4.5", "veo3", "veo3.1", "veo3.1_fast"
     // 허용된 ratio: "1280:720", "720:1280", "1104:832", "832:1104", "960:960", "1584:672"
+    // promptImage는 항상 배열 형태여야 함
     const promptImagePayload = Array.isArray(additionalImages) && additionalImages.length > 0
       ? [
           { uri: imageUrl, position: "first" },
@@ -5076,7 +5077,7 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additiona
             position: index === list.length - 1 ? "last" : "middle",
           })),
         ]
-      : imageUrl;
+      : [{ uri: imageUrl, position: "first" }]; // 단일 이미지도 배열로 감싸기
 
     const task = await runwayClient.imageToVideo
       .create({
