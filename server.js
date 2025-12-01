@@ -4980,7 +4980,7 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
       ],
       videoConfig: {
         aspectRatio: "VERTICAL_9_16",
-        durationSeconds: Math.min(Math.max(duration, 5), 20),
+        durationSeconds: Math.min(Math.max(duration, 4), 8),
         resolution: "RESOLUTION_720P",
         enableAudio: true,
       },
