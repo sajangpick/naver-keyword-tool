@@ -5156,22 +5156,54 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       
       // 에러 메시지 추출 (Buffer 처리 포함) - 항상 문자열로 변환
       let errorMessage = "알 수 없는 오류입니다.";
-      if (typeof responseData === 'string') {
-        try {
-          const parsed = JSON.parse(responseData);
-          errorMessage = String(parsed.error || parsed.message || responseData);
-        } catch {
-          errorMessage = String(responseData);
-        }
-      } else if (responseData && typeof responseData === 'object') {
-        errorMessage = String(responseData.error || responseData.message || JSON.stringify(responseData));
-      } else {
-        errorMessage = String(responseData || "알 수 없는 오류입니다.");
-      }
       
-      // errorMessage가 항상 문자열인지 확인
-      if (typeof errorMessage !== 'string') {
-        errorMessage = String(errorMessage);
+      try {
+        if (typeof responseData === 'string') {
+          try {
+            const parsed = JSON.parse(responseData);
+            // 중첩된 error 객체 처리
+            if (parsed.error) {
+              if (typeof parsed.error === 'string') {
+                errorMessage = parsed.error;
+              } else if (typeof parsed.error === 'object') {
+                errorMessage = parsed.error.message || parsed.error.error || JSON.stringify(parsed.error);
+              } else {
+                errorMessage = String(parsed.error);
+              }
+            } else {
+              errorMessage = parsed.message || responseData;
+            }
+          } catch {
+            errorMessage = responseData;
+          }
+        } else if (responseData && typeof responseData === 'object') {
+          // 객체인 경우 여러 경로에서 메시지 추출
+          if (responseData.error) {
+            if (typeof responseData.error === 'string') {
+              errorMessage = responseData.error;
+            } else if (typeof responseData.error === 'object') {
+              errorMessage = responseData.error.message || responseData.error.error || responseData.error.details || JSON.stringify(responseData.error);
+            } else {
+              errorMessage = String(responseData.error);
+            }
+          } else if (responseData.message) {
+            errorMessage = String(responseData.message);
+          } else if (responseData.details) {
+            errorMessage = String(responseData.details);
+          } else {
+            errorMessage = JSON.stringify(responseData);
+          }
+        } else {
+          errorMessage = String(responseData || "알 수 없는 오류입니다.");
+        }
+        
+        // 최종적으로 문자열인지 확인
+        if (typeof errorMessage !== 'string') {
+          errorMessage = JSON.stringify(errorMessage);
+        }
+      } catch (parseError) {
+        console.error("🔴 [Gemini API] 에러 메시지 파싱 실패:", parseError);
+        errorMessage = JSON.stringify(responseData) || "알 수 없는 오류입니다.";
       }
       
       if (status === 404) {
@@ -5196,11 +5228,36 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
         throw new Error("Gemini Veo 사용 권한이 없습니다. 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한이 필요합니다.");
       }
       if (status === 400) {
-        throw new Error(`Gemini Veo API 요청 오류: ${errorMessage}`);
+        console.error("🔴 [Gemini API] 400 오류 상세:", {
+          endpoint: VEO_API_URL,
+          model: veoModel,
+          errorMessage: errorMessage,
+          fullResponse: JSON.stringify(responseData, null, 2)
+        });
+        devError("🔴 [Gemini API] 400 오류 상세:", {
+          endpoint: VEO_API_URL,
+          model: veoModel,
+          errorMessage: errorMessage
+        });
+        
+        // 더 읽기 쉬운 에러 메시지 생성
+        const readableError = errorMessage.length > 200 
+          ? errorMessage.substring(0, 200) + "..."
+          : errorMessage;
+        throw new Error(`Gemini Veo API 요청 오류 (400): ${readableError}`);
       }
       
       // 기타 상태 코드
-      throw new Error(`Gemini Veo API 오류 (${status}): ${errorMessage}`);
+      console.error(`🔴 [Gemini API] ${status} 오류 상세:`, {
+        endpoint: VEO_API_URL,
+        model: veoModel,
+        errorMessage: errorMessage,
+        fullResponse: JSON.stringify(responseData, null, 2)
+      });
+      const readableError = errorMessage.length > 200 
+        ? errorMessage.substring(0, 200) + "..."
+        : errorMessage;
+      throw new Error(`Gemini Veo API 오류 (${status}): ${readableError}`);
     }
     
     // 네트워크 오류나 타임아웃
