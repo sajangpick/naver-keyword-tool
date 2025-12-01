@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://cdn.jsdelivr.net https://connect.facebook.net https://www.facebook.com wss://*.supabase.co; img-src 'self' data: https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://cdn.jsdelivr.net https://connect.facebook.net https://www.facebook.com wss://*.supabase.co; img-src 'self' data: https://www.facebook.com https:; media-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <title>AI 쇼츠 영상 생성 - 사장픽</title>
@@ -2354,11 +2354,22 @@
 
         function downloadLatestVideo() {
             const url = latestVideoData?.video_url;
-            if (!url) return;
-            const link = document.createElement('a');
-            link.href = url;
+            if (!url) {
+                alert('다운로드할 영상이 없습니다.');
+                return;
+            }
+            
             const filename = (latestVideoData?.menu_name || 'sajangpick-short').replace(/\s+/g, '-') + '.mp4';
+            
+            // 서버 프록시를 통해 다운로드 (Google API 403 오류 방지)
+            const downloadUrl = `${API_BASE}/api/shorts/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+            
+            console.log('🔵 [다운로드] 프록시 URL:', downloadUrl);
+            
+            const link = document.createElement('a');
+            link.href = downloadUrl;
             link.download = filename;
+            link.target = '_blank'; // 새 탭에서 열기 (필요시)
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

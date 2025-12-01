@@ -92,6 +92,10 @@
           <h1 class="page-title">${config.title}</h1>
           <p class="page-subtitle">${config.subtitle}</p>
         </div>
+        <button class="header-btn main-page-btn" id="mainPageBtn" title="메인 페이지로 이동">
+          <i class="fas fa-home"></i>
+          <span>메인 페이지로 이동하기</span>
+        </button>
       </div>
 
       <div class="header-right">
@@ -189,6 +193,16 @@
     if (logoutBtn) logoutBtn.style.display = 'flex';
   }
 
+  // 메인 페이지 이동 버튼 이벤트
+  function setupMainPageButton() {
+    const mainPageBtn = document.getElementById('mainPageBtn');
+    if (mainPageBtn) {
+      mainPageBtn.addEventListener('click', () => {
+        window.location.href = '/index.html';
+      });
+    }
+  }
+
   // 새로고침 버튼 이벤트
   function setupRefreshButton() {
     const refreshBtn = document.getElementById('refreshBtn');
@@ -279,6 +293,7 @@
     mainContent.insertBefore(header, mainContent.firstChild);
 
     // 이벤트 설정
+    setupMainPageButton();
     setupRefreshButton();
     setupLoginButton();
     setupLogoutButton();

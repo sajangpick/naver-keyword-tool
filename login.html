@@ -530,10 +530,31 @@
       const redirectTarget = params.get("redirect");
 
       function resolveRedirectTarget() {
-        if (!redirectTarget) return "index.html";
-        if (!redirectTarget.startsWith("/")) return "index.html";
-        if (redirectTarget === "/login.html") return "index.html";
-        return redirectTarget;
+        if (!redirectTarget) {
+          console.log("[로그인] redirect 파라미터 없음, index.html로 이동");
+          return "index.html";
+        }
+        
+        // URL 디코딩 (encodeURIComponent로 인코딩된 경우)
+        let decodedTarget = decodeURIComponent(redirectTarget);
+        console.log("[로그인] redirect 대상:", decodedTarget);
+        
+        // 관리자 페이지에서 로그인한 경우 관리자 페이지로 리다이렉트
+        if (decodedTarget.startsWith("/admin/")) {
+          console.log("[로그인] 관리자 페이지로 리다이렉트:", decodedTarget);
+          return decodedTarget;
+        }
+        
+        if (!decodedTarget.startsWith("/")) {
+          console.log("[로그인] 잘못된 경로, index.html로 이동");
+          return "index.html";
+        }
+        if (decodedTarget === "/login.html") {
+          console.log("[로그인] login.html 자체, index.html로 이동");
+          return "index.html";
+        }
+        console.log("[로그인] 일반 페이지로 리다이렉트:", decodedTarget);
+        return decodedTarget;
       }
 
       // 이미 로그인된 경우 지정된 페이지로 이동 (Supabase 세션 기반)

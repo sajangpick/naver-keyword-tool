@@ -6141,6 +6141,70 @@ app.get("/api/shorts/videos", async (req, res) => {
   }
 });
 
+// ==================== 영상 다운로드 프록시 ====================
+// Google API에서 직접 다운로드하면 403 오류가 발생하므로 서버를 통해 프록시
+app.get("/api/shorts/download", async (req, res) => {
+  try {
+    // CORS 헤더 설정
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, user-id");
+
+    const videoUrl = req.query.url;
+    
+    if (!videoUrl) {
+      return res.status(400).json({
+        success: false,
+        error: "영상 URL이 제공되지 않았습니다."
+      });
+    }
+
+    devLog("🔵 [다운로드 프록시] 영상 다운로드 시작:", videoUrl);
+
+    // Google API URL인 경우 API 키 추가
+    let downloadUrl = videoUrl;
+    if (videoUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
+      // URL에 API 키 추가
+      const separator = videoUrl.includes('?') ? '&' : '?';
+      downloadUrl = `${videoUrl}${separator}key=${GEMINI_API_KEY}`;
+      devLog("🔵 [다운로드 프록시] API 키 추가됨");
+    }
+
+    // 영상 다운로드
+    const response = await axios.get(downloadUrl, {
+      responseType: 'stream',
+      timeout: 120000, // 2분 타임아웃
+      headers: {
+        'Accept': 'video/*',
+      }
+    });
+
+    // 파일명 추출
+    const filename = req.query.filename || 'sajangpick-video.mp4';
+    
+    // 응답 헤더 설정
+    res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.setHeader('Content-Length', response.headers['content-length'] || '');
+
+    devLog("🔵 [다운로드 프록시] 영상 스트리밍 시작");
+    
+    // 스트림을 클라이언트로 전송
+    response.data.pipe(res);
+    
+  } catch (error) {
+    devError("🔴 [다운로드 프록시] 오류:", error.message);
+    console.error("🔴 [다운로드 프록시] 오류:", error);
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: `영상 다운로드 실패: ${error.message || "알 수 없는 오류"}`
+      });
+    }
+  }
+});
+
 // ==================== 서버 시작 ====================
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
