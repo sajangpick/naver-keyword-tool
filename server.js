@@ -5154,17 +5154,24 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       devError("🔴 [Gemini API] HTTP 응답 헤더:", JSON.stringify(error.response.headers, null, 2));
       devError("🔴 [Gemini API] HTTP 응답 데이터:", typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2));
       
-      // 에러 메시지 추출 (Buffer 처리 포함)
+      // 에러 메시지 추출 (Buffer 처리 포함) - 항상 문자열로 변환
       let errorMessage = "알 수 없는 오류입니다.";
       if (typeof responseData === 'string') {
         try {
           const parsed = JSON.parse(responseData);
-          errorMessage = parsed.error || parsed.message || responseData;
+          errorMessage = String(parsed.error || parsed.message || responseData);
         } catch {
-          errorMessage = responseData;
+          errorMessage = String(responseData);
         }
       } else if (responseData && typeof responseData === 'object') {
-        errorMessage = responseData.error || responseData.message || JSON.stringify(responseData);
+        errorMessage = String(responseData.error || responseData.message || JSON.stringify(responseData));
+      } else {
+        errorMessage = String(responseData || "알 수 없는 오류입니다.");
+      }
+      
+      // errorMessage가 항상 문자열인지 확인
+      if (typeof errorMessage !== 'string') {
+        errorMessage = String(errorMessage);
       }
       
       if (status === 404) {
@@ -5185,7 +5192,8 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
     }
     
     // 네트워크 오류나 타임아웃
-    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+    const errorMsg = error.message ? String(error.message) : String(error);
+    if (error.code === 'ECONNABORTED' || (typeof errorMsg === 'string' && errorMsg.includes('timeout'))) {
       console.error("🔴 [Gemini API] 타임아웃 오류");
       devError("🔴 [Gemini API] 타임아웃 오류");
       throw new Error("Gemini Veo API 호출 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
@@ -5193,13 +5201,13 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
     
     // 요청이 전송되지 않은 경우 (네트워크 오류 등)
     if (error.request && !error.response) {
-      console.error("🔴 [Gemini API] 요청이 서버에 도달하지 못함:", error.message);
-      devError("🔴 [Gemini API] 요청이 서버에 도달하지 못함:", error.message);
-      throw new Error(`Gemini Veo API 서버 연결 실패: ${error.message}`);
+      console.error("🔴 [Gemini API] 요청이 서버에 도달하지 못함:", errorMsg);
+      devError("🔴 [Gemini API] 요청이 서버에 도달하지 못함:", errorMsg);
+      throw new Error(`Gemini Veo API 서버 연결 실패: ${errorMsg}`);
     }
     
-    console.error("🔴 [Gemini API] 알 수 없는 오류:", error.message);
-    throw new Error(`Gemini Veo 영상 생성 실패: ${error.message}`);
+    console.error("🔴 [Gemini API] 알 수 없는 오류:", errorMsg);
+    throw new Error(`Gemini Veo 영상 생성 실패: ${errorMsg}`);
   }
 }
 
@@ -5815,9 +5823,10 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
               aiModel = "gemini-veo-3.1";
               devLog("✅ Gemini Veo 3.1 영상 생성 성공:", { videoUrl, jobId });
             } catch (veoError) {
-              devError("❌ Gemini Veo 3.1 실패:", veoError.message);
+              const veoErrorMsg = veoError?.message ? String(veoError.message) : String(veoError || "알 수 없는 오류입니다.");
+              devError("❌ Gemini Veo 3.1 실패:", veoErrorMsg);
               devError("Gemini 에러 상세:", veoError.stack || veoError);
-              throw new Error(`Gemini 영상 생성 실패: ${veoError.message || "알 수 없는 오류입니다."}`);
+              throw new Error(`Gemini 영상 생성 실패: ${veoErrorMsg}`);
             }
             
             if (!videoUrl) {
@@ -5846,11 +5855,12 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
             
             // 실패 상태로 업데이트
             try {
+              const errorMsg = error?.message ? String(error.message) : String(error || "영상 생성 중 오류가 발생했습니다.");
               await supabase
                 .from("shorts_videos")
                 .update({
                   status: "failed",
-                  error_message: error.message || "영상 생성 중 오류가 발생했습니다.",
+                  error_message: errorMsg,
                   updated_at: new Date().toISOString(),
                 })
                 .eq("id", videoData.id);
