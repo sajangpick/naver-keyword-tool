@@ -5056,7 +5056,7 @@ try {
 }
 
 // Runway API: 이미지에서 동영상 생성 (Gen-4 또는 Gen-3 모델 사용)
-async function generateVideoWithRunway(imageUrl, prompt, duration = 5) {
+async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additionalImages = []) {
   try {
     devLog("Runway API 호출 시작:", { imageUrl, prompt, duration });
 
@@ -5068,10 +5068,20 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5) {
     // 공식 문서: https://docs.dev.runwayml.com/
     // 허용된 모델: "gen3a_turbo", "gen4_turbo", "gen4", "gen4.5", "veo3", "veo3.1", "veo3.1_fast"
     // 허용된 ratio: "1280:720", "720:1280", "1104:832", "832:1104", "960:960", "1584:672"
+    const promptImagePayload = Array.isArray(additionalImages) && additionalImages.length > 0
+      ? [
+          { uri: imageUrl, position: "first" },
+          ...additionalImages.map((uri, index, list) => ({
+            uri,
+            position: index === list.length - 1 ? "last" : "middle",
+          })),
+        ]
+      : imageUrl;
+
     const task = await runwayClient.imageToVideo
       .create({
         model: "gen4", // 허용된 모델: gen4, gen4_turbo, gen4.5, veo3, veo3.1, veo3.1_fast
-        imageUrl: imageUrl,
+        promptImage: promptImagePayload,
         promptText: prompt || "cinematic food video, slow motion, professional lighting",
         duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
         ratio: "720:1280", // 쇼츠 형식 (세로) - Runway API 형식: "720:1280" (9:16 비율)
