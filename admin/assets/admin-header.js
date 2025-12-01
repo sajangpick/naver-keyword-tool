@@ -97,6 +97,7 @@
       <div class="header-right">
         <button class="header-btn login-btn" id="loginBtn" title="로그인" style="display: none;">
           <i class="fas fa-sign-in-alt"></i>
+          <span>로그인</span>
         </button>
         
         <button class="header-btn" id="refreshBtn" title="새로고침">

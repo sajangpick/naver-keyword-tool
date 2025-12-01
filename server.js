@@ -63,7 +63,7 @@ const NAVER_SEARCH = {
 // AI API 키 설정
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_VEO_MODEL = process.env.GEMINI_VEO_MODEL || "veo-1.5";
+const GEMINI_VEO_MODEL = process.env.GEMINI_VEO_MODEL || "veo-3.1-generate-preview";
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const OPENAI_SHORTS_MODEL =
   process.env.OPENAI_SHORTS_MODEL ||
@@ -4972,16 +4972,16 @@ async function pollGeminiOperation(operationName, timeoutMs = 600000) {
 }
 
 async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageBase64 = null, imageMimeType = 'image/jpeg') {
+  // 변수들을 함수 스코프로 이동 (catch 블록에서 접근 가능하도록)
+  const veoModel = GEMINI_VEO_MODEL;
+  const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:predictLongRunning`;
+  
   try {
     devLog("Gemini Veo 3.1 API 호출 시작:", { imageUrl, prompt, duration, hasImageBuffer: !!imageBase64 });
 
     if (!GEMINI_API_KEY) {
       throw new Error("Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경변수를 설정해주세요.");
     }
-
-    const veoModel = GEMINI_VEO_MODEL;
-    // 공식 REST API 엔드포인트 사용: predictLongRunning
-    const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:predictLongRunning`;
     
     devLog("🔵 [Gemini API] 엔드포인트:", VEO_API_URL);
     devLog("🔵 [Gemini API] 모델:", veoModel);
@@ -5175,9 +5175,21 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       }
       
       if (status === 404) {
+        console.error("🔴 [Gemini API] 404 오류 상세:", {
+          endpoint: VEO_API_URL,
+          model: veoModel,
+          errorMessage: errorMessage,
+          fullResponse: JSON.stringify(responseData, null, 2)
+        });
+        devError("🔴 [Gemini API] 404 오류 상세:", {
+          endpoint: VEO_API_URL,
+          model: veoModel,
+          errorMessage: errorMessage
+        });
+        
         const msg = errorMessage.includes("Bucket not found") 
           ? "이미지 파일을 찾을 수 없습니다. 이미지 URL이 유효한지 확인해주세요."
-          : "Gemini Veo API가 아직 공개되지 않았거나 엔드포인트가 다릅니다. Google AI Studio에서 최신 API 문서를 확인해주세요.";
+          : `Gemini Veo API 엔드포인트를 찾을 수 없습니다 (404). 사용한 모델: ${veoModel}, 엔드포인트: ${VEO_API_URL}. Google AI Studio에서 최신 API 문서를 확인하거나, GEMINI_VEO_MODEL 환경변수를 확인해주세요.`;
         throw new Error(msg);
       }
       if (status === 403) {
