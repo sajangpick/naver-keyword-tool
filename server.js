@@ -4971,9 +4971,9 @@ async function pollGeminiOperation(operationName, timeoutMs = 600000) {
   throw new Error("Gemini Veo 작업이 제한 시간 내 완료되지 않았습니다.");
 }
 
-async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
+async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageBase64 = null, imageMimeType = 'image/jpeg') {
   try {
-    devLog("Gemini Veo 3.1 API 호출 시작:", { imageUrl, prompt, duration });
+    devLog("Gemini Veo 3.1 API 호출 시작:", { imageUrl, prompt, duration, hasImageBuffer: !!imageBase64 });
 
     if (!GEMINI_API_KEY) {
       throw new Error("Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경변수를 설정해주세요.");
@@ -4987,45 +4987,56 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
     devLog("🔵 [Gemini API] 모델:", veoModel);
     devLog("🔵 [Gemini API] 키 존재 여부:", GEMINI_API_KEY ? `있음 (${GEMINI_API_KEY.substring(0, 10)}...)` : "없음");
     
-    // 이미지 URL에서 이미지 데이터 가져오기
-    devLog("🔵 [Gemini API] 이미지 다운로드 시작:", imageUrl);
-    console.log("🔵 [Gemini API] 이미지 다운로드 시작:", imageUrl);
-    
-    let imageBase64 = null;
-    let imageMimeType = 'image/jpeg';
-    
-    try {
-      const imageResponse = await axios.get(imageUrl, {
-        responseType: 'arraybuffer',
-        timeout: 30000,
-        validateStatus: function (status) {
-          return status >= 200 && status < 500; // 4xx도 catch하도록
+    // 이미지 처리: 버퍼가 있으면 사용, 없으면 URL에서 다운로드
+    if (!imageBase64 && imageUrl) {
+      devLog("🔵 [Gemini API] 이미지 다운로드 시작:", imageUrl);
+      console.log("🔵 [Gemini API] 이미지 다운로드 시작:", imageUrl);
+      
+      try {
+        const imageResponse = await axios.get(imageUrl, {
+          responseType: 'arraybuffer',
+          timeout: 30000,
+          validateStatus: function (status) {
+            return status >= 200 && status < 500; // 4xx도 catch하도록
+          }
+        });
+        
+        if (imageResponse.status !== 200) {
+          console.error("🔴 [Gemini API] 이미지 다운로드 실패:", imageResponse.status, imageResponse.statusText);
+          throw new Error(`이미지 다운로드 실패 (HTTP ${imageResponse.status}): ${imageResponse.statusText}`);
         }
-      });
-      
-      if (imageResponse.status !== 200) {
-        console.error("🔴 [Gemini API] 이미지 다운로드 실패:", imageResponse.status, imageResponse.statusText);
-        throw new Error(`이미지 다운로드 실패 (HTTP ${imageResponse.status}): ${imageResponse.statusText}`);
+        
+        imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+        imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
+        devLog("🔵 [Gemini API] 이미지 다운로드 완료:", { 
+          size: imageBase64.length, 
+          mimeType: imageMimeType 
+        });
+        console.log("🔵 [Gemini API] 이미지 다운로드 완료:", { 
+          size: imageBase64.length, 
+          mimeType: imageMimeType 
+        });
+      } catch (imageError) {
+        console.error("🔴 [Gemini API] 이미지 다운로드 오류:", imageError.message);
+        devError("🔴 [Gemini API] 이미지 다운로드 오류:", imageError.message);
+        if (imageError.response) {
+          console.error("🔴 [Gemini API] 이미지 다운로드 응답:", imageError.response.status, imageError.response.data);
+          devError("🔴 [Gemini API] 이미지 다운로드 응답:", imageError.response.status);
+        }
+        throw new Error(`이미지를 불러올 수 없습니다: ${imageError.message}. 이미지 URL이 유효한지 확인해주세요.`);
       }
-      
-      imageBase64 = Buffer.from(imageResponse.data).toString('base64');
-      imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
-      devLog("🔵 [Gemini API] 이미지 다운로드 완료:", { 
+    } else if (imageBase64) {
+      devLog("🔵 [Gemini API] 이미지 버퍼 사용 (다운로드 생략):", { 
         size: imageBase64.length, 
         mimeType: imageMimeType 
       });
-      console.log("🔵 [Gemini API] 이미지 다운로드 완료:", { 
+      console.log("🔵 [Gemini API] 이미지 버퍼 사용 (다운로드 생략):", { 
         size: imageBase64.length, 
         mimeType: imageMimeType 
       });
-    } catch (imageError) {
-      console.error("🔴 [Gemini API] 이미지 다운로드 오류:", imageError.message);
-      devError("🔴 [Gemini API] 이미지 다운로드 오류:", imageError.message);
-      if (imageError.response) {
-        console.error("🔴 [Gemini API] 이미지 다운로드 응답:", imageError.response.status, imageError.response.data);
-        devError("🔴 [Gemini API] 이미지 다운로드 응답:", imageError.response.status);
-      }
-      throw new Error(`이미지를 불러올 수 없습니다: ${imageError.message}. 이미지 URL이 유효한지 확인해주세요.`);
+    } else {
+      devLog("⚠️ [Gemini API] 이미지 없음 - 텍스트만으로 영상 생성");
+      console.log("⚠️ [Gemini API] 이미지 없음 - 텍스트만으로 영상 생성");
     }
 
     // 공식 REST API 형식에 맞게 요청 본문 구성
@@ -5788,7 +5799,17 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
               }
               devLog("Gemini API 키 확인 완료 (키 길이: " + GEMINI_API_KEY.length + "자)");
               
-              const veoResult = await generateVideoWithGeminiVeo(imageUrl, prompt, Math.min(parseInt(duration) || 8, 8));
+              // 이미지 버퍼를 직접 사용 (다운로드 불필요)
+              const imageBuffer = mainImage.buffer;
+              const imageMimeType = mainImage.mimetype || 'image/jpeg';
+              const imageBase64 = imageBuffer.toString('base64');
+              
+              devLog("🔵 [Gemini API] 이미지 버퍼 사용 (다운로드 생략):", {
+                size: imageBuffer.length,
+                mimeType: imageMimeType
+              });
+              
+              const veoResult = await generateVideoWithGeminiVeo(null, prompt, Math.min(parseInt(duration) || 8, 8), imageBase64, imageMimeType);
               videoUrl = veoResult.videoUrl;
               jobId = veoResult.jobId;
               aiModel = "gemini-veo-3.1";

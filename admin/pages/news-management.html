@@ -1090,6 +1090,22 @@
           <div class="ai-suggestions" id="searchResults"></div>
         </div>
 
+        <!-- AI 뉴스 추천 섹션 -->
+        <div class="ai-recommend-section" id="aiRecommendSection" style="margin-top: 24px;">
+          <div class="ai-recommend-title">🤖 AI 뉴스 추천</div>
+          <div class="ai-recommend-desc">
+            AI가 식당 대표님께 유용한 최신 뉴스를 자동으로 추천해드립니다
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <button class="ai-recommend-btn" onclick="getAIRecommendations()" id="aiRecommendButton">
+              <i class="fas fa-magic"></i> AI 뉴스 추천받기
+            </button>
+          </div>
+          
+          <div class="ai-suggestions" id="aiSuggestions" style="margin-top: 16px;"></div>
+        </div>
+
         <!-- 컨트롤 -->
         <div class="news-controls">
           <button class="btn btn-primary" onclick="openModal()">
@@ -4146,6 +4162,25 @@
 
         // localStorage에서 네이버 뉴스 데이터 불러오기 (페이지 로드 시 자동 표시)
         loadNaverNewsFromStorage();
+        
+        // AI 추천 섹션을 항상 보이도록 설정
+        const aiRecommendSection = document.getElementById('aiRecommendSection');
+        if (aiRecommendSection) {
+          aiRecommendSection.style.display = 'block';
+        }
+        
+        // localStorage에서 AI 추천 데이터 불러오기 (페이지 로드 시 자동 표시)
+        const savedAIRecommendations = loadAIRecommendationsFromStorage();
+        if (savedAIRecommendations && savedAIRecommendations.length > 0) {
+          renderAIRecommendations(savedAIRecommendations);
+          console.log('✅ 페이지 로드 시 AI 추천 데이터를 자동으로 표시했습니다.');
+        } else {
+          // 데이터가 없어도 섹션은 보이도록
+          const suggestionsEl = document.getElementById('aiSuggestions');
+          if (suggestionsEl) {
+            suggestionsEl.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">AI 추천 데이터가 없습니다. 위 버튼을 클릭하여 추천을 받아보세요.</div>';
+          }
+        }
         const panel = document.getElementById('naverNewsPanel');
         const sections = naverSectionData.sections || {};
         
@@ -4520,6 +4555,86 @@
         return `<p>${safeText}</p><p><br></p>${linkHtml}`;
       }
 
+      // AI 추천 데이터를 localStorage에 저장
+      function saveAIRecommendationsToStorage(data) {
+        try {
+          const storageData = {
+            data: data,
+            timestamp: new Date().toISOString()
+          };
+          localStorage.setItem('aiNewsRecommendations', JSON.stringify(storageData));
+          console.log('✅ AI 추천 데이터를 localStorage에 저장했습니다.');
+        } catch (error) {
+          console.error('❌ AI 추천 데이터 저장 실패:', error);
+        }
+      }
+
+      // localStorage에서 AI 추천 데이터 불러오기
+      function loadAIRecommendationsFromStorage() {
+        try {
+          const stored = localStorage.getItem('aiNewsRecommendations');
+          if (!stored) return null;
+          
+          const parsed = JSON.parse(stored);
+          if (!parsed.data || !Array.isArray(parsed.data)) return null;
+          
+          // 24시간 이내 데이터만 유효
+          if (parsed.timestamp) {
+            const storedTime = new Date(parsed.timestamp);
+            const now = new Date();
+            const hoursDiff = (now - storedTime) / (1000 * 60 * 60);
+            if (hoursDiff > 24) {
+              console.log('⚠️ AI 추천 데이터가 24시간이 지나 만료되었습니다.');
+              localStorage.removeItem('aiNewsRecommendations');
+              return null;
+            }
+          }
+          
+          console.log('✅ localStorage에서 AI 추천 데이터를 불러왔습니다.');
+          return parsed.data;
+        } catch (error) {
+          console.error('❌ AI 추천 데이터 불러오기 실패:', error);
+          return null;
+        }
+      }
+
+      // AI 추천 데이터를 화면에 표시
+      function renderAIRecommendations(data) {
+        const suggestionsEl = document.getElementById('aiSuggestions');
+        const sectionEl = document.getElementById('aiRecommendSection');
+        
+        if (!suggestionsEl) {
+          console.warn('⚠️ aiSuggestions 요소를 찾을 수 없습니다.');
+          return;
+        }
+        
+        // 섹션이 항상 보이도록
+        if (sectionEl) {
+          sectionEl.style.display = 'block';
+        }
+
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          suggestionsEl.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">AI 추천 데이터가 없습니다. 위 버튼을 클릭하여 추천을 받아보세요.</div>';
+          return;
+        }
+
+        // AI 제안 카드 생성
+        suggestionsEl.innerHTML = data.map((suggestion, index) => `
+          <div class="ai-suggestion-card" onclick="selectAISuggestion(${index}, ${JSON.stringify(suggestion).replace(/"/g, '&quot;')})">
+            <div class="ai-suggestion-title">${suggestion.title}</div>
+            <div class="ai-suggestion-summary">${suggestion.summary}</div>
+            <div style="font-size: 12px; margin-top: 8px; opacity: 0.8;">
+              💡 ${suggestion.why_useful}
+            </div>
+          </div>
+        `).join('');
+
+        // 제안 데이터를 전역 변수에 저장
+        window.aiSuggestions = data;
+        
+        console.log('✅ AI 추천 데이터를 화면에 표시했습니다.');
+      }
+
       // AI 뉴스 추천 (기존 함수 유지)
       async function getAIRecommendations() {
         const suggestionsEl = document.getElementById('aiSuggestions');
@@ -4544,19 +4659,11 @@
             throw new Error(result.error || 'AI 추천에 실패했습니다.');
           }
 
-          // AI 제안 카드 생성
-          suggestionsEl.innerHTML = result.data.map((suggestion, index) => `
-            <div class="ai-suggestion-card" onclick="selectAISuggestion(${index}, ${JSON.stringify(suggestion).replace(/"/g, '&quot;')})">
-              <div class="ai-suggestion-title">${suggestion.title}</div>
-              <div class="ai-suggestion-summary">${suggestion.summary}</div>
-              <div style="font-size: 12px; margin-top: 8px; opacity: 0.8;">
-                💡 ${suggestion.why_useful}
-              </div>
-            </div>
-          `).join('');
+          // localStorage에 저장
+          saveAIRecommendationsToStorage(result.data);
 
-          // 제안 데이터를 전역 변수에 저장
-          window.aiSuggestions = result.data;
+          // 화면에 표시
+          renderAIRecommendations(result.data);
 
         } catch (error) {
           console.error('AI recommendations error:', error);
@@ -4582,8 +4689,8 @@
         setModalCategory(suggestion.category || null);
         quill.root.innerHTML = suggestion.content;
         
-        // 모달이 열리면 AI 섹션 닫기
-        document.getElementById('aiSuggestions').innerHTML = '';
+        // 모달이 열려도 AI 섹션은 유지 (데이터가 계속 보이도록)
+        // document.getElementById('aiSuggestions').innerHTML = ''; // 제거
       }
 
       function mapCategoryToClass(category) {
