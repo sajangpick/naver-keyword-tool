@@ -1654,6 +1654,8 @@
         const MAX_VIDEO_STATUS_CHECKS = 60;
         let latestVideoData = null;
         let pendingResultMeta = null;
+        const RENDER_HEALTH_URL = 'https://naver-keyword-tool.onrender.com/health';
+        let renderWakePromise = null;
 
         // 플랫폼별 정보
         const platformInfo = {
@@ -1689,6 +1691,61 @@
             }
         };
 
+        function isGatewayError(status) {
+            return status === 502 || status === 503 || status === 504;
+        }
+
+        async function wakeRenderServer(reason = '') {
+            if (renderWakePromise) {
+                return renderWakePromise;
+            }
+
+            const healthUrl = `${RENDER_HEALTH_URL}?t=${Date.now()}`;
+            renderWakePromise = (async () => {
+                let controller = null;
+                let timeoutId = null;
+                try {
+                    if (typeof AbortController !== 'undefined') {
+                        controller = new AbortController();
+                        timeoutId = setTimeout(() => controller.abort(), 15000);
+                    }
+                    const response = await fetch(healthUrl, {
+                        cache: 'no-store',
+                        signal: controller?.signal
+                    });
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+                    if (!response.ok) {
+                        console.warn(`[shorts-editor] Render 서버 웜업 실패 (${reason})`, response.status);
+                        return false;
+                    }
+                    await response.json().catch(() => null);
+                    console.log('[shorts-editor] Render 서버 웜업 완료');
+                    return true;
+                } catch (error) {
+                    console.warn(`[shorts-editor] Render 서버 웜업 중 오류 (${reason})`, error);
+                    return false;
+                } finally {
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                    }
+                    setTimeout(() => {
+                        renderWakePromise = null;
+                    }, 5000);
+                }
+            })();
+
+            return renderWakePromise;
+        }
+
+        function showRenderWakeMessage(message) {
+            const text = message || 'Render 서버를 깨우는 중입니다. 최대 20초만 기다려주세요.';
+            setResultStatus('timeout', text);
+            showResultPlaceholder(text);
+        }
+
         // API 베이스 URL
         const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
             ? 'http://localhost:3003' 
@@ -1720,8 +1777,15 @@
                 const response = await fetch(`${API_BASE}/api/shorts/videos?userId=${encodeURIComponent(userId)}&limit=20`, {
                     headers: { 'user-id': userId }
                 });
+
+                if (isGatewayError(response.status)) {
+                    console.warn(`[shorts-editor] Render 서버 게이트웨이 응답 (상태 조회)`, response.status);
+                    showRenderWakeMessage('Render 서버를 깨우는 중입니다. 잠시 후 다시 확인합니다.');
+                    await wakeRenderServer('영상 상태 조회');
+                    return;
+                }
                 
-                if (!response.ok) throw new Error('영상 정보를 불러올 수 없습니다.');
+                if (!response.ok) throw new Error(`영상 정보를 불러올 수 없습니다. (HTTP ${response.status})`);
                 
                 const payload = await response.json();
                 const video = Array.isArray(payload?.data)
@@ -1750,6 +1814,10 @@
                 }
             } catch (error) {
                 console.error('영상 상태 조회 실패:', error);
+                if (error?.message?.includes('Failed to fetch')) {
+                    showRenderWakeMessage('Render 서버 연결을 복구하는 중입니다...');
+                    await wakeRenderServer('영상 상태 조회 fetch 실패');
+                }
             }
         }
 
@@ -2165,8 +2233,19 @@
                 music: selectedMusic
             };
             prepareResultSection(pendingResultMeta);
+            const platformDetails = platformInfo[selectedStyle];
             
             showLoadingScreen();
+
+            const loadingMessageEl = document.getElementById('loadingMessage');
+            if (loadingMessageEl) {
+                loadingMessageEl.textContent = 'Render 서버 상태를 확인하는 중입니다...';
+            }
+            await wakeRenderServer('영상 생성 API 호출 준비');
+            if (loadingMessageEl) {
+                const fallbackMessage = 'AI가 영상을 만드는 중입니다...';
+                loadingMessageEl.textContent = platformDetails?.loadingMessage || fallbackMessage;
+            }
             
             const formData = new FormData();
             
@@ -2194,6 +2273,12 @@
                     },
                     body: formData
                 });
+
+                if (isGatewayError(response.status)) {
+                    console.warn('[shorts-editor] Render 서버 게이트웨이 응답 (영상 생성)', response.status);
+                    await wakeRenderServer('영상 생성 API 게이트웨이 오류');
+                    throw new Error('Render 서버가 깨어나는 중입니다. 잠시 후 다시 시도해주세요.');
+                }
 
                 let result;
                 try {
