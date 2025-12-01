@@ -95,6 +95,10 @@
       </div>
 
       <div class="header-right">
+        <button class="header-btn login-btn" id="loginBtn" title="로그인" style="display: none;">
+          <i class="fas fa-sign-in-alt"></i>
+        </button>
+        
         <button class="header-btn" id="refreshBtn" title="새로고침">
           <i class="fas fa-sync-alt"></i>
         </button>
@@ -137,6 +141,8 @@
 
       if (!supabaseClient || !supabaseClient.auth || typeof supabaseClient.auth.getUser !== 'function') {
         console.warn('⚠️ Supabase client not ready (skip header user info)');
+        // 로그인되지 않은 상태로 간주하고 로그인 버튼 표시
+        showLoginButton();
         return;
       }
 
@@ -147,10 +153,39 @@
         if (userNameEl) {
           userNameEl.textContent = user.email || '관리자';
         }
+        // 로그인된 상태: 로그인 버튼 숨기고 사용자 정보/로그아웃 버튼 표시
+        hideLoginButton();
+      } else {
+        // 로그인되지 않은 상태: 로그인 버튼 표시하고 사용자 정보/로그아웃 버튼 숨기기
+        showLoginButton();
       }
     } catch (error) {
       console.error('사용자 정보 로드 실패:', error);
+      // 에러 발생 시 로그인 버튼 표시
+      showLoginButton();
     }
+  }
+
+  // 로그인 버튼 표시
+  function showLoginButton() {
+    const loginBtn = document.getElementById('loginBtn');
+    const userInfo = document.getElementById('adminUserInfo');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (loginBtn) loginBtn.style.display = 'flex';
+    if (userInfo) userInfo.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+
+  // 로그인 버튼 숨기기
+  function hideLoginButton() {
+    const loginBtn = document.getElementById('loginBtn');
+    const userInfo = document.getElementById('adminUserInfo');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (userInfo) userInfo.style.display = 'flex';
+    if (logoutBtn) logoutBtn.style.display = 'flex';
   }
 
   // 새로고침 버튼 이벤트
@@ -165,6 +200,17 @@
           // 없으면 페이지 새로고침
           window.location.reload();
         }
+      });
+    }
+  }
+
+  // 로그인 버튼 이벤트
+  function setupLoginButton() {
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', () => {
+        const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login.html?redirect=${currentUrl}`;
       });
     }
   }
@@ -233,6 +279,7 @@
 
     // 이벤트 설정
     setupRefreshButton();
+    setupLoginButton();
     setupLogoutButton();
 
     // 사용자 정보 로드 (비동기)
