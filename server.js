@@ -5553,11 +5553,27 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
               
               // 2순위: Runway API 시도 (폴백)
               try {
+                devLog("Runway SDK 시도 중...");
                 const result = await generateVideoWithRunway(imageUrl, prompt, parseInt(duration) || 5);
                 videoUrl = result.videoUrl;
                 jobId = result.jobId;
                 aiModel = "runway";
-                devLog("Runway 영상 생성 성공 (폴백):", { videoUrl, jobId });
+                devLog("✅ Runway SDK 영상 생성 성공 (폴백):", { videoUrl, jobId });
+              } catch (runwaySDKError) {
+                devError("Runway SDK 실패, HTTP API로 폴백 시도:", runwaySDKError.message);
+                
+                // 3순위: Runway HTTP API 시도 (최종 폴백)
+                try {
+                  devLog("Runway HTTP API 시도 중...");
+                  const httpResult = await generateVideoWithRunwayHTTP(imageUrl, prompt, parseInt(duration) || 5);
+                  videoUrl = httpResult.videoUrl;
+                  jobId = httpResult.jobId;
+                  aiModel = "runway-http";
+                  devLog("✅ Runway HTTP API 영상 생성 성공 (최종 폴백):", { videoUrl, jobId });
+                } catch (runwayHTTPError) {
+                  devError("Runway HTTP API도 실패:", runwayHTTPError.message);
+                  throw new Error("모든 영상 생성 방법이 실패했습니다. Gemini: " + veoError.message + ", Runway SDK: " + runwaySDKError.message + ", Runway HTTP: " + runwayHTTPError.message);
+                }
               } catch (runwayError) {
                 devError("Runway API 실패, HTTP 폴백 시도:", runwayError.message);
                 
