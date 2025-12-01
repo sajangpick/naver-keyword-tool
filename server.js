@@ -5579,8 +5579,8 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
                 jobId = result.jobId;
                 aiModel = "runway";
                 devLog("✅ Runway SDK 영상 생성 성공 (폴백):", { videoUrl, jobId });
-              } catch (runwaySDKError) {
-                devError("Runway SDK 실패, HTTP API로 폴백 시도:", runwaySDKError.message);
+              } catch (runwayError) {
+                devError("Runway SDK 실패, HTTP API로 폴백 시도:", runwayError.message);
                 
                 // 3순위: Runway HTTP API 시도 (최종 폴백)
                 try {
@@ -5592,21 +5592,7 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
                   devLog("✅ Runway HTTP API 영상 생성 성공 (최종 폴백):", { videoUrl, jobId });
                 } catch (runwayHTTPError) {
                   devError("Runway HTTP API도 실패:", runwayHTTPError.message);
-                  throw new Error("모든 영상 생성 방법이 실패했습니다. Gemini: " + veoError.message + ", Runway SDK: " + runwaySDKError.message + ", Runway HTTP: " + runwayHTTPError.message);
-                }
-              } catch (runwayError) {
-                devError("Runway API 실패, HTTP 폴백 시도:", runwayError.message);
-                
-                // 3순위: Runway HTTP API 폴백 시도
-                try {
-                  const fallbackResult = await generateVideoWithRunwayHTTP(imageUrl, prompt, parseInt(duration) || 5);
-                  videoUrl = fallbackResult.videoUrl;
-                  jobId = fallbackResult.jobId;
-                  aiModel = "runway-http";
-                  devLog("Runway HTTP 폴백 성공:", { videoUrl, jobId });
-                } catch (httpError) {
-                  devError("모든 영상 생성 API 실패:", httpError.message);
-                  throw new Error(`모든 영상 생성 API 실패:\n- Gemini Veo: ${veoError.message}\n- Runway: ${runwayError.message}\n- Runway HTTP: ${httpError.message}`);
+                  throw new Error("모든 영상 생성 방법이 실패했습니다. Gemini: " + veoError.message + ", Runway SDK: " + runwayError.message + ", Runway HTTP: " + runwayHTTPError.message);
                 }
               }
             }
