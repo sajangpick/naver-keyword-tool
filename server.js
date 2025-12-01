@@ -5052,7 +5052,7 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
         }
       ],
       parameters: {
-        aspectRatio: "9:16", // VERTICAL_9_16 대신 "9:16" 문자열 사용
+        aspectRatio: "9:16", // 고정: 세로형 쇼츠 비율 (9:16) - 변경 불가
         durationSeconds: Math.min(Math.max(duration, 4), 8).toString(), // 문자열로 변환
         resolution: "720p", // RESOLUTION_720P 대신 "720p" 문자열 사용
       }
@@ -5341,7 +5341,7 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additiona
       model: "gen4", // 허용된 모델: gen4, gen4_turbo, gen4.5, veo3, veo3.1, veo3.1_fast
       promptText: prompt || "cinematic food video, slow motion, professional lighting",
       duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
-      ratio: "720:1280", // 쇼츠 형식 (세로) - Runway API 형식: "720:1280" (9:16 비율)
+      ratio: "720:1280", // 고정: 세로형 쇼츠 비율 (9:16) - Runway API 형식: "720:1280" - 변경 불가
     };
 
     // promptImage는 배열 형태로 전달 (공식 문서 기준)
@@ -5407,7 +5407,7 @@ async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
       image_url: imageUrl,
       prompt: prompt || "cinematic food video, slow motion, professional lighting",
       duration: Math.min(Math.max(duration, 3), 10),
-      aspect_ratio: "720:1280", // 쇼츠 형식 (세로) - Runway API 형식: "720:1280" (9:16 비율)
+      aspect_ratio: "720:1280", // 고정: 세로형 쇼츠 비율 (9:16) - Runway API 형식: "720:1280" - 변경 불가
       watermark: false,
     };
     
