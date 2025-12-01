@@ -4912,6 +4912,33 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
 // Gemini Veo 3.1: Google의 영상 생성 모델
 // 참고: Veo 3.1은 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한 필요
 // 가격: Veo 3는 초당 $0.40, Veo 3 Fast는 초당 $0.15
+const GEMINI_OPERATIONS_BASE = "https://generativelanguage.googleapis.com/v1beta";
+
+async function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function pollGeminiOperation(operationName, timeoutMs = 600000) {
+  const pollUrl = `${GEMINI_OPERATIONS_BASE}/${operationName}?key=${GEMINI_API_KEY}`;
+  const startedAt = Date.now();
+  let attempt = 0;
+
+  while (Date.now() - startedAt < timeoutMs) {
+    attempt += 1;
+    devLog(`[Gemini] 작업 상태 확인 (${attempt}회): ${operationName}`);
+    const pollResponse = await axios.get(pollUrl, { timeout: 60000 });
+    const payload = pollResponse.data;
+
+    if (payload.done) {
+      return payload;
+    }
+
+    await delay(10000);
+  }
+
+  throw new Error("Gemini Veo 작업이 제한 시간 내 완료되지 않았습니다.");
+}
+
 async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
   try {
     devLog("Gemini Veo 3.1 API 호출 시작:", { imageUrl, prompt, duration });
@@ -4938,23 +4965,25 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
           role: "user",
           parts: [
             {
-              text: prompt || "Cinematic food video, slow motion, professional lighting, appetizing close-up shots."
+              text:
+                prompt ||
+                "Cinematic food video, slow motion, professional lighting, appetizing close-up shots.",
             },
             {
               inline_data: {
                 mime_type: imageMimeType,
-                data: imageBase64
-              }
-            }
-          ]
-        }
+                data: imageBase64,
+              },
+            },
+          ],
+        },
       ],
       videoConfig: {
         aspectRatio: "VERTICAL_9_16",
-        durationSeconds: Math.min(Math.max(duration, 5), 8),
+        durationSeconds: Math.min(Math.max(duration, 5), 20),
         resolution: "RESOLUTION_720P",
-        enableAudio: true
-      }
+        enableAudio: true,
+      },
     };
 
     devLog("Gemini Veo API 요청 전송 중...");
@@ -4970,15 +4999,32 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
       }
     );
 
-    const videoUrl = extractGeminiVideoUrl(response.data);
+    let jobId = response.data?.job_id || response.data?.jobId || null;
+    let videoUrl = null;
+
+    if (response.data?.name) {
+      const operationName = response.data.name;
+      jobId = jobId || operationName;
+      const operationResult = await pollGeminiOperation(operationName);
+
+      if (operationResult.error) {
+        throw new Error(
+          operationResult.error.message ||
+            "Gemini Veo 작업이 실패했습니다."
+        );
+      }
+
+      videoUrl = extractGeminiVideoUrl(operationResult.response);
+    } else {
+      videoUrl = extractGeminiVideoUrl(response.data);
+    }
+
     if (!videoUrl) {
       throw new Error("Gemini Veo API 응답에서 영상 URL을 찾을 수 없습니다.");
     }
 
-    const jobId = response.data?.job_id || response.data?.jobId || null;
-    
     devLog("Gemini Veo 영상 생성 완료:", { videoUrl, jobId });
-    
+
     return { videoUrl, jobId };
   } catch (error) {
     devError("Gemini Veo API 오류:", error);
@@ -5011,6 +5057,21 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
 
 function extractGeminiVideoUrl(payload) {
   if (!payload || typeof payload !== "object") return null;
+
+  if (payload.generatedVideos || payload.generated_videos) {
+    const videos = payload.generatedVideos || payload.generated_videos;
+    if (Array.isArray(videos) && videos.length > 0) {
+      const videoItem = videos[0];
+      if (typeof videoItem === "string" && videoItem.startsWith("http")) {
+        return videoItem;
+      }
+      if (videoItem?.video?.uri) return videoItem.video.uri;
+      if (videoItem?.video?.downloadUri) return videoItem.video.downloadUri;
+      if (videoItem?.video?.fileUri) return videoItem.video.fileUri;
+      if (videoItem?.uri) return videoItem.uri;
+      if (videoItem?.fileUri) return videoItem.fileUri;
+    }
+  }
 
   const direct =
     payload.video_url ||

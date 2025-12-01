@@ -1647,7 +1647,7 @@
         let selectedStyle = null;
         let uploadedImages = [];
         let selectedMusic = 'auto';
-        let selectedDuration = 10;
+        let selectedDuration = 8;
         let currentVideoId = null;
         let videoStatusCheckInterval = null;
         let videoStatusAttempts = 0;
@@ -1662,31 +1662,31 @@
             insta_reels: {
                 emoji: '📱',
                 name: '인스타 릴스',
-                recommendedDurations: [10, 15],
+                recommendedDurations: [4, 6, 8],
                 loadingMessage: 'Instagram Reels 스타일로 영상을 제작 중입니다...'
             },
             tiktok: {
                 emoji: '🎵',
                 name: '틱톡',
-                recommendedDurations: [5, 10],
+                recommendedDurations: [4, 6],
                 loadingMessage: 'TikTok 트렌드에 맞춰 편집 중입니다...'
             },
             youtube_shorts: {
                 emoji: '📺',
                 name: '유튜브 쇼츠',
-                recommendedDurations: [15, 20],
+                recommendedDurations: [6, 8],
                 loadingMessage: 'YouTube Shorts 최적화 중입니다...'
             },
             business: {
                 emoji: '💼',
                 name: '비즈니스',
-                recommendedDurations: [15, 20],
+                recommendedDurations: [6, 8],
                 loadingMessage: '비즈니스용 전문 영상을 만들고 있습니다...'
             },
             portfolio: {
                 emoji: '🎨',
                 name: '포트폴리오',
-                recommendedDurations: [20],
+                recommendedDurations: [8],
                 loadingMessage: '포트폴리오 퀄리티로 렌더링 중입니다...'
             }
         };
@@ -2046,7 +2046,7 @@
         function updateDurationButtons() {
             const container = document.getElementById('durationButtons');
             const info = platformInfo[selectedStyle];
-            const durations = [5, 10, 15, 20];
+            const durations = [4, 6, 8];
             
             container.innerHTML = durations.map(duration => {
                 const isRecommended = info?.recommendedDurations?.includes(duration);
