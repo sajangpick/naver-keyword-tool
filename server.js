@@ -4979,14 +4979,26 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
   } catch (error) {
     devError("Gemini Veo API 오류:", error);
     
-    // API 엔드포인트가 다르거나 접근 권한이 없는 경우
+    // 상세한 에러 정보 로깅
     if (error.response) {
+      devError("Gemini Veo API 응답 상태:", error.response.status);
+      devError("Gemini Veo API 응답 데이터:", JSON.stringify(error.response.data, null, 2));
+      
       if (error.response.status === 404) {
-        throw new Error("Gemini Veo 3.1 API가 아직 공개되지 않았거나 엔드포인트가 다릅니다. Google AI Studio에서 최신 API 문서를 확인해주세요.");
+        throw new Error("Gemini Veo API가 아직 공개되지 않았거나 엔드포인트가 다릅니다. Google AI Studio에서 최신 API 문서를 확인해주세요.");
       }
       if (error.response.status === 403) {
-        throw new Error("Gemini Veo 3.1 사용 권한이 없습니다. 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한이 필요합니다.");
+        throw new Error("Gemini Veo 사용 권한이 없습니다. 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한이 필요합니다.");
       }
+      if (error.response.status === 400) {
+        const errorMsg = error.response.data?.error?.message || error.response.data?.message || "잘못된 요청입니다.";
+        throw new Error(`Gemini Veo API 요청 오류: ${errorMsg}`);
+      }
+    }
+    
+    // 네트워크 오류나 타임아웃
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      throw new Error("Gemini Veo API 호출 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
     }
     
     throw new Error(`Gemini Veo 영상 생성 실패: ${error.message}`);
@@ -5651,16 +5663,16 @@ app.get("/api/shorts/videos", async (req, res) => {
       });
     }
 
-    // 테이블 존재 여부 확인 (타임아웃 설정)
+    // 테이블 존재 여부 확인
     let tableCheckError = null;
     try {
-      const tableCheckResult = await Promise.race([
-        supabase.from("shorts_videos").select("id").limit(0),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("테이블 확인 타임아웃")), 5000))
-      ]);
+      const tableCheckResult = await supabase
+        .from("shorts_videos")
+        .select("id")
+        .limit(0);
       tableCheckError = tableCheckResult.error;
-    } catch (timeoutError) {
-      devError("⚠️  테이블 확인 타임아웃:", timeoutError.message);
+    } catch (checkError) {
+      devError("⚠️  테이블 확인 실패:", checkError.message);
       return res.json({
         success: true,
         data: [],
@@ -5670,7 +5682,7 @@ app.get("/api/shorts/videos", async (req, res) => {
           limit: 20,
           totalPages: 0,
         },
-        warning: "데이터베이스 연결이 지연되고 있습니다."
+        warning: "데이터베이스 연결에 문제가 있습니다."
       });
     }
     
@@ -5693,7 +5705,7 @@ app.get("/api/shorts/videos", async (req, res) => {
     const { page = 1, limit = 20, status } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    // 쿼리 실행 (타임아웃 설정)
+    // 쿼리 실행
     let videos = [];
     let count = 0;
     let queryError = null;
@@ -5710,16 +5722,13 @@ app.get("/api/shorts/videos", async (req, res) => {
         query = query.eq("status", status);
       }
 
-      const queryResult = await Promise.race([
-        query,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("쿼리 타임아웃")), 10000))
-      ]);
+      const queryResult = await query;
 
       videos = queryResult.data || [];
       count = queryResult.count || 0;
       queryError = queryResult.error;
-    } catch (timeoutError) {
-      devError("⚠️  쿼리 타임아웃:", timeoutError.message);
+    } catch (queryException) {
+      devError("⚠️  쿼리 실행 실패:", queryException.message);
       return res.json({
         success: true,
         data: [],
@@ -5729,7 +5738,7 @@ app.get("/api/shorts/videos", async (req, res) => {
           limit: parseInt(limit),
           totalPages: 0,
         },
-        warning: "데이터베이스 쿼리가 지연되고 있습니다."
+        warning: "데이터베이스 쿼리 실행 중 오류가 발생했습니다."
       });
     }
 
