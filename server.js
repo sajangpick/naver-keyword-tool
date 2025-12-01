@@ -4919,18 +4919,50 @@ async function delay(ms) {
 }
 
 async function pollGeminiOperation(operationName, timeoutMs = 600000) {
-  const pollUrl = `${GEMINI_OPERATIONS_BASE}/${operationName}?key=${GEMINI_API_KEY}`;
+  const pollUrl = `${GEMINI_OPERATIONS_BASE}/${operationName}`;
   const startedAt = Date.now();
   let attempt = 0;
 
+  devLog(`🔵 [Gemini API] 폴링 URL: ${pollUrl}`);
+
   while (Date.now() - startedAt < timeoutMs) {
     attempt += 1;
-    devLog(`[Gemini] 작업 상태 확인 (${attempt}회): ${operationName}`);
-    const pollResponse = await axios.get(pollUrl, { timeout: 60000 });
-    const payload = pollResponse.data;
+    devLog(`🔵 [Gemini API] 작업 상태 확인 (${attempt}회): ${operationName}`);
+    
+    try {
+      const pollResponse = await axios.get(pollUrl, { 
+        headers: {
+          "x-goog-api-key": GEMINI_API_KEY
+        },
+        timeout: 60000 
+      });
+      const payload = pollResponse.data;
 
-    if (payload.done) {
-      return payload;
+      devLog(`🔵 [Gemini API] 폴링 응답 (${attempt}회):`, {
+        done: payload.done,
+        hasError: !!payload.error,
+        hasResponse: !!payload.response,
+        status: pollResponse.status
+      });
+
+      if (payload.done) {
+        devLog(`🔵 [Gemini API] 작업 완료! (${attempt}회 시도)`);
+        return payload;
+      }
+
+      if (payload.error) {
+        devError(`🔴 [Gemini API] 작업 오류:`, payload.error);
+        throw new Error(payload.error.message || "Gemini 작업이 실패했습니다.");
+      }
+
+      devLog(`🔵 [Gemini API] 작업 진행 중... 10초 후 다시 확인`);
+    } catch (pollError) {
+      devError(`🔴 [Gemini API] 폴링 오류 (${attempt}회):`, pollError.message);
+      if (pollError.response) {
+        devError(`🔴 [Gemini API] 폴링 응답 상태:`, pollError.response.status);
+        devError(`🔴 [Gemini API] 폴링 응답 데이터:`, JSON.stringify(pollError.response.data, null, 2));
+      }
+      // 폴링 오류는 계속 재시도
     }
 
     await delay(10000);
@@ -4948,9 +4980,15 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
     }
 
     const veoModel = GEMINI_VEO_MODEL;
-    const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:generateVideo?key=${GEMINI_API_KEY}`;
+    // 공식 REST API 엔드포인트 사용: predictLongRunning
+    const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:predictLongRunning`;
+    
+    devLog("🔵 [Gemini API] 엔드포인트:", VEO_API_URL);
+    devLog("🔵 [Gemini API] 모델:", veoModel);
+    devLog("🔵 [Gemini API] 키 존재 여부:", GEMINI_API_KEY ? `있음 (${GEMINI_API_KEY.substring(0, 10)}...)` : "없음");
     
     // 이미지 URL에서 이미지 데이터 가져오기
+    devLog("🔵 [Gemini API] 이미지 다운로드 시작:", imageUrl);
     const imageResponse = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       timeout: 30000,
@@ -4958,35 +4996,43 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
     
     const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
     const imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
+    devLog("🔵 [Gemini API] 이미지 다운로드 완료:", { 
+      size: imageBase64.length, 
+      mimeType: imageMimeType 
+    });
 
+    // 공식 REST API 형식에 맞게 요청 본문 구성
     const requestBody = {
-      contents: [
+      instances: [
         {
-          role: "user",
-          parts: [
-            {
-              text:
-                prompt ||
-                "Cinematic food video, slow motion, professional lighting, appetizing close-up shots.",
-            },
-            {
-              inline_data: {
-                mime_type: imageMimeType,
-                data: imageBase64,
-              },
-            },
-          ],
-        },
+          prompt: prompt || "Cinematic food video, slow motion, professional lighting, appetizing close-up shots.",
+          // 이미지가 있으면 base64로 포함
+          image: imageBase64 ? {
+            bytesBase64Encoded: imageBase64,
+            mimeType: imageMimeType
+          } : undefined
+        }
       ],
-      videoConfig: {
-        aspectRatio: "VERTICAL_9_16",
-        durationSeconds: Math.min(Math.max(duration, 4), 8),
-        resolution: "RESOLUTION_720P",
-        enableAudio: true,
-      },
+      parameters: {
+        aspectRatio: "9:16", // VERTICAL_9_16 대신 "9:16" 문자열 사용
+        durationSeconds: Math.min(Math.max(duration, 4), 8).toString(), // 문자열로 변환
+        resolution: "720p", // RESOLUTION_720P 대신 "720p" 문자열 사용
+      }
     };
 
-    devLog("Gemini Veo API 요청 전송 중...");
+    // 이미지가 없으면 image 필드 제거
+    if (!imageBase64) {
+      delete requestBody.instances[0].image;
+    }
+
+    devLog("🔵 [Gemini API] 요청 본문 준비 완료:", {
+      prompt: requestBody.instances[0].prompt.substring(0, 100) + "...",
+      hasImage: !!requestBody.instances[0].image,
+      parameters: requestBody.parameters
+    });
+    
+    devLog("🔵 [Gemini API] HTTP POST 요청 전송 시작...");
+    const requestStartTime = Date.now();
     
     const response = await axios.post(
       VEO_API_URL,
@@ -4994,17 +5040,32 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
       {
         headers: {
           "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY
         },
         timeout: 120000, // 2분 타임아웃 (영상 생성은 시간이 걸림)
       }
     );
+    
+    const requestDuration = Date.now() - requestStartTime;
+    devLog("🔵 [Gemini API] HTTP 응답 수신 완료:", {
+      status: response.status,
+      statusText: response.statusText,
+      duration: `${requestDuration}ms`,
+      hasData: !!response.data,
+      responseKeys: response.data ? Object.keys(response.data) : []
+    });
 
+    devLog("🔵 [Gemini API] 응답 데이터 분석 중...");
+    devLog("🔵 [Gemini API] 응답 데이터:", JSON.stringify(response.data, null, 2).substring(0, 500));
+    
     let jobId = response.data?.job_id || response.data?.jobId || null;
     let videoUrl = null;
 
     if (response.data?.name) {
       const operationName = response.data.name;
       jobId = jobId || operationName;
+      devLog("🔵 [Gemini API] 작업 이름(operation name) 발견:", operationName);
+      devLog("🔵 [Gemini API] 폴링 시작 - 10초마다 상태 확인...");
       const operationResult = await pollGeminiOperation(operationName);
 
       if (operationResult.error) {
@@ -5014,7 +5075,8 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
         );
       }
 
-      videoUrl = extractGeminiVideoUrl(operationResult.response);
+      // 공식 REST API 응답 형식에 맞게 URL 추출
+      videoUrl = extractGeminiVideoUrlFromOperation(operationResult);
     } else {
       videoUrl = extractGeminiVideoUrl(response.data);
     }
@@ -5027,12 +5089,14 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
 
     return { videoUrl, jobId };
   } catch (error) {
-    devError("Gemini Veo API 오류:", error);
+    devError("🔴 [Gemini API] 오류 발생:", error.message);
+    devError("🔴 [Gemini API] 오류 스택:", error.stack);
     
     // 상세한 에러 정보 로깅
     if (error.response) {
-      devError("Gemini Veo API 응답 상태:", error.response.status);
-      devError("Gemini Veo API 응답 데이터:", JSON.stringify(error.response.data, null, 2));
+      devError("🔴 [Gemini API] HTTP 응답 상태:", error.response.status);
+      devError("🔴 [Gemini API] HTTP 응답 헤더:", JSON.stringify(error.response.headers, null, 2));
+      devError("🔴 [Gemini API] HTTP 응답 데이터:", JSON.stringify(error.response.data, null, 2));
       
       if (error.response.status === 404) {
         throw new Error("Gemini Veo API가 아직 공개되지 않았거나 엔드포인트가 다릅니다. Google AI Studio에서 최신 API 문서를 확인해주세요.");
@@ -5041,22 +5105,61 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
         throw new Error("Gemini Veo 사용 권한이 없습니다. 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한이 필요합니다.");
       }
       if (error.response.status === 400) {
-        const errorMsg = error.response.data?.error?.message || error.response.data?.message || "잘못된 요청입니다.";
+        const errorMsg = error.response.data?.error?.message || error.response.data?.message || JSON.stringify(error.response.data);
         throw new Error(`Gemini Veo API 요청 오류: ${errorMsg}`);
       }
     }
     
     // 네트워크 오류나 타임아웃
     if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      devError("🔴 [Gemini API] 타임아웃 오류");
       throw new Error("Gemini Veo API 호출 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
+    }
+    
+    // 요청이 전송되지 않은 경우 (네트워크 오류 등)
+    if (error.request && !error.response) {
+      devError("🔴 [Gemini API] 요청이 서버에 도달하지 못함:", error.message);
+      throw new Error(`Gemini Veo API 서버 연결 실패: ${error.message}`);
     }
     
     throw new Error(`Gemini Veo 영상 생성 실패: ${error.message}`);
   }
 }
 
+// 공식 REST API 응답 형식에서 영상 URL 추출
+function extractGeminiVideoUrlFromOperation(operationResult) {
+  if (!operationResult || !operationResult.response) return null;
+  
+  const response = operationResult.response;
+  
+  // 공식 문서 형식: response.generateVideoResponse.generatedSamples[0].video.uri
+  if (response.generateVideoResponse?.generatedSamples?.[0]?.video?.uri) {
+    return response.generateVideoResponse.generatedSamples[0].video.uri;
+  }
+  
+  // 대체 경로들
+  if (response.generatedVideos?.[0]?.video?.uri) {
+    return response.generatedVideos[0].video.uri;
+  }
+  
+  if (response.generated_videos?.[0]?.video?.uri) {
+    return response.generated_videos[0].video.uri;
+  }
+  
+  return null;
+}
+
 function extractGeminiVideoUrl(payload) {
   if (!payload || typeof payload !== "object") return null;
+
+  // 공식 REST API 응답 형식: response.generateVideoResponse.generatedSamples[0].video.uri
+  if (payload.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri) {
+    return payload.response.generateVideoResponse.generatedSamples[0].video.uri;
+  }
+
+  if (payload.generateVideoResponse?.generatedSamples?.[0]?.video?.uri) {
+    return payload.generateVideoResponse.generatedSamples[0].video.uri;
+  }
 
   if (payload.generatedVideos || payload.generated_videos) {
     const videos = payload.generatedVideos || payload.generated_videos;
