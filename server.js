@@ -5091,14 +5091,32 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additiona
         ]
       : [{ uri: imageUrl, position: "first" }]; // 단일 이미지도 배열로 감싸기
 
+    // Runway SDK 요청 파라미터 검증
+    const requestParams = {
+      model: "gen4", // 허용된 모델: gen4, gen4_turbo, gen4.5, veo3, veo3.1, veo3.1_fast
+      promptText: prompt || "cinematic food video, slow motion, professional lighting",
+      duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
+      ratio: "720:1280", // 쇼츠 형식 (세로) - Runway API 형식: "720:1280" (9:16 비율)
+    };
+
+    // promptImage는 배열 형태로 전달 (공식 문서 기준)
+    if (Array.isArray(promptImagePayload) && promptImagePayload.length > 0) {
+      requestParams.promptImage = promptImagePayload;
+    } else if (typeof promptImagePayload === 'string') {
+      // 문자열인 경우 배열로 변환
+      requestParams.promptImage = [{ uri: promptImagePayload, position: "first" }];
+    } else {
+      // 객체인 경우 배열로 변환
+      requestParams.promptImage = [promptImagePayload];
+    }
+
+    devLog("Runway SDK 요청 파라미터:", JSON.stringify({
+      ...requestParams,
+      promptImage: requestParams.promptImage.map(img => ({ uri: img.uri?.substring(0, 50) + "...", position: img.position }))
+    }, null, 2));
+
     const task = await runwayClient.imageToVideo
-      .create({
-        model: "gen4", // 허용된 모델: gen4, gen4_turbo, gen4.5, veo3, veo3.1, veo3.1_fast
-        promptImage: promptImagePayload,
-        promptText: prompt || "cinematic food video, slow motion, professional lighting",
-        duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
-        ratio: "720:1280", // 쇼츠 형식 (세로) - Runway API 형식: "720:1280" (9:16 비율)
-      })
+      .create(requestParams)
       .waitForTaskOutput(); // 작업 완료까지 자동 대기
 
     if (!task || !task.output || task.output.length === 0) {
