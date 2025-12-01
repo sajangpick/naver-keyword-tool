@@ -4989,17 +4989,44 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
     
     // 이미지 URL에서 이미지 데이터 가져오기
     devLog("🔵 [Gemini API] 이미지 다운로드 시작:", imageUrl);
-    const imageResponse = await axios.get(imageUrl, {
-      responseType: 'arraybuffer',
-      timeout: 30000,
-    });
+    console.log("🔵 [Gemini API] 이미지 다운로드 시작:", imageUrl);
     
-    const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
-    const imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
-    devLog("🔵 [Gemini API] 이미지 다운로드 완료:", { 
-      size: imageBase64.length, 
-      mimeType: imageMimeType 
-    });
+    let imageBase64 = null;
+    let imageMimeType = 'image/jpeg';
+    
+    try {
+      const imageResponse = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000,
+        validateStatus: function (status) {
+          return status >= 200 && status < 500; // 4xx도 catch하도록
+        }
+      });
+      
+      if (imageResponse.status !== 200) {
+        console.error("🔴 [Gemini API] 이미지 다운로드 실패:", imageResponse.status, imageResponse.statusText);
+        throw new Error(`이미지 다운로드 실패 (HTTP ${imageResponse.status}): ${imageResponse.statusText}`);
+      }
+      
+      imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+      imageMimeType = imageResponse.headers['content-type'] || 'image/jpeg';
+      devLog("🔵 [Gemini API] 이미지 다운로드 완료:", { 
+        size: imageBase64.length, 
+        mimeType: imageMimeType 
+      });
+      console.log("🔵 [Gemini API] 이미지 다운로드 완료:", { 
+        size: imageBase64.length, 
+        mimeType: imageMimeType 
+      });
+    } catch (imageError) {
+      console.error("🔴 [Gemini API] 이미지 다운로드 오류:", imageError.message);
+      devError("🔴 [Gemini API] 이미지 다운로드 오류:", imageError.message);
+      if (imageError.response) {
+        console.error("🔴 [Gemini API] 이미지 다운로드 응답:", imageError.response.status, imageError.response.data);
+        devError("🔴 [Gemini API] 이미지 다운로드 응답:", imageError.response.status);
+      }
+      throw new Error(`이미지를 불러올 수 없습니다: ${imageError.message}. 이미지 URL이 유효한지 확인해주세요.`);
+    }
 
     // 공식 REST API 형식에 맞게 요청 본문 구성
     const requestBody = {
@@ -5089,39 +5116,78 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8) {
 
     return { videoUrl, jobId };
   } catch (error) {
+    console.error("🔴 [Gemini API] 오류 발생:", error.message);
+    console.error("🔴 [Gemini API] 오류 스택:", error.stack);
     devError("🔴 [Gemini API] 오류 발생:", error.message);
     devError("🔴 [Gemini API] 오류 스택:", error.stack);
     
     // 상세한 에러 정보 로깅
     if (error.response) {
-      devError("🔴 [Gemini API] HTTP 응답 상태:", error.response.status);
-      devError("🔴 [Gemini API] HTTP 응답 헤더:", JSON.stringify(error.response.headers, null, 2));
-      devError("🔴 [Gemini API] HTTP 응답 데이터:", JSON.stringify(error.response.data, null, 2));
+      const status = error.response.status;
+      let responseData = error.response.data;
       
-      if (error.response.status === 404) {
-        throw new Error("Gemini Veo API가 아직 공개되지 않았거나 엔드포인트가 다릅니다. Google AI Studio에서 최신 API 문서를 확인해주세요.");
+      // Buffer를 문자열로 변환 시도
+      if (Buffer.isBuffer(responseData)) {
+        try {
+          responseData = JSON.parse(responseData.toString('utf8'));
+          console.error("🔴 [Gemini API] Buffer를 JSON으로 변환:", responseData);
+        } catch (parseError) {
+          responseData = responseData.toString('utf8');
+          console.error("🔴 [Gemini API] Buffer를 문자열로 변환:", responseData);
+        }
       }
-      if (error.response.status === 403) {
+      
+      console.error("🔴 [Gemini API] HTTP 응답 상태:", status);
+      console.error("🔴 [Gemini API] HTTP 응답 데이터:", typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2));
+      devError("🔴 [Gemini API] HTTP 응답 상태:", status);
+      devError("🔴 [Gemini API] HTTP 응답 헤더:", JSON.stringify(error.response.headers, null, 2));
+      devError("🔴 [Gemini API] HTTP 응답 데이터:", typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2));
+      
+      // 에러 메시지 추출 (Buffer 처리 포함)
+      let errorMessage = "알 수 없는 오류입니다.";
+      if (typeof responseData === 'string') {
+        try {
+          const parsed = JSON.parse(responseData);
+          errorMessage = parsed.error || parsed.message || responseData;
+        } catch {
+          errorMessage = responseData;
+        }
+      } else if (responseData && typeof responseData === 'object') {
+        errorMessage = responseData.error || responseData.message || JSON.stringify(responseData);
+      }
+      
+      if (status === 404) {
+        const msg = errorMessage.includes("Bucket not found") 
+          ? "이미지 파일을 찾을 수 없습니다. 이미지 URL이 유효한지 확인해주세요."
+          : "Gemini Veo API가 아직 공개되지 않았거나 엔드포인트가 다릅니다. Google AI Studio에서 최신 API 문서를 확인해주세요.";
+        throw new Error(msg);
+      }
+      if (status === 403) {
         throw new Error("Gemini Veo 사용 권한이 없습니다. 유료 결제가 활성화된 계정(Paid Tier)과 Tier 1 이상 접근 권한이 필요합니다.");
       }
-      if (error.response.status === 400) {
-        const errorMsg = error.response.data?.error?.message || error.response.data?.message || JSON.stringify(error.response.data);
-        throw new Error(`Gemini Veo API 요청 오류: ${errorMsg}`);
+      if (status === 400) {
+        throw new Error(`Gemini Veo API 요청 오류: ${errorMessage}`);
       }
+      
+      // 기타 상태 코드
+      throw new Error(`Gemini Veo API 오류 (${status}): ${errorMessage}`);
     }
     
     // 네트워크 오류나 타임아웃
     if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      console.error("🔴 [Gemini API] 타임아웃 오류");
       devError("🔴 [Gemini API] 타임아웃 오류");
       throw new Error("Gemini Veo API 호출 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
     }
     
     // 요청이 전송되지 않은 경우 (네트워크 오류 등)
     if (error.request && !error.response) {
+      console.error("🔴 [Gemini API] 요청이 서버에 도달하지 못함:", error.message);
       devError("🔴 [Gemini API] 요청이 서버에 도달하지 못함:", error.message);
       throw new Error(`Gemini Veo API 서버 연결 실패: ${error.message}`);
     }
     
+    console.error("🔴 [Gemini API] 알 수 없는 오류:", error.message);
     throw new Error(`Gemini Veo 영상 생성 실패: ${error.message}`);
   }
 }
