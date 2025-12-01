@@ -5542,14 +5542,25 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
             let aiModel = "gemini-veo-3.1";
             
             // 1순위: Gemini Veo 3.1 시도 (제미나이 키 사용)
+            devLog("🎬 Gemini Veo API 호출 시작 (1순위)");
             try {
+              if (!GEMINI_API_KEY) {
+                throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
+              }
+              devLog("Gemini API 키 확인 완료 (키 길이: " + GEMINI_API_KEY.length + "자)");
+              
               const veoResult = await generateVideoWithGeminiVeo(imageUrl, prompt, Math.min(parseInt(duration) || 8, 8));
               videoUrl = veoResult.videoUrl;
               jobId = veoResult.jobId;
               aiModel = "gemini-veo-3.1";
               devLog("✅ Gemini Veo 3.1 영상 생성 성공:", { videoUrl, jobId });
             } catch (veoError) {
-              devError("Gemini Veo 3.1 실패, Runway API 시도:", veoError.message);
+              devError("❌ Gemini Veo 3.1 실패:", veoError.message);
+              devError("Gemini 에러 상세:", veoError.stack || veoError);
+              
+              // Gemini 실패 시 Runway로 폴백 (선택적)
+              // 주석 처리하면 Gemini만 사용
+              devLog("⚠️ Gemini 실패, Runway API로 폴백 시도...");
               
               // 2순위: Runway API 시도 (폴백)
               try {
@@ -5944,13 +5955,26 @@ app.use((error, req, res, next) => {
   });
 });
 
-  app.listen(PORT, "0.0.0.0", () => {
-    devLog("==========================================");
-    devLog("🚀 통합 API 서버가 시작되었습니다!");
-    devLog(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
-    devLog(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
-    devLog(`📊 환경: ${process.env.NODE_ENV || "development"}`);
-    devLog("==========================================");
+  // 전역 에러 핸들러 (처리되지 않은 에러 캐치)
+  process.on('uncaughtException', (error) => {
+    devError('❌ [FATAL] 처리되지 않은 예외:', error);
+    devError('스택:', error.stack);
+    // 서버를 종료하지 않고 계속 실행 (502 방지)
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    devError('❌ [FATAL] 처리되지 않은 Promise 거부:', reason);
+    // 서버를 종료하지 않고 계속 실행 (502 방지)
+  });
+
+  try {
+    app.listen(PORT, "0.0.0.0", () => {
+      devLog("==========================================");
+      devLog("🚀 통합 API 서버가 시작되었습니다!");
+      devLog(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
+      devLog(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
+      devLog(`📊 환경: ${process.env.NODE_ENV || "development"}`);
+      devLog("==========================================");
     devLog("");
     devLog("🔧 사용 가능한 서비스:");
     devLog("");
