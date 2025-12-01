@@ -973,6 +973,10 @@ function getSeasonalPattern(keyword) {
 
 // 서버 상태 확인
 app.get("/health", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
   res.json({
     status: "OK",
     message: "통합 API 서버가 정상 작동 중입니다.",
