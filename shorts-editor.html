@@ -29,7 +29,7 @@
             --error: #F44336;
             --warning: #FF9800;
             
-            /* 플랫폼별 컬러 (세련된 톤) */
+            /* 플랫폼별 컬러 */
             --insta-gradient: linear-gradient(135deg, #ffd9ec 0%, #fbcfe8 50%, #ffe4d4 100%);
             --tiktok-gradient: linear-gradient(135deg, #c5f7ff 0%, #ddf5ff 60%, #f6e9ff 100%);
             --youtube-red: #ffb3b3;
@@ -54,7 +54,7 @@
             min-height: 100vh;
         }
 
-        /* 헤더 (기존 유지) */
+        /* 헤더 */
         .header {
             position: sticky;
             top: 0;
@@ -261,7 +261,7 @@
             }
         }
 
-        /* 스타일 선택 화면 (Step 1) */
+        /* 스타일 선택 화면 */
         .style-selection {
             display: none;
         }
@@ -299,11 +299,11 @@
         }
 
         .style-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
+            content: '';
+            position: absolute;
+            top: 0;
             left: 0;
-                right: 0;
+            right: 0;
             bottom: 0;
             border-radius: 24px;
             padding: 2px;
@@ -312,8 +312,8 @@
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             opacity: 0;
-                transition: opacity 0.3s ease;
-            }
+            transition: opacity 0.3s ease;
+        }
 
         .style-card:hover {
             transform: translateY(-6px);
@@ -423,7 +423,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-                font-size: 12px;
+            font-size: 12px;
             opacity: 0.85;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.4);
@@ -452,7 +452,7 @@
             }
         }
 
-        /* 콘텐츠 입력 화면 (Step 2) */
+        /* 콘텐츠 입력 화면 */
         .content-input {
             display: none;
         }
@@ -704,57 +704,6 @@
             opacity: 0.5;
         }
 
-        /* 기타 설정 (아코디언) */
-        .settings-accordion {
-            background: var(--white);
-            border-radius: 16px;
-            margin-bottom: 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-        }
-
-        .accordion-header {
-            padding: 20px 24px;
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.2s ease;
-        }
-
-        .accordion-header:hover {
-            background: var(--bg);
-        }
-
-        .accordion-header.active {
-            background: var(--bg);
-        }
-
-        .accordion-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .accordion-icon {
-            transition: transform 0.3s ease;
-        }
-
-        .accordion-header.active .accordion-icon {
-            transform: rotate(180deg);
-        }
-
-        .accordion-content {
-            display: none;
-            padding: 24px;
-        }
-
-        .accordion-content.active {
-            display: block;
-        }
-
         /* 음악 선택 */
         .music-grid {
             display: flex;
@@ -868,7 +817,7 @@
         }
 
         .success-banner p {
-            color: var(--text-secondary);
+            color: var(--text-light);
             margin-bottom: 20px;
         }
 
@@ -892,7 +841,7 @@
             background: var(--white);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 8 25px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
@@ -906,7 +855,7 @@
         .result-title {
             font-size: 18px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--text);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -920,8 +869,8 @@
             border-radius: 999px;
             font-size: 14px;
             font-weight: 600;
-            background: rgba(255, 123, 84, 0.15);
-            color: var(--accent-color);
+            background: rgba(255, 107, 53, 0.15);
+            color: var(--primary);
         }
 
         .result-status.success {
@@ -967,7 +916,7 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            color: var(--text-secondary);
+            color: var(--text-light);
             text-align: center;
             font-size: 15px;
             padding: 20px;
@@ -976,19 +925,24 @@
 
         .result-placeholder i {
             font-size: 30px;
-            color: var(--accent-color);
+            color: var(--primary);
             animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .result-info p {
             margin-bottom: 12px;
             font-size: 15px;
-            color: var(--text-secondary);
+            color: var(--text-light);
         }
 
         .result-info p span {
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--text);
         }
 
         .result-actions {
@@ -1223,7 +1177,7 @@
             text-decoration: none;
         }
 
-        /* 사이드바 (기존 유지) */
+        /* 사이드바 */
         .side-nav {
             background: #ffe8d9;
             border-radius: 18px;
@@ -1242,7 +1196,7 @@
 
         .side-nav .menu-item {
             display: flex;
-                flex-direction: column;
+            flex-direction: column;
             align-items: center;
             gap: 3px;
             padding: 9px 6px;
@@ -1267,7 +1221,7 @@
             border-radius: 7px;
             display: grid;
             place-items: center;
-                font-size: 13px;
+            font-size: 13px;
         }
 
         .main-content {
@@ -1312,8 +1266,6 @@
             }
         }
     </style>
-    <!-- 인증 가드 -->
-    <script src="./assets/auth-guard.js" defer></script>
     <!-- Meta Pixel Code -->
     <script>
       !function(f,b,e,v,n,t,s)
@@ -1427,7 +1379,7 @@
                         <div class="style-preview" aria-label="인스타 릴스 샘플 영상">
                             <video src="./assets/videos/인스타.mp4" autoplay muted loop playsinline></video>
                         </div>
-            </div>
+                    </div>
 
                     <div class="style-card tiktok" data-style="tiktok" onclick="selectStyle('tiktok')">
                         <div class="style-emoji">🎵</div>
@@ -1436,7 +1388,7 @@
                         <div class="style-preview" aria-label="틱톡 샘플 영상">
                             <video src="./assets/videos/틱톡.mp4" autoplay muted loop playsinline></video>
                         </div>
-            </div>
+                    </div>
 
                     <div class="style-card youtube_shorts" data-style="youtube_shorts" onclick="selectStyle('youtube_shorts')">
                         <div class="style-emoji">📺</div>
@@ -1445,7 +1397,7 @@
                         <div class="style-preview" aria-label="유튜브 쇼츠 샘플 영상">
                             <video src="./assets/videos/유튜브.mp4" autoplay muted loop playsinline></video>
                         </div>
-                </div>
+                    </div>
 
                     <div class="style-card business" data-style="business" onclick="selectStyle('business')">
                         <div class="style-emoji">💼</div>
@@ -1454,7 +1406,7 @@
                         <div class="style-preview" aria-label="비즈니스 샘플 영상">
                             <video src="./assets/videos/비즈니스.mp4" autoplay muted loop playsinline></video>
                         </div>
-                </div>
+                    </div>
 
                     <div class="style-card portfolio" data-style="portfolio" onclick="selectStyle('portfolio')">
                         <div class="style-emoji">🎨</div>
@@ -1463,16 +1415,16 @@
                         <div class="style-preview" aria-label="포트폴리오 샘플 영상">
                             <video src="./assets/videos/포트폴리오.mp4" autoplay muted loop playsinline></video>
                         </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="action-buttons">
+                <div class="action-buttons">
                     <button class="btn btn-primary" id="nextToStep2" onclick="goToStep2()" disabled>
                         다음
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
-        </div>
 
             <!-- Step 2: 콘텐츠 입력 -->
             <div class="content-input" id="step2">
@@ -1481,18 +1433,18 @@
                     <div class="selected-style-info">
                         <span class="selected-style-emoji" id="selectedStyleEmoji">📱</span>
                         <span class="selected-style-text" id="selectedStyleText">인스타 릴스</span>
-                </div>
+                    </div>
                     <button class="change-style-btn" onclick="goToStep1()">
                         변경하기
-                </button>
-        </div>
+                    </button>
+                </div>
 
-            <!-- 이미지 업로드 -->
+                <!-- 이미지 업로드 -->
                 <div class="upload-section">
                     <h3 class="section-title">
-                    <i class="fa-solid fa-image"></i>
-                    음식 사진 업로드
-                </h3>
+                        <i class="fa-solid fa-image"></i>
+                        음식 사진 업로드
+                    </h3>
                     <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageInput').click()">
                         <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png" multiple style="display: none;" onchange="handleImageUpload(this)">
                         <div class="upload-icon" id="uploadIcon">
@@ -1503,87 +1455,87 @@
                         <div class="upload-preview" id="uploadPreview">
                             <div class="upload-preview-grid" id="previewGrid">
                                 <!-- 동적으로 생성 -->
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
                 <!-- 메뉴 정보 -->
                 <div class="menu-section">
                     <h3 class="section-title">
-                    <i class="fa-solid fa-keyboard"></i>
+                        <i class="fa-solid fa-keyboard"></i>
                         메뉴 정보
-                </h3>
-                <div class="form-group">
-                    <label class="form-label">
-                        메뉴명 <span class="required">*</span>
-                    </label>
+                    </h3>
+                    <div class="form-group">
+                        <label class="form-label">
+                            메뉴명 <span class="required">*</span>
+                        </label>
                         <input type="text" class="form-input" id="menuName" placeholder="예: 새우 파스타" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
                             메뉴 설명
-                    </label>
-                    <textarea class="form-input form-textarea" id="menuFeatures" 
-                            placeholder="예: 신선한 재료로 만든 시그니처 메뉴입니다. 특별한 조리법과 비법 소스가 포인트!"></textarea>
+                        </label>
+                        <textarea class="form-input form-textarea" id="menuFeatures" 
+                                placeholder="예: 신선한 재료로 만든 시그니처 메뉴입니다. 특별한 조리법과 비법 소스가 포인트!"></textarea>
                         <button class="ai-generate-btn" disabled>
                             <i class="fa-solid fa-robot"></i> AI로 자동 생성 (준비 중)
                         </button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 배경음악 선택 -->
+                <!-- 배경음악 선택 -->
                 <div class="menu-section">
                     <h3 class="section-title">
-                    <i class="fa-solid fa-music"></i>
-                    배경음악 선택
-                </h3>
+                        <i class="fa-solid fa-music"></i>
+                        배경음악 선택
+                    </h3>
                     <div class="music-grid">
                         <div class="music-card selected" data-music="auto" onclick="selectMusic('auto')">
                             <div class="music-icon">🤖</div>
                             <div class="music-name">자동 선택</div>
                         </div>
                         <div class="music-card" data-music="upbeat" onclick="selectMusic('upbeat')">
-                        <div class="music-icon">🎵</div>
-                        <div class="music-name">경쾌한</div>
-                    </div>
+                            <div class="music-icon">🎵</div>
+                            <div class="music-name">경쾌한</div>
+                        </div>
                         <div class="music-card" data-music="elegant" onclick="selectMusic('elegant')">
-                        <div class="music-icon">🎼</div>
-                        <div class="music-name">우아한</div>
-                    </div>
+                            <div class="music-icon">🎼</div>
+                            <div class="music-name">우아한</div>
+                        </div>
                         <div class="music-card" data-music="trendy" onclick="selectMusic('trendy')">
-                        <div class="music-icon">🎸</div>
-                        <div class="music-name">트렌디</div>
-                    </div>
+                            <div class="music-icon">🎸</div>
+                            <div class="music-name">트렌디</div>
+                        </div>
                         <div class="music-card" data-music="calm" onclick="selectMusic('calm')">
-                        <div class="music-icon">🎹</div>
-                        <div class="music-name">차분한</div>
+                            <div class="music-icon">🎹</div>
+                            <div class="music-name">차분한</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
                 <!-- 영상 길이 -->
                 <div class="menu-section">
                     <h3 class="section-title">
-                    <i class="fa-solid fa-clock"></i>
-                    영상 길이
-                </h3>
+                        <i class="fa-solid fa-clock"></i>
+                        영상 길이
+                    </h3>
                     <div class="duration-buttons" id="durationButtons">
                         <!-- JavaScript로 동적 생성 -->
+                    </div>
                 </div>
-            </div>
 
                 <!-- 액션 버튼 -->
-            <div class="action-buttons">
+                <div class="action-buttons">
                     <button class="btn btn-secondary" onclick="goToStep1()">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    이전
-                </button>
+                        <i class="fa-solid fa-arrow-left"></i>
+                        이전
+                    </button>
                     <button class="btn btn-primary" onclick="generateVideo()" id="generateBtn">
-                    <i class="fa-solid fa-magic"></i>
-                    영상 생성하기
-                </button>
-        </div>
+                        <i class="fa-solid fa-magic"></i>
+                        영상 생성하기
+                    </button>
+                </div>
 
                 <div class="success-banner" id="successBanner">
                     <h3>영상 생성이 시작되었습니다!</h3>
@@ -1592,13 +1544,13 @@
                         <button class="btn btn-primary" onclick="goToMypage()">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                             마이페이지에서 확인
-                    </button>
+                        </button>
                         <button class="btn btn-secondary" onclick="startNewVideo()">
-                        <i class="fa-solid fa-plus"></i>
+                            <i class="fa-solid fa-plus"></i>
                             새 영상 계속 만들기
-                    </button>
+                        </button>
+                    </div>
                 </div>
-            </div>
 
                 <div class="result-section" id="resultSection">
                     <h3 class="section-title">
@@ -1610,20 +1562,20 @@
                             <div class="result-title">
                                 <i class="fa-solid fa-clapperboard"></i>
                                 <span id="resultTitle">AI 영상</span>
-            </div>
+                            </div>
                             <div class="result-status" id="resultStatusBadge">
                                 <i class="fa-solid fa-gear fa-spin"></i>
                                 렌더링 중...
-                </div>
-            </div>
+                            </div>
+                        </div>
                         <div class="result-body">
                             <div class="result-video-wrapper">
                                 <div class="result-placeholder" id="resultPlaceholder">
                                     <i class="fa-solid fa-hourglass-half"></i>
                                     <span>AI가 영상을 만드는 중입니다...</span>
-        </div>
+                                </div>
                                 <video id="resultVideo" controls class="hidden"></video>
-                </div>
+                            </div>
                             <div class="result-info">
                                 <p><span>메뉴명</span>: <span id="resultMenuName">-</span></p>
                                 <p><span>스타일</span>: <span id="resultStyleName">-</span></p>
@@ -1633,14 +1585,14 @@
                                     <button class="btn btn-primary" id="downloadVideoBtn" disabled onclick="downloadLatestVideo()">
                                         <i class="fa-solid fa-download"></i>
                                         영상 다운로드
-                    </button>
+                                    </button>
                                     <button class="btn btn-secondary" onclick="startNewVideo()">
                                         <i class="fa-solid fa-plus"></i>
                                         새 영상 만들기
-                        </button>
-                    </div>
-                    </div>
-                </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1658,22 +1610,22 @@
                         <li>문제가 계속되면 고객센터로 문의해주세요</li>
                     </ul>
                 </div>
-            <div class="action-buttons">
+                <div class="action-buttons">
                     <button class="btn btn-primary" onclick="retryGeneration()">
                         <i class="fa-solid fa-refresh"></i>
                         다시 시도
-                </button>
+                    </button>
                     <button class="btn btn-secondary" onclick="goToStep1()">
                         <i class="fa-solid fa-home"></i>
                         처음으로
-                </button>
-            </div>
+                    </button>
+                </div>
                 <div class="error-contact">
                     고객센터: <a href="mailto:support@sajangpick.co.kr">support@sajangpick.co.kr</a>
+                </div>
+            </div>
         </div>
     </div>
-            </div>
-            </div>
 
     <!-- 로딩 화면 -->
     <div class="loading-screen" id="loadingScreen">
@@ -1693,13 +1645,13 @@
         // 전역 변수
         let currentStep = 1;
         let selectedStyle = null;
-        let uploadedImages = []; // 배열로 변경 (최대 5장)
+        let uploadedImages = [];
         let selectedMusic = 'auto';
         let selectedDuration = 15;
         let currentVideoId = null;
         let videoStatusCheckInterval = null;
         let videoStatusAttempts = 0;
-        const MAX_VIDEO_STATUS_CHECKS = 60; // 약 5분
+        const MAX_VIDEO_STATUS_CHECKS = 60;
         let latestVideoData = null;
         let pendingResultMeta = null;
 
@@ -1742,7 +1694,7 @@
             ? 'http://localhost:3003' 
             : '';
 
-        // 사용자 정보
+        // 사용자 정보 관련 함수들
         function getCurrentUser() {
             try {
                 const raw = localStorage.getItem('userData');
@@ -1758,365 +1710,50 @@
             return user?.id || user?.user?.id || user?.uid || null;
         }
 
-        // 스타일 선택
-        function selectStyle(style) {
-            selectedStyle = style;
-            
-            // 모든 카드에서 selected 클래스 제거
-            document.querySelectorAll('.style-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // 선택한 카드에 selected 클래스 추가
-            const card = document.querySelector(`[data-style="${style}"]`);
-            if (card) {
-                card.classList.add('selected');
-            }
-            
-            // 다음 버튼 활성화
-            document.getElementById('nextToStep2').disabled = false;
-        }
-
-        // Step 1 → Step 2
-        function goToStep2() {
-            if (!selectedStyle) {
-                alert('플랫폼 스타일을 선택해주세요.');
-                return;
-            }
-            
-            currentStep = 2;
-            updateStepDisplay();
-            
-            // 선택한 스타일 정보 표시
-            const info = platformInfo[selectedStyle];
-            if (info) {
-                document.getElementById('selectedStyleEmoji').textContent = info.emoji;
-                document.getElementById('selectedStyleText').textContent = info.name;
-            }
-            
-            // 영상 길이 버튼 생성
-            updateDurationButtons();
-            
-            // 화면 전환
-            document.getElementById('step1').classList.remove('active');
-            document.getElementById('step2').classList.add('active');
-            document.getElementById('errorScreen').classList.remove('active');
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // Step 2 → Step 1
-        function goToStep1() {
-            currentStep = 1;
-            updateStepDisplay();
-            
-            document.getElementById('step1').classList.add('active');
-            document.getElementById('step2').classList.remove('active');
-            document.getElementById('errorScreen').classList.remove('active');
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // 단계 표시 업데이트
-        function updateStepDisplay() {
-            document.getElementById('stepBadge').textContent = `Step ${currentStep} / 2`;
-        }
-
-        // 영상 길이 버튼 업데이트
-        function updateDurationButtons() {
-            const container = document.getElementById('durationButtons');
-            const info = platformInfo[selectedStyle];
-            const durations = [10, 15, 20, 25];
-            
-            container.innerHTML = durations.map(duration => {
-                const isRecommended = info?.recommendedDurations?.includes(duration);
-                const isSelected = selectedDuration === duration;
-                return `
-                    <button class="duration-btn ${isSelected ? 'selected' : ''}" 
-                            onclick="selectDuration(${duration})"
-                            data-duration="${duration}">
-                        ${duration}초
-                        ${isRecommended ? '<span class="duration-badge">추천</span>' : ''}
-                    </button>
-                `;
-            }).join('');
-        }
-
-        // 영상 길이 선택
-        function selectDuration(duration) {
-            selectedDuration = duration;
-            
-            document.querySelectorAll('.duration-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            
-            const btn = document.querySelector(`[data-duration="${duration}"]`);
-            if (btn) {
-                btn.classList.add('selected');
-            }
-        }
-
-        // 음악 선택
-        function selectMusic(music) {
-            selectedMusic = music;
-            
-            document.querySelectorAll('.music-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            const card = document.querySelector(`[data-music="${music}"]`);
-            if (card) {
-                card.classList.add('selected');
-            }
-        }
-
-        // 아코디언 토글
-        function toggleAccordion(id) {
-            const content = document.getElementById(id);
-            const header = content.previousElementSibling;
-            
-            content.classList.toggle('active');
-            header.classList.toggle('active');
-        }
-
-        // 이미지 업로드 (다중 이미지 지원)
-        function handleImageUpload(input) {
-            if (!input.files || input.files.length === 0) return;
-            
-            const files = Array.from(input.files);
-            const maxFiles = 5;
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-            
-            // 최대 개수 체크
-            if (uploadedImages.length + files.length > maxFiles) {
-                alert(`최대 ${maxFiles}장까지 업로드 가능합니다. (현재: ${uploadedImages.length}장)`);
-                input.value = '';
-                return;
-            }
-            
-            // 각 파일 검증
-            const validFiles = [];
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                
-                // 파일 크기 체크
-                if (file.size > maxSize) {
-                    alert(`"${file.name}" 파일 크기는 10MB 이하여야 합니다.`);
-                    continue;
-                }
-                
-                // 파일 형식 체크
-                if (!validTypes.includes(file.type)) {
-                    alert(`"${file.name}"은(는) JPG, PNG 파일만 업로드 가능합니다.`);
-                    continue;
-                }
-                
-                validFiles.push(file);
-            }
-            
-            if (validFiles.length === 0) {
-                input.value = '';
-                return;
-            }
-            
-            // 이미지 추가
-            let loadedCount = 0;
-            validFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    uploadedImages.push({
-                        file: file,
-                        preview: e.target.result,
-                        id: Date.now() + index
-                    });
-                    
-                    loadedCount++;
-                    if (loadedCount === validFiles.length) {
-                        updateImagePreview();
-                    }
-                };
-                reader.onerror = function() {
-                    alert(`"${file.name}"을(를) 불러올 수 없습니다.`);
-                };
-                reader.readAsDataURL(file);
-            });
-            
-            input.value = '';
-        }
-
-        // 이미지 미리보기 업데이트
-        function updateImagePreview() {
-            const preview = document.getElementById('uploadPreview');
-            const previewGrid = document.getElementById('previewGrid');
-            const uploadArea = document.getElementById('uploadArea');
-            
-            if (uploadedImages.length === 0) {
-                preview.classList.remove('show');
-                uploadArea.classList.remove('has-image');
-                document.getElementById('uploadIcon').style.display = 'block';
-                document.getElementById('uploadText').style.display = 'block';
-                document.getElementById('uploadHint').style.display = 'block';
-                return;
-            }
-            
-            // 미리보기 그리드 생성
-            previewGrid.innerHTML = uploadedImages.map((img, index) => `
-                <div class="upload-preview-item">
-                    <img src="${img.preview}" alt="Preview ${index + 1}">
-                    <button class="remove-image-btn" onclick="removeImageById(${img.id})" title="삭제">
-                        <i class="fa-solid fa-times"></i>
-                    </button>
-                    <div class="upload-count">${index + 1}/${uploadedImages.length}</div>
-                </div>
-            `).join('');
-            
-            preview.classList.add('show');
-            uploadArea.classList.add('has-image');
-            document.getElementById('uploadIcon').style.display = 'none';
-            document.getElementById('uploadText').style.display = 'none';
-            document.getElementById('uploadHint').style.display = 'none';
-        }
-
-        // 이미지 삭제 (ID로)
-        function removeImageById(id) {
-            uploadedImages = uploadedImages.filter(img => img.id !== id);
-            updateImagePreview();
-        }
-
-        // 모든 이미지 삭제
-        function removeAllImages() {
-            uploadedImages = [];
-            document.getElementById('imageInput').value = '';
-            updateImagePreview();
-        }
-
-        // 영상 생성
-        async function generateVideo() {
-            hideSuccessBanner();
-            stopVideoStatusWatcher();
-            resetResultSection();
-            // 유효성 검사
-            if (uploadedImages.length === 0) {
-                alert('음식 사진을 최소 1장 이상 업로드해주세요.');
-                return;
-            }
-
-            const menuName = document.getElementById('menuName').value.trim();
-            if (!menuName || menuName.length < 2) {
-                alert('메뉴명을 2자 이상 입력해주세요.');
-                return;
-            }
-
-            if (!selectedStyle) {
-                alert('플랫폼 스타일을 선택해주세요.');
-                goToStep1();
-                return;
-            }
-
+        // 영상 상태 조회 함수 (먼저 정의)
+        async function fetchLatestVideoStatus() {
+            if (!currentVideoId) return;
             const userId = getCurrentUserId();
-            if (!userId) {
-                alert('로그인이 필요합니다.');
-                return;
-            }
-
-            pendingResultMeta = {
-                menuName,
-                style: selectedStyle,
-                duration: selectedDuration,
-                music: selectedMusic
-            };
-            prepareResultSection(pendingResultMeta);
-            
-            // 로딩 화면 표시
-            showLoadingScreen();
-            
-            // FormData 생성
-            const formData = new FormData();
-            
-            // 여러 이미지 추가 (첫 번째 이미지를 메인으로, 나머지는 추가 이미지로)
-            uploadedImages.forEach((img, index) => {
-                if (index === 0) {
-                    formData.append('image', img.file); // 메인 이미지
-                } else {
-                    formData.append(`image${index + 1}`, img.file); // 추가 이미지
-                }
-            });
-            
-            formData.append('style', selectedStyle);
-            formData.append('menuName', menuName);
-            formData.append('menuFeatures', document.getElementById('menuFeatures').value);
-            formData.append('menuPrice', '');
-            formData.append('music', selectedMusic);
-            formData.append('duration', selectedDuration.toString());
-            formData.append('imageCount', uploadedImages.length.toString()); // 이미지 개수 전달
+            if (!userId) return;
             
             try {
-                const response = await fetch(`${API_BASE}/api/shorts/generate`, {
-                    method: 'POST',
-                    headers: {
-                        'user-id': userId
-                    },
-                    body: formData
+                const response = await fetch(`${API_BASE}/api/shorts/videos?userId=${encodeURIComponent(userId)}&limit=20`, {
+                    headers: { 'user-id': userId }
                 });
-
-                let result;
-                try {
-                    result = await response.json();
-                } catch (jsonError) {
-                    const text = await response.text();
-                    console.error('응답 파싱 실패:', text);
-                    throw new Error(`서버 응답 오류 (${response.status}): ${text.substring(0, 100)}`);
-                }
-
-                if (!response.ok || !result.success) {
-                    throw new Error(result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`);
-                }
-
-                hideLoadingScreen();
                 
-                // 생성된 영상 정보 저장
-                if (result.data && result.data.id) {
-                    showSuccessBanner();
-                    startVideoStatusWatcher(result.data.id, pendingResultMeta);
-                } else {
-                    showSuccessBanner();
-                    showResultSection();
+                if (!response.ok) throw new Error('영상 정보를 불러올 수 없습니다.');
+                
+                const payload = await response.json();
+                const video = Array.isArray(payload?.data)
+                    ? payload.data.find(item => item.id === currentVideoId)
+                    : null;
+                
+                if (video) {
+                    latestVideoData = video;
+                    updateResultMetadata({
+                        menuName: video.menu_name,
+                        style: video.style,
+                        duration: video.duration_sec || pendingResultMeta?.duration
+                    });
+                    
+                    if (video.status === 'completed' && video.video_url) {
+                        setResultStatus('success', '영상 생성이 완료되었습니다!');
+                        showResultVideo(video.video_url);
+                        stopVideoStatusWatcher();
+                    } else if (video.status === 'failed') {
+                        setResultStatus('error', video.error_message || '영상 생성에 실패했습니다.');
+                        showResultPlaceholder('문제가 발생했습니다. 다시 시도해주세요.');
+                        stopVideoStatusWatcher();
+                    } else {
+                        setResultStatus('processing', '렌더링 중입니다...');
+                    }
                 }
             } catch (error) {
-                console.error('영상 생성 실패:', error);
-                hideLoadingScreen();
-                resetResultSection();
-                showErrorScreen(error.message);
+                console.error('영상 상태 조회 실패:', error);
             }
         }
 
-        // 로딩 화면 표시
-        function showLoadingScreen() {
-            const info = platformInfo[selectedStyle];
-            if (info) {
-                document.getElementById('loadingEmoji').textContent = info.emoji;
-                document.getElementById('loadingMessage').textContent = info.loadingMessage;
-            }
-            
-            document.getElementById('loadingScreen').classList.add('active');
-            
-            // 진행률 시뮬레이션
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 2;
-                if (progress > 90) {
-                    clearInterval(interval);
-                }
-                document.getElementById('progressFill').style.width = progress + '%';
-            }, 500);
-        }
-
-        // 로딩 화면 숨기기
-        function hideLoadingScreen() {
-            document.getElementById('loadingScreen').classList.remove('active');
-        }
-
+        // UI 업데이트 함수들
         function showSuccessBanner() {
             const banner = document.getElementById('successBanner');
             if (banner) {
@@ -2130,24 +1767,6 @@
             if (banner) {
                 banner.classList.remove('show');
             }
-        }
-
-        function goToMypage() {
-            window.open('/mypage.html#shorts', '_blank', 'noopener');
-        }
-
-        function startNewVideo() {
-            hideSuccessBanner();
-            stopVideoStatusWatcher();
-            resetResultSection();
-            removeAllImages();
-            document.getElementById('menuName').value = '';
-            document.getElementById('menuFeatures').value = '';
-            selectedStyle = null;
-            document.querySelectorAll('#selfMode .style-card').forEach(el => el.classList.remove('selected'));
-            const nextBtn = document.getElementById('nextToStep2');
-            if (nextBtn) nextBtn.disabled = true;
-            goToStep1();
         }
 
         function showResultSection() {
@@ -2202,6 +1821,7 @@
             const statusText = document.getElementById('resultStatusText');
             let icon = 'fa-gear fa-spin';
             let className = 'result-status';
+            
             if (state === 'success') {
                 icon = 'fa-circle-check';
                 className += ' success';
@@ -2213,6 +1833,7 @@
             } else if (state === 'idle') {
                 icon = 'fa-clock';
             }
+            
             if (badge) {
                 badge.className = className;
                 badge.innerHTML = `<i class="fa-solid ${icon}"></i> ${text}`;
@@ -2295,41 +1916,355 @@
             }
         }
 
-        async function fetchLatestVideoStatus() {
-            if (!currentVideoId) return;
-            const userId = getCurrentUserId();
-            if (!userId) return;
-            try {
-                const response = await fetch(`${API_BASE}/api/shorts/videos?userId=${encodeURIComponent(userId)}&limit=20`, {
-                    headers: { 'user-id': userId }
-                });
-                if (!response.ok) throw new Error('영상 정보를 불러올 수 없습니다.');
-                const payload = await response.json();
-                const video = Array.isArray(payload?.data)
-                    ? payload.data.find(item => item.id === currentVideoId)
-                    : null;
-                if (video) {
-                    latestVideoData = video;
-                    updateResultMetadata({
-                        menuName: video.menu_name,
-                        style: video.style,
-                        duration: video.duration_sec || pendingResultMeta?.duration
+        // 스타일 선택
+        function selectStyle(style) {
+            selectedStyle = style;
+            
+            document.querySelectorAll('.style-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            const card = document.querySelector(`[data-style="${style}"]`);
+            if (card) {
+                card.classList.add('selected');
+            }
+            
+            document.getElementById('nextToStep2').disabled = false;
+        }
+
+        // Step 1 → Step 2
+        function goToStep2() {
+            if (!selectedStyle) {
+                alert('플랫폼 스타일을 선택해주세요.');
+                return;
+            }
+            
+            currentStep = 2;
+            updateStepDisplay();
+            
+            const info = platformInfo[selectedStyle];
+            if (info) {
+                document.getElementById('selectedStyleEmoji').textContent = info.emoji;
+                document.getElementById('selectedStyleText').textContent = info.name;
+            }
+            
+            updateDurationButtons();
+            
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            document.getElementById('errorScreen').classList.remove('active');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Step 2 → Step 1
+        function goToStep1() {
+            currentStep = 1;
+            updateStepDisplay();
+            
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('errorScreen').classList.remove('active');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 단계 표시 업데이트
+        function updateStepDisplay() {
+            document.getElementById('stepBadge').textContent = `Step ${currentStep} / 2`;
+        }
+
+        // 영상 길이 버튼 업데이트
+        function updateDurationButtons() {
+            const container = document.getElementById('durationButtons');
+            const info = platformInfo[selectedStyle];
+            const durations = [10, 15, 20, 25];
+            
+            container.innerHTML = durations.map(duration => {
+                const isRecommended = info?.recommendedDurations?.includes(duration);
+                const isSelected = selectedDuration === duration;
+                return `
+                    <button class="duration-btn ${isSelected ? 'selected' : ''}" 
+                            onclick="selectDuration(${duration})"
+                            data-duration="${duration}">
+                        ${duration}초
+                        ${isRecommended ? '<span class="duration-badge">추천</span>' : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // 영상 길이 선택
+        function selectDuration(duration) {
+            selectedDuration = duration;
+            
+            document.querySelectorAll('.duration-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            const btn = document.querySelector(`[data-duration="${duration}"]`);
+            if (btn) {
+                btn.classList.add('selected');
+            }
+        }
+
+        // 음악 선택
+        function selectMusic(music) {
+            selectedMusic = music;
+            
+            document.querySelectorAll('.music-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            const card = document.querySelector(`[data-music="${music}"]`);
+            if (card) {
+                card.classList.add('selected');
+            }
+        }
+
+        // 이미지 업로드
+        function handleImageUpload(input) {
+            if (!input.files || input.files.length === 0) return;
+            
+            const files = Array.from(input.files);
+            const maxFiles = 5;
+            const maxSize = 10 * 1024 * 1024;
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            
+            if (uploadedImages.length + files.length > maxFiles) {
+                alert(`최대 ${maxFiles}장까지 업로드 가능합니다. (현재: ${uploadedImages.length}장)`);
+                input.value = '';
+                return;
+            }
+            
+            const validFiles = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                if (file.size > maxSize) {
+                    alert(`"${file.name}" 파일 크기는 10MB 이하여야 합니다.`);
+                    continue;
+                }
+                
+                if (!validTypes.includes(file.type)) {
+                    alert(`"${file.name}"은(는) JPG, PNG 파일만 업로드 가능합니다.`);
+                    continue;
+                }
+                
+                validFiles.push(file);
+            }
+            
+            if (validFiles.length === 0) {
+                input.value = '';
+                return;
+            }
+            
+            let loadedCount = 0;
+            validFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedImages.push({
+                        file: file,
+                        preview: e.target.result,
+                        id: Date.now() + index
                     });
-                    if (video.status === 'completed' && video.video_url) {
-                        setResultStatus('success', '영상 생성이 완료되었습니다!');
-                        showResultVideo(video.video_url);
-                        stopVideoStatusWatcher();
-                    } else if (video.status === 'failed') {
-                        setResultStatus('error', video.error_message || '영상 생성에 실패했습니다.');
-                        showResultPlaceholder('문제가 발생했습니다. 다시 시도해주세요.');
-                        stopVideoStatusWatcher();
-                    } else {
-                        setResultStatus('processing', '렌더링 중입니다...');
+                    
+                    loadedCount++;
+                    if (loadedCount === validFiles.length) {
+                        updateImagePreview();
                     }
+                };
+                reader.onerror = function() {
+                    alert(`"${file.name}"을(를) 불러올 수 없습니다.`);
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            input.value = '';
+        }
+
+        // 이미지 미리보기 업데이트
+        function updateImagePreview() {
+            const preview = document.getElementById('uploadPreview');
+            const previewGrid = document.getElementById('previewGrid');
+            const uploadArea = document.getElementById('uploadArea');
+            
+            if (uploadedImages.length === 0) {
+                preview.classList.remove('show');
+                uploadArea.classList.remove('has-image');
+                document.getElementById('uploadIcon').style.display = 'block';
+                document.getElementById('uploadText').style.display = 'block';
+                document.getElementById('uploadHint').style.display = 'block';
+                return;
+            }
+            
+            previewGrid.innerHTML = uploadedImages.map((img, index) => `
+                <div class="upload-preview-item">
+                    <img src="${img.preview}" alt="Preview ${index + 1}">
+                    <button class="remove-image-btn" onclick="removeImageById(${img.id})" title="삭제">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                    <div class="upload-count">${index + 1}/${uploadedImages.length}</div>
+                </div>
+            `).join('');
+            
+            preview.classList.add('show');
+            uploadArea.classList.add('has-image');
+            document.getElementById('uploadIcon').style.display = 'none';
+            document.getElementById('uploadText').style.display = 'none';
+            document.getElementById('uploadHint').style.display = 'none';
+        }
+
+        // 이미지 삭제
+        function removeImageById(id) {
+            uploadedImages = uploadedImages.filter(img => img.id !== id);
+            updateImagePreview();
+        }
+
+        // 모든 이미지 삭제
+        function removeAllImages() {
+            uploadedImages = [];
+            document.getElementById('imageInput').value = '';
+            updateImagePreview();
+        }
+
+        // 영상 생성
+        async function generateVideo() {
+            hideSuccessBanner();
+            stopVideoStatusWatcher();
+            resetResultSection();
+            
+            // 유효성 검사
+            if (uploadedImages.length === 0) {
+                alert('음식 사진을 최소 1장 이상 업로드해주세요.');
+                return;
+            }
+
+            const menuName = document.getElementById('menuName').value.trim();
+            if (!menuName || menuName.length < 2) {
+                alert('메뉴명을 2자 이상 입력해주세요.');
+                return;
+            }
+
+            if (!selectedStyle) {
+                alert('플랫폼 스타일을 선택해주세요.');
+                goToStep1();
+                return;
+            }
+
+            const userId = getCurrentUserId();
+            if (!userId) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            pendingResultMeta = {
+                menuName,
+                style: selectedStyle,
+                duration: selectedDuration,
+                music: selectedMusic
+            };
+            prepareResultSection(pendingResultMeta);
+            
+            showLoadingScreen();
+            
+            const formData = new FormData();
+            
+            uploadedImages.forEach((img, index) => {
+                if (index === 0) {
+                    formData.append('image', img.file);
+                } else {
+                    formData.append(`image${index + 1}`, img.file);
+                }
+            });
+            
+            formData.append('style', selectedStyle);
+            formData.append('menuName', menuName);
+            formData.append('menuFeatures', document.getElementById('menuFeatures').value);
+            formData.append('menuPrice', '');
+            formData.append('music', selectedMusic);
+            formData.append('duration', selectedDuration.toString());
+            formData.append('imageCount', uploadedImages.length.toString());
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/shorts/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'user-id': userId
+                    },
+                    body: formData
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (jsonError) {
+                    const text = await response.text();
+                    console.error('응답 파싱 실패:', text);
+                    throw new Error(`서버 응답 오류 (${response.status}): ${text.substring(0, 100)}`);
+                }
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`);
+                }
+
+                hideLoadingScreen();
+                
+                if (result.data && result.data.id) {
+                    showSuccessBanner();
+                    startVideoStatusWatcher(result.data.id, pendingResultMeta);
+                } else {
+                    showSuccessBanner();
+                    showResultSection();
                 }
             } catch (error) {
-                console.error('영상 상태 조회 실패:', error);
+                console.error('영상 생성 실패:', error);
+                hideLoadingScreen();
+                resetResultSection();
+                showErrorScreen(error.message);
             }
+        }
+
+        // 로딩 화면
+        function showLoadingScreen() {
+            const info = platformInfo[selectedStyle];
+            if (info) {
+                document.getElementById('loadingEmoji').textContent = info.emoji;
+                document.getElementById('loadingMessage').textContent = info.loadingMessage;
+            }
+            
+            document.getElementById('loadingScreen').classList.add('active');
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                if (progress > 90) {
+                    clearInterval(interval);
+                }
+                document.getElementById('progressFill').style.width = progress + '%';
+            }, 500);
+        }
+
+        function hideLoadingScreen() {
+            document.getElementById('loadingScreen').classList.remove('active');
+        }
+
+        function goToMypage() {
+            window.open('/mypage.html#shorts', '_blank', 'noopener');
+        }
+
+        function startNewVideo() {
+            hideSuccessBanner();
+            stopVideoStatusWatcher();
+            resetResultSection();
+            removeAllImages();
+            document.getElementById('menuName').value = '';
+            document.getElementById('menuFeatures').value = '';
+            selectedStyle = null;
+            document.querySelectorAll('.style-card').forEach(el => el.classList.remove('selected'));
+            const nextBtn = document.getElementById('nextToStep2');
+            if (nextBtn) nextBtn.disabled = true;
+            goToStep1();
         }
 
         function downloadLatestVideo() {
@@ -2344,7 +2279,7 @@
             document.body.removeChild(link);
         }
 
-        // 에러 화면 표시
+        // 에러 화면
         function showErrorScreen(message) {
             document.getElementById('errorMessage').textContent = message || '서버에 일시적인 문제가 발생했습니다';
             document.getElementById('errorScreen').classList.add('active');
@@ -2352,19 +2287,50 @@
             document.getElementById('step2').classList.remove('active');
         }
 
-        // 다시 시도
         function retryGeneration() {
             document.getElementById('errorScreen').classList.remove('active');
             document.getElementById('step2').classList.add('active');
             generateVideo();
         }
 
+        // 인증 UI 업데이트
+        async function updateAuthUI() {
+            const user = getCurrentUser();
+            const authUser = document.getElementById('authUser');
+            const loginBtn = document.getElementById('loginBtn');
+            const signupBtn = document.getElementById('signupBtn');
+            const userEmail = document.getElementById('userEmail');
+            const userAvatar = document.getElementById('userAvatar');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            if (user && user.email) {
+                if (authUser) authUser.style.display = 'flex';
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (signupBtn) signupBtn.style.display = 'none';
+                if (userEmail) userEmail.textContent = user.email;
+                if (userAvatar) {
+                    const initial = (user.email[0] || 'U').toUpperCase();
+                    userAvatar.textContent = initial;
+                }
+                if (logoutBtn) {
+                    logoutBtn.onclick = async function() {
+                        if (!confirm('로그아웃 하시겠습니까?')) return;
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('userData');
+                        location.href = 'login.html';
+                    };
+                }
+            } else {
+                if (authUser) authUser.style.display = 'none';
+                if (loginBtn) loginBtn.style.display = 'inline-flex';
+                if (signupBtn) signupBtn.style.display = 'inline-flex';
+            }
+        }
+
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            // 기본 음악 선택
             selectMusic('auto');
             
-            // 기본 영상 길이 설정
             if (selectedStyle && platformInfo[selectedStyle]) {
                 selectedDuration = platformInfo[selectedStyle].recommendedDurations[0] || 15;
             }
@@ -2393,50 +2359,10 @@
                     handleImageUpload(input);
                 }
             });
+
+            // 인증 UI 업데이트
+            updateAuthUI();
         });
-
-        // 인증 UI 업데이트 (기존 코드 유지)
-        async function updateAuthUI() {
-            const user = getCurrentUser();
-            const authUser = document.getElementById('authUser');
-            const loginBtn = document.getElementById('loginBtn');
-            const signupBtn = document.getElementById('signupBtn');
-            const userEmail = document.getElementById('userEmail');
-            const userAvatar = document.getElementById('userAvatar');
-            const logoutBtn = document.getElementById('logoutBtn');
-            
-            if (user && user.email) {
-                if (authUser) authUser.style.display = 'flex';
-                if (loginBtn) loginBtn.style.display = 'none';
-                if (signupBtn) signupBtn.style.display = 'none';
-                if (userEmail) userEmail.textContent = user.email;
-        if (userAvatar) {
-                    const initial = (user.email[0] || 'U').toUpperCase();
-          userAvatar.textContent = initial;
-        }
-        if (logoutBtn) {
-                    logoutBtn.onclick = async function() {
-                        if (!confirm('로그아웃 하시겠습니까?')) return;
-                        localStorage.removeItem('isLoggedIn');
-                        localStorage.removeItem('userData');
-                        location.href = 'login.html';
-                    };
-          }
-        } else {
-                if (authUser) authUser.style.display = 'none';
-                if (loginBtn) loginBtn.style.display = 'inline-flex';
-                if (signupBtn) signupBtn.style.display = 'inline-flex';
-            }
-        }
-
-        // 페이지 로드 시 인증 UI 업데이트
-      if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', updateAuthUI);
-      } else {
-          updateAuthUI();
-        }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-    <script src="./assets/auth-state.js?v=202410"></script>
 </body>
 </html>
