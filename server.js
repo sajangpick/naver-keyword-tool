@@ -5130,9 +5130,14 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additiona
   } catch (error) {
     devError("Runway API 오류:", error);
     
-    // SDK 오류인 경우 직접 HTTP API로 폴백 시도
-    if (error.message.includes("SDK") || error.message.includes("require")) {
-      devLog("SDK 사용 불가, HTTP API로 폴백 시도");
+    // SDK 요청 본문 검증 실패 또는 SDK 자체 오류는 HTTP API로 폴백
+    const shouldFallbackToHttp =
+      (typeof error?.status === "number" && error.status === 400) ||
+      (typeof error?.message === "string" && error.message.includes("Validation of body failed")) ||
+      (typeof error?.message === "string" && (error.message.includes("SDK") || error.message.includes("require")));
+
+    if (shouldFallbackToHttp) {
+      devLog("Runway SDK 사용이 불가능하여 HTTP API로 폴백 시도");
       return await generateVideoWithRunwayHTTP(imageUrl, prompt, duration);
     }
     
