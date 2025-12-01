@@ -6061,6 +6061,9 @@ app.use((error, req, res, next) => {
     devLog("\n🛑 서버를 종료합니다...");
     process.exit(0);
   });
+} catch (serverStartError) {
+  devError("서버 시작 중 오류가 발생했습니다:", serverStartError);
+  process.exit(1);
 }
 
 // ==================== 구독 시스템 API (중복 제거됨) ====================
@@ -6580,3 +6583,5 @@ app.put('/api/subscription/upgrade-request/:requestId/approve', async (req, res)
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+}
