@@ -5053,7 +5053,7 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       ],
       parameters: {
         aspectRatio: "9:16", // 고정: 세로형 쇼츠 비율 (9:16) - 변경 불가
-        durationSeconds: Math.min(Math.max(duration, 4), 8).toString(), // 문자열로 변환
+        durationSeconds: Math.min(Math.max(parseInt(duration) || 8, 4), 8), // 숫자로 전송 (4, 6, 8 중 하나)
         resolution: "720p", // RESOLUTION_720P 대신 "720p" 문자열 사용
       }
     };
