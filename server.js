@@ -6205,6 +6205,90 @@ app.get("/api/shorts/download", async (req, res) => {
   }
 });
 
+// ==================== 영상 재생 프록시 ====================
+// Google API에서 직접 재생하면 403 오류가 발생하므로 서버를 통해 프록시
+app.get("/api/shorts/play", async (req, res) => {
+  try {
+    // CORS 헤더 설정
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, user-id, Range");
+    res.setHeader("Accept-Ranges", "bytes");
+
+    const videoUrl = req.query.url;
+    
+    if (!videoUrl) {
+      return res.status(400).json({
+        success: false,
+        error: "영상 URL이 제공되지 않았습니다."
+      });
+    }
+
+    devLog("🔵 [재생 프록시] 영상 재생 시작:", videoUrl);
+
+    // Google API URL인 경우 API 키 추가
+    let playUrl = videoUrl;
+    if (videoUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
+      // URL에 API 키 추가
+      const separator = videoUrl.includes('?') ? '&' : '?';
+      playUrl = `${videoUrl}${separator}key=${GEMINI_API_KEY}`;
+      devLog("🔵 [재생 프록시] API 키 추가됨");
+    }
+
+    // Range 헤더 처리 (비디오 스트리밍을 위해)
+    const range = req.headers.range;
+    const headers = {
+      'Accept': 'video/*',
+    };
+    
+    if (range) {
+      headers['Range'] = range;
+    }
+
+    // 영상 다운로드
+    const response = await axios.get(playUrl, {
+      responseType: 'stream',
+      timeout: 120000, // 2분 타임아웃
+      headers: headers
+    });
+
+    // 응답 헤더 설정 (재생용)
+    res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
+    res.setHeader('Accept-Ranges', 'bytes');
+    
+    // Range 요청인 경우 적절한 헤더 설정
+    if (range && response.status === 206) {
+      res.status(206);
+      if (response.headers['content-range']) {
+        res.setHeader('Content-Range', response.headers['content-range']);
+      }
+      if (response.headers['content-length']) {
+        res.setHeader('Content-Length', response.headers['content-length']);
+      }
+    } else {
+      if (response.headers['content-length']) {
+        res.setHeader('Content-Length', response.headers['content-length']);
+      }
+    }
+
+    devLog("🔵 [재생 프록시] 영상 스트리밍 시작");
+    
+    // 스트림을 클라이언트로 전송
+    response.data.pipe(res);
+    
+  } catch (error) {
+    devError("🔴 [재생 프록시] 오류:", error.message);
+    console.error("🔴 [재생 프록시] 오류:", error);
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: `영상 재생 실패: ${error.message || "알 수 없는 오류"}`
+      });
+    }
+  }
+});
+
 // ==================== 서버 시작 ====================
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {

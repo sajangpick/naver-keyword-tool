@@ -1924,7 +1924,14 @@
             const videoEl = document.getElementById('resultVideo');
             if (placeholder) placeholder.classList.add('hidden');
             if (videoEl) {
-                videoEl.src = url;
+                // Google API URL인 경우 서버 프록시를 통해 재생 (403 오류 방지)
+                let videoSrc = url;
+                if (url && url.includes('generativelanguage.googleapis.com')) {
+                    videoSrc = `${API_BASE}/api/shorts/play?url=${encodeURIComponent(url)}`;
+                    console.log('🔵 [영상 재생] 프록시 URL 사용:', videoSrc);
+                }
+                
+                videoEl.src = videoSrc;
                 videoEl.classList.remove('hidden');
                 videoEl.load();
             }
