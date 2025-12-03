@@ -5069,7 +5069,7 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       parameters: {
         aspectRatio: "9:16", // 고정: 세로형 쇼츠 비율 (9:16) - 변경 불가
         durationSeconds: Math.min(Math.max(parseInt(duration) || 8, 4), 8), // 숫자로 전송 (4, 6, 8 중 하나)
-        resolution: "720p", // RESOLUTION_720P 대신 "720p" 문자열 사용
+        resolution: "1080p", // 1080:1920 해상도 (9:16 비율)
       }
     };
 
@@ -5420,7 +5420,7 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additiona
     // Gen-4 Image to Video 또는 Gen-3 모델 사용
     // 공식 문서: https://docs.dev.runwayml.com/
     // 허용된 모델: "gen3a_turbo", "gen4_turbo", "gen4", "gen4.5", "veo3", "veo3.1", "veo3.1_fast"
-    // 허용된 ratio: "1280:720", "720:1280", "1104:832", "832:1104", "960:960", "1584:672"
+    // 허용된 ratio: "1280:720", "720:1280", "1080:1920", "1104:832", "832:1104", "960:960", "1584:672"
     // promptImage는 항상 배열 형태여야 함
     const promptImagePayload = Array.isArray(additionalImages) && additionalImages.length > 0
       ? [
@@ -5437,7 +5437,7 @@ async function generateVideoWithRunway(imageUrl, prompt, duration = 5, additiona
       model: "gen4", // 허용된 모델: gen4, gen4_turbo, gen4.5, veo3, veo3.1, veo3.1_fast
       promptText: prompt || "cinematic food video, slow motion, professional lighting",
       duration: Math.min(Math.max(duration, 3), 10), // 3-10초 사이
-      ratio: "720:1280", // 고정: 세로형 쇼츠 비율 (9:16) - Runway API 형식: "720:1280" - 변경 불가
+      ratio: "1080:1920", // 고정: 세로형 쇼츠 비율 (9:16) - 1080p 해상도
     };
 
     // promptImage는 배열 형태로 전달 (공식 문서 기준)
@@ -5498,12 +5498,12 @@ async function generateVideoWithRunwayHTTP(imageUrl, prompt, duration = 5) {
     const RUNWAY_API_BASE = "https://api.runwayml.com/v1";
 
     // Step 1: 이미지에서 동영상 생성 요청
-    // 허용된 ratio: "1280:720", "720:1280", "1104:832", "832:1104", "960:960", "1584:672"
+    // 허용된 ratio: "1280:720", "720:1280", "1080:1920", "1104:832", "832:1104", "960:960", "1584:672"
     const requestBody = {
       image_url: imageUrl,
       prompt: prompt || "cinematic food video, slow motion, professional lighting",
       duration: Math.min(Math.max(duration, 3), 10),
-      aspect_ratio: "720:1280", // 고정: 세로형 쇼츠 비율 (9:16) - Runway API 형식: "720:1280" - 변경 불가
+      aspect_ratio: "1080:1920", // 고정: 세로형 쇼츠 비율 (9:16) - 1080p 해상도
       watermark: false,
     };
     

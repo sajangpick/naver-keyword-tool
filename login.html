@@ -691,14 +691,25 @@
               await new Promise(resolve => setTimeout(resolve, 100));
             }
             
+            // redirect 파라미터를 포함한 리다이렉트 URL 생성
+            let redirectUrl = window.location.origin + window.location.pathname;
+            if (redirectTarget) {
+              redirectUrl += '?redirect=' + encodeURIComponent(redirectTarget);
+            }
+            
+            console.log('[카카오 로그인] 카카오 로그인 페이지로 이동합니다...');
+            console.log('[카카오 로그인] 리다이렉트 URL:', redirectUrl);
+            
             // Supabase OAuth를 사용한 카카오 로그인
+            // 이 함수는 카카오 로그인 페이지로 자동으로 리다이렉트됩니다
             const { data, error } = await supabase.auth.signInWithOAuth({
               provider: 'kakao',
               options: {
-                redirectTo:
-                  window.location.origin +
-                  window.location.pathname +
-                  window.location.search
+                redirectTo: redirectUrl,
+                // 카카오 로그인 페이지를 명시적으로 표시하도록 설정
+                queryParams: {
+                  prompt: 'login' // 카카오 로그인 페이지를 강제로 표시
+                }
               }
             });
 
@@ -706,8 +717,14 @@
               hideLoading();
               showError('로그인 실패: ' + error.message);
               console.error('카카오 로그인 오류:', error);
+            } else {
+              // 성공 시 data.url로 리다이렉트 (카카오 로그인 페이지)
+              if (data?.url) {
+                console.log('[카카오 로그인] 카카오 로그인 페이지로 이동:', data.url);
+                // 카카오 로그인 페이지로 리다이렉트
+                window.location.href = data.url;
+              }
             }
-            // 성공 시 자동으로 카카오 페이지로 리다이렉트됨
           } catch (err) {
             hideLoading();
             showError('로그인 중 오류가 발생했습니다.');
