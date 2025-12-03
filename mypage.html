@@ -1785,14 +1785,21 @@
       // 등급 정규화 (관리자 페이지와 동일한 로직)
       const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
       
+      // 관리자 등급 체크
+      const isAdmin = normalizedLevel === 'admin' || profile.user_type === 'admin';
+      
       // 실제 설정된 가격과 토큰 사용
       const membershipLevel = normalizedLevel;
       
       // 가격 정보
       let planPrice = 0;
-      let planTokens = 100;
+      let planTokens = null; // null = 무제한
       
-      if (pricing && tokens) {
+      if (isAdmin) {
+        // 관리자는 무제한
+        planPrice = 0;
+        planTokens = null; // 무제한
+      } else if (pricing && tokens) {
         // 식당 대표 등급만 처리
         switch(membershipLevel) {
           case 'seed':
@@ -1838,7 +1845,7 @@
       document.getElementById('paymentPlanName').textContent = planInfo.name;
       document.getElementById('paymentPlanBadge').textContent = planInfo.badge;
       document.getElementById('paymentPlanPrice').textContent = planPrice === 0 ? '무료' : `${planPrice.toLocaleString()}원`;
-      document.getElementById('paymentPlanTokens').textContent = `${planTokens.toLocaleString()} 토큰`;
+      document.getElementById('paymentPlanTokens').textContent = planTokens ? `${planTokens.toLocaleString()} 토큰` : '무제한';
       
       if (cycle && cycle.days_remaining !== undefined) {
         document.getElementById('paymentPlanDays').textContent = `${cycle.days_remaining}일`;
@@ -2323,39 +2330,56 @@
             planBadges[normalizedLevel] || '무료';
           
           if (cycle) {
+            // 관리자 등급 체크
+            const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
+            
             // 토큰 사용량 표시
             const tokensUsed = cycle.tokens_used || 0;
-            const tokensLimit = cycle.monthly_token_limit || 100;
-            const tokensRemaining = cycle.tokens_remaining || tokensLimit;
-            const usagePercent = tokensLimit > 0 ? 
+            let tokensLimit = cycle.monthly_token_limit || 100;
+            let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+            
+            // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리
+            if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
+              tokensLimit = null; // null = 무제한
+              tokensRemaining = null; // null = 무제한
+            }
+            
+            const usagePercent = tokensLimit && tokensLimit > 0 ? 
               Math.round((tokensUsed / tokensLimit) * 100) : 0;
             
             console.log('📊 토큰 정보 표시:', {
+              isAdmin,
               tokensUsed,
-              tokensLimit,
-              tokensRemaining,
+              tokensLimit: tokensLimit || '무제한',
+              tokensRemaining: tokensRemaining || '무제한',
               usagePercent,
               daysRemaining: cycle.days_remaining,
               cycleId: cycle.id
             });
             
             document.getElementById('tokensUsed').textContent = tokensUsed;
-            document.getElementById('tokensLimit').textContent = tokensLimit;
-            document.getElementById('tokensRemaining').textContent = tokensRemaining;
-            document.getElementById('usagePercent').textContent = usagePercent + '%';
+            document.getElementById('tokensLimit').textContent = tokensLimit ? tokensLimit : '무제한';
+            document.getElementById('tokensRemaining').textContent = tokensRemaining ? tokensRemaining : '무제한';
+            document.getElementById('usagePercent').textContent = isAdmin ? '0%' : (usagePercent + '%');
             document.getElementById('daysLeft').textContent = 
               cycle.days_remaining ? `${cycle.days_remaining}일` : '30일';
             
-            // 미터 바 업데이트
+            // 미터 바 업데이트 (관리자는 표시하지 않음)
             const meterFill = document.getElementById('tokenMeterFill');
             if (meterFill) {
-              meterFill.style.width = Math.min(usagePercent, 100) + '%';
-              
-              // 사용량에 따른 색상 변경
-              if (usagePercent >= 90) {
-                meterFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
-              } else if (usagePercent >= 70) {
-                meterFill.style.background = 'linear-gradient(90deg, #f59e0b, #ea580c)';
+              if (isAdmin) {
+                // 관리자는 미터 바 숨기거나 0%로 표시
+                meterFill.style.width = '0%';
+                meterFill.style.background = 'linear-gradient(90deg, #10b981, #059669)'; // 초록색 (무제한)
+              } else {
+                meterFill.style.width = Math.min(usagePercent, 100) + '%';
+                
+                // 사용량에 따른 색상 변경
+                if (usagePercent >= 90) {
+                  meterFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                } else if (usagePercent >= 70) {
+                  meterFill.style.background = 'linear-gradient(90deg, #f59e0b, #ea580c)';
+                }
               }
             }
             

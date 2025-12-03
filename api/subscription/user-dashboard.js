@@ -347,9 +347,16 @@ async function getDashboardData(user, res) {
         const level = profile.membership_level || 'seed';
         const userType = profile.user_type || 'owner';
         
+        // 관리자 등급 체크
+        const isAdmin = level === 'admin' || userType === 'admin';
+        
         // 토큰 설정 조회 (관리자 설정 우선)
         let monthlyTokens = 100;
-        if (supabase) {
+        if (isAdmin) {
+          // 관리자는 무제한 (null 또는 매우 큰 값)
+          monthlyTokens = null; // null = 무제한
+          console.log(`📊 [user-dashboard] 관리자 등급 - 토큰 무제한`);
+        } else if (supabase) {
           try {
             const { data: tokenConfigs, error: tokenConfigError } = await supabase
               .from('token_config')
@@ -376,6 +383,10 @@ async function getDashboardData(user, res) {
         endDate.setDate(endDate.getDate() + 30);
         
         if (supabase) {
+          // 관리자는 무제한이므로 매우 큰 값으로 설정 (또는 null 허용 시 null)
+          const cycleTokenLimit = isAdmin ? 999999 : monthlyTokens;
+          const cycleTokensRemaining = isAdmin ? 999999 : monthlyTokens;
+          
           const { data: newCycle, error: createError } = await supabase
             .from('subscription_cycle')
             .insert({
@@ -384,9 +395,9 @@ async function getDashboardData(user, res) {
               cycle_start_date: startDate.toISOString().split('T')[0],
               cycle_end_date: endDate.toISOString().split('T')[0],
               days_in_cycle: 30,
-              monthly_token_limit: monthlyTokens,
+              monthly_token_limit: cycleTokenLimit,
               tokens_used: 0,
-              tokens_remaining: monthlyTokens,
+              tokens_remaining: cycleTokensRemaining,
               status: 'active',
               billing_amount: 0,
               payment_status: 'completed'
@@ -396,7 +407,7 @@ async function getDashboardData(user, res) {
           
           if (!createError && newCycle) {
             currentCycle = newCycle;
-            console.log('✅ 새 사이클 생성 완료');
+            console.log(`✅ 새 사이클 생성 완료 (관리자: ${isAdmin ? '무제한' : monthlyTokens + ' 토큰'})`);
           }
         }
       } catch (err) {
@@ -451,58 +462,66 @@ async function getDashboardData(user, res) {
     }
     
     // 5. 관리자 설정에서 최신 토큰 한도 확인 (우선 사용)
+    const isAdmin = profile.membership_level === 'admin' || profile.user_type === 'admin';
     let currentTokenLimit = currentCycle.monthly_token_limit || 100;
-    try {
-      if (supabase) {
-        const { data: tokenConfigs, error: tokenConfigError } = await supabase
-          .from('token_config')
-          .select('*')
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        
-        if (!tokenConfigError && tokenConfigs) {
-          const userType = profile.user_type || 'owner';
-          const membershipLevel = profile.membership_level || 'seed';
-          const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+    
+    // 관리자는 무제한
+    if (isAdmin) {
+      currentTokenLimit = 999999; // 무제한을 나타내는 매우 큰 값
+      console.log(`📊 [user-dashboard] 관리자 등급 - 토큰 무제한`);
+    } else {
+      try {
+        if (supabase) {
+          const { data: tokenConfigs, error: tokenConfigError } = await supabase
+            .from('token_config')
+            .select('*')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
           
-          console.log(`📊 [user-dashboard] 토큰 설정 조회: ${tokenLimitKey}`, {
-            configValue: tokenConfigs[tokenLimitKey],
-            currentCycleLimit: currentCycle.monthly_token_limit
-          });
-          
-          if (tokenConfigs[tokenLimitKey] !== undefined && tokenConfigs[tokenLimitKey] !== null) {
-            currentTokenLimit = Number(tokenConfigs[tokenLimitKey]);
-            console.log(`✅ [user-dashboard] 관리자 설정 한도 사용: ${currentTokenLimit} (기존: ${currentCycle.monthly_token_limit})`);
+          if (!tokenConfigError && tokenConfigs) {
+            const userType = profile.user_type || 'owner';
+            const membershipLevel = profile.membership_level || 'seed';
+            const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
             
-            // 사이클 업데이트 (사이클이 실제로 존재할 때만)
-            if (currentCycle.id && currentCycle.monthly_token_limit !== currentTokenLimit) {
-              console.log(`🔄 [user-dashboard] 사이클 한도 업데이트: ${currentCycle.monthly_token_limit} → ${currentTokenLimit}`);
-              const { error: updateError } = await supabase
-                .from('subscription_cycle')
-                .update({
-                  monthly_token_limit: currentTokenLimit,
-                  tokens_remaining: Math.max(0, currentTokenLimit - totalUsed),
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', currentCycle.id);
+            console.log(`📊 [user-dashboard] 토큰 설정 조회: ${tokenLimitKey}`, {
+              configValue: tokenConfigs[tokenLimitKey],
+              currentCycleLimit: currentCycle.monthly_token_limit
+            });
+            
+            if (tokenConfigs[tokenLimitKey] !== undefined && tokenConfigs[tokenLimitKey] !== null) {
+              currentTokenLimit = Number(tokenConfigs[tokenLimitKey]);
+              console.log(`✅ [user-dashboard] 관리자 설정 한도 사용: ${currentTokenLimit} (기존: ${currentCycle.monthly_token_limit})`);
               
-              if (updateError) {
-                console.error('❌ 사이클 업데이트 실패:', updateError);
-              } else {
-                console.log('✅ 사이클 한도 업데이트 완료');
-                currentCycle.monthly_token_limit = currentTokenLimit;
+              // 사이클 업데이트 (사이클이 실제로 존재할 때만)
+              if (currentCycle.id && currentCycle.monthly_token_limit !== currentTokenLimit) {
+                console.log(`🔄 [user-dashboard] 사이클 한도 업데이트: ${currentCycle.monthly_token_limit} → ${currentTokenLimit}`);
+                const { error: updateError } = await supabase
+                  .from('subscription_cycle')
+                  .update({
+                    monthly_token_limit: currentTokenLimit,
+                    tokens_remaining: Math.max(0, currentTokenLimit - totalUsed),
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', currentCycle.id);
+                
+                if (updateError) {
+                  console.error('❌ 사이클 업데이트 실패:', updateError);
+                } else {
+                  console.log('✅ 사이클 한도 업데이트 완료');
+                  currentCycle.monthly_token_limit = currentTokenLimit;
+                }
               }
+            } else {
+              console.log(`⚠️ [user-dashboard] 토큰 설정에 ${tokenLimitKey}가 없습니다. 사이클 값 사용: ${currentTokenLimit}`);
             }
-          } else {
-            console.log(`⚠️ [user-dashboard] 토큰 설정에 ${tokenLimitKey}가 없습니다. 사이클 값 사용: ${currentTokenLimit}`);
+          } else if (tokenConfigError) {
+            console.warn('⚠️ 토큰 설정 조회 실패:', tokenConfigError.message);
           }
-        } else if (tokenConfigError) {
-          console.warn('⚠️ 토큰 설정 조회 실패:', tokenConfigError.message);
         }
+      } catch (err) {
+        console.warn('⚠️ 토큰 한도 업데이트 실패:', err.message);
       }
-    } catch (err) {
-      console.warn('⚠️ 토큰 한도 업데이트 실패:', err.message);
     }
     
     // 6. 플랜 정보 구성

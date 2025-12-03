@@ -167,6 +167,15 @@
         padding: 14px;
         font-size: 16px;
       }
+
+      /* 모바일에서 플랜 카드 세로 배치 */
+      #planSelectionGrid {
+        flex-direction: column;
+      }
+
+      .plan-card {
+        max-width: 100% !important;
+      }
     }
 
     @media (max-width: 360px) {
@@ -243,13 +252,23 @@
 </head>
 <body>
   <!-- 플랜 선택 화면 -->
-  <div class="payment-container" id="planSelectionContainer" style="display: none; max-width: 900px;">
-    <h1>플랜 선택</h1>
-    <p class="subtitle">원하는 플랜을 선택하고 결제하세요</p>
+  <div class="payment-container" id="planSelectionContainer" style="display: none; max-width: 1200px;">
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+      <button onclick="goBack()" style="background: none; border: none; font-size: 24px; color: #667eea; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; transition: all 0.3s;" 
+              onmouseover="this.style.background='#f0f4ff'" 
+              onmouseout="this.style.background='none'"
+              title="이전 화면으로">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div style="flex: 1;">
+        <h1 style="margin: 0;">플랜 선택</h1>
+        <p class="subtitle" style="margin: 5px 0 0 0;">원하는 플랜을 선택하고 결제하세요</p>
+      </div>
+    </div>
     
-    <div id="planSelectionGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px;">
+    <div id="planSelectionGrid" style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 30px; justify-content: center;">
       <!-- 플랜 카드들이 여기에 동적으로 로드됩니다 -->
-      <div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+      <div class="loading" style="width: 100%; text-align: center; padding: 40px;">
         <div class="spinner"></div>
         <p style="margin-top: 15px;">플랜 정보를 불러오는 중...</p>
       </div>
@@ -517,7 +536,10 @@
                       padding: 24px; 
                       cursor: pointer; 
                       transition: all 0.3s;
-                      text-align: center;">
+                      text-align: center;
+                      flex: 1;
+                      min-width: 200px;
+                      max-width: 250px;">
             <div style="font-size: 48px; margin-bottom: 12px;">${plan.icon}</div>
             <h3 style="font-size: 24px; font-weight: 700; color: #333; margin-bottom: 8px;">${plan.name}</h3>
             <div style="font-size: 28px; font-weight: 700; color: ${plan.color}; margin-bottom: 12px;">
@@ -538,6 +560,12 @@
     // 플랜 선택
     function selectPlan(planKey) {
       window.location.href = `/payment.html?plan=${planKey}`;
+    }
+
+    // 이전 화면으로 돌아가기
+    function goBack() {
+      // 마이페이지로 이동
+      window.location.href = '/mypage.html';
     }
     
     // 페이지 로드 시 등록된 카드 목록 로드
