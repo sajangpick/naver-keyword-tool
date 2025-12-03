@@ -3382,7 +3382,7 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
               ${video.status === 'completed' && video.video_url ? `
                 <div style="margin-top: 12px;">
                   <video controls style="max-width: 200px; max-height: 300px; border-radius: 8px; border: 1px solid var(--border);">
-                    <source src="${video.video_url}" type="video/mp4">
+                    <source src="/api/shorts/play?url=${encodeURIComponent(video.video_url)}" type="video/mp4">
                     브라우저가 비디오 태그를 지원하지 않습니다.
                   </video>
                 </div>
@@ -3402,7 +3402,7 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
                 })}</span>
                 <div style="display: flex; gap: 8px;">
                   ${video.status === 'completed' && video.video_url ? `
-                    <a href="${video.video_url}" target="_blank" 
+                    <a href="/api/shorts/play?url=${encodeURIComponent(video.video_url)}" target="_blank" 
                        style="padding: 6px 12px; background: var(--accent-color); color: white; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
                       <i class="fas fa-play"></i> 영상 보기
                     </a>
@@ -3561,27 +3561,22 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
       try {
         console.log('📥 영상 다운로드 시작:', videoUrl);
         
-        // fetch로 영상 데이터 가져오기
-        const response = await fetch(videoUrl);
-        if (!response.ok) {
-          throw new Error('영상을 불러올 수 없습니다.');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        // 서버 프록시 API를 통해 다운로드
+        const proxyUrl = `/api/shorts/download?url=${encodeURIComponent(videoUrl)}&filename=${encodeURIComponent(filename)}`;
         
         // 다운로드 링크 생성
         const a = document.createElement('a');
-        a.href = url;
+        a.href = proxyUrl;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
         
         // 정리
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+        setTimeout(() => {
+          document.body.removeChild(a);
+        }, 100);
         
-        console.log('✅ 영상 다운로드 완료:', filename);
+        console.log('✅ 영상 다운로드 시작됨:', filename);
       } catch (error) {
         console.error('❌ 영상 다운로드 실패:', error);
         alert('영상 다운로드 중 오류가 발생했습니다: ' + error.message);
