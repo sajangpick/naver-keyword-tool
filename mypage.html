@@ -898,20 +898,22 @@
           </div>
         </div>
 
-        <!-- 이번 달 사용량 -->
+        <!-- 결제 및 플랜 정보 -->
         <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-number" id="reviewUsage">0 / 0</div>
-            <div class="stat-label">리뷰 답글 (이번 달)</div>
-            <div class="usage-bar">
-              <div class="usage-bar-fill" id="reviewBar" style="width: 0%"></div>
+          <div class="stat-card" style="cursor: pointer;" onclick="goToPayment('power')">
+            <div class="stat-number" id="currentPlanName">씨앗</div>
+            <div class="stat-label">현재 플랜</div>
+            <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
+              <i class="fas fa-arrow-right"></i> 플랜 변경하기
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-number" id="blogUsage">0 / 0</div>
-            <div class="stat-label">블로그 포스팅 (이번 달)</div>
-            <div class="usage-bar">
-              <div class="usage-bar-fill" id="blogBar" style="width: 0%"></div>
+          <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='/payment.html'">
+            <div class="stat-number">
+              <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="stat-label">결제 관리</div>
+            <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
+              <i class="fas fa-arrow-right"></i> 결제 페이지로 이동
             </div>
           </div>
         </div>
@@ -1363,29 +1365,75 @@
           </button>
         </section>
 
-        <!-- 3. 최근 리뷰 답글 -->
+        <!-- 결제 및 구독 관리 -->
         <section class="section">
           <h3 class="section-title">
-            <i class="fas fa-comment-dots"></i>
-            최근 리뷰 답글 (10개)
+            <i class="fas fa-credit-card"></i>
+            결제 및 구독 관리
           </h3>
-          <div id="recentReviewReplies" class="activity-list">
-            <div class="loading">
-              <div class="spinner"></div>
+          <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+            플랜을 변경하거나 결제 내역을 확인하세요
+          </p>
+
+          <!-- 현재 플랜 정보 -->
+          <div style="background: linear-gradient(135deg, var(--secondary) 0%, #ffe0cc 100%); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255, 123, 84, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div>
+                <h4 style="margin: 0 0 5px 0; color: var(--text-primary); font-size: 18px; font-weight: 700;">
+                  <span id="paymentPlanName">씨앗 플랜</span>
+                </h4>
+                <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">
+                  <span id="paymentPlanBadge">무료</span>
+                </p>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 24px; font-weight: 700; color: var(--accent-color);">
+                  <span id="paymentPlanPrice">무료</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">월간</div>
+              </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.6); border-radius: 8px; padding: 12px; margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: var(--text-secondary); font-size: 13px;">월간 토큰</span>
+                <strong style="color: var(--text-primary); font-size: 14px;" id="paymentPlanTokens">100 토큰</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-secondary); font-size: 13px;">갱신일까지</span>
+                <strong style="color: var(--text-primary); font-size: 14px;" id="paymentPlanDays">30일</strong>
+              </div>
             </div>
           </div>
-        </section>
 
-        <!-- 3. 최근 블로그 포스팅 -->
-        <section class="section">
-          <h3 class="section-title">
-            <i class="fas fa-blog"></i>
-            최근 블로그 포스팅 (10개)
-          </h3>
-          <div id="recentBlogs" class="activity-list">
-            <div class="loading">
-              <div class="spinner"></div>
+          <!-- 플랜 변경 버튼들 -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+            <button class="btn btn-primary" onclick="goToPayment('power')" style="width: 100%;">
+              <i class="fas fa-rocket"></i> 파워 플랜
+            </button>
+            <button class="btn btn-primary" onclick="goToPayment('bigpower')" style="width: 100%;">
+              <i class="fas fa-star"></i> 빅파워 플랜
+            </button>
+            <button class="btn btn-primary" onclick="goToPayment('premium')" style="width: 100%;">
+              <i class="fas fa-crown"></i> 프리미엄 플랜
+            </button>
+            <button class="btn btn-secondary" onclick="window.location.href='/payment.html'" style="width: 100%;">
+              <i class="fas fa-list"></i> 전체 플랜 보기
+            </button>
+          </div>
+
+          <!-- 결제 내역 (간단 버전) -->
+          <div style="background: #f9f9f9; border-radius: 12px; padding: 16px; margin-top: 20px;">
+            <h4 style="margin: 0 0 12px 0; color: var(--text-primary); font-size: 15px; font-weight: 600;">
+              <i class="fas fa-receipt"></i> 결제 내역
+            </h4>
+            <div id="paymentHistory" style="color: var(--text-secondary); font-size: 14px;">
+              <p style="margin: 0; text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+              </p>
             </div>
+            <button class="btn btn-secondary" onclick="window.location.href='/payment.html'" style="width: 100%; margin-top: 12px; font-size: 13px;">
+              <i class="fas fa-external-link-alt"></i> 전체 결제 내역 보기
+            </button>
           </div>
         </section>
 
@@ -1537,10 +1585,9 @@
         // ⚡ 모든 데이터를 병렬로 로드 (빠름!)
         await Promise.all([
           loadUserProfile(user.id),
-          loadRecentReviewReplies(user.id),
-          loadRecentBlogs(user.id),
           loadTokenInfo(user.id),  // 토큰 정보 추가
-          loadShortsVideos(user.id)  // 쇼츠 영상 목록 추가
+          loadShortsVideos(user.id),  // 쇼츠 영상 목록 추가
+          loadPaymentInfo(user.id)  // 결제 정보 추가
         ]);
 
         // 추가 데이터 로드 (블로그 관련)
@@ -1614,162 +1661,195 @@
       }
     }
 
-    // 사용량 통계 업데이트
+    // 사용량 통계 업데이트 (제거됨 - 결제 섹션으로 대체)
     function updateUsageStats(profile) {
-      const limits = LIMITS[profile.user_type]?.[profile.membership_level];
-      if (!limits) return;
-
-      const reviewUsage = profile.monthly_review_count || 0;
-      const blogUsage = profile.monthly_blog_count || 0;
-      const reviewLimit = limits.review;
-      const blogLimit = limits.blog;
-
-      // 리뷰 답글
-      document.getElementById('reviewUsage').textContent = 
-        `${reviewUsage} / ${reviewLimit || '무제한'}`;
+      // 플랜 이름 업데이트
+      const planNames = {
+        seed: '씨앗',
+        power: '파워',
+        big_power: '빅파워',
+        bigpower: '빅파워',
+        premium: '프리미엄',
+        elite: '엘리트',
+        expert: '전문가',
+        master: '마스터',
+        platinum: '플래티넘'
+      };
       
-      if (reviewLimit) {
-        const reviewPercent = Math.min((reviewUsage / reviewLimit * 100), 100);
-        const reviewBar = document.getElementById('reviewBar');
-        reviewBar.style.width = reviewPercent + '%';
-        reviewBar.className = 'usage-bar-fill';
-        if (reviewPercent >= 90) reviewBar.classList.add('danger');
-        else if (reviewPercent >= 70) reviewBar.classList.add('warning');
-      } else {
-        document.getElementById('reviewBar').style.width = '0%';
-      }
-
-      // 블로그 포스팅
-      document.getElementById('blogUsage').textContent = 
-        `${blogUsage} / ${blogLimit || '무제한'}`;
-      
-      if (blogLimit) {
-        const blogPercent = Math.min((blogUsage / blogLimit * 100), 100);
-        const blogBar = document.getElementById('blogBar');
-        blogBar.style.width = blogPercent + '%';
-        blogBar.className = 'usage-bar-fill';
-        if (blogPercent >= 90) blogBar.classList.add('danger');
-        else if (blogPercent >= 70) blogBar.classList.add('warning');
-      } else {
-        document.getElementById('blogBar').style.width = '0%';
+      const currentPlanName = planNames[profile.membership_level] || '씨앗';
+      const planNameEl = document.getElementById('currentPlanName');
+      if (planNameEl) {
+        planNameEl.textContent = currentPlanName;
       }
     }
 
-    // 최근 리뷰 답글 로드
-    async function loadRecentReviewReplies(userId) {
-      const container = document.getElementById('recentReviewReplies');
-      
+    // 결제 정보 로드
+    async function loadPaymentInfo(userId) {
       try {
-        const { data: reviews, error } = await supabase
-          .from('review_responses')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(10);
+        // Supabase 세션 토큰 가져오기
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          console.error('❌ 세션 토큰이 없습니다');
+          return;
+        }
 
-        if (error) throw new Error(error.message);
+        // 서버 API를 통해 결제 정보 가져오기
+        const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
 
-        if (!reviews || reviews.length === 0) {
+        if (!response.ok) {
+          console.warn('⚠️ 결제 정보 로드 실패:', response.status);
+          updatePaymentUI(null);
+          return;
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const { profile, cycle } = result.data;
+          updatePaymentUI({ profile, cycle });
+          
+          // 결제 내역 로드
+          await loadPaymentHistory(userId);
+        } else {
+          updatePaymentUI(null);
+        }
+      } catch (error) {
+        console.error('❌ 결제 정보 로드 실패:', error);
+        updatePaymentUI(null);
+      }
+    }
+
+    // 결제 UI 업데이트
+    function updatePaymentUI(data) {
+      if (!data || !data.profile) {
+        // 기본값
+        document.getElementById('paymentPlanName').textContent = '씨앗 플랜';
+        document.getElementById('paymentPlanBadge').textContent = '무료';
+        document.getElementById('paymentPlanPrice').textContent = '무료';
+        document.getElementById('paymentPlanTokens').textContent = '100 토큰';
+        document.getElementById('paymentPlanDays').textContent = '30일';
+        return;
+      }
+
+      const profile = data.profile;
+      const cycle = data.cycle;
+
+      const planNames = {
+        seed: { name: '씨앗 플랜', badge: '무료', price: '무료', tokens: '100 토큰' },
+        power: { name: '파워 플랜', badge: '베이직', price: '30,000원', tokens: '500 토큰' },
+        bigpower: { name: '빅파워 플랜', badge: '프로', price: '50,000원', tokens: '833 토큰' },
+        big_power: { name: '빅파워 플랜', badge: '프로', price: '50,000원', tokens: '833 토큰' },
+        premium: { name: '프리미엄 플랜', badge: 'VIP', price: '70,000원', tokens: '1,166 토큰' },
+        elite: { name: '엘리트 플랜', badge: '엘리트', price: '100,000원', tokens: '1,666 토큰' },
+        expert: { name: '전문가 플랜', badge: '전문가', price: '150,000원', tokens: '2,500 토큰' },
+        master: { name: '마스터 플랜', badge: '마스터', price: '200,000원', tokens: '3,333 토큰' }
+      };
+
+      const membershipLevel = profile.membership_level || 'seed';
+      const planInfo = planNames[membershipLevel] || planNames.seed;
+
+      document.getElementById('paymentPlanName').textContent = planInfo.name;
+      document.getElementById('paymentPlanBadge').textContent = planInfo.badge;
+      document.getElementById('paymentPlanPrice').textContent = planInfo.price;
+      document.getElementById('paymentPlanTokens').textContent = planInfo.tokens;
+      
+      if (cycle && cycle.days_remaining !== undefined) {
+        document.getElementById('paymentPlanDays').textContent = `${cycle.days_remaining}일`;
+      } else {
+        document.getElementById('paymentPlanDays').textContent = '30일';
+      }
+    }
+
+    // 결제 내역 로드
+    async function loadPaymentHistory(userId) {
+      const container = document.getElementById('paymentHistory');
+      if (!container) return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const response = await fetch('/api/payment/payment-handler', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            action: 'get-payment-history',
+            userId: userId,
+            limit: 5
+          })
+        });
+
+        if (!response.ok) {
           container.innerHTML = `
-            <div class="empty-state">
-              <i class="fas fa-inbox"></i>
-              <div>작성한 리뷰 답글이 없습니다</div>
-            </div>
+            <p style="margin: 0; text-align: center; padding: 10px; color: var(--text-secondary); font-size: 13px;">
+              결제 내역을 불러올 수 없습니다
+            </p>
           `;
           return;
         }
 
-        container.innerHTML = reviews.map(review => `
-          <div class="activity-item">
-            <div class="activity-title">
-              리뷰 답글 생성
-            </div>
-            <div class="activity-content">
-              ${(review.customer_review || '').substring(0, 80)}${review.customer_review && review.customer_review.length > 80 ? '...' : ''}
-            </div>
-            <div class="activity-meta">
-              <span><i class="fas fa-clock"></i> ${new Date(review.created_at).toLocaleString('ko-KR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}</span>
-              ${review.ai_response ? '<span><i class="fas fa-check-circle"></i> 답글 생성됨</span>' : ''}
-            </div>
-          </div>
-        `).join('');
+        const result = await response.json();
+        
+        if (result.success && result.payments && result.payments.length > 0) {
+          container.innerHTML = result.payments.map(payment => {
+            const statusText = {
+              'completed': '완료',
+              'pending': '대기중',
+              'failed': '실패',
+              'cancelled': '취소됨'
+            }[payment.status] || payment.status;
 
-      } catch (error) {
-        console.error('❌ 리뷰 로드 실패:', error);
-        container.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            <div>리뷰 내역을 불러오는 중 오류가 발생했습니다</div>
-          </div>
-        `;
-      }
-    }
+            const statusColor = {
+              'completed': 'var(--success)',
+              'pending': 'var(--warning)',
+              'failed': 'var(--error)',
+              'cancelled': 'var(--text-secondary)'
+            }[payment.status] || 'var(--text-secondary)';
 
-    // 최근 블로그 포스팅 로드
-    async function loadRecentBlogs(userId) {
-      const container = document.getElementById('recentBlogs');
-      
-      try {
-        const { data: blogs, error } = await supabase
-          .from('blog_posts')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        if (error) throw new Error(error.message);
-
-        if (!blogs || blogs.length === 0) {
+            return `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border);">
+                <div>
+                  <div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">
+                    ${payment.plan_type || '플랜'}
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                    ${new Date(payment.created_at).toLocaleDateString('ko-KR')}
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">
+                    ${payment.amount ? payment.amount.toLocaleString() + '원' : '-'}
+                  </div>
+                  <div style="font-size: 12px; color: ${statusColor}; margin-top: 4px;">
+                    ${statusText}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
           container.innerHTML = `
-            <div class="empty-state">
-              <i class="fas fa-inbox"></i>
-              <div>작성한 블로그 포스팅이 없습니다</div>
-            </div>
+            <p style="margin: 0; text-align: center; padding: 20px; color: var(--text-secondary); font-size: 13px;">
+              <i class="fas fa-inbox"></i><br>
+              결제 내역이 없습니다
+            </p>
           `;
-          return;
         }
-
-        container.innerHTML = blogs.map(blog => {
-          const statusText = blog.status === 'published' ? '발행됨' :
-                            blog.status === 'scheduled' ? '예약됨' : '임시저장';
-          const statusIcon = blog.status === 'published' ? 'check-circle' :
-                            blog.status === 'scheduled' ? 'clock' : 'save';
-
-          return `
-            <div class="activity-item">
-              <div class="activity-title">
-                ${blog.blog_title || '제목 없음'}
-              </div>
-              <div class="activity-content">
-                ${blog.blog_content ? blog.blog_content.substring(0, 80) + '...' : '-'}
-              </div>
-              <div class="activity-meta">
-                <span><i class="fas fa-clock"></i> ${new Date(blog.created_at).toLocaleString('ko-KR', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
-                <span><i class="fas fa-${statusIcon}"></i> ${statusText}</span>
-              </div>
-            </div>
-          `;
-        }).join('');
-
       } catch (error) {
-        console.error('❌ 블로그 로드 실패:', error);
+        console.error('❌ 결제 내역 로드 실패:', error);
         container.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            <div>블로그 내역을 불러오는 중 오류가 발생했습니다</div>
-          </div>
+          <p style="margin: 0; text-align: center; padding: 10px; color: var(--text-secondary); font-size: 13px;">
+            결제 내역을 불러오는 중 오류가 발생했습니다
+          </p>
         `;
       }
     }
@@ -2336,6 +2416,11 @@
     // 업그레이드 페이지로 이동
     function goToUpgrade() {
       window.location.href = '/payment.html?plan=power';
+    }
+
+    // 결제 페이지로 이동 (플랜 선택)
+    function goToPayment(plan) {
+      window.location.href = `/payment.html?plan=${plan}`;
     }
     
     // 토큰 정보 새로고침
@@ -3351,3 +3436,4 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
   <script src="/assets/performance-tracker.js"></script>
 </body>
 </html>
+
