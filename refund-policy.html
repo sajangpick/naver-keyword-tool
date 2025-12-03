@@ -195,11 +195,15 @@
     }
 
     .number-list li::before {
-      content: counter(section-counter) ". ";
+      content: counter(section-counter) ".";
       color: var(--accent-color);
       font-weight: 700;
       font-size: 16px;
-      margin-right: 8px;
+      margin-right: 6px;
+    }
+    
+    .number-list li {
+      padding-left: 0;
     }
 
     .sub-list {

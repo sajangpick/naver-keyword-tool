@@ -3393,12 +3393,6 @@ ${result.created ? '✨ 첫 크롤링을 시작합니다!' : '🔄 설정이 업
                 ${video.style ? ` · ${styleNames[video.style] || video.style}` : ''}
                 ${video.duration_sec ? ` · ${video.duration_sec}초` : ''}
               </div>
-              ${video.image_url ? `
-                <div style="margin-top: 12px;">
-                  <img src="${video.image_url}" alt="영상 썸네일" 
-                    style="max-width: 200px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);">
-                </div>
-              ` : ''}
               ${video.status === 'completed' && video.video_url ? `
                 <div style="margin-top: 12px;">
                   <video controls style="max-width: 200px; max-height: 300px; border-radius: 8px; border: 1px solid var(--border);">
