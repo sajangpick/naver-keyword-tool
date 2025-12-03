@@ -787,6 +787,51 @@
             border-radius: 10px;
             font-weight: 700;
         }
+        
+        .duration-warning {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            color: #856404;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .duration-warning i {
+            color: #ffc107;
+            margin-top: 2px;
+        }
+        
+        .duration-adjustment-notice {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #d1ecf1;
+            border: 1px solid #0dcaf0;
+            border-radius: 8px;
+            color: #055160;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .duration-adjustment-notice i {
+            color: #0dcaf0;
+            margin-right: 8px;
+        }
+        
+        .duration-adjustment-notice small {
+            display: block;
+            margin-top: 4px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .duration-adjustment-notice.hidden {
+            display: none;
+        }
 
         /* 액션 버튼 */
         .action-buttons {
@@ -794,6 +839,26 @@
             gap: 16px;
             justify-content: center;
             margin-top: 48px;
+        }
+        
+        .pricing-notice {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            color: #6c757d;
+            font-size: 13px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .pricing-notice i {
+            color: #0dcaf0;
+            font-size: 14px;
         }
 
         .success-banner {
@@ -1538,6 +1603,12 @@
                         영상 생성하기
                     </button>
                 </div>
+                
+                <!-- 요금 안내 -->
+                <div class="pricing-notice">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <span>현재는 무료로 영상 생성이 가능하나, 추후 요금이 부과될 예정입니다.</span>
+                </div>
 
                 <div class="success-banner" id="successBanner">
                     <h3>영상 생성이 시작되었습니다!</h3>
@@ -1593,6 +1664,7 @@
                                         새 영상 만들기
                                     </button>
                                 </div>
+                                <div id="durationAdjustmentNotice" class="duration-adjustment-notice hidden"></div>
                             </div>
                         </div>
                     </div>
@@ -1805,6 +1877,16 @@
                     if (video.status === 'completed' && video.video_url) {
                         setResultStatus('success', '영상 생성이 완료되었습니다!');
                         showResultVideo(video.video_url);
+                        
+                        // duration 조정 안내 메시지 표시
+                        if (pendingResultMeta?.durationAdjusted) {
+                            showDurationAdjustmentNotice(
+                                pendingResultMeta.requestedDuration,
+                                pendingResultMeta.actualDuration,
+                                pendingResultMeta.durationAdjustmentReason
+                            );
+                        }
+                        
                         stopVideoStatusWatcher();
                     } else if (video.status === 'failed') {
                         setResultStatus('error', video.error_message || '영상 생성에 실패했습니다.');
@@ -2083,6 +2165,35 @@
             if (btn) {
                 btn.classList.add('selected');
             }
+            
+            // 4초/6초 선택 시 안내 메시지 표시
+            showDurationWarning(duration);
+        }
+        
+        // 영상 길이 선택 시 안내 메시지 표시
+        function showDurationWarning(duration) {
+            // 기존 안내 메시지 제거
+            const existingWarning = document.getElementById('durationWarning');
+            if (existingWarning) {
+                existingWarning.remove();
+            }
+            
+            // 4초/6초 선택 시 안내 메시지 표시
+            if (duration === 4 || duration === 6) {
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'durationWarning';
+                warningDiv.className = 'duration-warning';
+                warningDiv.innerHTML = `
+                    <i class="fa-solid fa-info-circle"></i>
+                    <span>1080p 해상도는 8초 길이만 지원됩니다. 선택하신 ${duration}초와 관계없이 8초로 생성됩니다.</span>
+                `;
+                
+                // duration 버튼 컨테이너 다음에 삽입
+                const durationContainer = document.getElementById('durationButtons');
+                if (durationContainer && durationContainer.parentNode) {
+                    durationContainer.parentNode.insertBefore(warningDiv, durationContainer.nextSibling);
+                }
+            }
         }
 
         // 음악 선택
@@ -2305,6 +2416,13 @@
                 hideLoadingScreen();
                 
                 if (result.data && result.data.id) {
+                    // duration 조정 정보 저장
+                    if (result.data.durationAdjusted) {
+                        pendingResultMeta.durationAdjusted = true;
+                        pendingResultMeta.requestedDuration = result.data.requestedDuration;
+                        pendingResultMeta.actualDuration = result.data.actualDuration;
+                        pendingResultMeta.durationAdjustmentReason = result.data.durationAdjustmentReason;
+                    }
                     showSuccessBanner();
                     startVideoStatusWatcher(result.data.id, pendingResultMeta);
                 } else {
@@ -2382,6 +2500,24 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+        
+        // duration 조정 안내 메시지 표시
+        function showDurationAdjustmentNotice(requestedDuration, actualDuration, reason) {
+            const noticeEl = document.getElementById('durationAdjustmentNotice');
+            if (!noticeEl) return;
+            
+            if (requestedDuration !== actualDuration) {
+                noticeEl.innerHTML = `
+                    <i class="fa-solid fa-info-circle"></i>
+                    <span><strong>${requestedDuration}초</strong>로 선택하셨지만, <strong>${actualDuration}초</strong>로 생성되었습니다.</span>
+                    <br>
+                    <small>${reason || '1080p 해상도는 8초 길이만 지원됩니다.'}</small>
+                `;
+                noticeEl.classList.remove('hidden');
+            } else {
+                noticeEl.classList.add('hidden');
+            }
         }
 
         // 에러 화면

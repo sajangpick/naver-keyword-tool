@@ -5075,8 +5075,9 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       ],
       parameters: {
         aspectRatio: "9:16", // 고정: 세로형 쇼츠 비율 (9:16) - 변경 불가
-        durationSeconds: Math.min(Math.max(parseInt(duration) || 8, 4), 8), // 숫자로 전송 (4, 6, 8 중 하나)
-        resolution: "1080p", // 1080:1920 해상도 (9:16 비율)
+        // 1080p 해상도는 8초만 지원하므로, 1080p 사용 시 강제로 8초로 설정
+        durationSeconds: 8, // 1080p는 8초만 지원하므로 항상 8초로 고정
+        resolution: "1080p", // 1080:1920 해상도 (9:16 비율) - 8초만 지원
       }
     };
 
@@ -5965,12 +5966,23 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
           }
         })();
 
+      // 요청된 duration과 실제 생성될 duration 비교 (1080p는 8초만 지원)
+      const requestedDuration = parseInt(duration) || 8;
+      const actualDuration = 8; // 1080p 해상도는 항상 8초로 생성됨
+      const durationAdjusted = requestedDuration !== actualDuration;
+
       res.json({
         success: true,
         data: {
           id: videoData.id,
           status: "processing",
           message: "영상 생성이 시작되었습니다. 잠시 후 마이페이지에서 확인하세요.",
+          requestedDuration: requestedDuration,
+          actualDuration: actualDuration,
+          durationAdjusted: durationAdjusted,
+          durationAdjustmentReason: durationAdjusted 
+            ? "1080p 해상도는 8초 길이만 지원됩니다. 선택하신 길이와 관계없이 8초로 생성됩니다." 
+            : null,
         },
       });
     } catch (error) {
