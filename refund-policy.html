@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com wss://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; base-uri 'self'; form-action 'self'" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <title>환불약관 - 사장픽</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ff7b54'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <style>
+    /* 사장픽 브랜드 색상 변수 */
+    :root {
+      --accent-color: #ff7b54;
+      --accent-dark: #e56548;
+      --bg-color: #fff7f0;
+      --text-primary: #201a17;
+      --text-secondary: #7a6a60;
+      --secondary: #ffe8d9;
+      --white: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --success: #4caf50;
+      --warning: #ff9800;
+      --error: #f44336;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg-color);
+      min-height: 100vh;
+      color: var(--text-primary);
+      line-height: 1.8;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .page-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-bottom: 30px;
+    }
+
+    .back-button:hover {
+      background: var(--secondary);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+      transform: translateX(-4px);
+    }
+
+    .content-section {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--secondary);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title i {
+      color: var(--accent-color);
+      font-size: 20px;
+    }
+
+    .section-content {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.9;
+    }
+
+    .section-content p {
+      margin-bottom: 16px;
+    }
+
+    .section-content ul {
+      margin-left: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-content li {
+      margin-bottom: 12px;
+      padding-left: 8px;
+    }
+
+    .section-content strong {
+      color: var(--accent-color);
+      font-weight: 700;
+    }
+
+    .highlight-box {
+      background: linear-gradient(135deg, var(--secondary) 0%, #ffe0cc 100%);
+      border-left: 4px solid var(--accent-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .highlight-box p {
+      margin-bottom: 0;
+      font-weight: 500;
+    }
+
+    .contact-info {
+      background: var(--secondary);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .contact-info h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .contact-info a {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .contact-info a:hover {
+      text-decoration: underline;
+    }
+
+    .number-list {
+      counter-reset: section-counter;
+      list-style: none;
+      margin-left: 0;
+    }
+
+    .number-list li {
+      counter-increment: section-counter;
+      margin-bottom: 20px;
+      padding-left: 40px;
+      position: relative;
+    }
+
+    .number-list li::before {
+      content: counter(section-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .sub-list {
+      margin-left: 20px;
+      margin-top: 12px;
+    }
+
+    .sub-list li {
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .sub-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--accent-color);
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 30px 16px;
+      }
+
+      .page-title {
+        font-size: 28px;
+      }
+
+      .content-section {
+        padding: 28px 20px;
+        border-radius: 20px;
+      }
+
+      .section-title {
+        font-size: 20px;
+      }
+
+      .section-content {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px 12px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .content-section {
+        padding: 24px 16px;
+      }
+
+      .section-title {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/mypage.html" class="back-button">
+      <i class="fas fa-arrow-left"></i> 마이페이지로 돌아가기
+    </a>
+
+    <div class="header">
+      <h1 class="page-title">사장픽 환불 약관</h1>
+      <p class="page-subtitle">공정한 환불 정책으로 고객님의 권리를 보호합니다</p>
+    </div>
+
+    <!-- 1. 환불 요청 가능 조건 -->
+    <section class="content-section">
+      <h2 class="section-title">
+        <i class="fas fa-check-circle"></i>
+        1. 환불 요청 가능 조건
+      </h2>
+      <div class="section-content">
+        <p>다음 각 호에 해당하는 경우 이용자는 환불을 요청할 수 있습니다.</p>
+        
+        <ul class="number-list">
+          <li>
+            <strong>서비스 제공 오류</strong>
+            <ul class="sub-list">
+              <li>사장픽이 제공한 디지털 콘텐츠가 고객이 입력한 정보와 명백히 다를 경우</li>
+              <li>시스템 오류 또는 기술적 문제로 인해 정상적인 서비스 이용이 불가능한 경우</li>
+            </ul>
+          </li>
+          <li>
+            <strong>콘텐츠 미제공</strong>
+            <ul class="sub-list">
+              <li>결제 완료 후 7일 이내에 디지털 콘텐츠 또는 자료가 제공되지 않은 경우</li>
+            </ul>
+          </li>
+          <li>
+            <strong>객관적 사용 불가</strong>
+            <ul class="sub-list">
+              <li>제공된 콘텐츠가 기기·시스템 환경과 명백히 호환되지 않아 이용할 수 없음을 확인한 경우</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 2. 환불 요청 절차 -->
+    <section class="content-section">
+      <h2 class="section-title">
+        <i class="fas fa-clipboard-list"></i>
+        2. 환불 요청 절차
+      </h2>
+      <div class="section-content">
+        <p>환불을 원하는 경우, 아래 절차에 따라 요청 가능합니다.</p>
+        
+        <div class="highlight-box">
+          <p><strong>요청 기한</strong><br>
+          콘텐츠 제공일 또는 결제일 기준 7일 이내</p>
+        </div>
+
+        <p><strong>요청 방법</strong></p>
+        <ul class="sub-list">
+          <li>사장픽 공식 이메일을 통해 환불 요청</li>
+          <li>이메일: <a href="mailto:ohdaejun@naver.com" style="color: var(--accent-color); text-decoration: none; font-weight: 600;">ohdaejun@naver.com</a></li>
+        </ul>
+
+        <p style="margin-top: 20px;"><strong>요청 시 필요한 정보</strong></p>
+        <ul class="sub-list">
+          <li>주문자명</li>
+          <li>결제일</li>
+          <li>결제 금액</li>
+          <li>환불 사유</li>
+          <li>확인 가능한 자료(필요 시)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 3. 환불 처리 절차 -->
+    <section class="content-section">
+      <h2 class="section-title">
+        <i class="fas fa-clock"></i>
+        3. 환불 처리 절차
+      </h2>
+      <div class="section-content">
+        <ul class="sub-list">
+          <li>사장픽은 이용자의 요청을 접수한 후 영업일 기준 3일 이내 검토를 시작합니다.</li>
+          <li>환불 승인 후, 결제 수단에 따라 영업일 기준 3~7일 이내 환불이 진행됩니다.</li>
+          <li>추가 확인이 필요한 경우 담당자가 개별 연락할 수 있습니다.</li>
+          <li>결제 수단별 환불 소요 기간은 PG사·카드사 정책에 따라 달라질 수 있습니다.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4. 환불 불가 조건 -->
+    <section class="content-section">
+      <h2 class="section-title">
+        <i class="fas fa-exclamation-triangle"></i>
+        4. 환불 불가 조건
+      </h2>
+      <div class="section-content">
+        <p>아래 각 호에 해당하는 경우 환불이 불가합니다.</p>
+        
+        <ul class="number-list">
+          <li>단순 변심, 사용자의 의도적 오사용 등으로 서비스 이용이 어려운 경우</li>
+          <li>디지털 콘텐츠 특성상 이미 자료가 다운로드되었거나 주요 내용이 제공된 경우</li>
+          <li>사용자 기기 오류·환경 문제로 인해 정상 이용이 어려운 경우</li>
+          <li>이벤트·할인·특가 상품 등 별도 조건이 명시된 상품</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 5. 약관 변경 및 공지 -->
+    <section class="content-section">
+      <h2 class="section-title">
+        <i class="fas fa-file-alt"></i>
+        5. 약관 변경 및 공지
+      </h2>
+      <div class="section-content">
+        <ul class="sub-list">
+          <li>본 환불 약관은 법령 및 내부 정책에 따라 변경될 수 있습니다.</li>
+          <li>변경 시 사장픽은 웹사이트 공지사항에 최소 7일 전 공지합니다.</li>
+          <li>개정 약관 시행 이후에도 서비스 이용을 지속할 경우 변경 약관에 동의한 것으로 간주됩니다.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 6. 기타 사항 -->
+    <section class="content-section">
+      <h2 class="section-title">
+        <i class="fas fa-info-circle"></i>
+        6. 기타 사항
+      </h2>
+      <div class="section-content">
+        <ul class="sub-list">
+          <li>본 약관에 명시되지 않은 사항은 관련 법령 및 사장픽 이용약관을 따릅니다.</li>
+        </ul>
+
+        <div class="contact-info">
+          <h3><i class="fas fa-envelope"></i> 고객센터 연락처</h3>
+          <p>
+            <a href="mailto:ohdaejun@naver.com">ohdaejun@naver.com</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 하단 버튼 -->
+    <div style="text-align: center; margin-top: 40px;">
+      <a href="/mypage.html" class="back-button" style="display: inline-flex;">
+        <i class="fas fa-arrow-left"></i> 마이페이지로 돌아가기
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+

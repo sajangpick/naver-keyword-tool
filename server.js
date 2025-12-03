@@ -4788,6 +4788,7 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
 2. 영상으로 만들 때 강조해야 할 포인트
 3. 영상 생성 AI(Gemini Veo 3.1)에 사용할 최적의 영어 프롬프트 (50단어 이내, 영화적이고 전문적인 표현 사용)
    - 반드시 "vertical 9:16 aspect ratio", "1080x1920 resolution", "mobile shorts format" 등의 키워드를 포함해주세요.
+   - 이미지가 프레임을 꽉 채우도록 "fill the entire frame", "no empty space", "close-up shot", "subject fills the vertical frame" 등의 표현을 포함해주세요.
 
 응답 형식:
 특징: [이미지 분석 결과]
@@ -5056,10 +5057,10 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       console.log("⚠️ [Gemini API] 이미지 없음 - 텍스트만으로 영상 생성");
     }
 
-    // 프롬프트에 9:16 비율과 1080p 해상도를 명시적으로 추가
+    // 프롬프트에 9:16 비율과 1080p 해상도를 명시적으로 추가, 이미지가 꽉 차도록 지시
     const enhancedPrompt = prompt 
-      ? `${prompt}. Create this video in vertical 9:16 aspect ratio (1080x1920 resolution) optimized for mobile shorts format.`
-      : "Cinematic food video, slow motion, professional lighting, appetizing close-up shots. Create this video in vertical 9:16 aspect ratio (1080x1920 resolution) optimized for mobile shorts format.";
+      ? `${prompt}. Create this video in vertical 9:16 aspect ratio (1080x1920 resolution) optimized for mobile shorts format. The image should fill the entire frame with no empty space or black bars at the top or bottom. Use close-up shots and ensure the subject fills the vertical frame completely.`
+      : "Cinematic food video, slow motion, professional lighting, appetizing close-up shots. Create this video in vertical 9:16 aspect ratio (1080x1920 resolution) optimized for mobile shorts format. The image should fill the entire frame with no empty space or black bars at the top or bottom. Use close-up shots and ensure the subject fills the vertical frame completely.";
     
     // 공식 REST API 형식에 맞게 요청 본문 구성
     const requestBody = {
