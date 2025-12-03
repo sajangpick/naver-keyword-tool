@@ -1486,11 +1486,13 @@
     let isLiveReviewLoading = false;
     let cachedStorePlaceUrl = '';
 
-    // 등급 한글명
+    // 등급 한글명 (관리자 페이지와 동일하게)
     const LEVEL_NAMES = {
+      free: '씨앗',      // FREE 등급도 씨앗으로 표시
       seed: '씨앗',
       power: '파워',
       big_power: '빅파워',
+      bigpower: '빅파워',
       premium: '프리미엄',
       elite: '엘리트',
       expert: '전문가',
@@ -1498,6 +1500,23 @@
       platinum: '플래티넘',
       admin: '관리자'
     };
+
+    // 등급 정규화 함수 (관리자 페이지와 동일하게)
+    function normalizeMembershipLevel(level) {
+      if (!level) {
+        return 'seed';
+      }
+      const normalized = level.toLowerCase();
+      // FREE 또는 free를 seed로 변환
+      if (normalized === 'free') {
+        return 'seed';
+      }
+      // big_power를 bigpower로 변환
+      if (normalized === 'big_power') {
+        return 'bigpower';
+      }
+      return normalized;
+    }
 
     // 사용량 제한
     const LIMITS = {
@@ -1609,6 +1628,15 @@
         if (error) throw new Error(error.message);
         if (!profile) throw new Error('프로필을 찾을 수 없습니다.');
 
+        // 디버깅: 프로필 데이터 확인
+        console.log('📊 [loadUserProfile] 프로필 조회 결과:', {
+          userId: userId,
+          email: profile.email,
+          user_type: profile.user_type,
+          membership_level: profile.membership_level,
+          fullProfile: profile
+        });
+
         currentUser = profile;
 
         // UI 업데이트
@@ -1662,20 +1690,21 @@
 
     // 사용량 통계 업데이트 (제거됨 - 결제 섹션으로 대체)
     function updateUsageStats(profile) {
-      // 플랜 이름 업데이트
-      const planNames = {
-        seed: '씨앗',
-        power: '파워',
-        big_power: '빅파워',
-        bigpower: '빅파워',
-        premium: '프리미엄',
-        elite: '엘리트',
-        expert: '전문가',
-        master: '마스터',
-        platinum: '플래티넘'
-      };
+      // 등급 정규화 (관리자 페이지와 동일한 로직)
+      const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
+      const currentPlanName = LEVEL_NAMES[normalizedLevel] || '씨앗';
       
-      const currentPlanName = planNames[profile.membership_level] || '씨앗';
+      // 디버깅: 플랜 이름 설정 확인
+      console.log('📊 [updateUsageStats] 플랜 이름 설정:', {
+        original_membership_level: profile.membership_level,
+        normalized_level: normalizedLevel,
+        currentPlanName: currentPlanName,
+        profile: {
+          user_type: profile.user_type,
+          membership_level: profile.membership_level
+        }
+      });
+      
       const planNameEl = document.getElementById('currentPlanName');
       if (planNameEl) {
         planNameEl.textContent = currentPlanName;
@@ -1753,8 +1782,11 @@
       const pricing = data.pricing;
       const tokens = data.tokens;
 
+      // 등급 정규화 (관리자 페이지와 동일한 로직)
+      const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
+      
       // 실제 설정된 가격과 토큰 사용
-      const membershipLevel = profile.membership_level || 'seed';
+      const membershipLevel = normalizedLevel;
       
       // 가격 정보
       let planPrice = 0;
@@ -1771,8 +1803,7 @@
             planPrice = pricing.owner_power_price || 30000;
             planTokens = tokens.owner_power_limit || 500;
             break;
-          case 'bigpower':
-          case 'big_power':
+          case 'bigpower':  // 정규화된 등급 사용
             planPrice = pricing.owner_bigpower_price || 50000;
             planTokens = tokens.owner_bigpower_limit || 833;
             break;
@@ -1787,7 +1818,6 @@
           seed: { price: 0, tokens: 100 },
           power: { price: 30000, tokens: 500 },
           bigpower: { price: 50000, tokens: 833 },
-          big_power: { price: 50000, tokens: 833 },
           premium: { price: 70000, tokens: 1166 }
         };
         const defaultInfo = defaults[membershipLevel] || defaults.seed;
@@ -1799,8 +1829,8 @@
         seed: { name: '씨앗 플랜', badge: '무료' },
         power: { name: '파워 플랜', badge: '베이직' },
         bigpower: { name: '빅파워 플랜', badge: '프로' },
-        big_power: { name: '빅파워 플랜', badge: '프로' },
-        premium: { name: '프리미엄 플랜', badge: 'VIP' }
+        premium: { name: '프리미엄 플랜', badge: 'VIP' },
+        admin: { name: '관리자 플랜', badge: '관리자' }
       };
 
       const planInfo = planNames[membershipLevel] || planNames.seed;
@@ -2263,46 +2293,34 @@
             recentUsageCount: recentUsage?.length || 0 
           });
           
-          // 플랜 정보 표시
-          const planNames = {
-            'seed': '씨앗',
-            'power': '파워',
-            'bigpower': '빅파워',
-            'big_power': '빅파워',
-            'premium': '프리미엄',
-            'elite': '엘리트',
-            'expert': '전문가',
-            'master': '마스터'
-          };
+          // 등급 정규화 (관리자 페이지와 동일한 로직)
+          const normalizedLevel = normalizeMembershipLevel(profile?.membership_level);
           
+          // 플랜 정보 표시 (정규화된 등급 사용)
           const planBadges = {
             'seed': '무료',
             'power': '베이직',
             'bigpower': '프로',
-            'big_power': '프로',
             'premium': 'VIP',
             'elite': '엘리트',
             'expert': '전문가',
-            'master': '마스터'
+            'master': '마스터',
+            'platinum': '플래티넘',
+            'admin': '관리자'
           };
           
-          const membershipLevel = profile?.membership_level || 'seed';
-          
           // 디버깅: membership_level 확인
-          if (!profile?.membership_level || profile.membership_level === 'seed') {
-            console.warn('⚠️ [mypage] membership_level이 없거나 seed입니다:', {
-              profileMembershipLevel: profile?.membership_level,
-              willUse: membershipLevel,
-              fullProfile: profile
-            });
-          } else {
-            console.log('✅ [mypage] membership_level 확인:', membershipLevel);
-          }
+          console.log('📊 [loadTokenInfo] 등급 정보:', {
+            original_membership_level: profile?.membership_level,
+            normalized_level: normalizedLevel,
+            plan_name: LEVEL_NAMES[normalizedLevel] || '씨앗',
+            fullProfile: profile
+          });
           
           document.getElementById('currentPlan').textContent = 
-            planNames[membershipLevel] || '씨앗';
+            LEVEL_NAMES[normalizedLevel] || '씨앗';
           document.getElementById('planBadge').textContent = 
-            planBadges[membershipLevel] || '무료';
+            planBadges[normalizedLevel] || '무료';
           
           if (cycle) {
             // 토큰 사용량 표시

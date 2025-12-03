@@ -260,6 +260,52 @@ async function getDashboardData(user, res) {
           console.error('❌ [user-dashboard] 프로필 조회 에러:', profileError);
         } else if (profileData) {
           profile = profileData;
+          
+          // 'free' 등급을 'seed'로 자동 변환 (DB에 남아있을 수 있음)
+          if (profile.membership_level && profile.membership_level.toLowerCase() === 'free') {
+            console.warn('⚠️ [user-dashboard] free 등급 발견, seed로 변환:', {
+              userId: user.id,
+              original: profile.membership_level
+            });
+            
+            // DB에 바로 업데이트
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ 
+                membership_level: 'seed',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', user.id);
+            
+            if (updateError) {
+              console.error('❌ [user-dashboard] free → seed 변환 실패:', updateError);
+            } else {
+              console.log('✅ [user-dashboard] free → seed 변환 완료');
+            }
+            
+            // 메모리상의 값도 업데이트
+            profile.membership_level = 'seed';
+          }
+          
+          // NULL 또는 빈 문자열도 'seed'로 변환
+          if (!profile.membership_level || profile.membership_level === '') {
+            console.warn('⚠️ [user-dashboard] NULL/빈 등급 발견, seed로 변환:', {
+              userId: user.id
+            });
+            
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ 
+                membership_level: 'seed',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', user.id);
+            
+            if (!updateError) {
+              profile.membership_level = 'seed';
+            }
+          }
+          
           console.log('✅ [user-dashboard] 프로필 조회 성공:', {
             userId: user.id,
             membership_level: profile.membership_level,
