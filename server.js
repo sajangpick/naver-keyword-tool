@@ -1193,6 +1193,14 @@ app.get("/api/payment/cards", cardsHandler);
 app.post("/api/payment/cards", cardsHandler);
 app.delete("/api/payment/cards/:cardId", cardsDeleteHandler);
 
+// 간편결제 연동 API
+const connectTossPayHandler = require("./api/payment/connect-tosspay");
+const connectKakaoPayHandler = require("./api/payment/connect-kakaopay");
+const connectNaverPayHandler = require("./api/payment/connect-naverpay");
+app.post("/api/payment/connect-tosspay", connectTossPayHandler);
+app.post("/api/payment/connect-kakaopay", connectKakaoPayHandler);
+app.post("/api/payment/connect-naverpay", connectNaverPayHandler);
+
 // 크론 작업 API (수동 실행용)
 const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
 app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
