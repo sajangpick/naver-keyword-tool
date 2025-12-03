@@ -524,7 +524,20 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
               setLoggedInFromSession(session);
-              window.location.replace("index.html");
+              
+              // 프로필 정보 확인
+              const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('name')
+                .eq('id', session.user.id)
+                .single();
+              
+              // 프로필이 없거나 이름이 없으면 정보 입력 페이지로 이동
+              if (error || !profile || !profile.name) {
+                window.location.replace("setup-profile.html");
+              } else {
+                window.location.replace("index.html");
+              }
             }
           } catch (error) {
             console.error("세션 확인 오류:", error);
@@ -532,10 +545,29 @@
         }
         
         // 로그인 상태 변화 감지
-        supabaseClient.auth.onAuthStateChange((event, session) => {
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
           if (event === "SIGNED_IN") {
             setLoggedInFromSession(session);
-            window.location.replace("index.html");
+            
+            // 프로필 정보 확인
+            try {
+              const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('name')
+                .eq('id', session.user.id)
+                .single();
+              
+              // 프로필이 없거나 이름이 없으면 정보 입력 페이지로 이동
+              if (error || !profile || !profile.name) {
+                window.location.replace("setup-profile.html");
+              } else {
+                window.location.replace("index.html");
+              }
+            } catch (error) {
+              console.error("프로필 확인 오류:", error);
+              // 오류 발생 시에도 정보 입력 페이지로 이동 (안전)
+              window.location.replace("setup-profile.html");
+            }
           }
         });
       })();

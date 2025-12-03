@@ -256,8 +256,18 @@ async function getDashboardData(user, res) {
           .eq('id', user.id)
           .maybeSingle();
         
-        if (!profileError && profileData) {
+        if (profileError) {
+          console.error('❌ [user-dashboard] 프로필 조회 에러:', profileError);
+        } else if (profileData) {
           profile = profileData;
+          console.log('✅ [user-dashboard] 프로필 조회 성공:', {
+            userId: user.id,
+            membership_level: profile.membership_level,
+            user_type: profile.user_type,
+            email: profile.email
+          });
+        } else {
+          console.warn('⚠️ [user-dashboard] 프로필 데이터가 없습니다. 기본값 사용:', user.id);
         }
       }
     } catch (err) {
@@ -499,15 +509,34 @@ async function getDashboardData(user, res) {
       usage_rate: currentTokenLimit > 0 ? Math.round((totalUsed / currentTokenLimit) * 100) : 0
     };
     
+    // membership_level 확인 및 로깅
+    const finalMembershipLevel = profile.membership_level || 'seed';
     console.log('📊 [user-dashboard] 최종 응답 데이터:', {
       userId: user.id,
       profileMembership: profile.membership_level,
+      finalMembershipLevel: finalMembershipLevel,
+      profileData: {
+        id: profile.id,
+        email: profile.email,
+        name: profile.name,
+        user_type: profile.user_type,
+        membership_level: profile.membership_level
+      },
       cycleId: currentCycle.id,
       tokenLimit: currentTokenLimit,
       tokensUsed: totalUsed,
       tokensRemaining: finalCycle.tokens_remaining,
       daysRemaining: daysRemaining
     });
+    
+    // membership_level이 null이거나 undefined인 경우 경고
+    if (!profile.membership_level || profile.membership_level === 'seed') {
+      console.warn('⚠️ [user-dashboard] membership_level이 없거나 seed입니다. DB에서 확인 필요:', {
+        userId: user.id,
+        currentMembershipLevel: profile.membership_level,
+        willUse: finalMembershipLevel
+      });
+    }
     
     return res.json({
       success: true,
@@ -517,7 +546,7 @@ async function getDashboardData(user, res) {
           email: profile.email || user.email || '',
           name: profile.name || user.user_metadata?.name || '',
           user_type: profile.user_type || 'owner',
-          membership_level: profile.membership_level || 'seed',
+          membership_level: finalMembershipLevel,
           created_at: profile.created_at
         },
         cycle: finalCycle,

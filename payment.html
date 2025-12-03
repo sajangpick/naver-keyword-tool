@@ -253,22 +253,98 @@
     </div>
 
     <div class="payment-methods">
-      <h3 style="margin-bottom: 15px; font-size: 16px;">결제 방법 선택</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0; font-size: 16px;">결제 방법 선택</h3>
+        <button id="registerCardBtn" class="btn-register-card" onclick="openCardRegisterModal()" style="padding: 8px 16px; background: #f0f4ff; color: #667eea; border: 1px solid #667eea; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+          <i class="fas fa-plus"></i> 내 카드 등록하기
+        </button>
+      </div>
       
-      <label class="payment-method selected">
-        <input type="radio" name="method" value="card" checked>
-        <span>💳 신용/체크카드</span>
-      </label>
+      <!-- 등록된 카드 목록 -->
+      <div id="registeredCards" style="margin-bottom: 15px;">
+        <!-- 카드 목록이 여기에 동적으로 로드됩니다 -->
+      </div>
       
-      <label class="payment-method">
-        <input type="radio" name="method" value="transfer">
-        <span>🏦 계좌이체</span>
-      </label>
-      
-      <label class="payment-method">
-        <input type="radio" name="method" value="phone">
-        <span>📱 휴대폰 결제</span>
-      </label>
+      <!-- 일반 결제 방법 -->
+      <div id="generalPaymentMethods">
+        <label class="payment-method selected">
+          <input type="radio" name="method" value="card" checked>
+          <span>💳 신용/체크카드 (일회성)</span>
+        </label>
+        
+        <label class="payment-method">
+          <input type="radio" name="method" value="transfer">
+          <span>🏦 계좌이체</span>
+        </label>
+        
+        <label class="payment-method">
+          <input type="radio" name="method" value="phone">
+          <span>📱 휴대폰 결제</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 카드 등록 모달 -->
+    <div id="cardRegisterModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+      <div style="background: white; border-radius: 16px; padding: 30px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; font-size: 22px; color: #333;">카드 등록하기</h2>
+          <button onclick="closeCardRegisterModal()" style="background: none; border: none; font-size: 24px; color: #999; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form id="cardRegisterForm" onsubmit="registerCard(event)">
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">카드 별칭</label>
+            <input type="text" id="cardAlias" placeholder="예: 주 카드, 회사 카드" 
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+            <small style="color: #999; font-size: 12px;">나중에 쉽게 구분할 수 있도록 별칭을 입력하세요</small>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">카드번호</label>
+            <input type="text" id="cardNumber" placeholder="1234-5678-9012-3456" 
+                   maxlength="19" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+            <small style="color: #999; font-size: 12px;">하이픈(-) 없이 숫자만 입력하세요</small>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">유효기간</label>
+              <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5"
+                     style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">CVC</label>
+              <input type="text" id="cardCvc" placeholder="123" maxlength="4"
+                     style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">카드 비밀번호 앞 2자리</label>
+            <input type="password" id="cardPassword" placeholder="**" maxlength="2"
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="setAsDefault" style="width: 18px; height: 18px;">
+              <span style="font-size: 14px; color: #333;">기본 카드로 설정</span>
+            </label>
+          </div>
+          
+          <div style="display: flex; gap: 10px;">
+            <button type="button" onclick="closeCardRegisterModal()" 
+                    style="flex: 1; padding: 14px; background: #f5f5f5; color: #333; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+              취소
+            </button>
+            <button type="submit" 
+                    style="flex: 1; padding: 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+              등록하기
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <button class="btn-payment" onclick="processPayment()">
@@ -315,6 +391,246 @@
     document.getElementById('priceAmount').textContent = planInfo.price.toLocaleString();
     document.getElementById('tokenAmount').textContent = planInfo.tokens + ' 토큰';
     
+    // 페이지 로드 시 등록된 카드 목록 로드
+    let registeredCards = [];
+    let currentUserId = null;
+
+    window.addEventListener('load', async function() {
+      await loadRegisteredCards();
+    });
+
+    // 등록된 카드 목록 로드
+    async function loadRegisteredCards() {
+      try {
+        // Supabase 초기화 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const supabase = window.authState.supabase;
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          return;
+        }
+
+        currentUserId = session.user.id;
+
+        const response = await fetch('/api/payment/cards', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            registeredCards = result.cards || [];
+            renderRegisteredCards();
+          }
+        }
+      } catch (error) {
+        console.error('카드 목록 로드 실패:', error);
+      }
+    }
+
+    // 등록된 카드 렌더링
+    function renderRegisteredCards() {
+      const container = document.getElementById('registeredCards');
+      if (!container) return;
+
+      if (registeredCards.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = registeredCards.map((card, index) => `
+        <label class="payment-method ${card.is_default ? 'selected' : ''}" style="position: relative;">
+          <input type="radio" name="method" value="saved_card_${card.id}" ${card.is_default ? 'checked' : ''}>
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div>
+              <span>💳 ${card.card_alias || '등록된 카드'}</span>
+              <div style="font-size: 12px; color: #999; margin-top: 4px;">
+                ${card.card_number || '****-****-****-****'} ${card.card_company ? '· ' + card.card_company : ''}
+                ${card.is_default ? '<span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px;">기본</span>' : ''}
+              </div>
+            </div>
+            <button onclick="deleteCard('${card.id}', event)" 
+                    style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px 8px; font-size: 12px;">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </label>
+      `).join('');
+
+      // 결제 방법 선택 이벤트 다시 바인딩
+      document.querySelectorAll('.payment-method').forEach(method => {
+        method.addEventListener('click', function() {
+          document.querySelectorAll('.payment-method').forEach(m => {
+            m.classList.remove('selected');
+          });
+          this.classList.add('selected');
+          const input = this.querySelector('input');
+          if (input) input.checked = true;
+        });
+      });
+    }
+
+    // 카드 등록 모달 열기
+    function openCardRegisterModal() {
+      document.getElementById('cardRegisterModal').style.display = 'flex';
+    }
+
+    // 카드 등록 모달 닫기
+    function closeCardRegisterModal() {
+      document.getElementById('cardRegisterModal').style.display = 'none';
+      document.getElementById('cardRegisterForm').reset();
+    }
+
+    // 카드 등록
+    async function registerCard(event) {
+      event.preventDefault();
+
+      try {
+        // Supabase 초기화 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const supabase = window.authState.supabase;
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          alert('로그인이 필요합니다.');
+          return;
+        }
+
+        const cardData = {
+          card_alias: document.getElementById('cardAlias').value.trim(),
+          card_number: document.getElementById('cardNumber').value.replace(/-/g, ''),
+          card_expiry: document.getElementById('cardExpiry').value,
+          card_cvc: document.getElementById('cardCvc').value,
+          card_password: document.getElementById('cardPassword').value,
+          is_default: document.getElementById('setAsDefault').checked
+        };
+
+        // 카드번호 유효성 검사 (간단한 체크)
+        if (cardData.card_number.length < 13 || cardData.card_number.length > 19) {
+          alert('올바른 카드번호를 입력해주세요.');
+          return;
+        }
+
+        const response = await fetch('/api/payment/cards', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify(cardData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('카드가 등록되었습니다!');
+          closeCardRegisterModal();
+          await loadRegisteredCards();
+        } else {
+          throw new Error(result.error || '카드 등록 실패');
+        }
+      } catch (error) {
+        console.error('카드 등록 오류:', error);
+        alert('카드 등록 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    // 카드 삭제
+    async function deleteCard(cardId, event) {
+      event.stopPropagation();
+      
+      if (!confirm('등록된 카드를 삭제하시겠습니까?')) {
+        return;
+      }
+
+      try {
+        // Supabase 초기화 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const supabase = window.authState.supabase;
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          alert('로그인이 필요합니다.');
+          return;
+        }
+
+        const response = await fetch(`/api/payment/cards/${cardId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('카드가 삭제되었습니다.');
+          await loadRegisteredCards();
+        } else {
+          throw new Error(result.error || '카드 삭제 실패');
+        }
+      } catch (error) {
+        console.error('카드 삭제 오류:', error);
+        alert('카드 삭제 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    // 카드번호 자동 포맷팅
+    document.addEventListener('DOMContentLoaded', function() {
+      const cardNumberInput = document.getElementById('cardNumber');
+      if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', function(e) {
+          let value = e.target.value.replace(/\D/g, '');
+          let formatted = value.match(/.{1,4}/g)?.join('-') || value;
+          if (formatted.length > 19) formatted = formatted.substring(0, 19);
+          e.target.value = formatted;
+        });
+      }
+
+      // 유효기간 자동 포맷팅
+      const cardExpiryInput = document.getElementById('cardExpiry');
+      if (cardExpiryInput) {
+        cardExpiryInput.addEventListener('input', function(e) {
+          let value = e.target.value.replace(/\D/g, '');
+          if (value.length >= 2) {
+            value = value.substring(0, 2) + '/' + value.substring(2, 4);
+          }
+          e.target.value = value;
+        });
+      }
+
+      // CVC 숫자만 입력
+      const cardCvcInput = document.getElementById('cardCvc');
+      if (cardCvcInput) {
+        cardCvcInput.addEventListener('input', function(e) {
+          e.target.value = e.target.value.replace(/\D/g, '');
+        });
+      }
+
+      // 카드 비밀번호 숫자만 입력
+      const cardPasswordInput = document.getElementById('cardPassword');
+      if (cardPasswordInput) {
+        cardPasswordInput.addEventListener('input', function(e) {
+          e.target.value = e.target.value.replace(/\D/g, '');
+        });
+      }
+    });
+
     // 결제 방법 선택
     document.querySelectorAll('.payment-method').forEach(method => {
       method.addEventListener('click', function() {
@@ -328,7 +644,14 @@
     
     // 결제 처리
     async function processPayment() {
-      const method = document.querySelector('input[name="method"]:checked').value;
+      const methodInput = document.querySelector('input[name="method"]:checked');
+      if (!methodInput) {
+        alert('결제 방법을 선택해주세요.');
+        return;
+      }
+      
+      const method = methodInput.value;
+      const selectedCardId = method.startsWith('saved_card_') ? method.replace('saved_card_', '') : null;
       
       // 로딩 표시
       document.getElementById('loading').style.display = 'block';
@@ -365,7 +688,8 @@
             action: 'create-payment',
             userId: user.id,
             planType: plan,  // 서버에서 검증됨
-            paymentMethod: method
+            paymentMethod: selectedCardId ? 'saved_card' : method,
+            cardId: selectedCardId || null
           })
         });
         

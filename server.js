@@ -1186,6 +1186,13 @@ const userDashboardHandler = require("./api/subscription/user-dashboard");
 app.get("/api/subscription/user-dashboard", userDashboardHandler);
 app.post("/api/subscription/user-dashboard", userDashboardHandler);
 
+// 카드 등록/조회/삭제 API
+const cardsHandler = require("./api/payment/cards");
+const cardsDeleteHandler = require("./api/payment/cards").delete;
+app.get("/api/payment/cards", cardsHandler);
+app.post("/api/payment/cards", cardsHandler);
+app.delete("/api/payment/cards/:cardId", cardsDeleteHandler);
+
 // 크론 작업 API (수동 실행용)
 const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
 app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
@@ -5068,6 +5075,10 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       hasImage: !!requestBody.instances[0].image,
       parameters: requestBody.parameters
     });
+    
+    // 비율 확인 로그
+    console.log("✅ [비율 고정] 영상 생성 비율:", requestBody.parameters.aspectRatio, "(9:16 세로형 쇼츠)");
+    devLog("✅ [비율 고정] 영상 생성 비율:", requestBody.parameters.aspectRatio, "(9:16 세로형 쇼츠)");
     
     devLog("🔵 [Gemini API] HTTP POST 요청 전송 시작...");
     const requestStartTime = Date.now();

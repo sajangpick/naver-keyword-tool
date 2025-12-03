@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com wss://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; base-uri 'self'; form-action 'self'" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <title>정보 입력 - 사장픽</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ff7b54'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <style>
+    /* 사장픽 브랜드 색상 변수 */
+    :root {
+      --accent-color: #ff7b54;
+      --accent-dark: #e56548;
+      --bg-color: #fff7f0;
+      --text-primary: #201a17;
+      --text-secondary: #7a6a60;
+      --secondary: #ffe8d9;
+      --white: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --success: #4caf50;
+      --warning: #ff9800;
+      --error: #f44336;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg-color);
+      min-height: 100vh;
+      color: var(--text-primary);
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .welcome-card {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .welcome-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 36px;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 24px rgba(255, 123, 84, 0.3);
+    }
+
+    .welcome-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .welcome-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .form-section {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title i {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      background: var(--white);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(255, 123, 84, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: #999;
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .time-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .time-group label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+      color: white;
+      box-shadow: 0 4px 12px rgba(255, 123, 84, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 123, 84, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--accent-color);
+      border: 2px solid var(--accent-color);
+      box-shadow: 0 2px 8px rgba(255, 123, 84, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: var(--secondary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 123, 84, 0.3);
+    }
+
+    .btn-secondary:active {
+      transform: translateY(0);
+    }
+
+    .info-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .error-message {
+      background: #fee;
+      border: 1px solid var(--error);
+      color: var(--error);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .success-message {
+      background: #efe;
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 10px;
+      }
+
+      .welcome-card,
+      .form-section {
+        padding: 24px 20px;
+      }
+
+      .time-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .welcome-title {
+        font-size: 24px;
+      }
+
+      /* 모바일에서 버튼 세로 배치 */
+      .button-container {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 환영 메시지 -->
+    <div class="welcome-card">
+      <div class="welcome-icon">
+        <i class="fas fa-user-plus"></i>
+      </div>
+      <h1 class="welcome-title">환영합니다! 🎉</h1>
+      <p class="welcome-desc">
+        사장픽에 오신 것을 환영합니다.<br>
+        아래 정보를 입력해주시면 더 나은 서비스를 제공받을 수 있습니다.
+      </p>
+    </div>
+
+    <!-- 에러/성공 메시지 -->
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
+
+    <!-- 회원정보 입력 -->
+    <div class="form-section">
+      <h2 class="section-title">
+        <i class="fas fa-user"></i>
+        회원정보
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label">이름 *</label>
+        <input type="text" class="form-input" id="name" placeholder="이름을 입력하세요" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">비즈니스명 (상호명)</label>
+        <input type="text" class="form-input" id="businessName" placeholder="상호명을 입력하세요">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">전화번호</label>
+        <input type="tel" class="form-input" id="phone" placeholder="010-0000-0000">
+      </div>
+    </div>
+
+    <!-- 가게 정보 입력 -->
+    <div class="form-section">
+      <h2 class="section-title">
+        <i class="fas fa-store"></i>
+        내 가게 정보
+      </h2>
+      <p class="info-text" style="margin-bottom: 20px;">
+        블로그 작성 시 자동으로 입력됩니다. 나중에 마이페이지에서도 수정할 수 있습니다.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">플레이스 URL</label>
+        <input type="text" class="form-input" id="storeUrl" placeholder="https://map.naver.com/...">
+        <p class="info-text">네이버 플레이스에서 "공유 > 링크 복사"로 가져오세요</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">가게 이름</label>
+        <input type="text" class="form-input" id="storeName" placeholder="예: 동흥안가">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">가게 주소</label>
+        <input type="text" class="form-input" id="storeAddress" placeholder="예: 부산광역시 해운대구 우동 1394-84">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">영업시간</label>
+        <div class="time-grid">
+          <div class="time-group">
+            <label>오픈 시간</label>
+            <select class="form-input" id="storeOpenHour" style="margin-bottom: 0;">
+              <option value="">시 선택</option>
+            </select>
+          </div>
+          <div class="time-group">
+            <label>마감 시간</label>
+            <select class="form-input" id="storeCloseHour" style="margin-bottom: 0;">
+              <option value="">시 선택</option>
+            </select>
+          </div>
+          <div class="time-group">
+            <label>요일</label>
+            <select class="form-input" id="storeDays" style="margin-bottom: 0;">
+              <option value="매일">매일</option>
+              <option value="월~금">월~금</option>
+              <option value="토일">토일</option>
+              <option value="월~토">월~토</option>
+              <option value="일요일 휴무">일요일 휴무</option>
+              <option value="월요일 휴무">월요일 휴무</option>
+              <option value="화요일 휴무">화요일 휴무</option>
+              <option value="수요일 휴무">수요일 휴무</option>
+              <option value="목요일 휴무">목요일 휴무</option>
+              <option value="금요일 휴무">금요일 휴무</option>
+              <option value="토요일 휴무">토요일 휴무</option>
+            </select>
+          </div>
+        </div>
+        <p class="info-text">오픈 시간과 마감 시간을 선택해주세요</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">가게 전화번호</label>
+        <input type="tel" class="form-input" id="storePhone" placeholder="예: 010-1234-5678 또는 051-123-4567">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">대표메뉴</label>
+        <textarea class="form-input" id="storeMenu" placeholder="예: 삼겹살, 목살, 갈비" rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">주변 랜드마크</label>
+        <input type="text" class="form-input" id="storeLandmarks" placeholder="예: 해운대해수욕장, 센텀시티">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">키워드</label>
+        <input type="text" class="form-input" id="storeKeywords" placeholder="예: 30년전통, 신선한고기">
+      </div>
+    </div>
+
+    <!-- 저장 버튼 -->
+    <div class="button-container">
+      <button class="btn btn-primary" id="saveBtn" onclick="saveAllInfo()">
+        <i class="fas fa-save"></i>
+        저장하기
+      </button>
+      <button class="btn btn-secondary" id="goToMypageBtn" onclick="goToMypage()">
+        <i class="fas fa-user"></i>
+        마이페이지로 가기
+      </button>
+    </div>
+  </div>
+
+  <!-- 공통 인증 스크립트 -->
+  <script src="/assets/auth-state.js?v=202410" defer></script>
+
+  <script>
+    let supabase = null;
+    let currentUser = null;
+
+    // Supabase 초기화
+    (async function initSupabase() {
+      while (!window.authState?.supabase) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      supabase = window.authState.supabase;
+
+      // 로그인 확인
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      currentUser = session.user;
+      await loadUserProfile();
+    })();
+
+    // 시간 드롭다운 옵션 생성 (30분 단위)
+    function initTimeDropdowns() {
+      const openHourSelect = document.getElementById('storeOpenHour');
+      const closeHourSelect = document.getElementById('storeCloseHour');
+      
+      if (!openHourSelect || !closeHourSelect) return;
+      
+      // 기존 옵션 제거 (시 선택 제외)
+      while (openHourSelect.children.length > 1) {
+        openHourSelect.removeChild(openHourSelect.lastChild);
+      }
+      while (closeHourSelect.children.length > 1) {
+        closeHourSelect.removeChild(closeHourSelect.lastChild);
+      }
+      
+      // 00:00부터 23:30까지 30분 단위로 생성
+      for (let hour = 0; hour < 24; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          const displayTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          
+          const openOption = document.createElement('option');
+          openOption.value = timeStr;
+          openOption.textContent = displayTime;
+          openHourSelect.appendChild(openOption);
+          
+          const closeOption = document.createElement('option');
+          closeOption.value = timeStr;
+          closeOption.textContent = displayTime;
+          closeHourSelect.appendChild(closeOption);
+        }
+      }
+    }
+
+    // 플레이스 URL 검증 함수
+    const SUPPORTED_PLACE_TYPES = ['restaurant', 'cafe', 'shop', 'hotel', 'accommodation', 'beauty', 'activity'];
+
+    function extractPlaceMeta(url) {
+      if (!url || typeof url !== 'string') return null;
+      const trimmed = url.trim();
+      if (!trimmed.toLowerCase().includes('naver.')) return null;
+
+      const patternConfigs = [
+        { regex: /\/(restaurant|cafe|shop|hotel|accommodation|beauty|activity)\/(\d+)/i, typeIndex: 1, idIndex: 2 },
+        { regex: /\/(place)\/(\d+)/i, typeIndex: 1, idIndex: 2 },
+        { regex: /\/p\/entry\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /\/entry\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /\/v5\/entry\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /\/place\/(\d+)/i, typeIndex: null, idIndex: 1 },
+        { regex: /[?&](?:placeId|entry|id)=(\d+)/i, typeIndex: null, idIndex: 1 }
+      ];
+
+      for (const config of patternConfigs) {
+        const match = trimmed.match(config.regex);
+        if (match) {
+          let type = config.typeIndex != null ? match[config.typeIndex].toLowerCase() : null;
+          const placeId = match[config.idIndex];
+          if (!placeId) continue;
+
+          if (!type || type === 'place') {
+            type = 'restaurant';
+          }
+
+          if (!SUPPORTED_PLACE_TYPES.includes(type)) {
+            type = 'restaurant';
+          }
+
+          return { placeId, placeType: type };
+        }
+      }
+
+      return null;
+    }
+
+    function isValidPlaceUrl(url) {
+      return !!extractPlaceMeta(url);
+    }
+
+    function normalizePlaceUrl(url) {
+      const meta = extractPlaceMeta(url);
+      if (!meta) return null;
+      return `https://m.place.naver.com/${meta.placeType}/${meta.placeId}`;
+    }
+
+    // 사용자 프로필 로드
+    async function loadUserProfile() {
+      if (!currentUser) return;
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
+        if (profile) {
+          // 프로필이 이미 있으면 정보 채우기
+          if (profile.name) document.getElementById('name').value = profile.name;
+          if (profile.business_name) document.getElementById('businessName').value = profile.business_name;
+          if (profile.phone) document.getElementById('phone').value = profile.phone;
+
+          // 가게 정보 로드
+          if (profile.store_place_url) document.getElementById('storeUrl').value = profile.store_place_url;
+          if (profile.store_name) document.getElementById('storeName').value = profile.store_name;
+          if (profile.store_address) document.getElementById('storeAddress').value = profile.store_address;
+          if (profile.store_phone_number) document.getElementById('storePhone').value = profile.store_phone_number;
+          if (profile.store_main_menu) document.getElementById('storeMenu').value = profile.store_main_menu;
+          if (profile.store_landmarks) document.getElementById('storeLandmarks').value = profile.store_landmarks;
+          if (profile.store_keywords) document.getElementById('storeKeywords').value = profile.store_keywords;
+
+          // 영업시간 파싱
+          if (profile.store_business_hours) {
+            const hoursStr = profile.store_business_hours;
+            const timeMatch = hoursStr.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+              const openHour = `${String(timeMatch[1]).padStart(2, '0')}:${timeMatch[2]}`;
+              const closeHour = `${String(timeMatch[3]).padStart(2, '0')}:${timeMatch[4]}`;
+              document.getElementById('storeOpenHour').value = openHour;
+              document.getElementById('storeCloseHour').value = closeHour;
+              
+              const daysMatch = hoursStr.match(/\(([^)]+)\)/);
+              if (daysMatch) {
+                document.getElementById('storeDays').value = daysMatch[1].trim();
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('프로필 로드 오류:', error);
+      }
+    }
+
+    // 드롭다운 값으로부터 영업시간 문자열 생성
+    function formatBusinessHours(openHour, closeHour, days) {
+      if (!openHour || !closeHour) return '';
+      return `${openHour}-${closeHour} (${days})`;
+    }
+
+    // 모든 정보 저장
+    async function saveAllInfo() {
+      if (!currentUser) {
+        showError('사용자 정보를 불러오지 못했습니다.');
+        return;
+      }
+
+      const name = document.getElementById('name').value.trim();
+      if (!name) {
+        showError('이름은 필수 입력사항입니다.');
+        return;
+      }
+
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
+
+      try {
+        // 1. 회원정보 저장
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            name: name,
+            business_name: document.getElementById('businessName').value.trim() || null,
+            phone: document.getElementById('phone').value.trim() || null,
+            email: currentUser.email,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          });
+
+        if (profileError) throw profileError;
+
+        // 2. 가게 정보 저장
+        const openHour = document.getElementById('storeOpenHour').value;
+        const closeHour = document.getElementById('storeCloseHour').value;
+        const days = document.getElementById('storeDays').value;
+        const businessHours = formatBusinessHours(openHour, closeHour, days);
+
+        const placeUrlInput = document.getElementById('storeUrl').value.trim();
+        let normalizedPlaceUrl = placeUrlInput;
+        if (placeUrlInput) {
+          if (!isValidPlaceUrl(placeUrlInput)) {
+            showError('네이버 플레이스 URL 형식이 아닙니다.\n주소창의 "공유 > 링크 복사" 기능을 이용해 전체 주소를 붙여넣어 주세요.');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> 저장하기';
+            return;
+          }
+          normalizedPlaceUrl = normalizePlaceUrl(placeUrlInput);
+          if (!normalizedPlaceUrl) {
+            showError('네이버 플레이스 URL을 해석하지 못했습니다. 모바일 버전 링크를 입력해 주세요.');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> 저장하기';
+            return;
+          }
+        }
+
+        const storeInfo = {
+          placeUrl: normalizedPlaceUrl || null,
+          companyName: document.getElementById('storeName').value.trim() || null,
+          companyAddress: document.getElementById('storeAddress').value.trim() || null,
+          businessHours: businessHours || null,
+          phoneNumber: document.getElementById('storePhone').value.trim() || null,
+          mainMenu: document.getElementById('storeMenu').value.trim() || null,
+          landmarks: document.getElementById('storeLandmarks').value.trim() || null,
+          keywords: document.getElementById('storeKeywords').value.trim() || null,
+        };
+
+        const response = await fetch('/api/store-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, storeInfo })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '가게 정보 저장 실패');
+        }
+
+        showSuccess('✅ 정보가 저장되었습니다!');
+        
+        // 저장 완료 후 버튼 복구
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> 저장하기';
+
+      } catch (error) {
+        console.error('저장 실패:', error);
+        showError('저장 실패: ' + error.message);
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> 저장하기';
+      }
+    }
+
+    // 마이페이지로 이동
+    function goToMypage() {
+      window.location.href = '/mypage.html';
+    }
+
+    // 메시지 표시 함수
+    function showError(message) {
+      const errorEl = document.getElementById('errorMessage');
+      const successEl = document.getElementById('successMessage');
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      successEl.style.display = 'none';
+    }
+
+    function showSuccess(message) {
+      const errorEl = document.getElementById('errorMessage');
+      const successEl = document.getElementById('successMessage');
+      successEl.textContent = message;
+      successEl.style.display = 'block';
+      errorEl.style.display = 'none';
+    }
+
+    // 페이지 로드 시 시간 드롭다운 초기화
+    window.addEventListener('DOMContentLoaded', () => {
+      initTimeDropdowns();
+    });
+  </script>
+</body>
+</html>
+

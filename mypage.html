@@ -1365,8 +1365,8 @@
           </button>
         </section>
 
-        <!-- 결제 및 구독 관리 -->
-        <section class="section">
+        <!-- 결제 및 구독 관리 (식당 대표만 표시) -->
+        <section class="section" id="paymentSection">
           <h3 class="section-title">
             <i class="fas fa-credit-card"></i>
             결제 및 구독 관리
@@ -1405,20 +1405,11 @@
             </div>
           </div>
 
-          <!-- 플랜 변경 버튼들 -->
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
-            <button class="btn btn-primary" onclick="goToPayment('power')" style="width: 100%;">
-              <i class="fas fa-rocket"></i> 파워 플랜
-            </button>
-            <button class="btn btn-primary" onclick="goToPayment('bigpower')" style="width: 100%;">
-              <i class="fas fa-star"></i> 빅파워 플랜
-            </button>
-            <button class="btn btn-primary" onclick="goToPayment('premium')" style="width: 100%;">
-              <i class="fas fa-crown"></i> 프리미엄 플랜
-            </button>
-            <button class="btn btn-secondary" onclick="window.location.href='/payment.html'" style="width: 100%;">
-              <i class="fas fa-list"></i> 전체 플랜 보기
-            </button>
+          <!-- 플랜 변경 버튼들 (식당 대표 등급만) -->
+          <div id="planButtons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+            <div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 20px;">
+              <i class="fas fa-spinner fa-spin"></i> 플랜 정보 로딩 중...
+            </div>
           </div>
 
           <!-- 결제 내역 (간단 버전) -->
@@ -1647,6 +1638,14 @@
         document.getElementById('editBusinessName').value = profile.business_name || '';
         document.getElementById('editPhone').value = profile.phone || '';
 
+        // 식당 대표가 아니면 결제 섹션 숨기기
+        if (profile.user_type !== 'owner') {
+          const paymentSection = document.getElementById('paymentSection');
+          if (paymentSection) {
+            paymentSection.style.display = 'none';
+          }
+        }
+
         // ⚡ 메인 컨텐츠 먼저 표시 (빠른 렌더링)
         document.getElementById('loadingContainer').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
@@ -1693,26 +1692,38 @@
           return;
         }
 
-        // 서버 API를 통해 결제 정보 가져오기
-        const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        });
+        // 가격 및 토큰 설정과 사용자 정보를 동시에 로드
+        const [dashboardRes, pricingRes, tokenRes] = await Promise.all([
+          fetch('/api/subscription/user-dashboard?action=dashboard', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          }),
+          fetch('/api/subscription/pricing-config'),
+          fetch('/api/subscription/token-config')
+        ]);
 
-        if (!response.ok) {
-          console.warn('⚠️ 결제 정보 로드 실패:', response.status);
+        if (!dashboardRes.ok) {
+          console.warn('⚠️ 결제 정보 로드 실패:', dashboardRes.status);
           updatePaymentUI(null);
           return;
         }
 
-        const result = await response.json();
+        const dashboardResult = await dashboardRes.json();
+        const pricingResult = await pricingRes.json();
+        const tokenResult = await tokenRes.json();
         
-        if (result.success && result.data) {
-          const { profile, cycle } = result.data;
-          updatePaymentUI({ profile, cycle });
+        if (dashboardResult.success && dashboardResult.data) {
+          const { profile, cycle } = dashboardResult.data;
+          const pricing = pricingResult.success ? pricingResult.pricing : null;
+          const tokens = tokenResult.success ? tokenResult.tokens : null;
+          
+          updatePaymentUI({ profile, cycle, pricing, tokens });
+          
+          // 플랜 버튼 렌더링 (식당 대표 등급만)
+          renderPlanButtons(pricing, tokens);
           
           // 결제 내역 로드
           await loadPaymentHistory(userId);
@@ -1739,31 +1750,163 @@
 
       const profile = data.profile;
       const cycle = data.cycle;
+      const pricing = data.pricing;
+      const tokens = data.tokens;
+
+      // 실제 설정된 가격과 토큰 사용
+      const membershipLevel = profile.membership_level || 'seed';
+      
+      // 가격 정보
+      let planPrice = 0;
+      let planTokens = 100;
+      
+      if (pricing && tokens) {
+        // 식당 대표 등급만 처리
+        switch(membershipLevel) {
+          case 'seed':
+            planPrice = pricing.owner_seed_price || 0;
+            planTokens = tokens.owner_seed_limit || 100;
+            break;
+          case 'power':
+            planPrice = pricing.owner_power_price || 30000;
+            planTokens = tokens.owner_power_limit || 500;
+            break;
+          case 'bigpower':
+          case 'big_power':
+            planPrice = pricing.owner_bigpower_price || 50000;
+            planTokens = tokens.owner_bigpower_limit || 833;
+            break;
+          case 'premium':
+            planPrice = pricing.owner_premium_price || 70000;
+            planTokens = tokens.owner_premium_limit || 1166;
+            break;
+        }
+      } else {
+        // 기본값 (API 실패 시)
+        const defaults = {
+          seed: { price: 0, tokens: 100 },
+          power: { price: 30000, tokens: 500 },
+          bigpower: { price: 50000, tokens: 833 },
+          big_power: { price: 50000, tokens: 833 },
+          premium: { price: 70000, tokens: 1166 }
+        };
+        const defaultInfo = defaults[membershipLevel] || defaults.seed;
+        planPrice = defaultInfo.price;
+        planTokens = defaultInfo.tokens;
+      }
 
       const planNames = {
-        seed: { name: '씨앗 플랜', badge: '무료', price: '무료', tokens: '100 토큰' },
-        power: { name: '파워 플랜', badge: '베이직', price: '30,000원', tokens: '500 토큰' },
-        bigpower: { name: '빅파워 플랜', badge: '프로', price: '50,000원', tokens: '833 토큰' },
-        big_power: { name: '빅파워 플랜', badge: '프로', price: '50,000원', tokens: '833 토큰' },
-        premium: { name: '프리미엄 플랜', badge: 'VIP', price: '70,000원', tokens: '1,166 토큰' },
-        elite: { name: '엘리트 플랜', badge: '엘리트', price: '100,000원', tokens: '1,666 토큰' },
-        expert: { name: '전문가 플랜', badge: '전문가', price: '150,000원', tokens: '2,500 토큰' },
-        master: { name: '마스터 플랜', badge: '마스터', price: '200,000원', tokens: '3,333 토큰' }
+        seed: { name: '씨앗 플랜', badge: '무료' },
+        power: { name: '파워 플랜', badge: '베이직' },
+        bigpower: { name: '빅파워 플랜', badge: '프로' },
+        big_power: { name: '빅파워 플랜', badge: '프로' },
+        premium: { name: '프리미엄 플랜', badge: 'VIP' }
       };
 
-      const membershipLevel = profile.membership_level || 'seed';
       const planInfo = planNames[membershipLevel] || planNames.seed;
 
       document.getElementById('paymentPlanName').textContent = planInfo.name;
       document.getElementById('paymentPlanBadge').textContent = planInfo.badge;
-      document.getElementById('paymentPlanPrice').textContent = planInfo.price;
-      document.getElementById('paymentPlanTokens').textContent = planInfo.tokens;
+      document.getElementById('paymentPlanPrice').textContent = planPrice === 0 ? '무료' : `${planPrice.toLocaleString()}원`;
+      document.getElementById('paymentPlanTokens').textContent = `${planTokens.toLocaleString()} 토큰`;
       
       if (cycle && cycle.days_remaining !== undefined) {
         document.getElementById('paymentPlanDays').textContent = `${cycle.days_remaining}일`;
       } else {
         document.getElementById('paymentPlanDays').textContent = '30일';
       }
+    }
+
+    // 플랜 버튼 렌더링 (식당 대표 등급만)
+    function renderPlanButtons(pricing, tokens) {
+      const container = document.getElementById('planButtons');
+      if (!container) return;
+
+      // 현재 사용자가 식당 대표가 아니면 표시하지 않음
+      if (currentUser && currentUser.user_type !== 'owner') {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">
+            <i class="fas fa-info-circle"></i> 식당 대표 전용 기능입니다
+          </div>
+        `;
+        return;
+      }
+
+      // 식당 대표 등급만 표시
+      const ownerPlans = [
+        { 
+          key: 'seed', 
+          name: '씨앗', 
+          icon: '🌱', 
+          color: 'var(--success)',
+          priceKey: 'owner_seed_price',
+          tokenKey: 'owner_seed_limit',
+          defaultPrice: 0,
+          defaultTokens: 100
+        },
+        { 
+          key: 'power', 
+          name: '파워', 
+          icon: '⚡', 
+          color: '#f59e0b',
+          priceKey: 'owner_power_price',
+          tokenKey: 'owner_power_limit',
+          defaultPrice: 30000,
+          defaultTokens: 500
+        },
+        { 
+          key: 'bigpower', 
+          name: '빅파워', 
+          icon: '💪', 
+          color: '#f97316',
+          priceKey: 'owner_bigpower_price',
+          tokenKey: 'owner_bigpower_limit',
+          defaultPrice: 50000,
+          defaultTokens: 833
+        },
+        { 
+          key: 'premium', 
+          name: '프리미엄', 
+          icon: '⭐', 
+          color: '#ec4899',
+          priceKey: 'owner_premium_price',
+          tokenKey: 'owner_premium_limit',
+          defaultPrice: 70000,
+          defaultTokens: 1166
+        }
+      ];
+
+      if (!pricing || !tokens) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">
+            <i class="fas fa-exclamation-triangle"></i> 플랜 정보를 불러올 수 없습니다
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = ownerPlans.map(plan => {
+        const price = pricing[plan.priceKey] !== undefined ? pricing[plan.priceKey] : plan.defaultPrice;
+        const tokenLimit = tokens[plan.tokenKey] !== undefined ? tokens[plan.tokenKey] : plan.defaultTokens;
+        const priceText = price === 0 ? '무료' : `${price.toLocaleString()}원`;
+        
+        return `
+          <button class="btn btn-primary" onclick="goToPayment('${plan.key}')" style="width: 100%; background: linear-gradient(135deg, ${plan.color}, ${plan.color}dd);">
+            <div style="text-align: left;">
+              <div style="font-size: 18px; margin-bottom: 4px;">
+                ${plan.icon} ${plan.name}
+              </div>
+              <div style="font-size: 12px; opacity: 0.9;">
+                ${priceText} · ${tokenLimit.toLocaleString()} 토큰
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('') + `
+        <button class="btn btn-secondary" onclick="window.location.href='/payment.html'" style="width: 100%; grid-column: 1 / -1;">
+          <i class="fas fa-list"></i> 전체 플랜 보기
+        </button>
+      `;
     }
 
     // 결제 내역 로드
@@ -2104,13 +2247,28 @@
         if (result.data) {
           const { profile, cycle, recentUsage } = result.data;
           
-          console.log('✅ 토큰 정보 로드 성공:', { profile, cycle, recentUsageCount: recentUsage?.length || 0 });
+          console.log('✅ 토큰 정보 로드 성공:', { 
+            profile: {
+              id: profile?.id,
+              email: profile?.email,
+              membership_level: profile?.membership_level,
+              user_type: profile?.user_type
+            }, 
+            cycle: {
+              id: cycle?.id,
+              monthly_token_limit: cycle?.monthly_token_limit,
+              tokens_used: cycle?.tokens_used,
+              tokens_remaining: cycle?.tokens_remaining
+            },
+            recentUsageCount: recentUsage?.length || 0 
+          });
           
           // 플랜 정보 표시
           const planNames = {
             'seed': '씨앗',
             'power': '파워',
             'bigpower': '빅파워',
+            'big_power': '빅파워',
             'premium': '프리미엄',
             'elite': '엘리트',
             'expert': '전문가',
@@ -2121,6 +2279,7 @@
             'seed': '무료',
             'power': '베이직',
             'bigpower': '프로',
+            'big_power': '프로',
             'premium': 'VIP',
             'elite': '엘리트',
             'expert': '전문가',
@@ -2128,6 +2287,18 @@
           };
           
           const membershipLevel = profile?.membership_level || 'seed';
+          
+          // 디버깅: membership_level 확인
+          if (!profile?.membership_level || profile.membership_level === 'seed') {
+            console.warn('⚠️ [mypage] membership_level이 없거나 seed입니다:', {
+              profileMembershipLevel: profile?.membership_level,
+              willUse: membershipLevel,
+              fullProfile: profile
+            });
+          } else {
+            console.log('✅ [mypage] membership_level 확인:', membershipLevel);
+          }
+          
           document.getElementById('currentPlan').textContent = 
             planNames[membershipLevel] || '씨앗';
           document.getElementById('planBadge').textContent = 
