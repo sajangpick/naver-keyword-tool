@@ -176,6 +176,26 @@
       .plan-card {
         max-width: 100% !important;
       }
+      
+      /* 모바일에서 간편 결제 그리드 조정 */
+      .payment-methods > div[style*="grid-template-columns"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+      }
+      
+      .payment-methods > div[style*="grid-template-columns"] label {
+        padding: 12px 4px !important;
+      }
+      
+      .payment-methods > div[style*="grid-template-columns"] label div {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 16px !important;
+      }
+      
+      .payment-methods > div[style*="grid-template-columns"] label span {
+        font-size: 11px !important;
+      }
     }
 
     @media (max-width: 360px) {
@@ -215,6 +235,21 @@
 
       .payment-method {
         padding: 12px;
+      }
+      
+      /* 모바일에서 간편 결제 그리드 조정 */
+      .payment-methods .payment-method[style*="grid-template-columns"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+      }
+      
+      .payment-methods .payment-method[style*="grid-template-columns"] label {
+        padding: 12px 8px !important;
+      }
+      
+      .payment-methods .payment-method[style*="grid-template-columns"] label div {
+        width: 40px !important;
+        height: 40px !important;
       }
     }
 
@@ -304,7 +339,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h3 style="margin: 0; font-size: 16px;">결제 방법 선택</h3>
         <button id="registerCardBtn" class="btn-register-card" onclick="openCardRegisterModal()" style="padding: 8px 16px; background: #f0f4ff; color: #667eea; border: 1px solid #667eea; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
-          <i class="fas fa-plus"></i> 내 카드 등록하기
+          <i class="fas fa-link"></i> 페이 연동하기
         </button>
       </div>
       
@@ -313,10 +348,41 @@
         <!-- 카드 목록이 여기에 동적으로 로드됩니다 -->
       </div>
       
+      <!-- 간편 결제 방법 -->
+      <div style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #666; font-weight: 600;">간편 결제</h4>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <label class="payment-method" style="margin: 0; flex-direction: column; align-items: center; padding: 16px; text-align: center;">
+            <input type="radio" name="method" value="toss">
+            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #0064FF 0%, #0052CC 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0, 100, 255, 0.3);">
+              <span style="color: white; font-size: 20px; font-weight: 700;">T</span>
+            </div>
+            <span style="font-size: 13px; font-weight: 600; color: #333;">토스페이</span>
+          </label>
+          
+          <label class="payment-method" style="margin: 0; flex-direction: column; align-items: center; padding: 16px; text-align: center;">
+            <input type="radio" name="method" value="kakao">
+            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #FEE500 0%, #FDD835 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(254, 229, 0, 0.3);">
+              <span style="color: #3C1E1E; font-size: 20px; font-weight: 700;">K</span>
+            </div>
+            <span style="font-size: 13px; font-weight: 600; color: #333;">카카오페이</span>
+          </label>
+          
+          <label class="payment-method" style="margin: 0; flex-direction: column; align-items: center; padding: 16px; text-align: center;">
+            <input type="radio" name="method" value="naver">
+            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #03C75A 0%, #02B14F 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(3, 199, 90, 0.3);">
+              <span style="color: white; font-size: 20px; font-weight: 700;">N</span>
+            </div>
+            <span style="font-size: 13px; font-weight: 600; color: #333;">네이버페이</span>
+          </label>
+        </div>
+      </div>
+      
       <!-- 일반 결제 방법 -->
       <div id="generalPaymentMethods">
-        <label class="payment-method selected">
-          <input type="radio" name="method" value="card" checked>
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #666; font-weight: 600;">일반 결제</h4>
+        <label class="payment-method">
+          <input type="radio" name="method" value="card">
           <span>💳 신용/체크카드 (일회성)</span>
         </label>
         
