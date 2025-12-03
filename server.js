@@ -4781,11 +4781,13 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
 메뉴 특징: ${menuFeatures || '없음'}
 영상 스타일: ${styleDescription}
 영상 길이: ${duration}초
+영상 비율: 세로형 9:16 비율 (1080x1920 해상도) - 모바일 쇼츠 형식에 최적화
 
-이 이미지를 분석하여 다음 정보를 제공해주세요:
+이미지를 분석하여 다음 정보를 제공해주세요:
 1. 이미지에 보이는 음식의 특징 (색상, 구성, 모양 등)
 2. 영상으로 만들 때 강조해야 할 포인트
-3. 영상 생성 AI(Runway, Pika 등)에 사용할 최적의 영어 프롬프트 (50단어 이내, 영화적이고 전문적인 표현 사용)
+3. 영상 생성 AI(Gemini Veo 3.1)에 사용할 최적의 영어 프롬프트 (50단어 이내, 영화적이고 전문적인 표현 사용)
+   - 반드시 "vertical 9:16 aspect ratio", "1080x1920 resolution", "mobile shorts format" 등의 키워드를 포함해주세요.
 
 응답 형식:
 특징: [이미지 분석 결과]
@@ -5054,11 +5056,16 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
       console.log("⚠️ [Gemini API] 이미지 없음 - 텍스트만으로 영상 생성");
     }
 
+    // 프롬프트에 9:16 비율과 1080p 해상도를 명시적으로 추가
+    const enhancedPrompt = prompt 
+      ? `${prompt}. Create this video in vertical 9:16 aspect ratio (1080x1920 resolution) optimized for mobile shorts format.`
+      : "Cinematic food video, slow motion, professional lighting, appetizing close-up shots. Create this video in vertical 9:16 aspect ratio (1080x1920 resolution) optimized for mobile shorts format.";
+    
     // 공식 REST API 형식에 맞게 요청 본문 구성
     const requestBody = {
       instances: [
         {
-          prompt: prompt || "Cinematic food video, slow motion, professional lighting, appetizing close-up shots.",
+          prompt: enhancedPrompt,
           // 이미지가 있으면 base64로 포함
           image: imageBase64 ? {
             bytesBase64Encoded: imageBase64,
