@@ -1836,177 +1836,87 @@
 
       @media (max-width: 768px) {
         .center-icon-menu {
-          gap: 12px;
-          margin-top: 0;
-          padding: 0 16px;
-          justify-content: flex-start;
-          -webkit-overflow-scrolling: touch;
-          overflow-x: auto;
-          overflow-y: hidden;
-          flex-wrap: nowrap; /* 한 줄로 배치하여 슬라이드 가능하게 */
+          gap: 8px;
+          margin-top: 24px;
+          padding: 0 12px;
+          justify-content: center;
+          flex-wrap: wrap; /* 2줄 그리드로 표시 */
           width: 100%;
           max-width: 100%;
           box-sizing: border-box;
-          scroll-snap-type: x mandatory; /* 스냅 스크롤 활성화 */
-          scrollbar-width: thin; /* 얇은 스크롤바 */
-          position: relative; /* 그라데이션 오버레이를 위한 위치 지정 */
+          overflow-x: visible;
+          overflow-y: visible;
+          position: relative;
         }
 
-        /* 오른쪽 페이드아웃 효과 - 더 많은 아이콘이 있다는 것을 시각적으로 표현 */
-        .center-icon-menu::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          right: 0;
-          width: 60px;
-          height: 100%;
-          background: linear-gradient(to right, transparent, var(--bg-color));
-          pointer-events: none; /* 클릭 방해하지 않도록 */
-          z-index: 1;
-          opacity: var(--show-indicator, 1); /* CSS 변수로 제어 */
-          transition: opacity 0.3s ease;
-        }
-
-        /* 오른쪽 화살표 인디케이터 */
+        /* 인디케이터 제거 (그리드 레이아웃이므로 스크롤 불필요) */
+        .center-icon-menu::after,
         .center-icon-menu::before {
-          content: "→";
-          position: absolute;
-          top: 50%;
-          right: 8px;
-          transform: translateY(-50%);
-          font-size: 20px;
-          color: rgba(255, 126, 70, 0.6);
-          pointer-events: none;
-          z-index: 2;
-          animation: slideHint 2s ease-in-out infinite;
-          opacity: var(--show-indicator, 1); /* CSS 변수로 제어 */
-          transition: opacity 0.3s ease;
+          display: none;
         }
 
-        @keyframes slideHint {
-          0%,
-          100% {
-            transform: translateY(-50%) translateX(0);
-            opacity: 0.6;
-          }
-          50% {
-            transform: translateY(-50%) translateX(5px);
-            opacity: 1;
-          }
-        }
-
-        /* 스크롤바 스타일링 */
-        .center-icon-menu::-webkit-scrollbar {
-          height: 4px;
-        }
-
-        .center-icon-menu::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 2px;
-        }
-
-        .center-icon-menu::-webkit-scrollbar-thumb {
-          background: rgba(255, 126, 70, 0.4);
-          border-radius: 2px;
-        }
-
-        .center-icon-menu::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 126, 70, 0.6);
-        }
-
+        /* 첫 번째 줄: 5개 아이콘 (각 20% - gap 조정) */
         .center-menu-item {
-          flex: 0 0 calc(25% - 9px); /* 4개만 보이도록 너비 설정 */
-          max-width: calc(25% - 9px);
-          min-width: calc(25% - 9px); /* 최소 너비 설정 */
+          flex: 0 0 calc(20% - 6.4px); /* 5개 배치: (100% - 4*8px) / 5 */
+          max-width: calc(20% - 6.4px);
+          min-width: 0;
           box-sizing: border-box;
-          scroll-snap-align: start; /* 스냅 스크롤 정렬 */
+          padding: 8px 4px;
+          gap: 6px;
         }
 
-        /* GPT-5 아이콘(첫 번째) 왼쪽 패딩 추가 */
-        .center-menu-item:first-child {
-          padding-left: 20px;
+        /* 두 번째 줄: 4개 아이콘 (각 25% - gap 조정) */
+        .center-menu-item:nth-child(n + 6) {
+          flex: 0 0 calc(25% - 6px); /* 4개 배치: (100% - 3*8px) / 4 */
+          max-width: calc(25% - 6px);
+        }
+
+        /* 두 번째 줄을 중앙 정렬: 첫 번째 아이콘에 왼쪽 마진 추가 */
+        .center-menu-item:nth-child(6) {
+          margin-left: calc(10% - 4px); /* 첫 번째 줄 아이콘 너비의 절반 */
         }
       }
 
       @media (max-width: 360px) {
         .center-icon-menu {
-          gap: 8px;
-          margin-top: 0;
-          padding: 0 12px;
-          justify-content: flex-start;
-          flex-wrap: nowrap; /* 한 줄로 배치하여 슬라이드 가능하게 */
-          overflow-x: auto;
-          overflow-y: hidden;
+          gap: 6px;
+          margin-top: 20px;
+          padding: 0 8px;
+          justify-content: center;
+          flex-wrap: wrap; /* 2줄 그리드로 표시 */
           width: 100%;
           max-width: 100%;
           box-sizing: border-box;
+          overflow-x: visible;
+          overflow-y: visible;
           position: relative;
-          scroll-snap-type: x mandatory; /* 스냅 스크롤 활성화 */
-          scrollbar-width: thin; /* 얇은 스크롤바 */
-          -webkit-overflow-scrolling: touch;
         }
 
-        /* 오른쪽 페이드아웃 효과 - 더 많은 아이콘이 있다는 것을 시각적으로 표현 */
-        .center-icon-menu::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          right: 0;
-          width: 50px;
-          height: 100%;
-          background: linear-gradient(to right, transparent, var(--bg-color));
-          pointer-events: none; /* 클릭 방해하지 않도록 */
-          z-index: 1;
-          opacity: var(--show-indicator, 1); /* CSS 변수로 제어 */
-          transition: opacity 0.3s ease;
-        }
-
-        /* 오른쪽 화살표 인디케이터 */
+        /* 인디케이터 제거 (그리드 레이아웃이므로 스크롤 불필요) */
+        .center-icon-menu::after,
         .center-icon-menu::before {
-          content: "→";
-          position: absolute;
-          top: 50%;
-          right: 6px;
-          transform: translateY(-50%);
-          font-size: 18px;
-          color: rgba(255, 126, 70, 0.6);
-          pointer-events: none;
-          z-index: 2;
-          animation: slideHint 2s ease-in-out infinite;
-          opacity: var(--show-indicator, 1); /* CSS 변수로 제어 */
-          transition: opacity 0.3s ease;
+          display: none;
         }
 
-        /* 스크롤바 스타일링 */
-        .center-icon-menu::-webkit-scrollbar {
-          height: 3px;
-        }
-
-        .center-icon-menu::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 2px;
-        }
-
-        .center-icon-menu::-webkit-scrollbar-thumb {
-          background: rgba(255, 126, 70, 0.4);
-          border-radius: 2px;
-        }
-
-        .center-icon-menu::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 126, 70, 0.6);
-        }
-
+        /* 첫 번째 줄: 5개 아이콘 (각 20% - gap 조정) */
         .center-menu-item {
-          flex: 0 0 calc(25% - 6px); /* 4개만 보이도록 너비 설정 */
-          max-width: calc(25% - 6px);
-          min-width: calc(25% - 6px); /* 최소 너비 설정 */
+          flex: 0 0 calc(20% - 4.8px); /* 5개 배치: (100% - 4*6px) / 5 */
+          max-width: calc(20% - 4.8px);
+          min-width: 0;
           box-sizing: border-box;
-          scroll-snap-align: start; /* 스냅 스크롤 정렬 */
+          padding: 6px 2px;
+          gap: 4px;
         }
 
-        /* GPT-5 아이콘(첫 번째) 왼쪽 패딩 추가 */
-        .center-menu-item:first-child {
-          padding-left: 20px;
+        /* 두 번째 줄: 4개 아이콘 (각 25% - gap 조정) */
+        .center-menu-item:nth-child(n + 6) {
+          flex: 0 0 calc(25% - 4.5px); /* 4개 배치: (100% - 3*6px) / 4 */
+          max-width: calc(25% - 4.5px);
+        }
+
+        /* 두 번째 줄을 중앙 정렬: 첫 번째 아이콘에 왼쪽 마진 추가 */
+        .center-menu-item:nth-child(6) {
+          margin-left: calc(10% - 3px); /* 첫 번째 줄 아이콘 너비의 절반 */
         }
       }
 
@@ -3641,37 +3551,7 @@
         }
       })();
 
-      // 모바일 아이콘 슬라이드 인디케이터 제어
-      (function () {
-        const iconMenu = document.querySelector(".center-icon-menu");
-        if (!iconMenu) return;
-
-        function updateScrollIndicator() {
-          // 모바일 화면에서만 동작
-          if (window.innerWidth > 768) return;
-
-          const isAtEnd =
-            iconMenu.scrollWidth - iconMenu.scrollLeft <=
-            iconMenu.clientWidth + 10; // 10px 여유
-
-          if (isAtEnd) {
-            // 스크롤이 끝에 도달하면 인디케이터 숨기기
-            iconMenu.style.setProperty("--show-indicator", "0");
-          } else {
-            // 스크롤 가능하면 인디케이터 보이기
-            iconMenu.style.setProperty("--show-indicator", "1");
-          }
-        }
-
-        // 초기 상태 확인
-        updateScrollIndicator();
-
-        // 스크롤 이벤트 리스너
-        iconMenu.addEventListener("scroll", updateScrollIndicator);
-
-        // 리사이즈 이벤트 리스너
-        window.addEventListener("resize", updateScrollIndicator);
-      })();
+      // 모바일 아이콘 그리드 레이아웃 (스크롤 인디케이터 불필요 - 그리드 레이아웃이므로)
 
       // 하단바 슬라이드 인디케이터 제어
       (function () {
