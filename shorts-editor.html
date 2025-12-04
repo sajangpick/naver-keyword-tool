@@ -2043,15 +2043,44 @@
         // 사용자 정보 관련 함수들
         function getCurrentUser() {
             try {
-                const raw = localStorage.getItem('userData');
-                return raw ? JSON.parse(raw) : null;
+                // 로그인 타입에 따라 localStorage 또는 sessionStorage 확인
+                const loginType = localStorage.getItem('loginType') || 'auto';
+                const useSessionStorage = loginType === 'manual';
+                const storage = useSessionStorage ? sessionStorage : localStorage;
+                
+                const raw = storage.getItem('userData');
+                if (raw) {
+                    return JSON.parse(raw);
+                }
+                
+                // 반대 스토리지에서도 확인 (혼동 방지)
+                const fallbackStorage = useSessionStorage ? localStorage : sessionStorage;
+                const fallbackRaw = fallbackStorage.getItem('userData');
+                if (fallbackRaw) {
+                    return JSON.parse(fallbackRaw);
+                }
+                
+                return null;
             } catch (error) {
                 console.warn('[shorts-editor] 사용자 정보를 읽을 수 없습니다:', error);
                 return null;
             }
         }
 
-        function getCurrentUserId() {
+        async function getCurrentUserId() {
+            // 먼저 auth-state.js의 Supabase 세션 확인
+            if (window.authState?.supabase) {
+                try {
+                    const { data: { session } } = await window.authState.supabase.auth.getSession();
+                    if (session?.user?.id) {
+                        return session.user.id;
+                    }
+                } catch (error) {
+                    console.warn('[shorts-editor] Supabase 세션 확인 실패:', error);
+                }
+            }
+            
+            // Supabase 세션이 없으면 localStorage/sessionStorage에서 확인
             const user = getCurrentUser();
             return user?.id || user?.user?.id || user?.uid || null;
         }
@@ -2059,7 +2088,7 @@
         // 영상 상태 조회 함수 (먼저 정의)
         async function fetchLatestVideoStatus() {
             if (!currentVideoId) return;
-            const userId = getCurrentUserId();
+            const userId = await getCurrentUserId();
             if (!userId) return;
             
             try {
@@ -2551,7 +2580,7 @@
                 return;
             }
 
-            const userId = getCurrentUserId();
+            const userId = await getCurrentUserId();
             if (!userId) {
                 alert('로그인이 필요합니다.');
                 return;
@@ -2575,13 +2604,12 @@
                     session = sessionData;
                 } else {
                     // auth-state.js가 없으면 localStorage에서 사용자 정보 사용 (하위 호환)
-                    const userId = getCurrentUserId();
+                    const userId = await getCurrentUserId();
                     if (!userId) {
                         console.warn('⚠️ [토큰 조회] 사용자 ID가 없습니다');
                         return null;
                     }
                     
-                    // 기존 방식으로 폴백
                     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
                         ? 'http://localhost:3003' 
                         : '';
@@ -2779,7 +2807,7 @@
                 return;
             }
 
-            const userId = getCurrentUserId();
+            const userId = await getCurrentUserId();
             if (!userId) {
                 alert('로그인이 필요합니다.');
                 return;
@@ -2975,13 +3003,34 @@
 
         // 인증 UI 업데이트
         async function updateAuthUI() {
-            const user = getCurrentUser();
             const authUser = document.getElementById('authUser');
             const loginBtn = document.getElementById('loginBtn');
             const signupBtn = document.getElementById('signupBtn');
             const userEmail = document.getElementById('userEmail');
             const userAvatar = document.getElementById('userAvatar');
             const logoutBtn = document.getElementById('logoutBtn');
+            
+            // 먼저 Supabase 세션 확인
+            let user = null;
+            if (window.authState?.supabase) {
+                try {
+                    const { data: { session } } = await window.authState.supabase.auth.getSession();
+                    if (session?.user) {
+                        user = {
+                            id: session.user.id,
+                            email: session.user.email,
+                            displayName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email
+                        };
+                    }
+                } catch (error) {
+                    console.warn('[shorts-editor] Supabase 세션 확인 실패:', error);
+                }
+            }
+            
+            // Supabase 세션이 없으면 localStorage/sessionStorage 확인
+            if (!user) {
+                user = getCurrentUser();
+            }
             
             if (user && user.email) {
                 if (authUser) authUser.style.display = 'flex';
@@ -2995,8 +3044,18 @@
                 if (logoutBtn) {
                     logoutBtn.onclick = async function() {
                         if (!confirm('로그아웃 하시겠습니까?')) return;
-                        localStorage.removeItem('isLoggedIn');
-                        localStorage.removeItem('userData');
+                        
+                        // auth-state.js의 signOut 사용
+                        if (window.authState?.signOut) {
+                            await window.authState.signOut();
+                        } else {
+                            // fallback
+                            localStorage.removeItem('isLoggedIn');
+                            localStorage.removeItem('userData');
+                            sessionStorage.removeItem('userData');
+                            sessionStorage.removeItem('isLoggedIn');
+                        }
+                        
                         location.href = 'login.html';
                     };
                 }
@@ -3040,8 +3099,25 @@
                 }
             });
 
-            // 인증 UI 업데이트
-            updateAuthUI();
+            // 인증 UI 업데이트 (auth-state.js 로드 대기)
+            (async () => {
+                // auth-state.js가 로드될 때까지 대기
+                let waitCount = 0;
+                while (!window.authState && waitCount < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    waitCount++;
+                }
+                
+                // 인증 UI 업데이트
+                await updateAuthUI();
+                
+                // auth-state.js의 인증 상태 변경 이벤트 구독
+                if (window.authState) {
+                    window.addEventListener('auth:state-changed', async () => {
+                        await updateAuthUI();
+                    });
+                }
+            })();
         });
     </script>
 
