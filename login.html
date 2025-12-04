@@ -684,18 +684,24 @@
         // sessionStorage에서 redirect 다시 확인 (OAuth 콜백 후에도 유지되도록)
         let target = redirectTarget || sessionStorage.getItem('loginRedirect');
         
-        console.log("[로그인] resolveRedirectTarget 호출");
+        console.log("[로그인] ========== resolveRedirectTarget 호출 ==========");
         console.log("[로그인] redirectTarget 변수:", redirectTarget);
         console.log("[로그인] sessionStorage loginRedirect:", sessionStorage.getItem('loginRedirect'));
         console.log("[로그인] 최종 target:", target);
         
         if (!target) {
-          console.log("[로그인] redirect 파라미터 없음, index.html로 이동");
+          console.log("[로그인] ❌ redirect 파라미터 없음, index.html로 이동");
           return "index.html";
         }
         
         // URL 디코딩 (encodeURIComponent로 인코딩된 경우)
-        let decodedTarget = decodeURIComponent(target);
+        let decodedTarget;
+        try {
+          decodedTarget = decodeURIComponent(target);
+        } catch (e) {
+          console.warn("[로그인] URL 디코딩 실패, 원본 사용:", target);
+          decodedTarget = target;
+        }
         console.log("[로그인] 디코딩된 redirect 대상:", decodedTarget);
         
         // URL 정규화 (절대 경로로 변환)
@@ -714,7 +720,8 @@
           lowerPath.includes("admin/pages/") ||
           lowerPath.includes("/admin/pages/dashboard") ||
           lowerPath === "/admin/pages/dashboard" ||
-          lowerPath === "/admin/pages/dashboard.html";
+          lowerPath === "/admin/pages/dashboard.html" ||
+          lowerPath.startsWith("/admin/pages/");
         
         console.log("[로그인] 관리자 페이지 감지 결과:", isAdminPage, "경로:", lowerPath);
         
@@ -764,7 +771,7 @@
             }
           }
           
-          console.log("[로그인] ✅ 관리자 페이지로 리다이렉트:", adminPath);
+          console.log("[로그인] ✅✅✅ 관리자 페이지로 리다이렉트:", adminPath);
           sessionStorage.removeItem('loginRedirect'); // 사용 후 제거
           return adminPath;
         }
@@ -902,33 +909,57 @@
         const supabaseClient = window.authState.supabase;
         
         try {
-          // 카카오 로그인 콜백인 경우 로딩 표시
+          // OAuth 콜백 감지 (hash에 access_token 또는 code가 있는 경우)
           const hashParams = new URLSearchParams(window.location.hash.slice(1));
-          if (hashParams.has('access_token')) {
+          const isOAuthCallback = hashParams.has('access_token') || hashParams.has('code');
+          
+          if (isOAuthCallback) {
+            console.log("[로그인] OAuth 콜백 감지 - hash 제거 및 세션 확인");
             showLoading();
+            
+            // hash 제거 (깔끔한 URL 유지)
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
           }
           
           const { data: { session } } = await supabaseClient.auth.getSession();
           if (session) {
             console.log("[로그인] 세션 발견 - 로그인 처리 시작");
-            // OAuth 콜백인 경우에만 리다이렉트 (페이지 새로고침 방지)
-            const hashParams = new URLSearchParams(window.location.hash.slice(1));
-            const isOAuthCallback = hashParams.has('access_token') || hashParams.has('code');
+            console.log("[로그인] sessionStorage loginRedirect:", sessionStorage.getItem('loginRedirect'));
             
             if (isOAuthCallback) {
-              console.log("[로그인] OAuth 콜백 감지 - 리다이렉트 실행");
+              console.log("[로그인] OAuth 콜백 후 리다이렉트 실행");
               setLoggedInFromSession(session);
               // 약간의 지연 후 리다이렉트 (세션 저장 완료 대기)
               setTimeout(() => {
                 redirectAfterLogin();
-              }, 200);
+              }, 300);
             } else {
               // 이미 로그인된 상태로 페이지 접근한 경우
               console.log("[로그인] 이미 로그인된 상태 - 리다이렉트 실행");
               redirectAfterLogin();
             }
           } else {
-            hideLoading();
+            if (isOAuthCallback) {
+              console.warn("[로그인] OAuth 콜백이지만 세션이 없습니다. 잠시 후 다시 시도합니다.");
+              // 세션이 아직 준비되지 않았을 수 있으므로 잠시 대기 후 재시도
+              setTimeout(async () => {
+                const { data: { session: retrySession } } = await supabaseClient.auth.getSession();
+                if (retrySession) {
+                  console.log("[로그인] 재시도 후 세션 발견 - 리다이렉트 실행");
+                  setLoggedInFromSession(retrySession);
+                  setTimeout(() => {
+                    redirectAfterLogin();
+                  }, 300);
+                } else {
+                  console.error("[로그인] 세션을 가져올 수 없습니다.");
+                  hideLoading();
+                }
+              }, 1000);
+            } else {
+              hideLoading();
+            }
           }
         } catch (error) {
           console.error('세션 확인 오류:', error);
@@ -938,17 +969,18 @@
         // 로그인 상태 변화 감지 (login.html 페이지에서만 실행)
         let redirectHandled = false; // 중복 리다이렉트 방지
         supabaseClient.auth.onAuthStateChange((event, session) => {
-          console.log('Auth state changed:', event, session ? '세션 있음' : '세션 없음');
+          console.log('[로그인] Auth state changed:', event, session ? '세션 있음' : '세션 없음');
           
           if (event === "SIGNED_IN" && session && !redirectHandled) {
             console.log("[로그인] SIGNED_IN 이벤트 감지 - 로그인 처리 시작");
+            console.log("[로그인] sessionStorage loginRedirect:", sessionStorage.getItem('loginRedirect'));
             redirectHandled = true; // 리다이렉트 처리 중 플래그 설정
             showLoading();
             setLoggedInFromSession(session);
             // 약간의 지연 후 리다이렉트 (세션 저장 완료 대기)
             setTimeout(() => {
               redirectAfterLogin();
-            }, 200);
+            }, 300);
           } else if (event === "SIGNED_OUT") {
             hideLoading();
             redirectHandled = false; // 로그아웃 시 플래그 리셋
