@@ -668,10 +668,16 @@
       
       // redirect 파라미터를 sessionStorage에 저장 (OAuth 콜백 후에도 사용하기 위해)
       if (redirectTarget) {
+        console.log("[로그인] URL 파라미터에서 redirect 발견:", redirectTarget);
         sessionStorage.setItem('loginRedirect', redirectTarget);
       } else {
         // sessionStorage에서 redirect 가져오기 (OAuth 콜백 후)
         redirectTarget = sessionStorage.getItem('loginRedirect');
+        if (redirectTarget) {
+          console.log("[로그인] sessionStorage에서 redirect 발견:", redirectTarget);
+        } else {
+          console.log("[로그인] redirect 파라미터 없음 (URL 파라미터 및 sessionStorage 모두 확인)");
+        }
       }
 
       function resolveRedirectTarget() {
@@ -700,12 +706,17 @@
           normalizedPath = "/" + normalizedPath;
         }
         
-        // 관리자 페이지 감지 (대소문자 구분 없이)
+        // 관리자 페이지 감지 (대소문자 구분 없이, 더 넓은 범위로 감지)
         const lowerPath = normalizedPath.toLowerCase();
         const isAdminPage = 
           lowerPath.includes("/admin/") || 
           lowerPath.startsWith("admin/") ||
-          lowerPath.includes("admin/pages/");
+          lowerPath.includes("admin/pages/") ||
+          lowerPath.includes("/admin/pages/dashboard") ||
+          lowerPath === "/admin/pages/dashboard" ||
+          lowerPath === "/admin/pages/dashboard.html";
+        
+        console.log("[로그인] 관리자 페이지 감지 결과:", isAdminPage, "경로:", lowerPath);
         
         if (isAdminPage) {
           // 관리자 페이지 경로 정규화
@@ -742,6 +753,15 @@
           // .html 확장자가 없으면 추가 (pages 경로인 경우)
           if (adminPath.startsWith("/admin/pages/") && !adminPath.endsWith(".html") && !adminPath.includes("?")) {
             adminPath = adminPath + ".html";
+          }
+          
+          // 쿼리 파라미터가 있으면 유지
+          const queryIndex = normalizedPath.indexOf("?");
+          if (queryIndex > -1) {
+            const queryString = normalizedPath.substring(queryIndex);
+            if (!adminPath.includes("?")) {
+              adminPath = adminPath + queryString;
+            }
           }
           
           console.log("[로그인] ✅ 관리자 페이지로 리다이렉트:", adminPath);
@@ -854,8 +874,20 @@
         console.log("[로그인] redirectAfterLogin - 최종 리다이렉트 URL:", targetUrl);
         
         // 관리자 페이지인 경우 명확하게 로그 출력
-        if (targetUrl.includes("/admin/")) {
+        if (targetUrl.includes("/admin/") || targetUrl.includes("admin/")) {
           console.log("[로그인] ✅ 관리자 페이지로 리다이렉트합니다:", targetUrl);
+          // 관리자 페이지는 절대 경로로 보장
+          let finalUrl = targetUrl;
+          if (!finalUrl.startsWith("/") && !finalUrl.startsWith("http")) {
+            finalUrl = "/" + finalUrl;
+          }
+          // .html 확장자 보장 (관리자 pages 경로인 경우)
+          if (finalUrl.startsWith("/admin/pages/") && !finalUrl.endsWith(".html") && !finalUrl.includes("?")) {
+            finalUrl = finalUrl + ".html";
+          }
+          console.log("[로그인] ✅ 최종 관리자 페이지 URL:", finalUrl);
+          window.location.replace(finalUrl);
+          return;
         }
         
         window.location.replace(targetUrl);
