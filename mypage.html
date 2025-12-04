@@ -2788,6 +2788,43 @@
       window.location.href = `/payment.html?plan=${plan}`;
     }
     
+    // 토큰 정보와 결제 섹션 동기화
+    function syncTokenInfoWithPayment(cycle, profile) {
+      if (!cycle || !profile) return;
+      
+      try {
+        // 등급 정규화
+        const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
+        const isAdmin = normalizedLevel === 'admin' || profile.user_type === 'admin';
+        
+        // 토큰 정보
+        const tokensUsed = cycle.tokens_used || 0;
+        let tokensLimit = cycle.monthly_token_limit || 100;
+        let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+        
+        if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
+          tokensLimit = null;
+          tokensRemaining = null;
+        }
+        
+        // 결제 섹션의 토큰 정보 업데이트 (있는 경우)
+        const paymentPlanTokensEl = document.getElementById('paymentPlanTokens');
+        if (paymentPlanTokensEl) {
+          paymentPlanTokensEl.textContent = tokensLimit ? `${tokensLimit.toLocaleString()} 토큰` : '무제한';
+        }
+        
+        // 결제 섹션의 갱신일 업데이트
+        const paymentPlanDaysEl = document.getElementById('paymentPlanDays');
+        if (paymentPlanDaysEl && cycle.days_remaining) {
+          paymentPlanDaysEl.textContent = `${cycle.days_remaining}일`;
+        }
+        
+        console.log('✅ 토큰 정보와 결제 섹션 동기화 완료');
+      } catch (error) {
+        console.error('❌ 토큰 정보 동기화 실패:', error);
+      }
+    }
+    
     // 토큰 정보 새로고침
     async function refreshTokenInfo() {
       if (!supabase) {
