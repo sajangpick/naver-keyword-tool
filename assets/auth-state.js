@@ -187,8 +187,20 @@
     data: "userData",
   };
 
+  // 로그인 타입에 따라 사용할 스토리지 결정
+  function getStorage() {
+    const loginType = localStorage.getItem("loginType") || "auto";
+    return loginType === "manual" ? sessionStorage : localStorage;
+  }
+
   function persistSession(session) {
     if (!session?.user) return;
+    
+    // 로그인 타입 확인 (login.html에서 설정한 값)
+    const loginType = localStorage.getItem("loginType") || sessionStorage.getItem("loginType") || "auto";
+    const useSessionStorage = loginType === "manual";
+    const storage = useSessionStorage ? sessionStorage : localStorage;
+    
     const user = session.user;
     const userData = {
       id: user.id || "",
@@ -201,19 +213,42 @@
       photoURL: user.user_metadata?.avatar_url || "",
       provider: user.app_metadata?.provider || "kakao",
       loginTime: new Date().toISOString(),
+      loginType: loginType,
     };
     try {
-      localStorage.setItem(STORAGE_KEYS.data, JSON.stringify(userData));
-      localStorage.setItem(STORAGE_KEYS.status, "true");
-      console.log("[auth] ✅ 세션 저장 완료:", { email: userData.email, id: userData.id });
+      // 로그인 타입에 따라 다른 스토리지 사용
+      storage.setItem(STORAGE_KEYS.data, JSON.stringify(userData));
+      storage.setItem(STORAGE_KEYS.status, "true");
+      
+      // 로그인 타입 정보는 localStorage에도 저장 (다음에 확인하기 위해)
+      localStorage.setItem("loginType", loginType);
+      
+      // 반대 스토리지에서는 제거 (혼동 방지)
+      if (useSessionStorage) {
+        localStorage.removeItem(STORAGE_KEYS.data);
+        localStorage.removeItem(STORAGE_KEYS.status);
+      } else {
+        sessionStorage.removeItem(STORAGE_KEYS.data);
+        sessionStorage.removeItem(STORAGE_KEYS.status);
+      }
+      
+      console.log(`[auth] ✅ 세션 저장 완료 (${loginType === 'auto' ? '간편' : '수동'}):`, { 
+        email: userData.email, 
+        id: userData.id,
+        storage: useSessionStorage ? 'sessionStorage' : 'localStorage'
+      });
     } catch (error) {
       console.warn("[auth] Failed to persist session", error);
     }
   }
 
   function clearSession() {
+    // 두 스토리지 모두에서 제거 (혹시 모를 혼동 방지)
     localStorage.removeItem(STORAGE_KEYS.data);
     localStorage.removeItem(STORAGE_KEYS.status);
+    sessionStorage.removeItem(STORAGE_KEYS.data);
+    sessionStorage.removeItem(STORAGE_KEYS.status);
+    localStorage.removeItem("loginType");
   }
 
   async function syncSession() {
@@ -221,10 +256,38 @@
       const {
         data: { session },
       } = await supabaseClient.auth.getSession();
-      console.log("[auth] 세션 동기화:", { hasSession: !!session });
+      
+      // 로그인 타입 확인
+      const loginType = localStorage.getItem("loginType") || "auto";
+      const useSessionStorage = loginType === "manual";
+      const storage = useSessionStorage ? sessionStorage : localStorage;
+      
+      console.log("[auth] 세션 동기화:", { 
+        hasSession: !!session,
+        loginType: loginType,
+        storage: useSessionStorage ? 'sessionStorage' : 'localStorage'
+      });
+      
       if (session) {
-        persistSession(session);
+        // 수동 로그인인 경우 sessionStorage에서 세션 확인
+        if (useSessionStorage) {
+          const storedData = sessionStorage.getItem(STORAGE_KEYS.data);
+          if (!storedData) {
+            // sessionStorage에 없으면 브라우저가 재시작되었거나 탭이 닫혔다가 열린 것
+            // 자동 로그아웃 처리
+            console.log("[auth] 수동 로그인 세션 만료 감지 - 자동 로그아웃");
+            await supabaseClient.auth.signOut();
+            clearSession();
+          } else {
+            // sessionStorage에 있으면 세션 유지
+            persistSession(session);
+          }
+        } else {
+          // 간편 로그인은 항상 세션 유지
+          persistSession(session);
+        }
       } else {
+        // Supabase 세션이 없으면 모든 스토리지 정리
         clearSession();
       }
       window.dispatchEvent(new CustomEvent("auth:state-changed"));

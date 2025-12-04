@@ -303,6 +303,10 @@
     
     <div id="planSelectionGrid" style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 30px; justify-content: center;">
       <!-- 플랜 카드들이 여기에 동적으로 로드됩니다 -->
+      <div class="loading" id="planLoadingSpinner" style="width: 100%; text-align: center; padding: 40px;">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; color: #666;">플랜 정보를 불러오는 중...</p>
+      </div>
     </div>
   </div>
 
@@ -492,17 +496,15 @@
         document.getElementById('planSelectionContainer').style.display = 'none';
         document.getElementById('paymentContainer').style.display = 'block';
       } else {
-        // plan 파라미터가 없으면 플랜 선택 화면 표시하고 즉시 기본값으로 렌더링
+        // plan 파라미터가 없으면 플랜 선택 화면만 표시 (렌더링은 데이터 로드 후)
         document.getElementById('planSelectionContainer').style.display = 'block';
         document.getElementById('paymentContainer').style.display = 'none';
-        // 기본값으로 즉시 플랜 카드 렌더링
-        renderPlanSelection();
       }
     })();
     
-    // 페이지 초기화
+    // 페이지 초기화 - 데이터 로드 후 렌더링
     window.addEventListener('load', async function() {
-      // plan 파라미터가 없으면 데이터 로드 후 플랜 정보 업데이트
+      // plan 파라미터가 없으면 데이터 로드 후 플랜 카드 렌더링
       if (!plan) {
         // 가격 및 토큰 설정 로드
         await loadPlanSettings();
@@ -510,7 +512,7 @@
         // 현재 사용 중인 플랜 정보 로드
         await loadCurrentUserPlan();
         
-        // 플랜 정보 업데이트 후 다시 렌더링
+        // 데이터 로드 완료 후 플랜 카드 렌더링
         renderPlanSelection();
       } else {
         // plan 파라미터가 있으면 결제 화면용 데이터 로드
@@ -638,6 +640,12 @@
     function renderPlanSelection() {
       const container = document.getElementById('planSelectionGrid');
       if (!container) return;
+
+      // 로딩 스피너 숨기기
+      const loadingSpinner = document.getElementById('planLoadingSpinner');
+      if (loadingSpinner) {
+        loadingSpinner.style.display = 'none';
+      }
 
       const ownerPlans = [
         { key: 'seed', name: '라이트', icon: '🌱', color: '#16a34a' },

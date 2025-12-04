@@ -286,11 +286,19 @@
         font-size: 16px;
         font-weight: 700;
         display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      
+      .kakao-btn-content {
+        display: flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
 
       .kakao-btn:hover {
@@ -300,6 +308,13 @@
 
       .kakao-emoji {
         font-size: 18px;
+      }
+
+      .kakao-btn-desc {
+        font-size: 12px;
+        font-weight: 400;
+        color: rgba(60, 30, 30, 0.65);
+        display: block;
       }
 
       .signup-link {
@@ -494,9 +509,19 @@
         <div class="success-message" id="successMessage"></div>
 
         <div class="social-login">
-          <button class="kakao-btn" id="kakaoLogin">
-            <span class="kakao-emoji">💬</span>
-            카카오톡 아이디로 로그인
+          <button class="kakao-btn" id="kakaoLoginAuto">
+            <div class="kakao-btn-content">
+              <span class="kakao-emoji">💬</span>
+              <span>카카오 간편 로그인</span>
+            </div>
+            <span class="kakao-btn-desc">로그인 상태 유지</span>
+          </button>
+          <button class="kakao-btn" id="kakaoLoginManual" style="background: linear-gradient(135deg, #fee500 0%, #fde768 80%, #fee500 100%); opacity: 0.95;">
+            <div class="kakao-btn-content">
+              <span class="kakao-emoji">🔐</span>
+              <span>카카오 수동 로그인</span>
+            </div>
+            <span class="kakao-btn-desc">매번 로그인 필요</span>
           </button>
         </div>
 
@@ -565,6 +590,19 @@
         }
         
         try {
+          // 수동 로그인 타입인 경우 sessionStorage 확인
+          const loginType = localStorage.getItem("loginType");
+          if (loginType === "manual") {
+            const sessionData = sessionStorage.getItem("userData");
+            if (!sessionData) {
+              // sessionStorage에 세션이 없으면 자동 로그아웃 (브라우저 재시작 또는 탭 닫음)
+              console.log("[로그인] 수동 로그인 세션 만료 - 자동 로그아웃");
+              await window.authState.supabase.auth.signOut();
+              localStorage.removeItem("loginType");
+              return; // 로그인 페이지에 머무름
+            }
+          }
+          
           const { data: { session } } = await window.authState.supabase.auth.getSession();
           if (session) {
             window.location.replace(resolveRedirectTarget());
@@ -585,6 +623,12 @@
 
       function setLoggedInFromSession(session) {
         if (!session) return;
+        
+        // 로그인 타입 확인 (간편 로그인 또는 수동 로그인)
+        const loginType = sessionStorage.getItem('kakaoLoginType') || 'auto';
+        const useSessionStorage = loginType === 'manual';
+        const storage = useSessionStorage ? sessionStorage : localStorage;
+        
         const user = session.user || {};
         const userData = {
           id: user.id || "",
@@ -593,9 +637,30 @@
           photoURL: user.user_metadata?.avatar_url || "",
           provider: (user.app_metadata?.provider || "kakao"),
           loginTime: new Date().toISOString(),
+          loginType: loginType, // 로그인 타입 저장
         };
-        localStorage.setItem("userData", JSON.stringify(userData));
-        localStorage.setItem("isLoggedIn", "true");
+        
+        // 로그인 타입에 따라 다른 스토리지 사용
+        storage.setItem("userData", JSON.stringify(userData));
+        storage.setItem("isLoggedIn", "true");
+        
+        // 로그인 타입 플래그를 localStorage에도 저장 (auth-state.js에서 확인하기 위해)
+        if (useSessionStorage) {
+          localStorage.setItem("loginType", "manual");
+          // 수동 로그인인 경우 localStorage의 기존 세션 정보 삭제
+          localStorage.removeItem("userData");
+          localStorage.removeItem("isLoggedIn");
+        } else {
+          localStorage.setItem("loginType", "auto");
+          // 간편 로그인인 경우 sessionStorage의 기존 세션 정보 삭제
+          sessionStorage.removeItem("userData");
+          sessionStorage.removeItem("isLoggedIn");
+        }
+        
+        // 로그인 타입 플래그 제거 (다음 로그인을 위해)
+        sessionStorage.removeItem('kakaoLoginType');
+        
+        console.log(`[로그인] ${loginType === 'auto' ? '간편 로그인' : '수동 로그인'} - ${useSessionStorage ? 'sessionStorage' : 'localStorage'}에 저장됨`);
       }
 
       function redirectAfterLogin() {
@@ -678,58 +743,74 @@
         loading.style.display = "none";
       }
 
-      // Kakao 로그인 (Supabase OAuth 방식)
-      const kakaoLoginBtn = document.getElementById("kakaoLogin");
-      if (kakaoLoginBtn) {
-        kakaoLoginBtn.addEventListener("click", async () => {
-          try {
-            showLoading();
-            hideMessages();
-            
-            // Supabase 객체 대기
-            while (!supabase) {
-              await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            
-            // redirect 파라미터를 포함한 리다이렉트 URL 생성
-            let redirectUrl = window.location.origin + window.location.pathname;
-            if (redirectTarget) {
-              redirectUrl += '?redirect=' + encodeURIComponent(redirectTarget);
-            }
-            
-            console.log('[카카오 로그인] 카카오 로그인 페이지로 이동합니다...');
-            console.log('[카카오 로그인] 리다이렉트 URL:', redirectUrl);
-            
-            // Supabase OAuth를 사용한 카카오 로그인
-            // 이 함수는 카카오 로그인 페이지로 자동으로 리다이렉트됩니다
-            const { data, error } = await supabase.auth.signInWithOAuth({
-              provider: 'kakao',
-              options: {
-                redirectTo: redirectUrl,
-                // 카카오 로그인 페이지를 명시적으로 표시하도록 설정
-                queryParams: {
-                  prompt: 'login' // 카카오 로그인 페이지를 강제로 표시
-                }
-              }
-            });
-
-            if (error) {
-              hideLoading();
-              showError('로그인 실패: ' + error.message);
-              console.error('카카오 로그인 오류:', error);
-            } else {
-              // 성공 시 data.url로 리다이렉트 (카카오 로그인 페이지)
-              if (data?.url) {
-                console.log('[카카오 로그인] 카카오 로그인 페이지로 이동:', data.url);
-                // 카카오 로그인 페이지로 리다이렉트
-                window.location.href = data.url;
-              }
-            }
-          } catch (err) {
-            hideLoading();
-            showError('로그인 중 오류가 발생했습니다.');
-            console.error('로그인 오류:', err);
+      // 카카오 로그인 공통 함수
+      async function handleKakaoLogin(loginType) {
+        try {
+          showLoading();
+          hideMessages();
+          
+          // 로그인 타입 저장 (sessionStorage에 임시 저장 - 로그인 후 사용)
+          sessionStorage.setItem('kakaoLoginType', loginType);
+          
+          // Supabase 객체 대기
+          while (!supabase) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
+          
+          // redirect 파라미터를 포함한 리다이렉트 URL 생성
+          let redirectUrl = window.location.origin + window.location.pathname;
+          if (redirectTarget) {
+            redirectUrl += '?redirect=' + encodeURIComponent(redirectTarget);
+          }
+          
+          console.log(`[카카오 ${loginType === 'auto' ? '간편' : '수동'} 로그인] 카카오 로그인 페이지로 이동합니다...`);
+          console.log('[카카오 로그인] 리다이렉트 URL:', redirectUrl);
+          
+          // Supabase OAuth를 사용한 카카오 로그인
+          // 이 함수는 카카오 로그인 페이지로 자동으로 리다이렉트됩니다
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'kakao',
+            options: {
+              redirectTo: redirectUrl,
+              // 카카오 로그인 페이지를 명시적으로 표시하도록 설정
+              queryParams: {
+                prompt: 'login' // 카카오 로그인 페이지를 강제로 표시
+              }
+            }
+          });
+
+          if (error) {
+            hideLoading();
+            showError('로그인 실패: ' + error.message);
+            console.error('카카오 로그인 오류:', error);
+          } else {
+            // 성공 시 data.url로 리다이렉트 (카카오 로그인 페이지)
+            if (data?.url) {
+              console.log('[카카오 로그인] 카카오 로그인 페이지로 이동:', data.url);
+              // 카카오 로그인 페이지로 리다이렉트
+              window.location.href = data.url;
+            }
+          }
+        } catch (err) {
+          hideLoading();
+          showError('로그인 중 오류가 발생했습니다.');
+          console.error('로그인 오류:', err);
+        }
+      }
+
+      // 카카오 간편 로그인 (세션 유지)
+      const kakaoLoginAutoBtn = document.getElementById("kakaoLoginAuto");
+      if (kakaoLoginAutoBtn) {
+        kakaoLoginAutoBtn.addEventListener("click", () => {
+          handleKakaoLogin('auto');
+        });
+      }
+
+      // 카카오 수동 로그인 (세션 미유지)
+      const kakaoLoginManualBtn = document.getElementById("kakaoLoginManual");
+      if (kakaoLoginManualBtn) {
+        kakaoLoginManualBtn.addEventListener("click", () => {
+          handleKakaoLogin('manual');
         });
       }
     </script>

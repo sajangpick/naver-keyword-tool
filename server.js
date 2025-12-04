@@ -9,6 +9,7 @@ const { spawn } = require("child_process");
 const helmet = require("helmet");
 const { createClient } = require("@supabase/supabase-js");
 const multer = require("multer");
+const { trackTokenUsage, checkTokenLimit } = require("./api/middleware/token-tracker");
 
 const app = express();
 app.set("trust proxy", true);
@@ -4736,7 +4737,7 @@ async function initializeShortsTable() {
 // ==================== Gemini 영상 생성 API 설정 ====================
 
 // Gemini API로 이미지 분석 및 영상 생성 프롬프트 개선
-async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, style, duration) {
+async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, style, duration, userId = null) {
   try {
     devLog("Gemini API로 이미지 분석 및 프롬프트 생성 시작:", { imageUrl, menuName, style });
 
@@ -4896,9 +4897,37 @@ async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, s
       const finalPrompt = `${videoPrompt}. ${styleKeyword}. ${menuName}${menuFeatures ? ', ' + menuFeatures : ''}. High quality, professional food video, ${duration} seconds, vertical format (9:16 aspect ratio).`;
 
       devLog("Gemini 프롬프트 생성 완료 (스타일 반영):", finalPrompt);
+      
+      // Gemini API 응답에서 토큰 사용량 추출 및 추적
+      let tokenUsage = null;
+      if (response.data.usageMetadata) {
+        tokenUsage = {
+          promptTokens: response.data.usageMetadata.promptTokenCount || 0,
+          candidatesTokens: response.data.usageMetadata.candidatesTokenCount || 0,
+          totalTokens: response.data.usageMetadata.totalTokenCount || 0
+        };
+        
+        // 토큰 추적 (사용자 ID가 있을 경우)
+        if (userId && tokenUsage.totalTokens > 0) {
+          try {
+            const trackingResult = await trackTokenUsage(userId, {
+              input_tokens: tokenUsage.promptTokens,
+              output_tokens: tokenUsage.candidatesTokens,
+              total_tokens: tokenUsage.totalTokens
+            }, 'gemini-image-analysis');
+            
+            devLog(`✅ [토큰 추적] Gemini 이미지 분석: ${tokenUsage.totalTokens} 토큰 사용 (남은 토큰: ${trackingResult.remaining || 'N/A'})`);
+          } catch (trackError) {
+            devError("토큰 추적 오류:", trackError);
+            // 토큰 추적 실패해도 계속 진행
+          }
+        }
+      }
+      
       return {
         prompt: finalPrompt,
         analysis: geminiResponse,
+        tokenUsage: tokenUsage
       };
     } else {
       throw new Error("Gemini API 응답 형식 오류");
@@ -4989,7 +5018,7 @@ async function pollGeminiOperation(operationName, timeoutMs = 600000) {
   throw new Error("Gemini Veo 작업이 제한 시간 내 완료되지 않았습니다.");
 }
 
-async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageBase64 = null, imageMimeType = 'image/jpeg') {
+async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageBase64 = null, imageMimeType = 'image/jpeg', userId = null) {
   // 변수들을 함수 스코프로 이동 (catch 블록에서 접근 가능하도록)
   const veoModel = GEMINI_VEO_MODEL;
   const VEO_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:predictLongRunning`;
@@ -5152,6 +5181,31 @@ async function generateVideoWithGeminiVeo(imageUrl, prompt, duration = 8, imageB
     }
 
     devLog("Gemini Veo 영상 생성 완료:", { videoUrl, jobId });
+
+    // Veo 비용을 토큰으로 환산하여 추적
+    // Veo 3 Fast: 초당 $0.15, 8초 = $1.20
+    // OpenAI 기준: $1.20 ≈ 1000 토큰 (대략적 환산)
+    if (userId) {
+      try {
+        const veoCostPerSecond = 0.15; // Veo 3 Fast 기준
+        const actualDuration = Math.min(duration, 8); // 1080p는 최대 8초
+        const veoCost = veoCostPerSecond * actualDuration; // $1.20 (8초 기준)
+        const equivalentTokens = Math.round(veoCost * 833); // $1 ≈ 833 토큰 환산
+        
+        devLog(`💰 [Veo 비용] ${actualDuration}초 영상 생성: $${veoCost.toFixed(2)} (토큰 환산: ${equivalentTokens} 토큰)`);
+        
+        const trackingResult = await trackTokenUsage(userId, {
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: equivalentTokens
+        }, 'gemini-veo-video');
+        
+        devLog(`✅ [토큰 추적] Gemini Veo 영상 생성: ${equivalentTokens} 토큰 사용 (남은 토큰: ${trackingResult.remaining || 'N/A'})`);
+      } catch (trackError) {
+        devError("Veo 토큰 추적 오류:", trackError);
+        // 토큰 추적 실패해도 계속 진행
+      }
+    }
 
     return { videoUrl, jobId };
   } catch (error) {
@@ -5712,6 +5766,26 @@ app.post("/api/shorts/generate", upload.fields([
         
         devLog(`이미지 업로드 완료: 메인 1장, 추가 ${additionalImages.length}장`);
 
+        // 토큰 한도 사전 체크 (영상 생성 예상 토큰: 500 + 1000 = 1500 토큰)
+        if (userId) {
+          try {
+            const estimatedTokens = 1500; // Gemini 이미지 분석(500) + Veo 비용 환산(1000)
+            const limitCheck = await checkTokenLimit(userId, estimatedTokens);
+            if (!limitCheck.success) {
+              return res.status(403).json({
+                success: false,
+                error: limitCheck.error || "토큰 한도를 초과했습니다. 구독을 업그레이드하거나 다음 달을 기다려주세요.",
+                tokensRemaining: limitCheck.tokensRemaining || 0,
+                monthlyLimit: limitCheck.monthlyLimit || 0
+              });
+            }
+            devLog(`✅ [토큰 체크] 예상 토큰 ${estimatedTokens} 확인 완료 (남은 토큰: ${limitCheck.tokensRemaining})`);
+          } catch (tokenError) {
+            devError("토큰 한도 체크 오류:", tokenError);
+            // 토큰 체크 실패해도 계속 진행 (서비스 중단 방지)
+          }
+        }
+        
         // Gemini API로 이미지 분석 및 영상 생성 프롬프트 생성
         devLog("Gemini로 이미지 분석 및 프롬프트 생성 시작...");
         let prompt, analysis;
@@ -5721,7 +5795,8 @@ app.post("/api/shorts/generate", upload.fields([
             menuName,
             menuFeatures,
             style,
-            parseInt(duration) || 10
+            parseInt(duration) || 10,
+            userId
           );
           prompt = result.prompt;
           analysis = result.analysis;
@@ -5914,7 +5989,7 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
                 mimeType: imageMimeType
               });
               
-              const veoResult = await generateVideoWithGeminiVeo(null, prompt, Math.min(parseInt(duration) || 8, 8), imageBase64, imageMimeType);
+              const veoResult = await generateVideoWithGeminiVeo(null, prompt, Math.min(parseInt(duration) || 8, 8), imageBase64, imageMimeType, userId);
               videoUrl = veoResult.videoUrl;
               jobId = veoResult.jobId;
               aiModel = "gemini-veo-3.1";
