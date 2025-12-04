@@ -268,6 +268,75 @@
         font-size: 18px;
       }
     }
+
+    /* 푸터 스타일 */
+    .site-footer {
+      background: rgba(255, 255, 255, 0.95);
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 40px 20px;
+      margin-top: 80px;
+      color: var(--text-secondary);
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .footer-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .footer-label {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .footer-value {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .footer-value a {
+      color: var(--accent-color);
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .footer-value a:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .site-footer {
+        padding: 32px 16px;
+        margin-top: 60px;
+      }
+
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        font-size: 12px;
+      }
+
+      .footer-label {
+        font-size: 12px;
+      }
+
+      .footer-value {
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -421,6 +490,36 @@
       </a>
     </div>
   </div>
+
+  <!-- 푸터 -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-item">
+        <div class="footer-label">대표자명</div>
+        <div class="footer-value">오대준</div>
+      </div>
+      <div class="footer-item">
+        <div class="footer-label">사업장 주소지</div>
+        <div class="footer-value">부산광역시 북구 백양대로 1003 5동307호</div>
+      </div>
+      <div class="footer-item">
+        <div class="footer-label">사업자 번호</div>
+        <div class="footer-value">441-31-01878</div>
+      </div>
+      <div class="footer-item">
+        <div class="footer-label">이메일 주소</div>
+        <div class="footer-value">
+          <a href="mailto:ohdaejun@naver.com">ohdaejun@naver.com</a>
+        </div>
+      </div>
+      <div class="footer-item">
+        <div class="footer-label">전화번호</div>
+        <div class="footer-value">
+          <a href="tel:010-6664-3744">010-6664-3744</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>
 

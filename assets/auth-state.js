@@ -196,8 +196,11 @@
   function persistSession(session) {
     if (!session?.user) return;
     
-    // 로그인 타입 확인 (login.html에서 설정한 값)
-    const loginType = localStorage.getItem("loginType") || sessionStorage.getItem("loginType") || "auto";
+    // 로그인 타입 확인 (현재 로그인 시도에서 설정한 kakaoLoginType을 우선 확인)
+    // kakaoLoginType은 login.html에서 버튼 클릭 시 설정됨
+    const loginType = sessionStorage.getItem("kakaoLoginType") || 
+                      localStorage.getItem("loginType") || 
+                      "auto";
     const useSessionStorage = loginType === "manual";
     const storage = useSessionStorage ? sessionStorage : localStorage;
     
@@ -222,6 +225,9 @@
       
       // 로그인 타입 정보는 localStorage에도 저장 (다음에 확인하기 위해)
       localStorage.setItem("loginType", loginType);
+      
+      // kakaoLoginType은 login.html에서 제거하므로 여기서는 제거하지 않음
+      // (login.html의 setLoggedInFromSession에서도 사용할 수 있도록)
       
       // 반대 스토리지에서는 제거 (혼동 방지)
       if (useSessionStorage) {

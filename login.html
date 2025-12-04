@@ -437,6 +437,75 @@
           font-size: 12px;
         }
       }
+
+      /* 푸터 스타일 */
+      .site-footer {
+        background: rgba(255, 255, 255, 0.95);
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 40px 20px;
+        margin-top: 80px;
+        color: var(--text-secondary);
+      }
+
+      .footer-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 24px;
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .footer-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .footer-label {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .footer-value {
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      .footer-value a {
+        color: var(--accent-color);
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .footer-value a:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        .site-footer {
+          padding: 32px 16px;
+          margin-top: 60px;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          gap: 20px;
+          font-size: 12px;
+        }
+
+        .footer-label {
+          font-size: 12px;
+        }
+
+        .footer-value {
+          font-size: 12px;
+        }
+      }
     </style>
     <!-- Meta Pixel Code -->
     <script>
@@ -563,8 +632,13 @@
       }
 
       function resolveRedirectTarget() {
-        // sessionStorage에서 redirect 다시 확인
+        // sessionStorage에서 redirect 다시 확인 (OAuth 콜백 후에도 유지되도록)
         let target = redirectTarget || sessionStorage.getItem('loginRedirect');
+        
+        console.log("[로그인] resolveRedirectTarget 호출");
+        console.log("[로그인] redirectTarget 변수:", redirectTarget);
+        console.log("[로그인] sessionStorage loginRedirect:", sessionStorage.getItem('loginRedirect'));
+        console.log("[로그인] 최종 target:", target);
         
         if (!target) {
           console.log("[로그인] redirect 파라미터 없음, index.html로 이동");
@@ -573,11 +647,11 @@
         
         // URL 디코딩 (encodeURIComponent로 인코딩된 경우)
         let decodedTarget = decodeURIComponent(target);
-        console.log("[로그인] redirect 대상:", decodedTarget);
+        console.log("[로그인] 디코딩된 redirect 대상:", decodedTarget);
         
         // 관리자 페이지에서 로그인한 경우 관리자 페이지로 리다이렉트
         if (decodedTarget.startsWith("/admin/")) {
-          console.log("[로그인] 관리자 페이지로 리다이렉트:", decodedTarget);
+          console.log("[로그인] ✅ 관리자 페이지로 리다이렉트:", decodedTarget);
           sessionStorage.removeItem('loginRedirect'); // 사용 후 제거
           return decodedTarget;
         }
@@ -679,7 +753,9 @@
       }
 
       function redirectAfterLogin() {
-        window.location.replace(resolveRedirectTarget());
+        const targetUrl = resolveRedirectTarget();
+        console.log("[로그인] redirectAfterLogin - 최종 리다이렉트 URL:", targetUrl);
+        window.location.replace(targetUrl);
       }
 
       // 페이지 로드 시 Supabase 세션 확인 및 상태 변화 감지
@@ -699,8 +775,12 @@
           
           const { data: { session } } = await supabaseClient.auth.getSession();
           if (session) {
+            console.log("[로그인] 세션 발견 - 로그인 처리 시작");
             setLoggedInFromSession(session);
-            redirectAfterLogin();
+            // 약간의 지연 후 리다이렉트 (세션 저장 완료 대기)
+            setTimeout(() => {
+              redirectAfterLogin();
+            }, 100);
           } else {
             hideLoading();
           }
@@ -714,9 +794,13 @@
           console.log('Auth state changed:', event, session ? '세션 있음' : '세션 없음');
           
           if (event === "SIGNED_IN" && session) {
+            console.log("[로그인] SIGNED_IN 이벤트 감지 - 로그인 처리 시작");
             showLoading();
             setLoggedInFromSession(session);
-            redirectAfterLogin();
+            // 약간의 지연 후 리다이렉트 (세션 저장 완료 대기)
+            setTimeout(() => {
+              redirectAfterLogin();
+            }, 100);
           } else if (event === "SIGNED_OUT") {
             hideLoading();
           }
@@ -772,10 +856,18 @@
             await new Promise(resolve => setTimeout(resolve, 100));
           }
           
+          // redirect 파라미터 확인 (URL 파라미터 또는 sessionStorage에서)
+          const currentRedirect = redirectTarget || sessionStorage.getItem('loginRedirect');
+          
           // redirect 파라미터를 포함한 리다이렉트 URL 생성
           let redirectUrl = window.location.origin + window.location.pathname;
-          if (redirectTarget) {
-            redirectUrl += '?redirect=' + encodeURIComponent(redirectTarget);
+          if (currentRedirect) {
+            redirectUrl += '?redirect=' + encodeURIComponent(currentRedirect);
+            // sessionStorage에도 저장 (OAuth 콜백 후에도 유지)
+            sessionStorage.setItem('loginRedirect', currentRedirect);
+            console.log('[카카오 로그인] redirect 파라미터 포함:', currentRedirect);
+          } else {
+            console.log('[카카오 로그인] redirect 파라미터 없음');
           }
           
           console.log(`[카카오 ${loginType === 'auto' ? '간편' : '수동'} 로그인] 카카오 로그인 페이지로 이동합니다...`);
@@ -840,5 +932,35 @@
     <script src="/assets/analytics.js"></script>
     <script src="/assets/error-logger.js"></script>
     <script src="/assets/performance-tracker.js"></script>
+
+    <!-- 푸터 -->
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-item">
+          <div class="footer-label">대표자명</div>
+          <div class="footer-value">오대준</div>
+        </div>
+        <div class="footer-item">
+          <div class="footer-label">사업장 주소지</div>
+          <div class="footer-value">부산광역시 북구 백양대로 1003 5동307호</div>
+        </div>
+        <div class="footer-item">
+          <div class="footer-label">사업자 번호</div>
+          <div class="footer-value">441-31-01878</div>
+        </div>
+        <div class="footer-item">
+          <div class="footer-label">이메일 주소</div>
+          <div class="footer-value">
+            <a href="mailto:ohdaejun@naver.com">ohdaejun@naver.com</a>
+          </div>
+        </div>
+        <div class="footer-item">
+          <div class="footer-label">전화번호</div>
+          <div class="footer-value">
+            <a href="tel:010-6664-3744">010-6664-3744</a>
+          </div>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>
