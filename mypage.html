@@ -914,7 +914,7 @@
         <!-- 결제 및 플랜 정보 -->
         <div class="stats-grid">
           <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='/payment.html'">
-            <div class="stat-number" id="currentPlanName">씨앗</div>
+            <div class="stat-number" id="currentPlanName">라이트</div>
             <div class="stat-label">현재 플랜</div>
             <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
               <i class="fas fa-arrow-right"></i> 플랜 변경하기
@@ -944,7 +944,7 @@
           <!-- 토큰 현황 카드 -->
           <div class="token-status-card">
             <div class="token-plan">
-              <span class="plan-name" id="currentPlan">씨앗</span>
+              <span class="plan-name" id="currentPlan">라이트</span>
               <span class="plan-badge" id="planBadge">무료</span>
             </div>
             
@@ -1014,7 +1014,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <div>
                 <h4 style="margin: 0 0 5px 0; color: var(--text-primary); font-size: 18px; font-weight: 700;">
-                  <span id="paymentPlanName">씨앗 플랜</span>
+                  <span id="paymentPlanName">라이트 플랜</span>
                 </h4>
                 <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">
                   <span id="paymentPlanBadge">무료</span>
@@ -1508,15 +1508,15 @@
 
     // 등급 한글명 (관리자 페이지와 동일하게)
     const LEVEL_NAMES = {
-      free: '씨앗',      // FREE 등급도 씨앗으로 표시
-      seed: '씨앗',
-      power: '파워',
-      big_power: '빅파워',
-      bigpower: '빅파워',
+      free: '라이트',      // FREE 등급도 라이트로 표시
+      seed: '라이트',
+      power: '스탠다드',
+      big_power: '프로',
+      bigpower: '프로',
       premium: '프리미엄',
-      elite: '엘리트',
-      expert: '전문가',
-      master: '마스터',
+      elite: '스타터',
+      expert: '프로',
+      master: '엔터프라이즈',
       platinum: '플래티넘',
       admin: '관리자'
     };
@@ -1712,7 +1712,7 @@
     function updateUsageStats(profile) {
       // 등급 정규화 (관리자 페이지와 동일한 로직)
       const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
-      const currentPlanName = LEVEL_NAMES[normalizedLevel] || '씨앗';
+      const currentPlanName = LEVEL_NAMES[normalizedLevel] || '라이트';
       
       // 디버깅: 플랜 이름 설정 확인
       console.log('📊 [updateUsageStats] 플랜 이름 설정:', {
@@ -1789,7 +1789,7 @@
     function updatePaymentUI(data) {
       if (!data || !data.profile) {
         // 기본값
-        document.getElementById('paymentPlanName').textContent = '씨앗 플랜';
+        document.getElementById('paymentPlanName').textContent = '라이트 플랜';
         document.getElementById('paymentPlanBadge').textContent = '무료';
         document.getElementById('paymentPlanPrice').textContent = '무료';
         document.getElementById('paymentPlanTokens').textContent = '100 토큰';
@@ -1853,9 +1853,9 @@
       }
 
       const planNames = {
-        seed: { name: '씨앗 플랜', badge: '무료' },
-        power: { name: '파워 플랜', badge: '베이직' },
-        bigpower: { name: '빅파워 플랜', badge: '프로' },
+        seed: { name: '라이트 플랜', badge: '무료' },
+        power: { name: '스탠다드 플랜', badge: '베이직' },
+        bigpower: { name: '프로 플랜', badge: '프로' },
         premium: { name: '프리미엄 플랜', badge: 'VIP' },
         admin: { name: '관리자 플랜', badge: '관리자' }
       };
@@ -1893,7 +1893,7 @@
       const ownerPlans = [
         { 
           key: 'seed', 
-          name: '씨앗', 
+          name: '라이트', 
           icon: '🌱', 
           color: 'var(--success)',
           priceKey: 'owner_seed_price',
@@ -1903,7 +1903,7 @@
         },
         { 
           key: 'power', 
-          name: '파워', 
+          name: '스탠다드', 
           icon: '⚡', 
           color: '#f59e0b',
           priceKey: 'owner_power_price',
@@ -1913,7 +1913,7 @@
         },
         { 
           key: 'bigpower', 
-          name: '빅파워', 
+          name: '프로', 
           icon: '💪', 
           color: '#f97316',
           priceKey: 'owner_bigpower_price',
@@ -2278,7 +2278,7 @@
           console.error('❌ API 응답 실패:', errorMsg);
           
           // 에러가 발생해도 기본값은 표시
-          document.getElementById('currentPlan').textContent = '씨앗';
+          document.getElementById('currentPlan').textContent = '라이트';
           document.getElementById('planBadge').textContent = '무료';
           document.getElementById('tokensUsed').textContent = '0';
           document.getElementById('tokensLimit').textContent = '100';
@@ -2329,9 +2329,9 @@
             'power': '베이직',
             'bigpower': '프로',
             'premium': 'VIP',
-            'elite': '엘리트',
-            'expert': '전문가',
-            'master': '마스터',
+            'elite': '스타터',
+            'expert': '프로',
+            'master': '엔터프라이즈',
             'platinum': '플래티넘',
             'admin': '관리자'
           };
@@ -2340,12 +2340,12 @@
           console.log('📊 [loadTokenInfo] 등급 정보:', {
             original_membership_level: profile?.membership_level,
             normalized_level: normalizedLevel,
-            plan_name: LEVEL_NAMES[normalizedLevel] || '씨앗',
+            plan_name: LEVEL_NAMES[normalizedLevel] || '라이트',
             fullProfile: profile
           });
           
           document.getElementById('currentPlan').textContent = 
-            LEVEL_NAMES[normalizedLevel] || '씨앗';
+            LEVEL_NAMES[normalizedLevel] || '라이트';
           document.getElementById('planBadge').textContent = 
             planBadges[normalizedLevel] || '무료';
           
@@ -2535,7 +2535,7 @@
         const tokensRemainingEl = document.getElementById('tokensRemaining');
         const usagePercentEl = document.getElementById('usagePercent');
         
-        if (currentPlanEl) currentPlanEl.textContent = '씨앗';
+        if (currentPlanEl) currentPlanEl.textContent = '라이트';
         if (planBadgeEl) planBadgeEl.textContent = '무료';
         if (tokensUsedEl) tokensUsedEl.textContent = '0';
         if (tokensLimitEl) tokensLimitEl.textContent = '100';

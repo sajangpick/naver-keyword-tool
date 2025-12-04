@@ -917,25 +917,25 @@
                 전체 <span class="badge" id="count-all">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('seed')">
-                🌱 씨앗 <span class="badge" id="count-seed">0</span>
+                🌱 라이트 <span class="badge" id="count-seed">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('power')">
-                ⚡ 파워 <span class="badge" id="count-power">0</span>
+                ⚡ 스탠다드 <span class="badge" id="count-power">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('big_power')">
-                💪 빅파워 <span class="badge" id="count-big_power">0</span>
+                💪 프로 <span class="badge" id="count-big_power">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('premium')">
                 ⭐ 프리미엄 <span class="badge" id="count-premium">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('elite')">
-                🏆 엘리트 <span class="badge" id="count-elite">0</span>
+                🏆 스타터 <span class="badge" id="count-elite">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('expert')">
-                🎯 전문가 <span class="badge" id="count-expert">0</span>
+                🎯 프로 <span class="badge" id="count-expert">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('master')">
-                👑 마스터 <span class="badge" id="count-master">0</span>
+                👑 엔터프라이즈 <span class="badge" id="count-master">0</span>
               </button>
               <button class="level-tab" onclick="filterByLevel('platinum')">
                 💎 플래티넘 <span class="badge" id="count-platinum">0</span>
@@ -1413,13 +1413,13 @@
 
         // 회원 유형에 따라 색상 적용
         if (currentUserType === 'owner') {
-          // 식당 대표 등급: 씨앗, 파워, 빅파워, 프리미엄
+          // 식당 대표 등급: 라이트, 스탠다드, 프로, 프리미엄
           ['seed', 'power', 'big_power', 'premium'].forEach(level => {
             const tab = document.querySelector(`.level-tab[onclick*="'${level}'"]`);
             if (tab) tab.classList.add('owner-color');
           });
         } else if (currentUserType === 'agency') {
-          // 대행사 등급: 엘리트, 전문가, 마스터, 플래티넘
+          // 대행사 등급: 스타터, 프로, 엔터프라이즈, 플래티넘
           ['elite', 'expert', 'master', 'platinum'].forEach(level => {
             const tab = document.querySelector(`.level-tab[onclick*="'${level}'"]`);
             if (tab) tab.classList.add('agency-color');
@@ -1623,13 +1623,13 @@
 
       function getLevelText(level) {
         const levels = {
-          'seed': '씨앗',
-          'power': '파워',
-          'big_power': '빅파워',
+          'seed': '라이트',
+          'power': '스탠다드',
+          'big_power': '프로',
           'premium': '프리미엄',
-          'elite': '엘리트',
-          'expert': '전문가',
-          'master': '마스터',
+          'elite': '스타터',
+          'expert': '프로',
+          'master': '엔터프라이즈',
           'platinum': '플래티넘',
           'admin': '관리자'
         };

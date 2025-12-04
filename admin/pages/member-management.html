@@ -1042,16 +1042,16 @@
         }
       };
 
-      // 등급 한글명 (FREE도 씨앗으로 표시)
+      // 등급 한글명 (FREE도 라이트로 표시)
       const LEVEL_NAMES = {
-        free: '씨앗',      // FREE 등급도 씨앗으로 표시
-        seed: '씨앗',
-        power: '파워',
-        big_power: '빅파워',
+        free: '라이트',      // FREE 등급도 라이트로 표시
+        seed: '라이트',
+        power: '스탠다드',
+        big_power: '프로',
         premium: '프리미엄',
-        elite: '엘리트',
-        expert: '전문가',
-        master: '마스터',
+        elite: '스타터',
+        expert: '프로',
+        master: '엔터프라이즈',
         platinum: '플래티넘',
         admin: '관리자'
       };
@@ -1120,9 +1120,9 @@
           ownerGroup.label = '식당 대표 (owner)';
           
           const ownerLevels = [
-            { key: 'seed', label: '🌱 씨앗', tokenKey: 'owner_seed_limit', priceKey: 'owner_seed_price' },
-            { key: 'power', label: '⚡ 파워', tokenKey: 'owner_power_limit', priceKey: 'owner_power_price' },
-            { key: 'bigpower', label: '💪 빅파워', tokenKey: 'owner_bigpower_limit', priceKey: 'owner_bigpower_price' },
+            { key: 'seed', label: '🌱 라이트', tokenKey: 'owner_seed_limit', priceKey: 'owner_seed_price' },
+            { key: 'power', label: '⚡ 스탠다드', tokenKey: 'owner_power_limit', priceKey: 'owner_power_price' },
+            { key: 'bigpower', label: '💪 프로', tokenKey: 'owner_bigpower_limit', priceKey: 'owner_bigpower_price' },
             { key: 'premium', label: '⭐ 프리미엄', tokenKey: 'owner_premium_limit', priceKey: 'owner_premium_price' }
           ];
 
@@ -1142,9 +1142,9 @@
           agencyGroup.label = '대행사/블로거 (agency)';
           
           const agencyLevels = [
-            { key: 'elite', label: '🏆 엘리트', tokenKey: 'agency_elite_limit', priceKey: 'agency_elite_price' },
-            { key: 'expert', label: '🎯 전문가', tokenKey: 'agency_expert_limit', priceKey: 'agency_expert_price' },
-            { key: 'master', label: '👑 마스터', tokenKey: 'agency_master_limit', priceKey: 'agency_master_price' },
+            { key: 'elite', label: '🏆 스타터', tokenKey: 'agency_elite_limit', priceKey: 'agency_elite_price' },
+            { key: 'expert', label: '🎯 프로', tokenKey: 'agency_expert_limit', priceKey: 'agency_expert_price' },
+            { key: 'master', label: '👑 엔터프라이즈', tokenKey: 'agency_master_limit', priceKey: 'agency_master_price' },
             { key: 'premium', label: '💎 프리미엄', tokenKey: 'agency_premium_limit', priceKey: 'agency_premium_price' }
           ];
 
