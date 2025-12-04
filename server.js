@@ -4736,8 +4736,8 @@ async function initializeShortsTable() {
 
 // ==================== Gemini 영상 생성 API 설정 ====================
 
-// Gemini API로 이미지 분석 및 영상 생성 프롬프트 개선
-async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, style, duration, userId = null) {
+// Gemini API로 이미지 분석 및 영상 생성 프롬프트 개선 (여러 이미지 지원)
+async function generateVideoPromptWithGemini(imageUrl, menuName, menuFeatures, style, duration, userId = null, additionalImageUrls = []) {
   try {
     devLog("Gemini API로 이미지 분석 및 프롬프트 생성 시작:", { imageUrl, menuName, style });
 
