@@ -1360,6 +1360,48 @@
             flex: 1;
         }
 
+        /* 토큰 부족 경고 모달 */
+        .token-warning-box {
+            background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 107, 53, 0.1) 100%);
+            border: 2px solid var(--warning);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .token-warning-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--warning);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px;
+            color: var(--white);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .token-warning-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--warning);
+            margin-bottom: 8px;
+        }
+
+        .token-warning-message {
+            font-size: 14px;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        .token-modal-icon.warning {
+            background: rgba(255, 152, 0, 0.15);
+            color: var(--warning);
+        }
+
         /* 사이드바 */
         .side-nav {
             background: #ffe8d9;
@@ -1900,6 +1942,17 @@
                 </div>
                 <h2 class="token-modal-title">토큰 사용 확인</h2>
                 <p class="token-modal-subtitle">영상 생성에 필요한 토큰을 확인해주세요</p>
+            </div>
+            <!-- 토큰 부족 경고 메시지 (토큰 부족 시에만 표시) -->
+            <div class="token-warning-box hidden" id="tokenWarningBox">
+                <div class="token-warning-icon">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                </div>
+                <div class="token-warning-title">토큰이 부족합니다</div>
+                <div class="token-warning-message">
+                    영상 생성에 필요한 토큰이 부족합니다.<br>
+                    토큰을 충전하거나 구독을 업그레이드해주세요.
+                </div>
             </div>
             <div class="token-info-box">
                 <div class="token-info-item">
@@ -2597,6 +2650,12 @@
                 return;
             }
 
+            // 토큰 정보를 먼저 조회하여 실제 정보 확인
+            const tokenInfo = await fetchTokenInfo();
+            if (!tokenInfo) {
+                console.warn('⚠️ [영상 생성] 토큰 정보를 가져올 수 없습니다. 모달을 표시합니다.');
+            }
+
             // 토큰 확인 팝업 표시
             await showTokenModal();
         }
@@ -2607,7 +2666,13 @@
                 // Supabase 세션 토큰 가져오기 (mypage.html과 동일)
                 let supabase = null;
                 
-                // auth-state.js가 로드되어 있으면 사용
+                // auth-state.js가 로드될 때까지 대기 (mypage.html과 동일)
+                let waitCount = 0;
+                while (!window.authState?.supabase && waitCount < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    waitCount++;
+                }
+                
                 if (window.authState?.supabase) {
                     supabase = window.authState.supabase;
                 } else {
@@ -2736,7 +2801,7 @@
         }
 
         // 토큰 모달 표시
-        async function showTokenModal() {
+        async function showTokenModal(showWarning = false) {
             const modal = document.getElementById('tokenModal');
             if (!modal) {
                 console.error('❌ [토큰 모달] 모달 요소를 찾을 수 없습니다');
@@ -2744,6 +2809,17 @@
             }
 
             const estimatedTokens = 1500;
+            const warningBox = document.getElementById('tokenWarningBox');
+            const modalIcon = document.querySelector('.token-modal-icon');
+            
+            // 경고 메시지 초기화
+            if (warningBox) {
+                warningBox.classList.add('hidden');
+            }
+            if (modalIcon) {
+                modalIcon.classList.remove('warning');
+                modalIcon.innerHTML = '<i class="fa-solid fa-coins"></i>';
+            }
             
             // 로딩 상태 표시
             document.getElementById('remainingTokens').textContent = '조회 중...';
@@ -2775,6 +2851,16 @@
                     const remaining = Number(tokenInfo.remaining) || 0;
                     const limit = Number(tokenInfo.limit) || 100;
                     const afterTokens = remaining - estimatedTokens;
+                    const isInsufficient = remaining < estimatedTokens || showWarning;
+                    
+                    // 토큰 부족 시 경고 표시
+                    if (isInsufficient && warningBox) {
+                        warningBox.classList.remove('hidden');
+                    }
+                    if (isInsufficient && modalIcon) {
+                        modalIcon.classList.add('warning');
+                        modalIcon.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
+                    }
                     
                     // 현재 남은 토큰 표시
                     const remainingEl = document.getElementById('remainingTokens');
@@ -2790,19 +2876,51 @@
                         remaining,
                         limit,
                         afterTokens,
-                        estimatedTokens
+                        estimatedTokens,
+                        isInsufficient
                     });
                 }
             } else {
-                // 조회 실패 시 기본값 표시
-                console.warn('⚠️ [토큰 모달] 토큰 정보 조회 실패, 기본값 표시');
-                const defaultRemaining = 100;
-                const defaultAfter = defaultRemaining - estimatedTokens;
+                // 조회 실패 시 재시도 및 안내 메시지 표시
+                console.warn('⚠️ [토큰 모달] 토큰 정보 조회 실패, 재시도 중...');
                 
-                document.getElementById('remainingTokens').textContent = defaultRemaining.toLocaleString() + ' 토큰 (기본값)';
-                document.getElementById('remainingTokens').className = 'token-info-value warning';
-                document.getElementById('afterTokens').textContent = defaultAfter.toLocaleString() + ' 토큰';
-                document.getElementById('afterTokens').className = 'token-info-value warning';
+                // 잠시 후 재시도
+                setTimeout(async () => {
+                    const retryTokenInfo = await fetchTokenInfo();
+                    if (retryTokenInfo) {
+                        // 재시도 성공 시 토큰 정보 업데이트
+                        const isUnlimited = retryTokenInfo.isUnlimited || retryTokenInfo.remaining === null || retryTokenInfo.limit === null;
+                        
+                        if (isUnlimited) {
+                            document.getElementById('remainingTokens').textContent = '무제한';
+                            document.getElementById('remainingTokens').className = 'token-info-value success';
+                            document.getElementById('afterTokens').textContent = '무제한';
+                            document.getElementById('afterTokens').className = 'token-info-value success';
+                        } else {
+                            const remaining = Number(retryTokenInfo.remaining) || 0;
+                            const afterTokens = remaining - estimatedTokens;
+                            
+                            document.getElementById('remainingTokens').textContent = remaining.toLocaleString() + ' 토큰';
+                            document.getElementById('remainingTokens').className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
+                            document.getElementById('afterTokens').textContent = afterTokens.toLocaleString() + ' 토큰';
+                            document.getElementById('afterTokens').className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
+                        }
+                        console.log('✅ [토큰 모달] 재시도 성공, 토큰 정보 업데이트 완료');
+                    } else {
+                        // 재시도도 실패한 경우 안내 메시지
+                        document.getElementById('remainingTokens').textContent = '조회 실패';
+                        document.getElementById('remainingTokens').className = 'token-info-value warning';
+                        document.getElementById('afterTokens').textContent = '확인 불가';
+                        document.getElementById('afterTokens').className = 'token-info-value warning';
+                        console.error('❌ [토큰 모달] 재시도도 실패했습니다');
+                    }
+                }, 500);
+                
+                // 즉시 표시할 기본값 (재시도 중임을 표시)
+                document.getElementById('remainingTokens').textContent = '조회 중...';
+                document.getElementById('remainingTokens').className = 'token-info-value';
+                document.getElementById('afterTokens').textContent = '조회 중...';
+                document.getElementById('afterTokens').className = 'token-info-value';
             }
         }
 
@@ -2829,6 +2947,19 @@
         // 영상 생성 확인 후 실행
         let pendingVideoGeneration = false;
         async function confirmVideoGeneration() {
+            // 토큰 부족 여부 확인
+            const estimatedTokens = 1500;
+            const tokenInfo = await fetchTokenInfo();
+            
+            if (tokenInfo && !tokenInfo.isUnlimited) {
+                const remaining = Number(tokenInfo.remaining) || 0;
+                if (remaining < estimatedTokens) {
+                    // 토큰 부족 시 모달을 닫지 않고 경고만 표시
+                    alert('토큰이 부족합니다. 토큰을 충전하거나 구독을 업그레이드해주세요.');
+                    return;
+                }
+            }
+            
             closeTokenModal();
             pendingVideoGeneration = true;
             await executeVideoGeneration();
@@ -2975,11 +3106,9 @@
                                    errorMessage.includes('부족');
                 
                 if (isTokenError) {
-                    // 토큰 부족 시 팝업으로 알림 (에러 화면 대신)
-                    const cleanErrorMessage = errorMessage.replace('TOKEN_INSUFFICIENT: ', '');
-                    alert('토큰이 부족합니다.\n\n영상 생성에 필요한 토큰이 부족합니다. 토큰을 충전하거나 구독을 업그레이드해주세요.');
-                    // 토큰 모달 표시
-                    await showTokenModal();
+                    // 토큰 부족 시 커스텀 모달로 알림 (에러 화면 대신)
+                    // 토큰 모달을 경고 모드로 표시
+                    await showTokenModal(true);
                 } else {
                     // 다른 에러는 기존대로 에러 화면 표시
                     showErrorScreen(error.message);
