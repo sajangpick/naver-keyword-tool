@@ -1461,17 +1461,20 @@
       .footer-content {
         max-width: 1400px;
         margin: 0 auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 24px;
         font-size: 14px;
         line-height: 1.8;
+        align-items: center;
       }
 
       .footer-item {
         display: flex;
-        flex-direction: column;
-        gap: 4px;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
       }
 
       .footer-label {
@@ -1504,9 +1507,16 @@
         }
 
         .footer-content {
-          grid-template-columns: 1fr;
-          gap: 20px;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 16px;
           font-size: 12px;
+        }
+
+        .footer-item {
+          flex-direction: row;
+          align-items: center;
+          gap: 6px;
         }
 
         .footer-label {
