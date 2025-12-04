@@ -63,6 +63,9 @@
           "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
           "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
         background: var(--bg-color);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
         color: var(--text-primary);
       }
 
@@ -228,6 +231,7 @@
         margin-left: 0;
         padding-left: 100px;
         min-height: 100vh;
+        flex: 1;
       }
 
       .header {
@@ -1672,24 +1676,26 @@
         background: rgba(255, 255, 255, 0.95);
         border-top: 1px solid rgba(0, 0, 0, 0.08);
         padding: 40px 20px;
-        margin-top: 80px;
+        margin-top: auto;
         color: var(--text-secondary);
+        width: 100%;
       }
 
       .footer-content {
         max-width: 1400px;
         margin: 0 auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
         font-size: 14px;
         line-height: 1.8;
       }
 
       .footer-item {
         display: flex;
-        flex-direction: column;
-        gap: 4px;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
       }
 
       .footer-label {
@@ -1718,13 +1724,17 @@
       @media (max-width: 768px) {
         .site-footer {
           padding: 32px 16px;
-          margin-top: 60px;
         }
 
         .footer-content {
-          grid-template-columns: 1fr;
-          gap: 20px;
+          gap: 14px;
           font-size: 12px;
+        }
+
+        .footer-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
         }
 
         .footer-label {

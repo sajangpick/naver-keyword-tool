@@ -200,18 +200,28 @@ module.exports = async (req, res) => {
         });
       }
 
-      // 활성 구독 사이클 조회
+      // 활성 구독 사이클 조회 (최신 정보 가져오기)
       const { data: cycle, error: fetchError } = await supabase
         .from('subscription_cycle')
         .select('*')
         .eq('user_id', user_id)
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false }) // updated_at 기준으로 최신 정보 가져오기
         .limit(1)
-        .single();
+        .maybeSingle(); // single() 대신 maybeSingle() 사용
 
       if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('❌ [cycle] 사이클 조회 오류:', fetchError);
         throw fetchError;
+      }
+      
+      // tokens_remaining 자동 계산 (최신 정보 반영)
+      if (cycle) {
+        const calculatedRemaining = (cycle.monthly_token_limit || 0) - (cycle.tokens_used || 0);
+        if (cycle.tokens_remaining !== calculatedRemaining) {
+          console.log(`🔄 [cycle] 토큰 잔액 재계산: ${cycle.tokens_remaining} → ${calculatedRemaining}`);
+          cycle.tokens_remaining = Math.max(0, calculatedRemaining);
+        }
       }
 
       // 사이클이 없으면 새로 생성

@@ -5786,7 +5786,7 @@ app.post("/api/shorts/generate", upload.fields([
           }
         }
         
-        // Gemini API로 이미지 분석 및 영상 생성 프롬프트 생성
+        // Gemini API로 이미지 분석 및 영상 생성 프롬프트 생성 (모든 이미지 활용)
         devLog("Gemini로 이미지 분석 및 프롬프트 생성 시작...");
         let prompt, analysis;
         try {
@@ -5796,11 +5796,12 @@ app.post("/api/shorts/generate", upload.fields([
             menuFeatures,
             style,
             parseInt(duration) || 10,
-            userId
+            userId,
+            additionalImages // 추가 이미지들 전달
           );
           prompt = result.prompt;
           analysis = result.analysis;
-          devLog("Gemini 프롬프트 생성 완료:", prompt.substring(0, 200) + "...");
+          devLog(`Gemini 프롬프트 생성 완료 (${additionalImages.length + 1}개 이미지 활용):`, prompt.substring(0, 200) + "...");
           devLog("Gemini 분석 결과:", analysis.substring(0, 200) + "...");
         } catch (geminiError) {
           devError("Gemini API 오류:", geminiError);
