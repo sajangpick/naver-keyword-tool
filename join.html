@@ -458,7 +458,7 @@
 
         <div class="login-link">
           이미 계정이 있으신가요?
-          <a href="login.html">사장픽 로그인</a>
+          <a href="login.html" id="loginLink">사장픽 로그인</a>
         </div>
       </div>
     </div>
@@ -466,6 +466,52 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
     <script src="/assets/auth-state.js?v=202410" defer></script>
     <script>
+      const params = new URLSearchParams(window.location.search);
+      let redirectTarget = params.get("redirect");
+      
+      // redirect 파라미터를 sessionStorage에 저장 (OAuth 콜백 후에도 사용하기 위해)
+      if (redirectTarget) {
+        sessionStorage.setItem('joinRedirect', redirectTarget);
+      } else {
+        // sessionStorage에서 redirect 가져오기 (OAuth 콜백 후)
+        redirectTarget = sessionStorage.getItem('joinRedirect');
+      }
+
+      function resolveRedirectTarget() {
+        // sessionStorage에서 redirect 다시 확인
+        let target = redirectTarget || sessionStorage.getItem('joinRedirect');
+        
+        if (!target) {
+          console.log("[회원가입] redirect 파라미터 없음, index.html로 이동");
+          return "index.html";
+        }
+        
+        // URL 디코딩 (encodeURIComponent로 인코딩된 경우)
+        let decodedTarget = decodeURIComponent(target);
+        console.log("[회원가입] redirect 대상:", decodedTarget);
+        
+        // 관리자 페이지에서 회원가입한 경우 관리자 페이지로 리다이렉트
+        if (decodedTarget.startsWith("/admin/")) {
+          console.log("[회원가입] 관리자 페이지로 리다이렉트:", decodedTarget);
+          sessionStorage.removeItem('joinRedirect'); // 사용 후 제거
+          return decodedTarget;
+        }
+        
+        if (!decodedTarget.startsWith("/")) {
+          console.log("[회원가입] 잘못된 경로, index.html로 이동");
+          sessionStorage.removeItem('joinRedirect');
+          return "index.html";
+        }
+        if (decodedTarget === "/join.html") {
+          console.log("[회원가입] join.html 자체, index.html로 이동");
+          sessionStorage.removeItem('joinRedirect');
+          return "index.html";
+        }
+        console.log("[회원가입] 일반 페이지로 리다이렉트:", decodedTarget);
+        sessionStorage.removeItem('joinRedirect'); // 사용 후 제거
+        return decodedTarget;
+      }
+
       // 이미 로그인된 경우 메인 페이지로 리다이렉트 (Supabase 세션 기반)
       (async function checkAlreadyLoggedIn() {
         // Supabase 초기화 대기
@@ -476,7 +522,7 @@
         try {
           const { data: { session } } = await window.authState.supabase.auth.getSession();
           if (session) {
-            window.location.href = "index.html";
+            window.location.replace(resolveRedirectTarget());
           }
         } catch (error) {
           console.error("세션 확인 오류:", error);
@@ -536,7 +582,7 @@
               if (error || !profile || !profile.name) {
                 window.location.replace("setup-profile.html");
               } else {
-                window.location.replace("index.html");
+                window.location.replace(resolveRedirectTarget());
               }
             }
           } catch (error) {
@@ -561,7 +607,7 @@
               if (error || !profile || !profile.name) {
                 window.location.replace("setup-profile.html");
               } else {
-                window.location.replace("index.html");
+                window.location.replace(resolveRedirectTarget());
               }
             } catch (error) {
               console.error("프로필 확인 오류:", error);
@@ -608,13 +654,45 @@
               await new Promise(resolve => setTimeout(resolve, 100));
             }
             
+            // redirect 파라미터를 포함한 리다이렉트 URL 생성
+            let redirectUrl = window.location.origin + '/join.html';
+            if (redirectTarget) {
+              redirectUrl += '?redirect=' + encodeURIComponent(redirectTarget);
+            }
+            
+            console.log('[카카오 회원가입] 카카오 로그인 페이지로 이동합니다...');
+            console.log('[카카오 회원가입] 리다이렉트 URL:', redirectUrl);
+            
             // Supabase OAuth를 사용한 카카오 회원가입
             const { data, error } = await supabase.auth.signInWithOAuth({
               provider: 'kakao',
               options: {
-                redirectTo: window.location.origin + '/join.html'
+                redirectTo: redirectUrl
               }
             });
+            
+            if (error) {
+              showError('회원가입 실패: ' + error.message);
+              console.error('카카오 회원가입 오류:', error);
+            } else {
+              // 성공 시 data.url로 리다이렉트 (카카오 로그인 페이지)
+              if (data?.url) {
+                console.log('[카카오 회원가입] 카카오 로그인 페이지로 이동:', data.url);
+                window.location.href = data.url;
+              }
+            }
+          } catch (err) {
+            showError('회원가입 중 오류가 발생했습니다.');
+            console.error('회원가입 오류:', err);
+          }
+        });
+      }
+
+      // 로그인 링크에 redirect 파라미터 추가
+      const loginLink = document.getElementById("loginLink");
+      if (loginLink && redirectTarget) {
+        loginLink.href = `login.html?redirect=${encodeURIComponent(redirectTarget)}`;
+      }
 
             if (error) {
               showError('회원가입 실패: ' + error.message);
