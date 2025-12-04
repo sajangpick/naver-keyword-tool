@@ -123,6 +123,7 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         margin-bottom: 16px;
+        margin-left: 64px; /* 뒤로가기 버튼(left: 22px + width: 42px)과 겹치지 않도록 여백 추가 */
       }
 
       .logo {
@@ -273,6 +274,9 @@
         display: flex;
         flex-direction: column;
         gap: 14px;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
       }
 
       .kakao-btn {
@@ -296,6 +300,11 @@
         gap: 6px;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
+        user-select: none;
+        -webkit-user-select: none;
       }
       
       .kakao-btn-content {
@@ -303,6 +312,11 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
+        pointer-events: none;
+      }
+      
+      .kakao-btn-desc {
+        pointer-events: none;
       }
 
       .kakao-btn:hover {
@@ -399,6 +413,10 @@
           border-radius: 24px;
         }
 
+        .brand-pill {
+          margin-left: 60px; /* 모바일에서도 뒤로가기 버튼과 겹치지 않도록 */
+        }
+
         .brand-hero {
           flex-direction: column;
         }
@@ -435,6 +453,7 @@
 
         .brand-pill {
           font-size: 11px;
+          margin-left: 58px; /* 모바일에서도 뒤로가기 버튼과 겹치지 않도록 */
         }
 
         .signup-link {
@@ -985,20 +1004,49 @@
         }
       }
 
-      // 카카오 간편 로그인 (세션 유지)
-      const kakaoLoginAutoBtn = document.getElementById("kakaoLoginAuto");
-      if (kakaoLoginAutoBtn) {
-        kakaoLoginAutoBtn.addEventListener("click", () => {
-          handleKakaoLogin('auto');
-        });
+      // 버튼 이벤트 리스너 설정 (DOMContentLoaded로 안전하게 실행)
+      function setupLoginButtons() {
+        // 카카오 간편 로그인 (세션 유지)
+        const kakaoLoginAutoBtn = document.getElementById("kakaoLoginAuto");
+        if (kakaoLoginAutoBtn) {
+          console.log('[로그인 버튼] 간편 로그인 버튼 찾음');
+          kakaoLoginAutoBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[로그인 버튼] 간편 로그인 클릭됨');
+            handleKakaoLogin('auto');
+          });
+          // 버튼이 클릭 가능한지 확인
+          kakaoLoginAutoBtn.style.pointerEvents = 'auto';
+          kakaoLoginAutoBtn.style.cursor = 'pointer';
+        } else {
+          console.error('[로그인 버튼] 간편 로그인 버튼을 찾을 수 없음');
+        }
+
+        // 카카오 수동 로그인 (세션 미유지)
+        const kakaoLoginManualBtn = document.getElementById("kakaoLoginManual");
+        if (kakaoLoginManualBtn) {
+          console.log('[로그인 버튼] 수동 로그인 버튼 찾음');
+          kakaoLoginManualBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[로그인 버튼] 수동 로그인 클릭됨');
+            handleKakaoLogin('manual');
+          });
+          // 버튼이 클릭 가능한지 확인
+          kakaoLoginManualBtn.style.pointerEvents = 'auto';
+          kakaoLoginManualBtn.style.cursor = 'pointer';
+        } else {
+          console.error('[로그인 버튼] 수동 로그인 버튼을 찾을 수 없음');
+        }
       }
 
-      // 카카오 수동 로그인 (세션 미유지)
-      const kakaoLoginManualBtn = document.getElementById("kakaoLoginManual");
-      if (kakaoLoginManualBtn) {
-        kakaoLoginManualBtn.addEventListener("click", () => {
-          handleKakaoLogin('manual');
-        });
+      // DOM이 로드된 후 버튼 설정
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupLoginButtons);
+      } else {
+        // DOM이 이미 로드된 경우 즉시 실행
+        setupLoginButtons();
       }
 
       // 회원가입 링크에 redirect 파라미터 추가
