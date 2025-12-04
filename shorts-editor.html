@@ -2601,54 +2601,21 @@
             await showTokenModal();
         }
 
-        // 토큰 정보 조회 (mypage.html과 동일한 방식)
+        // 토큰 정보 조회 (mypage.html과 완전히 동일한 방식)
         async function fetchTokenInfo() {
             try {
                 // Supabase 세션 토큰 가져오기 (mypage.html과 동일)
                 let supabase = null;
-                let session = null;
                 
                 // auth-state.js가 로드되어 있으면 사용
                 if (window.authState?.supabase) {
                     supabase = window.authState.supabase;
-                    const { data: { session: sessionData } } = await supabase.auth.getSession();
-                    session = sessionData;
                 } else {
-                    // auth-state.js가 없으면 localStorage에서 사용자 정보 사용 (하위 호환)
-                    const userId = await getCurrentUserId();
-                    if (!userId) {
-                        console.warn('⚠️ [토큰 조회] 사용자 ID가 없습니다');
-                        return null;
-                    }
-                    
-                    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                        ? 'http://localhost:3003' 
-                        : '';
-                    
-                    const response = await fetch(`${API_BASE}/api/subscription/cycle?user_id=${encodeURIComponent(userId)}`, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'user-id': userId
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        console.error('❌ [토큰 조회] HTTP 오류:', response.status);
-                        return null;
-                    }
-                    
-                    const result = await response.json();
-                    if (result.success && result.cycle) {
-                        return {
-                            remaining: result.cycle.tokens_remaining ?? 0,
-                            used: result.cycle.tokens_used ?? 0,
-                            limit: result.cycle.monthly_token_limit ?? 100
-                        };
-                    }
+                    console.error('❌ [토큰 조회] auth-state.js가 로드되지 않았습니다');
                     return null;
                 }
                 
+                const { data: { session } } = await supabase.auth.getSession();
                 if (!session?.access_token) {
                     console.error('❌ [토큰 조회] 세션 토큰이 없습니다');
                     return null;
@@ -2656,7 +2623,7 @@
                 
                 console.log('🔍 [토큰 조회] API 호출 시작 (mypage.html과 동일한 방식)');
                 
-                // mypage.html과 동일한 API 사용
+                // mypage.html과 완전히 동일한 API 사용
                 const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
                     method: 'GET',
                     headers: {
@@ -2666,41 +2633,97 @@
                 });
 
                 if (!response.ok) {
-                    console.error('❌ [토큰 조회] HTTP 오류:', response.status, response.statusText);
+                    let errorMessage = '토큰 정보 로드 실패';
                     try {
                         const errorData = await response.json();
-                        console.error('❌ [토큰 조회] 에러 응답:', errorData);
-                    } catch (e) {
-                        console.error('❌ [토큰 조회] 에러 응답 읽기 실패:', e);
+                        errorMessage = errorData.error || errorMessage;
+                        console.error('❌ [토큰 조회] API 응답 오류:', response.status, errorData);
+                    } catch (parseError) {
+                        console.error('❌ [토큰 조회] 응답 파싱 오류:', response.status, response.statusText);
+                        errorMessage = `서버 오류 (${response.status}): ${response.statusText}`;
                     }
+                    console.error('❌ [토큰 조회] 실패:', errorMessage);
                     return null;
                 }
 
                 const result = await response.json();
                 console.log('📊 [토큰 조회] API 응답:', result);
+                console.log('📊 [토큰 조회] API 응답 상세:', {
+                    success: result.success,
+                    hasData: !!result.data,
+                    hasCycle: !!result.data?.cycle,
+                    cycleData: result.data?.cycle,
+                    profileData: result.data?.profile
+                });
                 
-                if (result.success && result.data && result.data.cycle) {
-                    const cycle = result.data.cycle;
-                    const tokenInfo = {
-                        remaining: cycle.tokens_remaining ?? 0,
-                        used: cycle.tokens_used ?? 0,
-                        limit: cycle.monthly_token_limit ?? 100
-                    };
-                    console.log('✅ [토큰 조회] 성공:', tokenInfo);
-                    return tokenInfo;
+                if (!result.success) {
+                    const errorMsg = result.error || '토큰 정보 조회 실패';
+                    console.error('❌ [토큰 조회] API 응답 실패:', errorMsg);
+                    return null;
                 }
                 
-                // 사이클이 없으면 기본값 반환
-                if (result.success) {
-                    console.log('⚠️ [토큰 조회] 사이클이 없습니다. 기본값 사용');
-                    return {
-                        remaining: 100,
-                        used: 0,
-                        limit: 100
-                    };
+                if (result.data) {
+                    const { profile, cycle } = result.data;
+                    
+                    console.log('✅ [토큰 조회] 토큰 정보 로드 성공:', { 
+                        profile: {
+                            id: profile?.id,
+                            email: profile?.email,
+                            membership_level: profile?.membership_level,
+                            user_type: profile?.user_type
+                        }, 
+                        cycle: {
+                            id: cycle?.id,
+                            monthly_token_limit: cycle?.monthly_token_limit,
+                            tokens_used: cycle?.tokens_used,
+                            tokens_remaining: cycle?.tokens_remaining
+                        }
+                    });
+                    
+                    if (cycle) {
+                        // 관리자 등급 체크 (mypage.html과 동일)
+                        const isAdmin = profile?.membership_level === 'admin' || profile?.user_type === 'admin';
+                        
+                        // 토큰 사용량 계산 (mypage.html과 동일)
+                        const tokensUsed = cycle.tokens_used || 0;
+                        let tokensLimit = cycle.monthly_token_limit || 100;
+                        let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+                        
+                        // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리 (mypage.html과 동일)
+                        if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
+                            tokensLimit = null; // null = 무제한
+                            tokensRemaining = null; // null = 무제한
+                        }
+                        
+                        const tokenInfo = {
+                            remaining: tokensRemaining,
+                            used: tokensUsed,
+                            limit: tokensLimit,
+                            isUnlimited: tokensRemaining === null || tokensLimit === null
+                        };
+                        
+                        console.log('✅ [토큰 조회] 최종 토큰 정보:', {
+                            isAdmin,
+                            tokensUsed,
+                            tokensLimit: tokensLimit || '무제한',
+                            tokensRemaining: tokensRemaining || '무제한',
+                            isUnlimited: tokenInfo.isUnlimited
+                        });
+                        
+                        return tokenInfo;
+                    } else {
+                        // cycle이 없을 때 기본값 반환 (mypage.html과 동일)
+                        console.warn('⚠️ [토큰 조회] 구독 사이클이 없습니다. 기본값을 표시합니다.');
+                        return {
+                            remaining: 100,
+                            used: 0,
+                            limit: 100,
+                            isUnlimited: false
+                        };
+                    }
                 }
                 
-                console.error('❌ [토큰 조회] API 응답이 success=false:', result);
+                console.error('❌ [토큰 조회] API 응답에 data가 없습니다:', result);
                 return null;
             } catch (error) {
                 console.error('❌ [토큰 조회] 예외 발생:', error);
@@ -2733,26 +2756,43 @@
             const tokenInfo = await fetchTokenInfo();
             
             if (tokenInfo) {
-                const remaining = Number(tokenInfo.remaining) || 0;
-                const limit = Number(tokenInfo.limit) || 100;
-                const afterTokens = remaining - estimatedTokens;
+                // 무제한 토큰 처리 (mypage.html과 동일)
+                const isUnlimited = tokenInfo.isUnlimited || tokenInfo.remaining === null || tokenInfo.limit === null;
                 
-                // 현재 남은 토큰 표시
-                const remainingEl = document.getElementById('remainingTokens');
-                remainingEl.textContent = remaining.toLocaleString() + ' 토큰';
-                remainingEl.className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
-                
-                // 사용 후 남은 토큰 표시
-                const afterEl = document.getElementById('afterTokens');
-                afterEl.textContent = afterTokens.toLocaleString() + ' 토큰';
-                afterEl.className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
-                
-                console.log('✅ [토큰 모달] 토큰 정보 표시 완료:', {
-                    remaining,
-                    limit,
-                    afterTokens,
-                    estimatedTokens
-                });
+                if (isUnlimited) {
+                    // 무제한 토큰인 경우
+                    const remainingEl = document.getElementById('remainingTokens');
+                    remainingEl.textContent = '무제한';
+                    remainingEl.className = 'token-info-value success';
+                    
+                    const afterEl = document.getElementById('afterTokens');
+                    afterEl.textContent = '무제한';
+                    afterEl.className = 'token-info-value success';
+                    
+                    console.log('✅ [토큰 모달] 무제한 토큰 표시 완료');
+                } else {
+                    // 제한이 있는 토큰인 경우
+                    const remaining = Number(tokenInfo.remaining) || 0;
+                    const limit = Number(tokenInfo.limit) || 100;
+                    const afterTokens = remaining - estimatedTokens;
+                    
+                    // 현재 남은 토큰 표시
+                    const remainingEl = document.getElementById('remainingTokens');
+                    remainingEl.textContent = remaining.toLocaleString() + ' 토큰';
+                    remainingEl.className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
+                    
+                    // 사용 후 남은 토큰 표시
+                    const afterEl = document.getElementById('afterTokens');
+                    afterEl.textContent = afterTokens.toLocaleString() + ' 토큰';
+                    afterEl.className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
+                    
+                    console.log('✅ [토큰 모달] 토큰 정보 표시 완료:', {
+                        remaining,
+                        limit,
+                        afterTokens,
+                        estimatedTokens
+                    });
+                }
             } else {
                 // 조회 실패 시 기본값 표시
                 console.warn('⚠️ [토큰 모달] 토큰 정보 조회 실패, 기본값 표시');
@@ -2888,7 +2928,21 @@
                 }
 
                 if (!response.ok || !result.success) {
-                    throw new Error(result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`);
+                    const errorMsg = result.error || `영상 생성에 실패했습니다. (상태 코드: ${response.status})`;
+                    
+                    // 토큰 부족 에러인지 확인
+                    const isTokenError = errorMsg.includes('토큰') || 
+                                       errorMsg.includes('token') || 
+                                       errorMsg.includes('insufficient') ||
+                                       errorMsg.includes('부족') ||
+                                       response.status === 402; // 402 Payment Required는 토큰 부족일 가능성이 높음
+                    
+                    if (isTokenError) {
+                        // 토큰 부족 에러는 특별 처리
+                        throw new Error('TOKEN_INSUFFICIENT: ' + errorMsg);
+                    } else {
+                        throw new Error(errorMsg);
+                    }
                 }
 
                 hideLoadingScreen();
@@ -2911,7 +2965,25 @@
                 console.error('영상 생성 실패:', error);
                 hideLoadingScreen();
                 resetResultSection();
-                showErrorScreen(error.message);
+                
+                // 토큰 부족 에러인지 확인
+                const errorMessage = error.message || '';
+                const isTokenError = errorMessage.includes('TOKEN_INSUFFICIENT') ||
+                                   errorMessage.includes('토큰') || 
+                                   errorMessage.includes('token') || 
+                                   errorMessage.includes('insufficient') ||
+                                   errorMessage.includes('부족');
+                
+                if (isTokenError) {
+                    // 토큰 부족 시 팝업으로 알림 (에러 화면 대신)
+                    const cleanErrorMessage = errorMessage.replace('TOKEN_INSUFFICIENT: ', '');
+                    alert('토큰이 부족합니다.\n\n영상 생성에 필요한 토큰이 부족합니다. 토큰을 충전하거나 구독을 업그레이드해주세요.');
+                    // 토큰 모달 표시
+                    await showTokenModal();
+                } else {
+                    // 다른 에러는 기존대로 에러 화면 표시
+                    showErrorScreen(error.message);
+                }
             }
         }
 

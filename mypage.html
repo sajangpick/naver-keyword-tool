@@ -1712,11 +1712,54 @@
 
         // 실시간 작성 현황 리스너 설정
         setupPromotionListeners();
+        
+        // 토큰 정보 자동 새로고침 설정
+        setupTokenAutoRefresh(user.id);
 
       } catch (error) {
         console.error('❌ 페이지 초기화 실패:', error);
         showError('페이지 로드 실패: ' + error.message);
       }
+    }
+    
+    // 토큰 정보 자동 새로고침 설정
+    let tokenRefreshInterval = null;
+    let lastTokenRefreshTime = null;
+    
+    function setupTokenAutoRefresh(userId) {
+      // 기존 인터벌 정리
+      if (tokenRefreshInterval) {
+        clearInterval(tokenRefreshInterval);
+      }
+      
+      // 페이지 포커스 시 토큰 정보 새로고침
+      window.addEventListener('focus', () => {
+        console.log('📊 페이지 포커스 - 토큰 정보 새로고침');
+        refreshTokenInfo();
+      });
+      
+      // 페이지 가시성 변경 시 토큰 정보 새로고침
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          console.log('📊 페이지 표시 - 토큰 정보 새로고침');
+          refreshTokenInfo();
+        }
+      });
+      
+      // 30초마다 토큰 정보 자동 새로고침
+      tokenRefreshInterval = setInterval(() => {
+        // 마지막 새로고침 후 30초가 지났는지 확인
+        const now = Date.now();
+        if (!lastTokenRefreshTime || (now - lastTokenRefreshTime) >= 30000) {
+          console.log('📊 주기적 토큰 정보 새로고침');
+          refreshTokenInfo();
+          lastTokenRefreshTime = now;
+        }
+      }, 30000); // 30초마다
+      
+      lastTokenRefreshTime = Date.now();
+      
+      console.log('✅ 토큰 정보 자동 새로고침 설정 완료');
     }
 
     // 사용자 프로필 로드
@@ -1859,6 +1902,9 @@
           
           // 결제 내역 로드
           await loadPaymentHistory(userId);
+          
+          // 토큰 정보와 결제 섹션 동기화
+          syncTokenInfoWithPayment(cycle, profile);
         } else {
           updatePaymentUI(null);
         }
@@ -2493,6 +2539,9 @@
                 upgradeSection.style.display = 'block';
               }
             }
+            
+            // 결제 섹션과 토큰 정보 동기화
+            syncTokenInfoWithPayment(cycle, profile);
           } else {
             // cycle이 없을 때 기본값 표시
             console.warn('⚠️ 구독 사이클이 없습니다. 기본값을 표시합니다.');
@@ -2741,13 +2790,28 @@
     
     // 토큰 정보 새로고침
     async function refreshTokenInfo() {
-      if (!supabase) return;
+      if (!supabase) {
+        console.warn('⚠️ Supabase가 초기화되지 않았습니다');
+        return;
+      }
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await loadTokenInfo(session.user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log('🔄 토큰 정보 새로고침 시작...');
+          await loadTokenInfo(session.user.id);
+          lastTokenRefreshTime = Date.now();
+          console.log('✅ 토큰 정보 새로고침 완료');
+        } else {
+          console.warn('⚠️ 세션이 없어 토큰 정보를 새로고침할 수 없습니다');
+        }
+      } catch (error) {
+        console.error('❌ 토큰 정보 새로고침 실패:', error);
       }
     }
+    
+    // 전역 함수로 등록 (HTML에서 호출 가능)
+    window.refreshTokenInfo = refreshTokenInfo;
 
     // 가게 정보 로드
     async function loadStoreInfo() {
