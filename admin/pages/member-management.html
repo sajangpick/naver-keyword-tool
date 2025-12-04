@@ -1144,8 +1144,7 @@
           const agencyLevels = [
             { key: 'elite', label: '🏆 스타터', tokenKey: 'agency_elite_limit', priceKey: 'agency_elite_price' },
             { key: 'expert', label: '🎯 프로', tokenKey: 'agency_expert_limit', priceKey: 'agency_expert_price' },
-            { key: 'master', label: '👑 엔터프라이즈', tokenKey: 'agency_master_limit', priceKey: 'agency_master_price' },
-            { key: 'premium', label: '💎 프리미엄', tokenKey: 'agency_premium_limit', priceKey: 'agency_premium_price' }
+            { key: 'master', label: '👑 엔터프라이즈', tokenKey: 'agency_master_limit', priceKey: 'agency_master_price' }
           ];
 
           agencyLevels.forEach(level => {
@@ -1288,13 +1287,8 @@
           // 식당 대표 등급: owner:member:seed, owner:member:power, owner:member:bigpower, owner:member:premium
           dropdownValue = `owner:member:${normalizedLevel}`;
         } else if (currentUserType === 'agency') {
-          // 대행사/블로거 등급: agency:member:elite, agency:member:expert, agency:member:master, agency:member:premium
-          // premium을 platinum으로 변환 (대행사 프리미엄은 platinum)
-          if (normalizedLevel === 'premium') {
-            dropdownValue = 'agency:member:premium';
-          } else {
-            dropdownValue = `agency:member:${normalizedLevel}`;
-          }
+          // 대행사/블로거 등급: agency:member:elite, agency:member:expert, agency:member:master
+          dropdownValue = `agency:member:${normalizedLevel}`;
         } else if (currentUserType === 'manager') {
           // 매니저: manager:general:admin 또는 manager:super:admin
           if (normalizedLevel === 'super' || normalizedLevel === 'super_admin') {

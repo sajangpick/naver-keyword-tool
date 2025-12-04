@@ -937,9 +937,6 @@
               <button class="level-tab" onclick="filterByLevel('master')">
                 👑 엔터프라이즈 <span class="badge" id="count-master">0</span>
               </button>
-              <button class="level-tab" onclick="filterByLevel('platinum')">
-                💎 플래티넘 <span class="badge" id="count-platinum">0</span>
-              </button>
             </div>
 
             <!-- 회원 테이블 -->
@@ -1381,7 +1378,7 @@
       // ==================== 회원 카운트 업데이트 ====================
 
       function updateMemberCounts() {
-        const levels = ['seed', 'power', 'big_power', 'premium', 'elite', 'expert', 'master', 'platinum'];
+        const levels = ['seed', 'power', 'big_power', 'premium', 'elite', 'expert', 'master'];
         
         // 현재 필터에 맞는 회원 목록
         let filteredForCount = allMembers;
@@ -1420,7 +1417,7 @@
           });
         } else if (currentUserType === 'agency') {
           // 대행사 등급: 스타터, 프로, 엔터프라이즈, 플래티넘
-          ['elite', 'expert', 'master', 'platinum'].forEach(level => {
+          ['elite', 'expert', 'master'].forEach(level => {
             const tab = document.querySelector(`.level-tab[onclick*="'${level}'"]`);
             if (tab) tab.classList.add('agency-color');
           });
@@ -1630,7 +1627,6 @@
           'elite': '스타터',
           'expert': '프로',
           'master': '엔터프라이즈',
-          'platinum': '플래티넘',
           'admin': '관리자'
         };
         return levels[level] || level;
