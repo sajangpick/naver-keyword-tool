@@ -303,10 +303,6 @@
     
     <div id="planSelectionGrid" style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 30px; justify-content: center;">
       <!-- 플랜 카드들이 여기에 동적으로 로드됩니다 -->
-      <div class="loading" style="width: 100%; text-align: center; padding: 40px;">
-        <div class="spinner"></div>
-        <p style="margin-top: 15px;">플랜 정보를 불러오는 중...</p>
-      </div>
     </div>
   </div>
 
@@ -316,7 +312,7 @@
     <p class="subtitle">더 많은 AI 기능을 사용해보세요</p>
     
     <div class="plan-info">
-      <div class="plan-name" id="planName">파워 플랜</div>
+      <div class="plan-name" id="planName">스탠다드 플랜</div>
       <div class="plan-details">
         <span>월간 토큰</span>
         <strong id="tokenAmount">500 토큰</strong>
@@ -496,25 +492,30 @@
         document.getElementById('planSelectionContainer').style.display = 'none';
         document.getElementById('paymentContainer').style.display = 'block';
       } else {
-        // plan 파라미터가 없으면 플랜 선택 화면 표시
+        // plan 파라미터가 없으면 플랜 선택 화면 표시하고 즉시 기본값으로 렌더링
         document.getElementById('planSelectionContainer').style.display = 'block';
         document.getElementById('paymentContainer').style.display = 'none';
+        // 기본값으로 즉시 플랜 카드 렌더링
+        renderPlanSelection();
       }
     })();
     
     // 페이지 초기화
     window.addEventListener('load', async function() {
-      // 가격 및 토큰 설정 로드
-      await loadPlanSettings();
-      
-      // 현재 사용 중인 플랜 정보 로드
-      await loadCurrentUserPlan();
-      
-      // plan 파라미터가 있으면 결제 화면, 없으면 플랜 선택 화면
-      if (plan) {
-        showPaymentScreen(plan);
+      // plan 파라미터가 없으면 데이터 로드 후 플랜 정보 업데이트
+      if (!plan) {
+        // 가격 및 토큰 설정 로드
+        await loadPlanSettings();
+        
+        // 현재 사용 중인 플랜 정보 로드
+        await loadCurrentUserPlan();
+        
+        // 플랜 정보 업데이트 후 다시 렌더링
+        renderPlanSelection();
       } else {
-        showPlanSelectionScreen();
+        // plan 파라미터가 있으면 결제 화면용 데이터 로드
+        await loadPlanSettings();
+        showPaymentScreen(plan);
       }
       
       // 등록된 카드 목록 로드
@@ -608,9 +609,9 @@
       if (!pricingData || !tokenData) {
         // 기본값
         const defaults = {
-          seed: { name: '씨앗 플랜', price: 0, tokens: 100 },
-          power: { name: '파워 플랜', price: 30000, tokens: 500 },
-          bigpower: { name: '빅파워 플랜', price: 50000, tokens: 833 },
+          seed: { name: '라이트 플랜', price: 0, tokens: 100 },
+          power: { name: '스탠다드 플랜', price: 30000, tokens: 500 },
+          bigpower: { name: '프로 플랜', price: 50000, tokens: 833 },
           premium: { name: '프리미엄 플랜', price: 70000, tokens: 1166 }
         };
         return defaults[planKey] || null;
@@ -620,9 +621,9 @@
       const tokenKey = `owner_${planKey}_limit`;
       
       const planNames = {
-        seed: '씨앗 플랜',
-        power: '파워 플랜',
-        bigpower: '빅파워 플랜',
+        seed: '라이트 플랜',
+        power: '스탠다드 플랜',
+        bigpower: '프로 플랜',
         premium: '프리미엄 플랜'
       };
 
@@ -639,9 +640,9 @@
       if (!container) return;
 
       const ownerPlans = [
-        { key: 'seed', name: '씨앗', icon: '🌱', color: '#16a34a' },
-        { key: 'power', name: '파워', icon: '⚡', color: '#f59e0b' },
-        { key: 'bigpower', name: '빅파워', icon: '💪', color: '#f97316' },
+        { key: 'seed', name: '라이트', icon: '🌱', color: '#16a34a' },
+        { key: 'power', name: '스탠다드', icon: '⚡', color: '#f59e0b' },
+        { key: 'bigpower', name: '프로', icon: '💪', color: '#f97316' },
         { key: 'premium', name: '프리미엄', icon: '⭐', color: '#ec4899' }
       ];
 

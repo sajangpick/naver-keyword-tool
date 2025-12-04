@@ -95,7 +95,7 @@ async function createPayment(req, res) {
     // 4. 주문 ID 생성
     const orderId = `ORD_${Date.now()}_${userId.substring(0, 8)}`;
 
-    // 5. 결제 내역 사전 생성
+    // 5. 결제 내역 사전 생성 (planType 저장)
     const { data: payment, error: paymentError } = await supabase
       .from('payment_history')
       .insert({
@@ -104,6 +104,7 @@ async function createPayment(req, res) {
         amount: amount,
         status: 'pending',
         method: paymentMethod,
+        plan_type: planType, // 플랜 타입 저장
         requested_at: new Date().toISOString()
       })
       .select()
@@ -212,19 +213,30 @@ async function verifyPayment(req, res) {
       });
     }
 
-    // 3. 결제 완료 처리
+    // 3. 결제 완료 처리 (중요: 결제가 실제로 완료된 경우에만 'done' 상태로 변경)
     const { error: updateError } = await supabase
       .from('payment_history')
       .update({
         status: 'done',
-        payment_key: paymentKey,
+        payment_key: paymentKey || null,
         approved_at: new Date().toISOString()
       })
       .eq('order_id', orderId);
 
     if (updateError) throw updateError;
 
-    // 4. 구독 활성화
+    // 4. 결제 완료 확인 후 구독 활성화 (결제 상태가 'done'일 때만 등급 변경)
+    const { data: verifiedPayment } = await supabase
+      .from('payment_history')
+      .select('*')
+      .eq('order_id', orderId)
+      .single();
+    
+    if (!verifiedPayment || verifiedPayment.status !== 'done') {
+      throw new Error('결제 완료 상태 확인 실패 - 등급 변경하지 않음');
+    }
+
+    // 5. 구독 활성화 (결제 완료 확인 후)
     await activateSubscription(payment.user_id, orderId);
 
     return res.json({
@@ -245,14 +257,28 @@ async function verifyPayment(req, res) {
 async function activateSubscription(userId, orderId) {
   try {
     // 1. 결제 정보 조회
-    const { data: payment } = await supabase
+    const { data: payment, error: paymentQueryError } = await supabase
       .from('payment_history')
       .select('*')
       .eq('order_id', orderId)
       .single();
 
-    // 2. 사용자 정보 업데이트
-    const planType = extractPlanFromAmount(payment.amount);
+    if (paymentQueryError) throw paymentQueryError;
+    
+    // 중요: 결제 상태가 'done'이 아닌 경우 등급 변경하지 않음
+    if (payment.status !== 'done') {
+      console.error(`❌ 결제 상태가 'done'이 아니므로 등급 변경하지 않음: ${payment.status}`);
+      throw new Error(`결제가 완료되지 않았습니다. 현재 상태: ${payment.status}`);
+    }
+
+    // 2. 플랜 타입 확인 (plan_type이 있으면 사용, 없으면 금액으로 추출)
+    let planType = payment.plan_type || extractPlanFromAmount(payment.amount);
+    
+    if (!planType) {
+      throw new Error('플랜 타입을 확인할 수 없습니다');
+    }
+    
+    console.log(`✅ 결제 완료 확인 - 등급 변경 시작: ${userId} → ${planType}`);
     
     const { error: updateError } = await supabase
       .from('profiles')
