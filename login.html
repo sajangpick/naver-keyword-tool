@@ -885,6 +885,26 @@
             await new Promise(resolve => setTimeout(resolve, 100));
           }
           
+          // 간편 로그인인 경우 기존 세션 확인
+          if (loginType === 'auto') {
+            console.log('[간편 로그인] 기존 세션 확인 중...');
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session && session.user) {
+                console.log('[간편 로그인] ✅ 기존 세션 발견 - 자동 로그인');
+                setLoggedInFromSession(session);
+                setTimeout(() => {
+                  redirectAfterLogin();
+                }, 100);
+                return; // 기존 세션이 있으면 OAuth 이동하지 않고 바로 로그인
+              }
+            } catch (error) {
+              console.log('[간편 로그인] 세션 확인 오류:', error);
+              // 세션 확인 실패 시 OAuth 진행
+            }
+            console.log('[간편 로그인] 기존 세션 없음 - 카카오 OAuth로 이동');
+          }
+          
           // redirect 파라미터 확인 (URL 파라미터 또는 sessionStorage에서)
           const currentRedirect = redirectTarget || sessionStorage.getItem('loginRedirect');
           
@@ -903,16 +923,24 @@
           console.log('[카카오 로그인] 리다이렉트 URL:', redirectUrl);
           
           // Supabase OAuth를 사용한 카카오 로그인
-          // 이 함수는 카카오 로그인 페이지로 자동으로 리다이렉트됩니다
+          const oauthOptions = {
+            redirectTo: redirectUrl
+          };
+          
+          // 수동 로그인인 경우에만 prompt: 'login' 설정 (매번 로그인 페이지 표시)
+          // 간편 로그인은 prompt 설정 안 함 (자동 로그인 시도)
+          if (loginType === 'manual') {
+            oauthOptions.queryParams = {
+              prompt: 'login' // 카카오 로그인 페이지를 강제로 표시
+            };
+            console.log('[수동 로그인] prompt: login 설정 - 로그인 페이지 표시');
+          } else {
+            console.log('[간편 로그인] prompt 설정 안 함 - 자동 로그인 시도');
+          }
+          
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'kakao',
-            options: {
-              redirectTo: redirectUrl,
-              // 카카오 로그인 페이지를 명시적으로 표시하도록 설정
-              queryParams: {
-                prompt: 'login' // 카카오 로그인 페이지를 강제로 표시
-              }
-            }
+            options: oauthOptions
           });
 
           if (error) {

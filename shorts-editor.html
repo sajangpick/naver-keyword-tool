@@ -52,8 +52,6 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         /* 헤더 */
@@ -1412,7 +1410,6 @@
         .main-content {
             margin-left: 0;
             padding-left: 100px;
-            flex: 1;
         }
 
         @media (max-width: 992px) {
@@ -1457,26 +1454,24 @@
         background: rgba(255, 255, 255, 0.95);
         border-top: 1px solid rgba(0, 0, 0, 0.08);
         padding: 40px 20px;
-        margin-top: auto;
+        margin-top: 80px;
         color: var(--text-secondary);
-        width: 100%;
       }
 
       .footer-content {
         max-width: 1400px;
         margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 24px;
         font-size: 14px;
         line-height: 1.8;
       }
 
       .footer-item {
         display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 12px;
+        flex-direction: column;
+        gap: 4px;
       }
 
       .footer-label {
@@ -1505,17 +1500,13 @@
       @media (max-width: 768px) {
         .site-footer {
           padding: 32px 16px;
+          margin-top: 60px;
         }
 
         .footer-content {
-          gap: 14px;
+          grid-template-columns: 1fr;
+          gap: 20px;
           font-size: 12px;
-        }
-
-        .footer-item {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 4px;
         }
 
         .footer-label {
@@ -2570,35 +2561,76 @@
             await showTokenModal();
         }
 
-        // 토큰 정보 조회
+        // 토큰 정보 조회 (mypage.html과 동일한 방식)
         async function fetchTokenInfo() {
-            const userId = getCurrentUserId();
-            if (!userId) {
-                console.warn('⚠️ [토큰 조회] 사용자 ID가 없습니다');
-                return null;
-            }
-
             try {
-                const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                    ? 'http://localhost:3003' 
-                    : '';
+                // Supabase 세션 토큰 가져오기 (mypage.html과 동일)
+                let supabase = null;
+                let session = null;
                 
-                console.log(`🔍 [토큰 조회] API 호출 시작: userId=${userId}`);
+                // auth-state.js가 로드되어 있으면 사용
+                if (window.authState?.supabase) {
+                    supabase = window.authState.supabase;
+                    const { data: { session: sessionData } } = await supabase.auth.getSession();
+                    session = sessionData;
+                } else {
+                    // auth-state.js가 없으면 localStorage에서 사용자 정보 사용 (하위 호환)
+                    const userId = getCurrentUserId();
+                    if (!userId) {
+                        console.warn('⚠️ [토큰 조회] 사용자 ID가 없습니다');
+                        return null;
+                    }
+                    
+                    // 기존 방식으로 폴백
+                    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                        ? 'http://localhost:3003' 
+                        : '';
+                    
+                    const response = await fetch(`${API_BASE}/api/subscription/cycle?user_id=${encodeURIComponent(userId)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'user-id': userId
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        console.error('❌ [토큰 조회] HTTP 오류:', response.status);
+                        return null;
+                    }
+                    
+                    const result = await response.json();
+                    if (result.success && result.cycle) {
+                        return {
+                            remaining: result.cycle.tokens_remaining ?? 0,
+                            used: result.cycle.tokens_used ?? 0,
+                            limit: result.cycle.monthly_token_limit ?? 100
+                        };
+                    }
+                    return null;
+                }
                 
-                // 구독 사이클 API 사용 (더 간단하고 안정적)
-                const response = await fetch(`${API_BASE}/api/subscription/cycle?user_id=${encodeURIComponent(userId)}`, {
+                if (!session?.access_token) {
+                    console.error('❌ [토큰 조회] 세션 토큰이 없습니다');
+                    return null;
+                }
+                
+                console.log('🔍 [토큰 조회] API 호출 시작 (mypage.html과 동일한 방식)');
+                
+                // mypage.html과 동일한 API 사용
+                const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'user-id': userId // 추가 헤더
+                        'Authorization': `Bearer ${session.access_token}`
                     }
                 });
 
                 if (!response.ok) {
                     console.error('❌ [토큰 조회] HTTP 오류:', response.status, response.statusText);
                     try {
-                        const errorText = await response.text();
-                        console.error('❌ [토큰 조회] 에러 응답:', errorText);
+                        const errorData = await response.json();
+                        console.error('❌ [토큰 조회] 에러 응답:', errorData);
                     } catch (e) {
                         console.error('❌ [토큰 조회] 에러 응답 읽기 실패:', e);
                     }
@@ -2608,8 +2640,8 @@
                 const result = await response.json();
                 console.log('📊 [토큰 조회] API 응답:', result);
                 
-                if (result.success && result.cycle) {
-                    const cycle = result.cycle;
+                if (result.success && result.data && result.data.cycle) {
+                    const cycle = result.data.cycle;
                     const tokenInfo = {
                         remaining: cycle.tokens_remaining ?? 0,
                         used: cycle.tokens_used ?? 0,
@@ -2619,22 +2651,8 @@
                     return tokenInfo;
                 }
                 
-                // 사이클이 없으면 기본값 반환 (API가 자동 생성했을 수도 있음)
+                // 사이클이 없으면 기본값 반환
                 if (result.success) {
-                    if (result.isNew || result.renewed) {
-                        // 새로 생성된 사이클
-                        if (result.cycle) {
-                            const tokenInfo = {
-                                remaining: result.cycle.tokens_remaining ?? 100,
-                                used: result.cycle.tokens_used ?? 0,
-                                limit: result.cycle.monthly_token_limit ?? 100
-                            };
-                            console.log('✅ [토큰 조회] 새 사이클 생성됨:', tokenInfo);
-                            return tokenInfo;
-                        }
-                    }
-                    
-                    // 사이클이 없지만 성공 응답인 경우 기본값
                     console.log('⚠️ [토큰 조회] 사이클이 없습니다. 기본값 사용');
                     return {
                         remaining: 100,
@@ -3026,6 +3044,9 @@
             updateAuthUI();
         });
     </script>
+
+    <!-- 공통 인증 스크립트 (mypage.html과 동일) -->
+    <script src="/assets/auth-state.js?v=202410" defer></script>
 
     <!-- 푸터 -->
     <footer class="site-footer">
