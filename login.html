@@ -89,6 +89,12 @@
         position: relative;
         z-index: 1;
       }
+      
+      /* 버튼은 더 높은 z-index로 설정 */
+      .login-container > .social-login,
+      .login-container .kakao-btn {
+        z-index: 100 !important;
+      }
 
       .back-btn {
         position: absolute;
@@ -275,8 +281,9 @@
         flex-direction: column;
         gap: 14px;
         position: relative;
-        z-index: 10;
+        z-index: 100;
         pointer-events: auto;
+        isolation: isolate;
       }
 
       .kakao-btn {
@@ -298,13 +305,15 @@
         align-items: center;
         justify-content: center;
         gap: 6px;
-        cursor: pointer;
+        cursor: pointer !important;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         position: relative;
-        z-index: 10;
-        pointer-events: auto;
+        z-index: 100;
+        pointer-events: auto !important;
         user-select: none;
         -webkit-user-select: none;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
       
       .kakao-btn-content {
@@ -612,14 +621,14 @@
         <div class="success-message" id="successMessage"></div>
 
         <div class="social-login">
-          <button class="kakao-btn" id="kakaoLoginAuto">
+          <button type="button" class="kakao-btn" id="kakaoLoginAuto" onclick="handleKakaoLoginClick('auto', event)">
             <div class="kakao-btn-content">
               <span class="kakao-emoji">💬</span>
               <span>카카오 간편 로그인</span>
             </div>
             <span class="kakao-btn-desc">로그인 상태 유지</span>
           </button>
-          <button class="kakao-btn" id="kakaoLoginManual" style="background: linear-gradient(135deg, #fee500 0%, #fde768 80%, #fee500 100%); opacity: 0.95;">
+          <button type="button" class="kakao-btn" id="kakaoLoginManual" style="background: linear-gradient(135deg, #fee500 0%, #fde768 80%, #fee500 100%); opacity: 0.95;" onclick="handleKakaoLoginClick('manual', event)">
             <div class="kakao-btn-content">
               <span class="kakao-emoji">🔐</span>
               <span>카카오 수동 로그인</span>
@@ -1004,21 +1013,43 @@
         }
       }
 
+      // 전역 함수로 만들어서 inline onclick에서도 사용 가능하도록
+      window.handleKakaoLoginClick = function(loginType, event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        console.log('[로그인 버튼] 클릭됨 - 타입:', loginType);
+        handleKakaoLogin(loginType);
+      };
+
       // 버튼 이벤트 리스너 설정 (DOMContentLoaded로 안전하게 실행)
       function setupLoginButtons() {
         // 카카오 간편 로그인 (세션 유지)
         const kakaoLoginAutoBtn = document.getElementById("kakaoLoginAuto");
         if (kakaoLoginAutoBtn) {
           console.log('[로그인 버튼] 간편 로그인 버튼 찾음');
+          
+          // 여러 방법으로 이벤트 바인딩 (캡처 단계 포함)
           kakaoLoginAutoBtn.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[로그인 버튼] 간편 로그인 클릭됨');
+            console.log('[로그인 버튼] 간편 로그인 클릭됨 (addEventListener)');
             handleKakaoLogin('auto');
-          });
+          }, true); // 캡처 단계에서도 처리
+          
+          kakaoLoginAutoBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[로그인 버튼] 간편 로그인 클릭됨 (addEventListener bubble)');
+            handleKakaoLogin('auto');
+          }, false); // 버블링 단계에서도 처리
+          
           // 버튼이 클릭 가능한지 확인
           kakaoLoginAutoBtn.style.pointerEvents = 'auto';
           kakaoLoginAutoBtn.style.cursor = 'pointer';
+          kakaoLoginAutoBtn.disabled = false;
+          kakaoLoginAutoBtn.setAttribute('tabindex', '0');
         } else {
           console.error('[로그인 버튼] 간편 로그인 버튼을 찾을 수 없음');
         }
@@ -1027,27 +1058,48 @@
         const kakaoLoginManualBtn = document.getElementById("kakaoLoginManual");
         if (kakaoLoginManualBtn) {
           console.log('[로그인 버튼] 수동 로그인 버튼 찾음');
+          
+          // 여러 방법으로 이벤트 바인딩 (캡처 단계 포함)
           kakaoLoginManualBtn.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[로그인 버튼] 수동 로그인 클릭됨');
+            console.log('[로그인 버튼] 수동 로그인 클릭됨 (addEventListener)');
             handleKakaoLogin('manual');
-          });
+          }, true); // 캡처 단계에서도 처리
+          
+          kakaoLoginManualBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[로그인 버튼] 수동 로그인 클릭됨 (addEventListener bubble)');
+            handleKakaoLogin('manual');
+          }, false); // 버블링 단계에서도 처리
+          
           // 버튼이 클릭 가능한지 확인
           kakaoLoginManualBtn.style.pointerEvents = 'auto';
           kakaoLoginManualBtn.style.cursor = 'pointer';
+          kakaoLoginManualBtn.disabled = false;
+          kakaoLoginManualBtn.setAttribute('tabindex', '0');
         } else {
           console.error('[로그인 버튼] 수동 로그인 버튼을 찾을 수 없음');
         }
       }
 
-      // DOM이 로드된 후 버튼 설정
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupLoginButtons);
-      } else {
-        // DOM이 이미 로드된 경우 즉시 실행
+      // DOM이 로드된 후 버튼 설정 (여러 시점에서 시도)
+      function initLoginButtons() {
         setupLoginButtons();
       }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLoginButtons);
+      } else {
+        // DOM이 이미 로드된 경우 즉시 실행
+        setTimeout(initLoginButtons, 0);
+      }
+      
+      // window.onload에서도 한 번 더 시도
+      window.addEventListener('load', function() {
+        setTimeout(setupLoginButtons, 100);
+      });
 
       // 회원가입 링크에 redirect 파라미터 추가
       const signupLink = document.getElementById("signupLink");
