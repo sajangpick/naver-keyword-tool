@@ -2771,10 +2771,18 @@
                         // 토큰 사용량 계산 (mypage.html과 동일)
                         const tokensUsed = cycle.tokens_used || 0;
                         let tokensLimit = cycle.monthly_token_limit || 100;
-                        let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+                        let tokensRemaining = cycle.tokens_remaining;
+                        
+                        // tokens_remaining이 null이거나 undefined인 경우 계산
+                        if (tokensRemaining === null || tokensRemaining === undefined) {
+                            tokensRemaining = tokensLimit - tokensUsed;
+                        }
                         
                         // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리 (mypage.html과 동일)
-                        if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
+                        // 단, 실제 값이 999999 이상인지 명확히 확인
+                        const isUnlimited = isAdmin || (tokensLimit && tokensLimit >= 999999);
+                        
+                        if (isUnlimited) {
                             tokensLimit = null; // null = 무제한
                             tokensRemaining = null; // null = 무제한
                         }
@@ -2783,15 +2791,19 @@
                             remaining: tokensRemaining,
                             used: tokensUsed,
                             limit: tokensLimit,
-                            isUnlimited: tokensRemaining === null || tokensLimit === null
+                            isUnlimited: isUnlimited
                         };
                         
                         console.log('✅ [토큰 조회] 최종 토큰 정보:', {
                             isAdmin,
+                            membership_level: profile?.membership_level,
+                            user_type: profile?.user_type,
                             tokensUsed,
                             tokensLimit: tokensLimit || '무제한',
                             tokensRemaining: tokensRemaining || '무제한',
-                            isUnlimited: tokenInfo.isUnlimited
+                            isUnlimited: tokenInfo.isUnlimited,
+                            cycle_monthly_token_limit: cycle.monthly_token_limit,
+                            cycle_tokens_remaining: cycle.tokens_remaining
                         });
                         
                         return tokenInfo;
