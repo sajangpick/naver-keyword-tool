@@ -1302,6 +1302,9 @@
             width: 90%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             animation: modalSlideIn 0.3s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-sizing: border-box;
         }
 
         @keyframes modalSlideIn {
@@ -1390,6 +1393,69 @@
 
         .token-modal-actions .btn {
             flex: 1;
+            min-width: 0;
+        }
+
+        @media (max-width: 768px) {
+            .token-modal {
+                padding: 16px;
+                align-items: flex-end;
+            }
+
+            .token-modal-content {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 24px 24px 0 0;
+                padding: 24px 20px;
+                max-height: 85vh;
+                margin-bottom: 0;
+            }
+
+            .token-modal-header {
+                margin-bottom: 24px;
+            }
+
+            .token-modal-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
+                margin-bottom: 16px;
+            }
+
+            .token-modal-title {
+                font-size: 20px;
+            }
+
+            .token-modal-subtitle {
+                font-size: 14px;
+            }
+
+            .token-info-box {
+                padding: 20px;
+                margin-bottom: 24px;
+            }
+
+            .token-info-item {
+                padding: 10px 0;
+            }
+
+            .token-info-label {
+                font-size: 14px;
+            }
+
+            .token-info-value {
+                font-size: 16px;
+            }
+
+            .token-modal-actions {
+                gap: 8px;
+            }
+
+            .token-modal-actions .btn {
+                min-width: 0;
+                padding: 0 16px;
+                font-size: 14px;
+            }
         }
 
         /* 토큰 부족 경고 모달 */
@@ -1427,6 +1493,28 @@
             font-size: 14px;
             color: var(--text-light);
             line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .token-warning-box {
+                padding: 16px;
+                margin-bottom: 20px;
+            }
+
+            .token-warning-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+
+            .token-warning-title {
+                font-size: 16px;
+            }
+
+            .token-warning-message {
+                font-size: 13px;
+            }
         }
 
         .token-modal-icon.warning {
