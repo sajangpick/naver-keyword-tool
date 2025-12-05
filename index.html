@@ -8,7 +8,7 @@
     />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com wss://*.supabase.co; img-src 'self' data: https://images.unsplash.com https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com https://cdn.jsdelivr.net wss://*.supabase.co; img-src 'self' data: https://images.unsplash.com https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; base-uri 'self'; form-action 'self'"
     />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -3464,28 +3464,57 @@
 
       function forceUpdateAuthUI() {
         if (typeof updateAuthUI === "function") {
-          updateAuthUI();
+          updateAuthUI().catch(error => {
+            console.error("[auth] 강제 UI 업데이트 실패:", error);
+          });
         }
       }
 
+      // 전역 Promise 에러 핸들러 추가
+      window.addEventListener("unhandledrejection", function (event) {
+        // 중요한 에러만 콘솔에 표시 (Supabase LockManager 경고는 무시)
+        if (event.reason && typeof event.reason === "object") {
+          const reasonStr = JSON.stringify(event.reason);
+          if (!reasonStr.includes("LockManager") && !reasonStr.includes("Navigator")) {
+            console.error("[Unhandled Promise Rejection]:", event.reason);
+          }
+        } else if (event.reason && typeof event.reason === "string") {
+          if (!event.reason.includes("LockManager") && !event.reason.includes("Navigator")) {
+            console.error("[Unhandled Promise Rejection]:", event.reason);
+          }
+        }
+        // 에러를 처리했다고 표시 (기본 콘솔 에러 방지)
+        event.preventDefault();
+      });
+
       // DOMContentLoaded 시 즉시 실행
       if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initAuthUI);
+        document.addEventListener("DOMContentLoaded", () => {
+          initAuthUI().catch(error => {
+            console.error("[auth] 초기화 실패:", error);
+          });
+        });
       } else {
-        initAuthUI();
+        initAuthUI().catch(error => {
+          console.error("[auth] 초기화 실패:", error);
+        });
       }
 
       // 페이지 로드 완료 후 재확인
       window.addEventListener("load", function () {
         setTimeout(function () {
-          initAuthUI();
+          initAuthUI().catch(error => {
+            console.error("[auth] 재초기화 실패:", error);
+          });
         }, 100);
       });
 
       // 인증 상태 변경 이벤트 리스너
       window.addEventListener("auth:state-changed", function () {
         if (typeof updateAuthUI === "function") {
-          updateAuthUI();
+          updateAuthUI().catch(error => {
+            console.error("[auth] UI 업데이트 실패:", error);
+          });
         }
       });
 
