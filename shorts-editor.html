@@ -2662,6 +2662,23 @@
             await showTokenModal();
         }
 
+        // 등급 정규화 함수 (mypage.html과 동일)
+        function normalizeMembershipLevel(level) {
+            if (!level) {
+                return 'seed';
+            }
+            const normalized = level.toLowerCase();
+            // FREE 또는 free를 seed로 변환
+            if (normalized === 'free') {
+                return 'seed';
+            }
+            // big_power를 bigpower로 변환
+            if (normalized === 'big_power') {
+                return 'bigpower';
+            }
+            return normalized;
+        }
+
         // Supabase 클라이언트 초기화 (mypage.html과 완전히 동일)
         let supabase = null;
         async function initSupabase() {
@@ -2765,24 +2782,20 @@
                     });
                     
                     if (cycle) {
-                        // 관리자 등급 체크 (mypage.html과 동일)
-                        const isAdmin = profile?.membership_level === 'admin' || profile?.user_type === 'admin';
+                        // mypage.html의 loadTokenInfo와 완전히 동일한 로직 사용
+                        // 등급 정규화 (mypage.html과 동일)
+                        const normalizedLevel = normalizeMembershipLevel(profile?.membership_level);
                         
-                        // 토큰 사용량 계산 (mypage.html과 동일)
+                        // 관리자 등급 체크 (mypage.html과 완전히 동일)
+                        const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
+                        
+                        // 토큰 사용량 계산 (mypage.html과 완전히 동일)
                         const tokensUsed = cycle.tokens_used || 0;
                         let tokensLimit = cycle.monthly_token_limit || 100;
-                        let tokensRemaining = cycle.tokens_remaining;
+                        let tokensRemaining = cycle.tokens_remaining || tokensLimit;
                         
-                        // tokens_remaining이 null이거나 undefined인 경우 계산
-                        if (tokensRemaining === null || tokensRemaining === undefined) {
-                            tokensRemaining = tokensLimit - tokensUsed;
-                        }
-                        
-                        // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리 (mypage.html과 동일)
-                        // 단, 실제 값이 999999 이상인지 명확히 확인
-                        const isUnlimited = isAdmin || (tokensLimit && tokensLimit >= 999999);
-                        
-                        if (isUnlimited) {
+                        // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리 (mypage.html과 완전히 동일)
+                        if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
                             tokensLimit = null; // null = 무제한
                             tokensRemaining = null; // null = 무제한
                         }
@@ -2791,13 +2804,13 @@
                             remaining: tokensRemaining,
                             used: tokensUsed,
                             limit: tokensLimit,
-                            isUnlimited: isUnlimited
+                            isUnlimited: tokensRemaining === null || tokensLimit === null
                         };
                         
-                        console.log('✅ [토큰 조회] 최종 토큰 정보:', {
+                        console.log('✅ [토큰 조회] 최종 토큰 정보 (mypage.html 내 토큰 정보와 동일):', {
+                            normalizedLevel,
+                            original_membership_level: profile?.membership_level,
                             isAdmin,
-                            membership_level: profile?.membership_level,
-                            user_type: profile?.user_type,
                             tokensUsed,
                             tokensLimit: tokensLimit || '무제한',
                             tokensRemaining: tokensRemaining || '무제한',
@@ -2986,19 +2999,47 @@
         // 영상 생성 확인 후 실행
         let pendingVideoGeneration = false;
         async function confirmVideoGeneration() {
-            // 토큰 부족 여부 확인
+            // 토큰 부족 여부 확인 (실제 토큰 정보로 재확인)
             const estimatedTokens = 1500;
             const tokenInfo = await fetchTokenInfo();
             
-            if (tokenInfo && !tokenInfo.isUnlimited) {
+            if (!tokenInfo) {
+                alert('토큰 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                return;
+            }
+            
+            // 무제한이 아닌 경우 토큰 부족 체크
+            if (!tokenInfo.isUnlimited) {
                 const remaining = Number(tokenInfo.remaining) || 0;
                 if (remaining < estimatedTokens) {
-                    // 토큰 부족 시 모달을 닫지 않고 경고만 표시
-                    alert('토큰이 부족합니다. 토큰을 충전하거나 구독을 업그레이드해주세요.');
+                    // 토큰 부족 시 모달을 닫지 않고 경고 표시
+                    const warningBox = document.getElementById('tokenWarningBox');
+                    const modalIcon = document.querySelector('.token-modal-icon');
+                    
+                    if (warningBox) {
+                        warningBox.classList.remove('hidden');
+                    }
+                    if (modalIcon) {
+                        modalIcon.classList.add('warning');
+                        modalIcon.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
+                    }
+                    
+                    // 토큰 정보 강조 표시
+                    const remainingEl = document.getElementById('remainingTokens');
+                    const afterEl = document.getElementById('afterTokens');
+                    if (remainingEl) {
+                        remainingEl.className = 'token-info-value warning';
+                    }
+                    if (afterEl) {
+                        afterEl.className = 'token-info-value warning';
+                    }
+                    
+                    alert(`토큰이 부족합니다.\n\n현재 남은 토큰: ${remaining.toLocaleString()} 토큰\n필요한 토큰: ${estimatedTokens.toLocaleString()} 토큰\n\n토큰을 충전하거나 구독을 업그레이드해주세요.`);
                     return;
                 }
             }
             
+            // 토큰이 충분한 경우에만 진행
             closeTokenModal();
             pendingVideoGeneration = true;
             await executeVideoGeneration();
@@ -3145,9 +3186,21 @@
                                    errorMessage.includes('부족');
                 
                 if (isTokenError) {
-                    // 토큰 부족 시 커스텀 모달로 알림 (에러 화면 대신)
-                    // 토큰 모달을 경고 모드로 표시
+                    // 토큰 부족 시 토큰 모달을 다시 열어서 경고 표시
+                    console.error('❌ [영상 생성] 토큰 부족으로 실패. 토큰 모달을 다시 엽니다.');
+                    
+                    // 에러 화면 숨기기
+                    hideLoadingScreen();
+                    resetResultSection();
+                    
+                    // 토큰 모달을 경고 모드로 다시 표시
                     await showTokenModal(true);
+                    
+                    // 사용자에게 안내
+                    const warningBox = document.getElementById('tokenWarningBox');
+                    if (warningBox) {
+                        warningBox.classList.remove('hidden');
+                    }
                 } else {
                     // 다른 에러는 기존대로 에러 화면 표시
                     showErrorScreen(error.message);
