@@ -1582,7 +1582,7 @@
         `;
       }
 
-      // 카테고리 필터링 적용
+      // 카테고리 필터링 적용 (원본 데이터는 변경하지 않음)
       let filteredItems = items;
       if (currentNaverCategory !== 'all') {
         filteredItems = items.filter(item => {
@@ -1590,6 +1590,8 @@
           return detectedCategory === currentNaverCategory;
         });
       }
+      
+      // 필터링 후에도 원본 데이터는 naverSectionData에 그대로 유지됨
 
       // 정렬 적용
       const sortedItems = sortNaverNewsItems(filteredItems);
@@ -1966,11 +1968,14 @@
       return sorted;
     }
 
-    // localStorage에 네이버 뉴스 데이터 저장
+    // localStorage에 네이버 뉴스 데이터 저장 (항상 저장하여 데이터 유지)
     function saveNaverNewsToStorage() {
       try {
+        // sections가 없으면 빈 객체로 초기화 (데이터 구조 유지)
+        const sections = naverSectionData.sections || {};
+        
         const dataToSave = {
-          sections: naverSectionData.sections,
+          sections: sections,
           fetchedAt: naverSectionData.fetchedAt instanceof Date 
             ? naverSectionData.fetchedAt.toISOString() 
             : (naverSectionData.fetchedAt || null)
@@ -1982,9 +1987,14 @@
           return sum + (Array.isArray(items) ? items.length : 0);
         }, 0);
         
+        // 항상 저장 (데이터가 없어도 구조 유지)
         localStorage.setItem('naverNewsData', JSON.stringify(dataToSave));
         
-        console.log(`💾 localStorage 저장 성공: 총 ${totalCount}개의 뉴스 저장됨`);
+        if (totalCount > 0) {
+          console.log(`💾 localStorage 저장 성공: 총 ${totalCount}개의 뉴스 저장됨`);
+        } else {
+          console.log(`💾 localStorage 저장 완료: 데이터 구조 유지 (뉴스 0개)`);
+        }
         return true;
       } catch (error) {
         console.error('❌ 네이버 뉴스 데이터 저장 실패:', error);
@@ -2095,7 +2105,8 @@
         }
       }
 
-      // 데이터가 변경되었으므로 localStorage에 저장 (뉴스가 계속 유지되도록)
+      // 항상 localStorage에 저장 (뉴스 데이터가 계속 유지되도록 보장)
+      // 데이터가 없어도 저장하여 구조를 유지
       saveNaverNewsToStorage();
     }
 
@@ -2265,10 +2276,35 @@
         
         // result.data가 없어도 정상 처리 (빈 객체로 처리)
         if (!result.data) {
-          console.warn('⚠️ 서버에서 데이터를 받지 못했습니다. 빈 데이터로 처리합니다.');
-          // 에러를 throw하지 않고 빈 객체로 처리
-          // 기존 데이터는 유지되므로 문제없음
-          // 사용자에게 알림
+          console.warn('⚠️ 서버에서 데이터를 받지 못했습니다. 기존 데이터는 유지됩니다.');
+          
+          // 기존 데이터가 있으면 유지하고 표시
+          const hasExistingData = Object.keys(existingSections).some(key => {
+            const items = existingSections[key] || [];
+            return Array.isArray(items) && items.length > 0;
+          });
+          
+          if (hasExistingData) {
+            // 기존 데이터를 naverSectionData에 할당하여 유지
+            naverSectionData.sections = existingSections;
+            
+            // localStorage에 저장하여 데이터가 계속 유지되도록 보장
+            saveNaverNewsToStorage();
+            
+            // 렌더링하여 기존 데이터 표시
+            renderNaverNews();
+            
+            errorEl.textContent = '⚠️ 서버에서 새로운 데이터를 받지 못했습니다.\n\n기존 뉴스는 계속 표시됩니다.\n\n서버가 정상적으로 실행 중인지 확인해주세요.';
+            errorEl.style.display = 'block';
+            errorEl.style.background = 'rgba(245, 158, 11, 0.1)';
+            errorEl.style.borderColor = '#f59e0b';
+          } else {
+            errorEl.textContent = '⚠️ 서버에서 데이터를 받지 못했습니다.\n\n서버가 정상적으로 실행 중인지 확인해주세요.';
+            errorEl.style.display = 'block';
+            errorEl.style.background = 'rgba(239, 68, 68, 0.1)';
+            errorEl.style.borderColor = '#ef4444';
+          }
+          
           if (button) {
             button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 데이터 없음';
             button.style.background = '#ef4444';
@@ -2279,10 +2315,6 @@
               button.style.color = '';
             }, 3000);
           }
-          errorEl.textContent = '⚠️ 서버에서 데이터를 받지 못했습니다.\n\n서버가 정상적으로 실행 중인지 확인해주세요.';
-          errorEl.style.display = 'block';
-          errorEl.style.background = 'rgba(239, 68, 68, 0.1)';
-          errorEl.style.borderColor = '#ef4444';
           return; // 더 이상 진행하지 않음
         }
         
@@ -2318,6 +2350,16 @@
           if (hasExistingData) {
             // 기존 데이터는 유지하고 경고만 표시
             console.log('✅ 기존 데이터는 유지합니다.');
+            
+            // 기존 데이터를 naverSectionData에 할당하여 유지
+            naverSectionData.sections = existingSections;
+            
+            // localStorage에 저장하여 데이터가 계속 유지되도록 보장
+            saveNaverNewsToStorage();
+            
+            // 렌더링하여 기존 데이터 표시
+            renderNaverNews();
+            
             errorEl.textContent = '⚠️ 새로운 뉴스가 없습니다.\n\nAPI에서 받은 데이터가 모두 비어있습니다.\n\n기존 뉴스는 계속 표시됩니다.';
             errorEl.style.display = 'block';
             errorEl.style.background = 'rgba(245, 158, 11, 0.1)';
@@ -2566,11 +2608,41 @@
           href: window.location.href,
         });
         
+        // 에러 발생 시에도 기존 데이터는 유지
+        const hasExistingData = Object.keys(existingSections).some(key => {
+          const items = existingSections[key] || [];
+          return Array.isArray(items) && items.length > 0;
+        });
+        
+        if (hasExistingData) {
+          // 기존 데이터를 naverSectionData에 할당하여 유지
+          naverSectionData.sections = existingSections;
+          
+          // localStorage에 저장하여 데이터가 계속 유지되도록 보장
+          saveNaverNewsToStorage();
+          
+          // 렌더링하여 기존 데이터 표시
+          renderNaverNews();
+          
+          console.log('✅ 에러 발생했지만 기존 데이터는 유지됩니다.');
+          errorEl.textContent = `⚠️ 뉴스 수집 중 오류가 발생했습니다.\n\n${error?.message || '알 수 없는 오류'}\n\n기존 뉴스는 계속 표시됩니다.`;
+          errorEl.style.display = 'block';
+          errorEl.style.background = 'rgba(245, 158, 11, 0.1)';
+          errorEl.style.borderColor = '#f59e0b';
+        } else {
+          errorEl.textContent = `❌ 뉴스 수집 중 오류가 발생했습니다.\n\n${error?.message || '알 수 없는 오류'}\n\n서버가 정상적으로 실행 중인지 확인해주세요.`;
+          errorEl.style.display = 'block';
+          errorEl.style.background = 'rgba(239, 68, 68, 0.1)';
+          errorEl.style.borderColor = '#ef4444';
+        }
+        
         // 취소된 요청인 경우 에러 메시지 표시하지 않음
         if (error?.name === 'AbortError') {
           console.log('요청이 취소되었습니다.');
           // 기존 데이터는 유지하고 렌더링
           if (naverSectionData.sections && Object.keys(naverSectionData.sections).length > 0) {
+            // localStorage에 저장하여 데이터가 계속 유지되도록 보장
+            saveNaverNewsToStorage();
             renderNaverNews();
           }
           return;
@@ -2579,7 +2651,16 @@
         // 에러 발생 시에도 기존 데이터는 유지하고 렌더링
         if (naverSectionData.sections && Object.keys(naverSectionData.sections).length > 0) {
           console.log('⚠️ 에러 발생했지만 기존 데이터는 유지합니다.');
+          // localStorage에 저장하여 데이터가 계속 유지되도록 보장
+          saveNaverNewsToStorage();
           renderNaverNews();
+        } else {
+          // 기존 데이터가 없으면 localStorage에서 다시 불러오기 시도
+          const loadResult = loadNaverNewsFromStorage();
+          if (loadResult) {
+            console.log('✅ localStorage에서 기존 데이터를 불러왔습니다.');
+            renderNaverNews();
+          }
         }
         
         // 더 자세한 에러 메시지 생성
@@ -4161,7 +4242,7 @@
         });
 
         // localStorage에서 네이버 뉴스 데이터 불러오기 (페이지 로드 시 자동 표시)
-        loadNaverNewsFromStorage();
+        const loadResult = loadNaverNewsFromStorage();
         
         // AI 추천 섹션을 항상 보이도록 설정
         const aiRecommendSection = document.getElementById('aiRecommendSection');
@@ -4181,32 +4262,34 @@
             suggestionsEl.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-secondary);">AI 추천 데이터가 없습니다. 위 버튼을 클릭하여 추천을 받아보세요.</div>';
           }
         }
+        
         const panel = document.getElementById('naverNewsPanel');
         const sections = naverSectionData.sections || {};
         
-        // 데이터가 있으면 자동으로 표시
-        const hasData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
-          const items = sections[key] || [];
-          return Array.isArray(items) && items.length > 0;
-        });
-        
-        if (panel && hasData) {
-          // 패널 표시
+        // 항상 패널을 표시하고 뉴스를 렌더링 (데이터가 없어도 표시)
+        if (panel) {
           panel.style.display = 'block';
-          // 뉴스 렌더링
+          // 뉴스 렌더링 (데이터가 있으면 표시, 없으면 빈 상태 메시지)
           renderNaverNews();
-          console.log('✅ localStorage에서 뉴스 데이터 자동 로드 완료:', {
-            social: sections.social?.length || 0,
-            economy: sections.economy?.length || 0,
-            total: Object.keys(sections).reduce((sum, key) => {
-              const items = sections[key] || [];
-              return sum + (Array.isArray(items) ? items.length : 0);
-            }, 0),
+          
+          // 데이터가 있으면 로그 출력
+          const hasData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
+            const items = sections[key] || [];
+            return Array.isArray(items) && items.length > 0;
           });
-        } else if (panel) {
-          // 데이터가 없어도 패널은 표시 (빈 상태 메시지 표시)
-          panel.style.display = 'block';
-          renderNaverNews();
+          
+          if (hasData) {
+            console.log('✅ localStorage에서 뉴스 데이터 자동 로드 완료:', {
+              social: sections.social?.length || 0,
+              economy: sections.economy?.length || 0,
+              total: Object.keys(sections).reduce((sum, key) => {
+                const items = sections[key] || [];
+                return sum + (Array.isArray(items) ? items.length : 0);
+              }, 0),
+            });
+          } else {
+            console.log('ℹ️ 저장된 뉴스 데이터가 없습니다. "뉴스 데이터 수집" 버튼을 클릭하여 뉴스를 가져오세요.');
+          }
         }
 
         // 폼 제출
