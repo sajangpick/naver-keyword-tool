@@ -7,16 +7,32 @@
   <meta name="referrer" content="no-referrer" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <title>결제하기 - 사장픽</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ff7b54'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
   <style>
+    /* 사장픽 브랜드 색상 변수 */
+    :root {
+      --accent-color: #ff7b54;
+      --accent-dark: #e56548;
+      --bg-color: #fff7f0;
+      --text-primary: #201a17;
+      --text-secondary: #7a6a60;
+      --secondary: #ffe8d9;
+      --white: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg-color);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -24,12 +40,13 @@
       padding: 20px;
     }
     .payment-container {
-      background: white;
-      border-radius: 20px;
+      background: var(--white);
+      border-radius: 24px;
       padding: 40px;
       max-width: 500px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
       flex: 1;
       margin-bottom: 20px;
     }
@@ -44,55 +61,62 @@
     
     .plan-selection-title {
       font-size: 32px;
-      font-weight: 700;
-      color: #333;
+      font-weight: 800;
+      color: var(--text-primary);
       margin: 0 0 8px 0;
+      letter-spacing: -0.5px;
     }
     
     .plan-selection-subtitle {
       font-size: 16px;
-      color: #666;
+      color: var(--text-secondary);
       margin: 0;
+      font-weight: 500;
     }
     h1 {
       font-size: 28px;
       margin-bottom: 10px;
-      color: #333;
+      color: var(--text-primary);
+      font-weight: 800;
+      letter-spacing: -0.5px;
     }
     .subtitle {
-      color: #666;
+      color: var(--text-secondary);
       margin-bottom: 30px;
+      font-weight: 500;
     }
     .plan-info {
-      background: #f8f9fa;
-      border-radius: 12px;
+      background: var(--secondary);
+      border-radius: 16px;
       padding: 20px;
       margin-bottom: 30px;
+      border: 1px solid var(--border);
     }
     .plan-name {
       font-size: 20px;
-      font-weight: 600;
-      color: #667eea;
+      font-weight: 700;
+      color: var(--accent-color);
       margin-bottom: 10px;
     }
     .plan-details {
       display: flex;
       justify-content: space-between;
       margin: 10px 0;
-      color: #555;
+      color: var(--text-primary);
+      font-weight: 500;
     }
     .price {
       font-size: 32px;
-      font-weight: 700;
-      color: #333;
+      font-weight: 800;
+      color: var(--text-primary);
       margin: 20px 0;
     }
     .payment-methods {
       margin-bottom: 30px;
     }
     .payment-method {
-      border: 2px solid #e0e0e0;
-      border-radius: 10px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
       padding: 15px;
       margin-bottom: 10px;
       cursor: pointer;
@@ -100,13 +124,15 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      background: var(--white);
     }
     .payment-method:hover {
-      border-color: #667eea;
+      border-color: var(--accent-color);
+      box-shadow: var(--shadow-sm);
     }
     .payment-method.selected {
-      border-color: #667eea;
-      background: #f0f4ff;
+      border-color: var(--accent-color);
+      background: var(--secondary);
     }
     .payment-method input[type="radio"] {
       width: 20px;
@@ -115,27 +141,38 @@
     .btn-payment {
       width: 100%;
       padding: 16px;
-      background: #667eea;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 18px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       transition: all 0.3s;
+      box-shadow: var(--shadow-md);
     }
     .btn-payment:hover {
-      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
     }
     .btn-payment:disabled {
       background: #ccc;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
     .terms {
       font-size: 12px;
-      color: #999;
+      color: var(--text-secondary);
       text-align: center;
       margin-top: 20px;
+    }
+    .terms a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+    .terms a:hover {
+      text-decoration: underline;
     }
     .loading {
       display: none;
@@ -144,7 +181,7 @@
     }
     .spinner {
       border: 3px solid #f3f3f3;
-      border-top: 3px solid #667eea;
+      border-top: 3px solid var(--accent-color);
       border-radius: 50%;
       width: 40px;
       height: 40px;
@@ -297,27 +334,28 @@
     /* 플랜 선택 카드 스타일 */
     .plan-card {
       transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow-md);
       overflow: hidden;
+      border: 1px solid var(--border);
     }
 
     .plan-card:hover {
       transform: translateY(-8px);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+      box-shadow: var(--shadow-lg);
     }
 
     .plan-card:active {
       transform: translateY(-4px);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-md);
     }
 
     /* 푸터 스타일 */
     .site-footer {
-      background: rgba(255, 255, 255, 0.95);
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      background: var(--white);
+      border-top: 1px solid var(--border);
       padding: 30px 20px;
       margin-top: auto;
-      color: #666;
+      color: var(--text-secondary);
       width: 100%;
     }
 
@@ -344,18 +382,18 @@
 
     .footer-label {
       font-weight: 700;
-      color: #333;
+      color: var(--text-primary);
       font-size: 13px;
       white-space: nowrap;
     }
 
     .footer-value {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 13px;
     }
 
     .footer-value a {
-      color: #667eea;
+      color: var(--accent-color);
       text-decoration: none;
       transition: opacity 0.2s ease;
     }
@@ -419,9 +457,9 @@
   <!-- 플랜 선택 화면 -->
   <div class="payment-container" id="planSelectionContainer">
     <div class="plan-selection-header" style="display: flex; align-items: center; gap: 15px;">
-      <button onclick="goBack()" style="background: none; border: none; font-size: 24px; color: #333; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; transition: all 0.3s; font-weight: 600; flex-shrink: 0;" 
-              onmouseover="this.style.background='#f5f5f5'; this.style.color='#000'" 
-              onmouseout="this.style.background='none'; this.style.color='#333'"
+      <button onclick="goBack()" style="background: none; border: none; font-size: 24px; color: var(--text-primary); cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; transition: all 0.3s; font-weight: 600; flex-shrink: 0;" 
+              onmouseover="this.style.background='var(--secondary)'; this.style.color='var(--accent-color)'" 
+              onmouseout="this.style.background='none'; this.style.color='var(--text-primary)'"
               title="이전 화면으로">
         ←
       </button>
@@ -435,7 +473,7 @@
       <!-- 플랜 카드들이 여기에 동적으로 로드됩니다 -->
       <div class="loading" id="planLoadingSpinner" style="width: 100%; text-align: center; padding: 40px;">
         <div class="spinner"></div>
-        <p style="margin-top: 15px; color: #666;">플랜 정보를 불러오는 중...</p>
+        <p style="margin-top: 15px; color: var(--text-secondary);">플랜 정보를 불러오는 중...</p>
       </div>
     </div>
   </div>
@@ -468,7 +506,7 @@
     <div class="payment-methods">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h3 style="margin: 0; font-size: 16px;">결제 방법 선택</h3>
-        <button id="registerCardBtn" class="btn-register-card" onclick="openCardRegisterModal()" style="padding: 8px 16px; background: #f0f4ff; color: #667eea; border: 1px solid #667eea; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+        <button id="registerCardBtn" class="btn-register-card" onclick="openCardRegisterModal()" style="padding: 8px 16px; background: var(--secondary); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
           <i class="fas fa-link"></i> 페이 연동하기
         </button>
       </div>
@@ -480,7 +518,7 @@
       
       <!-- 간편 결제 방법 -->
       <div style="margin-bottom: 20px;">
-        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #666; font-weight: 600;">간편 결제</h4>
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text-secondary); font-weight: 600;">간편 결제</h4>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
           <label class="payment-method" style="margin: 0; flex-direction: column; align-items: center; padding: 16px; text-align: center;">
             <input type="radio" name="method" value="toss">
@@ -510,7 +548,7 @@
       
       <!-- 일반 결제 방법 -->
       <div id="generalPaymentMethods">
-        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #666; font-weight: 600;">일반 결제</h4>
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text-secondary); font-weight: 600;">일반 결제</h4>
         <label class="payment-method">
           <input type="radio" name="method" value="card">
           <span>💳 신용/체크카드 (일회성)</span>
@@ -530,60 +568,67 @@
 
     <!-- 카드 등록 모달 -->
     <div id="cardRegisterModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-      <div style="background: white; border-radius: 16px; padding: 30px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div style="background: var(--white); border-radius: 16px; padding: 30px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="margin: 0; font-size: 22px; color: #333;">카드 등록하기</h2>
-          <button onclick="closeCardRegisterModal()" style="background: none; border: none; font-size: 24px; color: #999; cursor: pointer;">&times;</button>
+          <h2 style="margin: 0; font-size: 22px; color: var(--text-primary); font-weight: 800;">카드 등록하기</h2>
+          <button onclick="closeCardRegisterModal()" style="background: none; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; transition: color 0.3s;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color='var(--text-secondary)'">&times;</button>
         </div>
         
         <form id="cardRegisterForm" onsubmit="registerCard(event)">
           <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">카드 별칭</label>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">카드 별칭</label>
             <input type="text" id="cardAlias" placeholder="예: 주 카드, 회사 카드" 
-                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
-            <small style="color: #999; font-size: 12px;">나중에 쉽게 구분할 수 있도록 별칭을 입력하세요</small>
+                   style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; transition: border-color 0.3s;" 
+                   onfocus="this.style.borderColor='var(--accent-color)'" onblur="this.style.borderColor='var(--border)'" required>
+            <small style="color: var(--text-secondary); font-size: 12px;">나중에 쉽게 구분할 수 있도록 별칭을 입력하세요</small>
           </div>
           
           <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">카드번호</label>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">카드번호</label>
             <input type="text" id="cardNumber" placeholder="1234-5678-9012-3456" 
-                   maxlength="19" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
-            <small style="color: #999; font-size: 12px;">하이픈(-) 없이 숫자만 입력하세요</small>
+                   maxlength="19" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; transition: border-color 0.3s;" 
+                   onfocus="this.style.borderColor='var(--accent-color)'" onblur="this.style.borderColor='var(--border)'" required>
+            <small style="color: var(--text-secondary); font-size: 12px;">하이픈(-) 없이 숫자만 입력하세요</small>
           </div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
             <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">유효기간</label>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">유효기간</label>
               <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5"
-                     style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+                     style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; transition: border-color 0.3s;" 
+                     onfocus="this.style.borderColor='var(--accent-color)'" onblur="this.style.borderColor='var(--border)'" required>
             </div>
             <div>
-              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">CVC</label>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">CVC</label>
               <input type="text" id="cardCvc" placeholder="123" maxlength="4"
-                     style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+                     style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; transition: border-color 0.3s;" 
+                     onfocus="this.style.borderColor='var(--accent-color)'" onblur="this.style.borderColor='var(--border)'" required>
             </div>
           </div>
           
           <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">카드 비밀번호 앞 2자리</label>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">카드 비밀번호 앞 2자리</label>
             <input type="password" id="cardPassword" placeholder="**" maxlength="2"
-                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+                   style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; transition: border-color 0.3s;" 
+                   onfocus="this.style.borderColor='var(--accent-color)'" onblur="this.style.borderColor='var(--border)'" required>
           </div>
           
           <div style="margin-bottom: 20px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="setAsDefault" style="width: 18px; height: 18px;">
-              <span style="font-size: 14px; color: #333;">기본 카드로 설정</span>
+              <input type="checkbox" id="setAsDefault" style="width: 18px; height: 18px; accent-color: var(--accent-color);">
+              <span style="font-size: 14px; color: var(--text-primary);">기본 카드로 설정</span>
             </label>
           </div>
           
           <div style="display: flex; gap: 10px;">
             <button type="button" onclick="closeCardRegisterModal()" 
-                    style="flex: 1; padding: 14px; background: #f5f5f5; color: #333; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                    style="flex: 1; padding: 14px; background: var(--secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+                    onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--secondary)'">
               취소
             </button>
             <button type="submit" 
-                    style="flex: 1; padding: 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                    style="flex: 1; padding: 14px; background: linear-gradient(135deg, var(--accent-color), var(--accent-dark)); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: var(--shadow-sm);"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
               등록하기
             </button>
           </div>
@@ -778,10 +823,10 @@
       }
 
       const ownerPlans = [
-        { key: 'seed', name: '라이트', icon: '🌱', color: '#16a34a' },
-        { key: 'power', name: '스탠다드', icon: '⚡', color: '#f59e0b' },
-        { key: 'bigpower', name: '프로', icon: '💪', color: '#f97316' },
-        { key: 'premium', name: '프리미엄', icon: '⭐', color: '#ec4899' }
+        { key: 'seed', name: '라이트', icon: '🌱', color: '#ff7b54', gradient: 'linear-gradient(135deg, #ff7b54 0%, #ff9d7a 100%)' },
+        { key: 'power', name: '스탠다드', icon: '⚡', color: '#ff7b54', gradient: 'linear-gradient(135deg, #ff7b54 0%, #ff8a65 100%)' },
+        { key: 'bigpower', name: '프로', icon: '💪', color: '#e56548', gradient: 'linear-gradient(135deg, #e56548 0%, #ff7b54 100%)' },
+        { key: 'premium', name: '프리미엄', icon: '⭐', color: '#e56548', gradient: 'linear-gradient(135deg, #d4543a 0%, #e56548 100%)' }
       ];
 
       container.innerHTML = ownerPlans.map(plan => {
@@ -791,8 +836,8 @@
         
         return `
           <div class="plan-card" onclick="selectPlan('${plan.key}')" 
-               style="background: linear-gradient(135deg, ${plan.color}15, ${plan.color}25); 
-                      border: none;
+               style="background: linear-gradient(135deg, rgba(255, 123, 84, 0.1), rgba(255, 123, 84, 0.05)); 
+                      border: 1px solid var(--border);
                       border-radius: 16px; 
                       padding: 28px 24px; 
                       cursor: pointer; 
@@ -802,25 +847,26 @@
                       min-width: 220px;
                       max-width: 260px;
                       position: relative;
-                      box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                      box-shadow: var(--shadow-md);">
             ${isCurrentPlan ? `
-            <div style="position: absolute; top: 10px; right: 10px; background: ${plan.color}; 
+            <div style="position: absolute; top: 10px; right: 10px; background: var(--accent-color); 
                         color: white; padding: 5px 10px; border-radius: 16px; font-size: 11px; 
-                        font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.15); z-index: 10;">
+                        font-weight: 700; box-shadow: var(--shadow-sm); z-index: 10;">
               현재 사용중
             </div>
             ` : ''}
             <div style="font-size: 48px; margin-bottom: 12px;">${plan.icon}</div>
-            <h3 style="font-size: 24px; font-weight: 700; color: #333; margin-bottom: 8px;">${plan.name}</h3>
-            <div style="font-size: 28px; font-weight: 700; color: ${plan.color}; margin-bottom: 12px;">
+            <h3 style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">${plan.name}</h3>
+            <div style="font-size: 28px; font-weight: 700; color: var(--accent-color); margin-bottom: 12px;">
               ${priceText}
             </div>
-            <div style="font-size: 14px; color: #666; margin-bottom: 20px;">
+            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 20px;">
               월 ${planInfo.tokens.toLocaleString()} 토큰
             </div>
-            <button style="width: 100%; padding: 12px; background: ${plan.color}; color: white; 
-                          border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
-                          ${isCurrentPlan ? 'opacity: 0.7;' : ''}">
+            <button style="width: 100%; padding: 12px; background: ${isCurrentPlan ? 'var(--secondary)' : plan.gradient}; color: ${isCurrentPlan ? 'var(--accent-color)' : 'white'};
+                          border: ${isCurrentPlan ? '1px solid var(--accent-color)' : 'none'}; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: ${isCurrentPlan ? 'default' : 'pointer'};
+                          transition: all 0.3s; box-shadow: ${isCurrentPlan ? 'none' : 'var(--shadow-sm)'};"
+                    ${!isCurrentPlan ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'"` : ''}>
               ${isCurrentPlan ? '현재 플랜' : '선택하기'}
             </button>
           </div>
@@ -905,9 +951,9 @@
           <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div>
               <span>💳 ${card.card_alias || '등록된 카드'}</span>
-              <div style="font-size: 12px; color: #999; margin-top: 4px;">
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
                 ${card.card_number || '****-****-****-****'} ${card.card_company ? '· ' + card.card_company : ''}
-                ${card.is_default ? '<span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px;">기본</span>' : ''}
+                ${card.is_default ? '<span style="background: var(--accent-color); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px;">기본</span>' : ''}
               </div>
             </div>
             <button onclick="deleteCard('${card.id}', event)" 
