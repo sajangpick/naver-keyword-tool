@@ -1117,6 +1117,10 @@ app.post("/api/ai-news-recommend", aiNewsRecommendHandler);
 const newsAiSummaryHandler = require("./api/news-ai-summary");
 app.post("/api/news-ai-summary", newsAiSummaryHandler);
 
+// 오늘 하루 경제/사회 뉴스 AI 해석 API
+const dailyNewsAnalysisHandler = require("./api/daily-news-analysis");
+app.get("/api/daily-news-analysis", dailyNewsAnalysisHandler);
+
 // 뉴스 원문 추출 API
 const newsFetchHandler = require("./api/news-fetch");
 app.get("/api/news-fetch", newsFetchHandler);
