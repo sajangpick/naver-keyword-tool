@@ -666,28 +666,34 @@
         
         const supabaseClient = window.authState.supabase;
         
-        // URL 해시나 쿼리에 OAuth 관련 파라미터가 있으면 스킵
+        // URL 해시나 쿼리에 OAuth 관련 파라미터 확인
         const hasOAuthParams = window.location.hash.includes('access_token') || 
                                window.location.search.includes('code=');
         
+        console.log('[회원가입] OAuth 파라미터 확인:', hasOAuthParams);
+        console.log('[회원가입] 회원가입 플래그:', sessionStorage.getItem('isSignupFlow'));
+        
+        // OAuth 콜백인 경우 onAuthStateChange에서 처리하므로 스킵
+        if (hasOAuthParams) {
+          console.log('[회원가입] OAuth 콜백 감지 - onAuthStateChange에서 처리');
+          // 회원가입 플래그가 있으면 그대로 유지 (onAuthStateChange에서 사용)
+          return;
+        }
+        
+        // 회원가입 페이지에 이미 로그인된 상태로 접근한 경우
+        // (회원가입이 아닌 로그인된 사용자가 회원가입 페이지에 접근)
         if (!hasOAuthParams) {
           try {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
-              setLoggedInFromSession(session);
+              console.log('[회원가입] 이미 로그인된 상태 - 홈으로 리다이렉트');
               
-              // 프로필 정보 확인
-              const { data: profile, error } = await supabaseClient
-                .from('profiles')
-                .select('name')
-                .eq('id', session.user.id)
-                .single();
-              
-              // 프로필이 없거나 이름이 없으면 정보 입력 페이지로 이동
-              if (error || !profile || !profile.name) {
-                window.location.replace("setup-profile.html");
-              } else {
-                window.location.replace(resolveRedirectTarget());
+              // 회원가입 페이지가 아닌 메인 페이지로 안내
+              // (이미 로그인된 사용자가 회원가입 페이지에 접근하는 경우)
+              const currentPath = window.location.pathname;
+              if (currentPath.includes('join.html')) {
+                // 로그인 링크로 안내하거나 메인으로 이동
+                window.location.replace(resolveRedirectTarget() || "index.html");
               }
             }
           } catch (error) {
@@ -698,9 +704,31 @@
         // 로그인 상태 변화 감지
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
           if (event === "SIGNED_IN") {
+            console.log('[회원가입] SIGNED_IN 이벤트 발생');
+            
+            // 회원가입 플래그 확인 (회원가입 페이지에서 설정됨)
+            const isSignupFlow = sessionStorage.getItem('isSignupFlow') === 'true';
+            console.log('[회원가입] 회원가입 플래그:', isSignupFlow);
+            
             setLoggedInFromSession(session);
             
-            // 프로필 정보 확인
+            // 회원가입 플로우인 경우 무조건 프로필 설정으로 이동
+            if (isSignupFlow) {
+              console.log('[회원가입] 회원가입 플로우 - 프로필 설정 페이지로 이동');
+              sessionStorage.removeItem('isSignupFlow'); // 플래그 제거
+              
+              // redirect 정보를 프로필 설정 페이지로 전달
+              const redirectInfo = redirectTarget || sessionStorage.getItem('joinRedirect');
+              if (redirectInfo) {
+                sessionStorage.setItem('signupRedirect', redirectInfo);
+                sessionStorage.removeItem('joinRedirect');
+              }
+              
+              window.location.replace("setup-profile.html");
+              return;
+            }
+            
+            // 기존 로그인 플로우인 경우 프로필 확인
             try {
               const { data: profile, error } = await supabaseClient
                 .from('profiles')
@@ -708,10 +736,14 @@
                 .eq('id', session.user.id)
                 .single();
               
+              console.log('[회원가입] 프로필 확인:', { profile, error });
+              
               // 프로필이 없거나 이름이 없으면 정보 입력 페이지로 이동
               if (error || !profile || !profile.name) {
+                console.log('[회원가입] 프로필 없음 - 프로필 설정 페이지로 이동');
                 window.location.replace("setup-profile.html");
               } else {
+                console.log('[회원가입] 프로필 있음 - 리다이렉트 대상으로 이동');
                 window.location.replace(resolveRedirectTarget());
               }
             } catch (error) {
@@ -783,6 +815,19 @@
           }
           
           console.log('[카카오 회원가입] Supabase 클라이언트 준비 완료');
+          
+          // 이미 로그인된 상태인지 확인 (회원가입 페이지에서 새 계정으로 가입하려는 경우)
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (session) {
+            console.log('[카카오 회원가입] 이미 로그인된 상태 - 로그아웃 후 회원가입 진행');
+            // 기존 세션 로그아웃 (새 계정으로 가입하기 위해)
+            await supabaseClient.auth.signOut();
+            console.log('[카카오 회원가입] 기존 세션 로그아웃 완료');
+          }
+          
+          // 회원가입 플래그 설정 (OAuth 콜백 후 프로필 설정으로 보내기 위해)
+          sessionStorage.setItem('isSignupFlow', 'true');
+          console.log('[카카오 회원가입] 회원가입 플래그 설정');
           
           // redirect 파라미터를 sessionStorage에 저장
           const currentRedirect = redirectTarget || sessionStorage.getItem('joinRedirect');

@@ -50,7 +50,7 @@
     },
     '/admin/news-management.html': {
       title: '뉴스 관리',
-      subtitle: '정보 게시판 관리',
+      subtitle: '뉴스 게시판 관리',
       icon: '📰'
     }
   };

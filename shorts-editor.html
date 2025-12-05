@@ -9,6 +9,8 @@
     <title>AI 쇼츠 영상 생성 - 사장픽</title>
     <meta name="description" content="식당 홍보 영상을 AI로 자동 생성하세요. 사진 한 장으로 프로페셔널한 쇼츠 영상을 만들어드립니다.">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303c75a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+    <!-- Supabase SDK (mypage.html과 동일) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <!-- Pretendard Font -->
@@ -2660,23 +2662,21 @@
             await showTokenModal();
         }
 
-        // Supabase 클라이언트 초기화 (mypage.html과 동일)
+        // Supabase 클라이언트 초기화 (mypage.html과 완전히 동일)
         let supabase = null;
         async function initSupabase() {
             try {
-                // auth-state.js가 로드될 때까지 대기
-                let waitCount = 0;
-                while (!window.authState?.supabase && waitCount < 50) {
+                // auth-state.js가 로드될 때까지 대기 (mypage.html과 동일)
+                while (!window.authState?.supabase) {
                     await new Promise(resolve => setTimeout(resolve, 100));
-                    waitCount++;
                 }
                 
-                if (window.authState?.supabase) {
-                    supabase = window.authState.supabase;
-                    console.log('✅ [shorts-editor] Supabase 초기화 완료');
-                } else {
-                    console.error('❌ [shorts-editor] auth-state.js가 로드되지 않았습니다');
-                }
+                supabase = window.authState.supabase;
+                
+                // ✅ 전역 변수로도 저장 (다른 스크립트에서 사용 가능)
+                window.supabaseClient = supabase;
+                
+                console.log('✅ [shorts-editor] Supabase 초기화 완료');
             } catch (error) {
                 console.error('❌ [shorts-editor] Supabase 초기화 실패:', error);
             }
@@ -2685,13 +2685,15 @@
         // 토큰 정보 조회 (mypage.html의 loadTokenInfo와 완전히 동일)
         async function fetchTokenInfo() {
             try {
-                // Supabase 초기화 확인
+                // Supabase 초기화 확인 (mypage.html과 동일)
                 if (!supabase) {
                     await initSupabase();
                 }
                 
                 if (!supabase) {
                     console.error('❌ [토큰 조회] Supabase 클라이언트가 없습니다');
+                    console.error('❌ [토큰 조회] window.authState:', window.authState);
+                    console.error('❌ [토큰 조회] window.supabase:', window.supabase);
                     return null;
                 }
                 
@@ -2699,6 +2701,7 @@
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session?.access_token) {
                     console.error('❌ [토큰 조회] 세션 토큰이 없습니다');
+                    console.error('❌ [토큰 조회] session:', session);
                     return null;
                 }
 
@@ -2897,46 +2900,54 @@
                     });
                 }
             } else {
-                // 조회 실패 시 재시도 및 안내 메시지 표시
+                // 조회 실패 시 여러 번 재시도
                 console.warn('⚠️ [토큰 모달] 토큰 정보 조회 실패, 재시도 중...');
                 
-                // 잠시 후 재시도
-                setTimeout(async () => {
-                    const retryTokenInfo = await fetchTokenInfo();
-                    if (retryTokenInfo) {
-                        // 재시도 성공 시 토큰 정보 업데이트
-                        const isUnlimited = retryTokenInfo.isUnlimited || retryTokenInfo.remaining === null || retryTokenInfo.limit === null;
-                        
-                        if (isUnlimited) {
-                            document.getElementById('remainingTokens').textContent = '무제한';
-                            document.getElementById('remainingTokens').className = 'token-info-value success';
-                            document.getElementById('afterTokens').textContent = '무제한';
-                            document.getElementById('afterTokens').className = 'token-info-value success';
-                        } else {
-                            const remaining = Number(retryTokenInfo.remaining) || 0;
-                            const afterTokens = remaining - estimatedTokens;
-                            
-                            document.getElementById('remainingTokens').textContent = remaining.toLocaleString() + ' 토큰';
-                            document.getElementById('remainingTokens').className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
-                            document.getElementById('afterTokens').textContent = afterTokens.toLocaleString() + ' 토큰';
-                            document.getElementById('afterTokens').className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
-                        }
-                        console.log('✅ [토큰 모달] 재시도 성공, 토큰 정보 업데이트 완료');
-                    } else {
-                        // 재시도도 실패한 경우 안내 메시지
-                        document.getElementById('remainingTokens').textContent = '조회 실패';
-                        document.getElementById('remainingTokens').className = 'token-info-value warning';
-                        document.getElementById('afterTokens').textContent = '확인 불가';
-                        document.getElementById('afterTokens').className = 'token-info-value warning';
-                        console.error('❌ [토큰 모달] 재시도도 실패했습니다');
-                    }
-                }, 500);
+                // 최대 3번 재시도
+                let retryCount = 0;
+                const maxRetries = 3;
+                let retryTokenInfo = null;
                 
-                // 즉시 표시할 기본값 (재시도 중임을 표시)
-                document.getElementById('remainingTokens').textContent = '조회 중...';
-                document.getElementById('remainingTokens').className = 'token-info-value';
-                document.getElementById('afterTokens').textContent = '조회 중...';
-                document.getElementById('afterTokens').className = 'token-info-value';
+                while (retryCount < maxRetries && !retryTokenInfo) {
+                    await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1))); // 점진적 지연
+                    console.log(`🔄 [토큰 모달] 재시도 ${retryCount + 1}/${maxRetries}...`);
+                    retryTokenInfo = await fetchTokenInfo();
+                    retryCount++;
+                }
+                
+                if (retryTokenInfo) {
+                    // 재시도 성공 시 토큰 정보 업데이트
+                    const isUnlimited = retryTokenInfo.isUnlimited || retryTokenInfo.remaining === null || retryTokenInfo.limit === null;
+                    
+                    if (isUnlimited) {
+                        document.getElementById('remainingTokens').textContent = '무제한';
+                        document.getElementById('remainingTokens').className = 'token-info-value success';
+                        document.getElementById('afterTokens').textContent = '무제한';
+                        document.getElementById('afterTokens').className = 'token-info-value success';
+                    } else {
+                        const remaining = Number(retryTokenInfo.remaining) || 0;
+                        const afterTokens = remaining - estimatedTokens;
+                        
+                        document.getElementById('remainingTokens').textContent = remaining.toLocaleString() + ' 토큰';
+                        document.getElementById('remainingTokens').className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
+                        document.getElementById('afterTokens').textContent = afterTokens.toLocaleString() + ' 토큰';
+                        document.getElementById('afterTokens').className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
+                    }
+                    console.log('✅ [토큰 모달] 재시도 성공, 토큰 정보 업데이트 완료');
+                } else {
+                    // 모든 재시도 실패한 경우 안내 메시지
+                    document.getElementById('remainingTokens').textContent = '조회 실패';
+                    document.getElementById('remainingTokens').className = 'token-info-value warning';
+                    document.getElementById('afterTokens').textContent = '확인 불가';
+                    document.getElementById('afterTokens').className = 'token-info-value warning';
+                    console.error('❌ [토큰 모달] 모든 재시도 실패. 브라우저 콘솔을 확인하세요.');
+                    
+                    // 사용자에게 안내
+                    const remainingEl = document.getElementById('remainingTokens');
+                    if (remainingEl) {
+                        remainingEl.title = '토큰 정보를 불러올 수 없습니다. 페이지를 새로고침하거나 마이페이지에서 확인하세요.';
+                    }
+                }
             }
         }
 
@@ -3346,7 +3357,7 @@
     </script>
 
     <!-- 공통 인증 스크립트 (mypage.html과 동일) -->
-    <script src="/assets/auth-state.js?v=202410" defer></script>
+    <script src="/assets/auth-state.js?v=202410"></script>
 
     <!-- 푸터 -->
     <footer class="site-footer">
