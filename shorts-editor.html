@@ -2660,13 +2660,11 @@
             await showTokenModal();
         }
 
-        // 토큰 정보 조회 (mypage.html과 완전히 동일한 방식)
-        async function fetchTokenInfo() {
+        // Supabase 클라이언트 초기화 (mypage.html과 동일)
+        let supabase = null;
+        async function initSupabase() {
             try {
-                // Supabase 세션 토큰 가져오기 (mypage.html과 동일)
-                let supabase = null;
-                
-                // auth-state.js가 로드될 때까지 대기 (mypage.html과 동일)
+                // auth-state.js가 로드될 때까지 대기
                 let waitCount = 0;
                 while (!window.authState?.supabase && waitCount < 50) {
                     await new Promise(resolve => setTimeout(resolve, 100));
@@ -2675,17 +2673,35 @@
                 
                 if (window.authState?.supabase) {
                     supabase = window.authState.supabase;
+                    console.log('✅ [shorts-editor] Supabase 초기화 완료');
                 } else {
-                    console.error('❌ [토큰 조회] auth-state.js가 로드되지 않았습니다');
+                    console.error('❌ [shorts-editor] auth-state.js가 로드되지 않았습니다');
+                }
+            } catch (error) {
+                console.error('❌ [shorts-editor] Supabase 초기화 실패:', error);
+            }
+        }
+
+        // 토큰 정보 조회 (mypage.html의 loadTokenInfo와 완전히 동일)
+        async function fetchTokenInfo() {
+            try {
+                // Supabase 초기화 확인
+                if (!supabase) {
+                    await initSupabase();
+                }
+                
+                if (!supabase) {
+                    console.error('❌ [토큰 조회] Supabase 클라이언트가 없습니다');
                     return null;
                 }
                 
+                // Supabase 세션 토큰 가져오기 (mypage.html과 완전히 동일)
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session?.access_token) {
                     console.error('❌ [토큰 조회] 세션 토큰이 없습니다');
                     return null;
                 }
-                
+
                 console.log('🔍 [토큰 조회] API 호출 시작 (mypage.html과 동일한 방식)');
                 
                 // mypage.html과 완전히 동일한 API 사용
@@ -2712,7 +2728,7 @@
                 }
 
                 const result = await response.json();
-                console.log('📊 [토큰 조회] API 응답:', result);
+                console.log('📊 [토큰 조회] API 응답 결과:', result);
                 console.log('📊 [토큰 조회] API 응답 상세:', {
                     success: result.success,
                     hasData: !!result.data,
@@ -3311,14 +3327,10 @@
                 }
             });
 
-            // 인증 UI 업데이트 (auth-state.js 로드 대기)
+            // Supabase 초기화 및 인증 UI 업데이트
             (async () => {
-                // auth-state.js가 로드될 때까지 대기
-                let waitCount = 0;
-                while (!window.authState && waitCount < 50) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    waitCount++;
-                }
+                // Supabase 초기화
+                await initSupabase();
                 
                 // 인증 UI 업데이트
                 await updateAuthUI();
