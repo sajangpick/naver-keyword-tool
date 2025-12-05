@@ -463,6 +463,15 @@
             display: block;
         }
 
+        /* 결과 섹션은 step2 안에 있어도 항상 표시되도록 */
+        .content-input .result-section {
+            display: block !important;
+        }
+
+        .content-input:not(.active) .result-section {
+            display: block !important;
+        }
+
         .selected-style-banner {
             background: var(--white);
             border-radius: 12px;
@@ -2493,6 +2502,10 @@
                     
                     if (video.status === 'completed' && video.video_url) {
                         setResultStatus('success', '영상 생성이 완료되었습니다!');
+                        
+                        // 결과 섹션 확실히 표시
+                        showResultSection();
+                        
                         showResultVideo(video.video_url);
                         
                         // duration 조정 안내 메시지 표시
@@ -2540,7 +2553,13 @@
 
         function showResultSection() {
             const section = document.getElementById('resultSection');
-            if (section) section.classList.add('show');
+            if (section) {
+                section.classList.add('show');
+                // 결과 섹션으로 스크롤
+                setTimeout(() => {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
         }
 
         function hideResultSection() {
@@ -2625,6 +2644,9 @@
         }
 
         function showResultVideo(url) {
+            // 결과 섹션 확실히 표시
+            showResultSection();
+            
             const placeholder = document.getElementById('resultPlaceholder');
             const videoEl = document.getElementById('resultVideo');
             if (placeholder) placeholder.classList.add('hidden');
@@ -2639,12 +2661,27 @@
                 videoEl.src = videoSrc;
                 videoEl.classList.remove('hidden');
                 videoEl.load();
+                
+                // 비디오 로드 완료 후 재생 준비
+                videoEl.addEventListener('loadeddata', () => {
+                    console.log('✅ [영상 재생] 비디오 로드 완료');
+                }, { once: true });
             }
+            
+            // 다운로드 및 편집 버튼 활성화
             const downloadBtn = document.getElementById('downloadVideoBtn');
-            if (downloadBtn) downloadBtn.disabled = false;
+            if (downloadBtn) {
+                downloadBtn.disabled = false;
+                console.log('✅ [영상 재생] 다운로드 버튼 활성화');
+            }
             
             const editBtn = document.getElementById('editVideoBtn');
-            if (editBtn) editBtn.disabled = false;
+            if (editBtn) {
+                editBtn.disabled = false;
+                console.log('✅ [영상 재생] 편집 버튼 활성화');
+            }
+            
+            console.log('✅ [영상 재생] 결과 섹션 표시 완료');
         }
 
         function updateResultMetadata(meta) {
@@ -3398,7 +3435,8 @@
             
             // 입력 섹션 숨기고 결과 섹션만 표시
             document.getElementById('step1').classList.remove('active');
-            document.getElementById('step2').classList.remove('active');
+            // step2는 숨기지 않고 결과 섹션만 표시되도록 유지
+            // document.getElementById('step2').classList.remove('active');
             document.getElementById('errorScreen').classList.remove('active');
             
             // Step 배지 "Done!"으로 변경
@@ -3406,6 +3444,21 @@
             
             // 결과 섹션 표시
             showResultSection();
+            
+            // step2 내부의 입력 섹션들만 숨기기
+            const step2 = document.getElementById('step2');
+            if (step2) {
+                // 입력 섹션들 숨기기
+                const uploadSection = step2.querySelector('.upload-section');
+                const menuSections = step2.querySelectorAll('.menu-section');
+                const actionButtons = step2.querySelector('.action-buttons');
+                const selectedStyleBanner = step2.querySelector('.selected-style-banner');
+                
+                if (uploadSection) uploadSection.style.display = 'none';
+                menuSections.forEach(section => section.style.display = 'none');
+                if (actionButtons) actionButtons.style.display = 'none';
+                if (selectedStyleBanner) selectedStyleBanner.style.display = 'none';
+            }
             
             // 유효성 검사
             if (uploadedImages.length === 0) {
@@ -3520,6 +3573,9 @@
 
                 hideLoadingScreen();
                 
+                // 결과 섹션 확실히 표시
+                showResultSection();
+                
                 if (result.data && result.data.id) {
                     // duration 조정 정보 저장
                     if (result.data.durationAdjusted) {
@@ -3532,7 +3588,7 @@
                     startVideoStatusWatcher(result.data.id, pendingResultMeta);
                 } else {
                     showSuccessBanner();
-                    showResultSection();
+                    // 결과 섹션은 이미 위에서 표시됨
                 }
             } catch (error) {
                 console.error('영상 생성 실패:', error);
