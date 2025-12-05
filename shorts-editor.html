@@ -2789,7 +2789,7 @@
                         // 관리자 등급 체크 (mypage.html과 완전히 동일)
                         const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
                         
-                        // 토큰 사용량 계산 (mypage.html과 완전히 동일)
+                        // 토큰 사용량 계산 (mypage.html과 완전히 동일 - 한 글자도 다르지 않게)
                         const tokensUsed = cycle.tokens_used || 0;
                         let tokensLimit = cycle.monthly_token_limit || 100;
                         let tokensRemaining = cycle.tokens_remaining || tokensLimit;
@@ -2799,6 +2799,18 @@
                             tokensLimit = null; // null = 무제한
                             tokensRemaining = null; // null = 무제한
                         }
+                        
+                        // 실제 토큰 값 확인 (디버깅용)
+                        console.log('🔍 [토큰 조회] 실제 토큰 값 확인:', {
+                            normalizedLevel,
+                            isAdmin,
+                            cycle_monthly_token_limit: cycle.monthly_token_limit,
+                            cycle_tokens_used: cycle.tokens_used,
+                            cycle_tokens_remaining: cycle.tokens_remaining,
+                            tokensLimit,
+                            tokensRemaining,
+                            willBeUnlimited: tokensRemaining === null || tokensLimit === null
+                        });
                         
                         const tokenInfo = {
                             remaining: tokensRemaining,
@@ -2810,12 +2822,14 @@
                         console.log('✅ [토큰 조회] 최종 토큰 정보 (mypage.html 내 토큰 정보와 동일):', {
                             normalizedLevel,
                             original_membership_level: profile?.membership_level,
+                            user_type: profile?.user_type,
                             isAdmin,
                             tokensUsed,
                             tokensLimit: tokensLimit || '무제한',
                             tokensRemaining: tokensRemaining || '무제한',
                             isUnlimited: tokenInfo.isUnlimited,
                             cycle_monthly_token_limit: cycle.monthly_token_limit,
+                            cycle_tokens_used: cycle.tokens_used,
                             cycle_tokens_remaining: cycle.tokens_remaining
                         });
                         
@@ -2876,8 +2890,15 @@
             const tokenInfo = await fetchTokenInfo();
             
             if (tokenInfo) {
-                // 무제한 토큰 처리 (mypage.html과 동일)
-                const isUnlimited = tokenInfo.isUnlimited || tokenInfo.remaining === null || tokenInfo.limit === null;
+                // 무제한 토큰 처리 (mypage.html과 동일) - tokenInfo.isUnlimited만 사용
+                const isUnlimited = tokenInfo.isUnlimited === true;
+                
+                console.log('🔍 [토큰 모달] 무제한 판단:', {
+                    isUnlimited,
+                    remaining: tokenInfo.remaining,
+                    limit: tokenInfo.limit,
+                    tokenInfoIsUnlimited: tokenInfo.isUnlimited
+                });
                 
                 if (isUnlimited) {
                     // 무제한 토큰인 경우

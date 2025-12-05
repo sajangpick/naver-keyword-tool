@@ -435,6 +435,42 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       }
     }
 
+    // 무제한 토큰 체크 (사이클 확인 전에 먼저 체크)
+    let normalizedLevel = (membershipLevel || '').toLowerCase();
+    if (normalizedLevel === 'free') {
+      normalizedLevel = 'seed';
+    }
+    const isAdmin = normalizedLevel === 'admin' || userType === 'admin';
+    const tokensLimitNum = Number(currentTokenLimit) || 0;
+    const isUnlimited = isAdmin || tokensLimitNum >= 999999;
+    
+    console.log(`🔍 [token-tracker] 무제한 체크 상세:`, {
+      userId,
+      membershipLevel,
+      normalizedLevel,
+      userType,
+      isAdmin,
+      currentTokenLimit,
+      tokensLimitNum,
+      isUnlimited,
+      cycle_exists: !!cycle,
+      cycle_monthly_token_limit: cycle?.monthly_token_limit,
+      cycle_tokens_remaining: cycle?.tokens_remaining
+    });
+    
+    if (isUnlimited) {
+      console.log(`✅ [token-tracker] 무제한 토큰 사용자 - 토큰 체크 건너뜀: userId=${userId}, isAdmin=${isAdmin}, limit=${currentTokenLimit}`);
+      return {
+        success: true,
+        hasLimit: false,
+        isUnlimited: true,
+        remaining: null,
+        limit: null,
+        monthlyLimit: null,
+        tokensRemaining: null
+      };
+    }
+    
     if (!cycle) {
       // 사이클이 없으면 관리자 설정 한도로 허용
       console.log(`✅ [token-tracker] 사이클이 없습니다. 관리자 설정 토큰 한도: ${currentTokenLimit}`);
@@ -442,24 +478,48 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
     }
     
     console.log(`✅ [token-tracker] 최종 토큰 한도: ${currentTokenLimit} (관리자 설정, 사이클 값: ${cycle.monthly_token_limit})`);
-
+    
     if (cycle.is_exceeded) {
       return {
         success: false,
         hasLimit: false,
         error: `토큰 한도를 초과했습니다. 구독을 업그레이드해주세요. 월 토큰 한도: ${currentTokenLimit}`,
         remaining: 0,
-        limit: currentTokenLimit
+        limit: currentTokenLimit,
+        monthlyLimit: currentTokenLimit,
+        tokensRemaining: 0
       };
     }
 
-    if (cycle.tokens_remaining < estimatedTokens) {
+    // tokens_remaining이 null이거나 계산 필요할 수 있음
+    let tokensRemaining = cycle.tokens_remaining;
+    if (tokensRemaining === null || tokensRemaining === undefined) {
+      tokensRemaining = currentTokenLimit - (cycle.tokens_used || 0);
+    }
+    
+    // 무제한 토큰 재확인 (tokens_remaining이 매우 큰 값일 수도 있음)
+    if (tokensRemaining >= 999999 || currentTokenLimit >= 999999) {
+      console.log(`✅ [token-tracker] 무제한 토큰 재확인 - tokens_remaining=${tokensRemaining}, limit=${currentTokenLimit}`);
+      return {
+        success: true,
+        hasLimit: false,
+        isUnlimited: true,
+        remaining: null,
+        limit: null,
+        monthlyLimit: null,
+        tokensRemaining: null
+      };
+    }
+    
+    if (tokensRemaining < estimatedTokens) {
       return {
         success: false,
         hasLimit: false,
-        error: `남은 토큰(${cycle.tokens_remaining})이 부족합니다. 필요 토큰: ${estimatedTokens}. 월 토큰 한도: ${currentTokenLimit}`,
-        remaining: cycle.tokens_remaining,
-        limit: currentTokenLimit
+        error: `남은 토큰(${tokensRemaining})이 부족합니다. 필요 토큰: ${estimatedTokens}. 월 토큰 한도: ${currentTokenLimit}`,
+        remaining: tokensRemaining,
+        limit: currentTokenLimit,
+        monthlyLimit: currentTokenLimit,
+        tokensRemaining: tokensRemaining
       };
     }
 
@@ -467,7 +527,9 @@ async function checkTokenLimit(userId, estimatedTokens = 100) {
       success: true,
       hasLimit: true,
       remaining: cycle.tokens_remaining,
-      limit: currentTokenLimit
+      limit: currentTokenLimit,
+      monthlyLimit: currentTokenLimit,
+      tokensRemaining: cycle.tokens_remaining
     };
 
   } catch (error) {
