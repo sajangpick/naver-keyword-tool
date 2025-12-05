@@ -3964,11 +3964,21 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
 
     let query = supabase
       .from("ebook_downloads")
-      .select("*", { count: "exact" });
+      .select(`
+        *,
+        profiles!user_id (
+          user_type,
+          membership_level,
+          name,
+          email
+        )
+      `, { count: "exact" });
 
     query = applyRangeBounds(query, bounds);
 
     if (sanitizedSearch) {
+      // 검색은 ebook_downloads 테이블의 컬럼만 사용
+      // profiles 조인 후 별도로 처리
       query = query.or(
         `email.ilike.%${sanitizedSearch}%,name.ilike.%${sanitizedSearch}%`
       );
@@ -3990,6 +4000,36 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
       });
     }
 
+    // profiles 테이블과 조인된 데이터 처리
+    // profiles의 최신 정보를 우선 사용
+    let processedDownloads = (downloads || []).map((download) => {
+      // profiles는 배열로 반환될 수 있으므로 첫 번째 요소 사용
+      const profile = Array.isArray(download.profiles) 
+        ? download.profiles[0] 
+        : download.profiles;
+      
+      return {
+        ...download,
+        // profiles의 최신 정보가 있으면 사용, 없으면 기존 값 사용
+        user_type: profile?.user_type || download.user_type,
+        membership_level: profile?.membership_level || download.membership_level,
+        name: profile?.name || download.name,
+        email: profile?.email || download.email,
+        // profiles 객체는 제거 (프론트엔드에서 사용하지 않음)
+        profiles: undefined
+      };
+    });
+
+    // 검색어가 있고 profiles로도 검색해야 하는 경우 추가 필터링
+    if (sanitizedSearch) {
+      const searchLower = sanitizedSearch.toLowerCase();
+      processedDownloads = processedDownloads.filter((download) => {
+        const emailMatch = download.email?.toLowerCase().includes(searchLower);
+        const nameMatch = download.name?.toLowerCase().includes(searchLower);
+        return emailMatch || nameMatch;
+      });
+    }
+
     const [
       totalDownloads,
       todayDownloads,
@@ -4008,7 +4048,7 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
 
     res.json({
       success: true,
-      downloads: downloads || [],
+      downloads: processedDownloads,
       pagination: {
         page: pageNum,
         limit: limitNum,
