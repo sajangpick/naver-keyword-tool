@@ -750,6 +750,29 @@
             flex: 0 0 auto;
         }
 
+        @media (max-width: 768px) {
+            .music-grid {
+                flex-wrap: nowrap;
+                gap: 8px;
+                justify-content: space-between;
+            }
+
+            .music-card {
+                flex: 1;
+                min-width: 0;
+                padding: 12px 8px;
+            }
+
+            .music-icon {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+
+            .music-name {
+                font-size: 12px;
+            }
+        }
+
         .music-card:hover {
             border-color: var(--primary);
         }
@@ -2731,7 +2754,17 @@
 
         // 단계 표시 업데이트
         function updateStepDisplay() {
-            document.getElementById('stepBadge').textContent = `Step ${currentStep} / 2`;
+            const stepBadge = document.getElementById('stepBadge');
+            if (stepBadge) {
+                stepBadge.textContent = `Step ${currentStep} / 2`;
+            }
+        }
+        
+        function setStepBadgeDone() {
+            const stepBadge = document.getElementById('stepBadge');
+            if (stepBadge) {
+                stepBadge.textContent = 'Done!';
+            }
         }
 
         // 영상 길이 버튼 업데이트
@@ -3368,6 +3401,12 @@
             document.getElementById('step2').classList.remove('active');
             document.getElementById('errorScreen').classList.remove('active');
             
+            // Step 배지 "Done!"으로 변경
+            setStepBadgeDone();
+            
+            // 결과 섹션 표시
+            showResultSection();
+            
             // 유효성 검사
             if (uploadedImages.length === 0) {
                 alert('음식 사진을 최소 1장 이상 업로드해주세요.');
@@ -3404,6 +3443,7 @@
                 music: selectedMusic
             };
             prepareResultSection(pendingResultMeta);
+            showResultSection(); // 결과 섹션 표시
             const platformDetails = platformInfo[selectedStyle];
             
             showLoadingScreen();
@@ -3573,6 +3613,8 @@
             document.querySelectorAll('.style-card').forEach(el => el.classList.remove('selected'));
             const nextBtn = document.getElementById('nextToStep2');
             if (nextBtn) nextBtn.disabled = true;
+            currentStep = 1;
+            updateStepDisplay(); // Step 배지 다시 "Step 1 / 2"로 변경
             goToStep1();
         }
 
