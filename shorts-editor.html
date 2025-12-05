@@ -897,17 +897,21 @@
 
         .result-section {
             display: none;
-            margin-top: 32px;
+            margin-top: 16px;
         }
 
         .result-section.show {
             display: block;
         }
 
+        .result-section .section-title {
+            margin-bottom: 12px;
+        }
+
         .result-card {
             background: var(--white);
             border-radius: 16px;
-            padding: 24px;
+            padding: 16px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
@@ -916,7 +920,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .result-title {
@@ -953,33 +957,26 @@
         .result-body {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 24px;
+            gap: 16px;
             align-items: flex-start;
         }
 
         .result-video-wrapper {
             position: relative;
             width: 100%;
-            aspect-ratio: 9 / 16; /* 9:16 비율 직접 지정 (padding-top 대신) */
             background: rgba(0, 0, 0, 0.05);
             border-radius: 16px;
             overflow: hidden;
-            max-width: 500px; /* 최대 너비 증가 (여백 감소) */
-            margin: 0 auto; /* 중앙 정렬 */
         }
 
         .result-video-wrapper video {
-            position: absolute;
-            top: 0;
-            left: 0;
+            display: block;
             width: 100%;
-            height: 100%;
-            object-fit: cover; /* 영상이 컨테이너를 꽉 채우도록 (위아래 여백 제거) */
+            height: auto;
+            max-width: 100%;
         }
 
         .result-placeholder {
-            position: absolute;
-            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -988,8 +985,9 @@
             color: var(--text-light);
             text-align: center;
             font-size: 15px;
-            padding: 20px;
+            padding: 40px 20px;
             background: rgba(255, 255, 255, 0.9);
+            min-height: 300px;
         }
 
         .result-placeholder i {
@@ -1004,7 +1002,7 @@
         }
 
         .result-info p {
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             font-size: 15px;
             color: var(--text-light);
         }
@@ -1017,7 +1015,7 @@
         .result-actions {
             display: flex;
             gap: 12px;
-            margin-top: 16px;
+            margin-top: 12px;
         }
 
         .result-actions .btn {
@@ -1026,11 +1024,30 @@
         }
 
         @media (max-width: 768px) {
+            .result-section {
+                margin-top: 12px;
+            }
+            .result-section .section-title {
+                margin-bottom: 8px;
+                font-size: 18px;
+            }
+            .result-card {
+                padding: 12px;
+            }
+            .result-header {
+                margin-bottom: 8px;
+            }
             .result-body {
                 grid-template-columns: 1fr;
+                gap: 12px;
             }
             .result-actions {
                 flex-direction: column;
+                margin-top: 8px;
+            }
+            .result-info p {
+                margin-bottom: 6px;
+                font-size: 14px;
             }
         }
 
