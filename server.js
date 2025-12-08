@@ -1092,6 +1092,14 @@ const adminDashboardHandler = require("./api/admin/dashboard");
 app.get("/api/admin/analytics", adminAnalyticsHandler);
 app.get("/api/admin/dashboard", adminDashboardHandler);
 
+// ==================== 로그인 기록 API ====================
+const loginLogHandler = require("./api/auth/login-log");
+app.post("/api/auth/login-log", loginLogHandler);
+
+// 관리자 로그인 기록 조회 API
+const adminLoginLogsHandler = require("./api/admin/login-logs");
+app.get("/api/admin/login-logs", adminLoginLogsHandler);
+
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);

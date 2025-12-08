@@ -243,8 +243,55 @@
         id: userData.id,
         storage: useSessionStorage ? 'sessionStorage' : 'localStorage'
       });
+      
+      // 로그인 기록 저장 (비동기, 실패해도 로그인은 계속 진행)
+      saveLoginLog(userData, loginType, user.app_metadata?.provider || "kakao").catch(err => {
+        console.warn("[auth] 로그인 기록 저장 실패 (무시됨):", err.message);
+      });
     } catch (error) {
       console.warn("[auth] Failed to persist session", error);
+    }
+  }
+
+  /**
+   * 로그인 기록을 서버에 저장
+   */
+  async function saveLoginLog(userData, loginType, provider) {
+    try {
+      // API 엔드포인트 결정 (로컬/프로덕션)
+      const isLocalDev = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1';
+      const apiBaseUrl = isLocalDev 
+        ? 'http://127.0.0.1:3003'
+        : window.location.origin;
+      
+      const response = await fetch(`${apiBaseUrl}/api/auth/login-log`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userData.id,
+          loginType: loginType,
+          provider: provider,
+          loginSuccess: true,
+          userEmail: userData.email,
+          userName: userData.displayName,
+          sessionId: `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('[auth] ✅ 로그인 기록 저장 완료:', result.data?.id);
+    } catch (error) {
+      // 로그인 기록 저장 실패는 로그인 프로세스를 중단하지 않음
+      console.warn('[auth] 로그인 기록 저장 실패:', error.message);
+      throw error; // 상위에서 catch하도록
     }
   }
 
