@@ -110,6 +110,12 @@
       title: '에러',
       path: '/admin/pages/errors.html',
       badge: null
+    },
+    {
+      icon: '🔐',
+      title: '로그인 기록',
+      path: '/admin/pages/login-logs.html',
+      badge: null
     }
   ];
 
