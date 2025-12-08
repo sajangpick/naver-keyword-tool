@@ -6310,6 +6310,8 @@ app.get("/api/shorts/download", async (req, res) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, user-id");
 
     const videoUrl = req.query.url;
+    const videoId = req.query.videoId;
+    const userId = req.query.userId || req.headers['user-id'];
     
     if (!videoUrl) {
       return res.status(400).json({
@@ -6347,6 +6349,24 @@ app.get("/api/shorts/download", async (req, res) => {
     res.setHeader('Content-Length', response.headers['content-length'] || '');
 
     devLog("🔵 [다운로드 프록시] 영상 스트리밍 시작");
+    
+    // 다운로드 기록 저장 (비동기, 실패해도 다운로드는 계속 진행)
+    if (supabase && userId && videoId) {
+      try {
+        // shorts_videos 테이블에 다운로드 기록 업데이트 (다운로드 카운트 증가)
+        await supabase
+          .from('shorts_videos')
+          .update({ 
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', videoId)
+          .eq('user_id', userId);
+        
+        devLog("✅ [다운로드 기록] 다운로드 기록 저장 완료");
+      } catch (recordError) {
+        devError("⚠️ [다운로드 기록] 기록 저장 실패 (다운로드는 계속 진행):", recordError);
+      }
+    }
     
     // 스트림을 클라이언트로 전송
     response.data.pipe(res);

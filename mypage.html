@@ -982,10 +982,10 @@
           <div style="background: linear-gradient(135deg, var(--secondary) 0%, #ffe0cc 100%); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255, 123, 84, 0.2);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <div>
-                <h4 style="margin: 0 0 5px 0; color: var(--text-primary); font-size: 18px; font-weight: 700;">
+                <h4 style="margin: 0 0 5px 0; color: #201a17; font-size: 22px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
                   <span id="paymentPlanName">라이트 플랜</span>
                 </h4>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">
+                <p style="margin: 0; color: #7a6a60; font-size: 15px; font-weight: 600;">
                   <span id="paymentPlanBadge">무료</span>
                 </p>
               </div>
@@ -2995,13 +2995,14 @@
                 ${video.duration_sec ? ` · ${video.duration_sec}초` : ''}
               </div>
               ${video.status === 'completed' && video.video_url ? `
-                <div style="margin-top: 12px;">
+                <div style="margin-top: 12px; position: relative;" id="video-container-${videoId}">
                   <video 
                     id="video-${videoId}"
                     controls 
                     preload="metadata" 
-                    style="max-width: 200px; max-height: 300px; border-radius: 8px; border: 1px solid var(--border); background: #000;"
-                    onerror="console.error('영상 로드 실패:', this.src); this.style.display='none'; this.parentElement.innerHTML='<div style=\\'padding: 20px; text-align: center; color: #999; background: #f5f5f5; border-radius: 8px;\\'><i class=\\'fas fa-exclamation-triangle\\'></i><br>영상을 불러올 수 없습니다</div>';">
+                    crossorigin="anonymous"
+                    style="max-width: 200px; max-height: 300px; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: #000; display: block;"
+                    data-video-src="${videoSrc}">
                     <source src="${videoSrc}" type="video/mp4">
                     브라우저가 비디오 태그를 지원하지 않습니다.
                   </video>
@@ -3022,7 +3023,7 @@
                 })}</span>
                 <div style="display: flex; gap: 8px;">
                   ${video.status === 'completed' && video.video_url ? `
-                    <button onclick="downloadVideo('${video.video_url}', '${(video.menu_name || video.title || 'video').replace(/[^a-zA-Z0-9가-힣]/g, '_')}.mp4')" 
+                    <button onclick="downloadVideo('${video.video_url}', '${(video.menu_name || video.title || 'video').replace(/[^a-zA-Z0-9가-힣]/g, '_')}.mp4', '${videoId}')" 
                             style="padding: 6px 12px; background: var(--white); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                       <i class="fas fa-download"></i> 다운로드
                     </button>
@@ -3045,6 +3046,38 @@
           console.log(`🔄 생성 중인 영상 ${processingVideos.length}개 발견. 주기적 상태 체크 시작...`);
           startVideoStatusPolling(userId);
         }
+
+        // 완료된 영상의 video 태그에 이벤트 리스너 추가
+        result.data.filter(v => v.status === 'completed' && v.video_url).forEach(video => {
+          const videoId = video.id;
+          const videoEl = document.getElementById(`video-${videoId}`);
+          if (videoEl) {
+            // 에러 핸들링
+            videoEl.addEventListener('error', function(e) {
+              console.error('영상 로드 오류:', e, this.src);
+              const container = document.getElementById(`video-container-${videoId}`);
+              if (container) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999; background: #f5f5f5; border-radius: 8px;"><i class="fas fa-exclamation-triangle"></i><br>영상을 불러올 수 없습니다</div>';
+              }
+            });
+            
+            // 로드 완료 이벤트
+            videoEl.addEventListener('loadedmetadata', function() {
+              console.log('✅ 영상 메타데이터 로드 완료:', videoId, this.videoWidth, 'x', this.videoHeight);
+            });
+            
+            videoEl.addEventListener('canplay', function() {
+              console.log('✅ 영상 재생 가능:', videoId);
+            });
+            
+            // 강제로 로드 시도 (메타데이터만)
+            setTimeout(() => {
+              if (videoEl.readyState === 0) {
+                videoEl.load();
+              }
+            }, 100);
+          }
+        });
 
         // #shorts 해시가 있으면 해당 섹션으로 스크롤
         if (window.location.hash === '#shorts') {
@@ -3173,12 +3206,27 @@
     }
 
     // 영상 다운로드 함수
-    async function downloadVideo(videoUrl, filename) {
+    async function downloadVideo(videoUrl, filename, videoId) {
       try {
         console.log('📥 영상 다운로드 시작:', videoUrl);
         
+        // 현재 사용자 ID 가져오기
+        let userId = null;
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            userId = session.user.id;
+          }
+        }
+        
         // 서버 프록시 API를 통해 다운로드
-        const proxyUrl = `/api/shorts/download?url=${encodeURIComponent(videoUrl)}&filename=${encodeURIComponent(filename)}`;
+        let proxyUrl = `/api/shorts/download?url=${encodeURIComponent(videoUrl)}&filename=${encodeURIComponent(filename)}`;
+        if (videoId) {
+          proxyUrl += `&videoId=${encodeURIComponent(videoId)}`;
+        }
+        if (userId) {
+          proxyUrl += `&userId=${encodeURIComponent(userId)}`;
+        }
         
         // 다운로드 링크 생성
         const a = document.createElement('a');
