@@ -10,17 +10,46 @@
 (function() {
   'use strict';
 
-  // 로그인 체크 함수
-  function isUserLoggedIn() {
+  // 로그인 체크 함수 (Supabase 세션 + localStorage 모두 확인)
+  async function isUserLoggedIn() {
     try {
-      // localStorage에서 로그인 상태 확인
+      // 1. Supabase 세션 확인 (우선순위 1)
+      if (window.authState?.supabase) {
+        try {
+          const { data: { session } } = await window.authState.supabase.auth.getSession();
+          if (session?.user) {
+            console.log('[auth-guard] ✅ Supabase 세션 확인됨');
+            return true;
+          }
+        } catch (supabaseError) {
+          console.warn('[auth-guard] Supabase 세션 확인 실패:', supabaseError);
+        }
+      }
+      
+      // 2. localStorage 확인 (fallback)
       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
       const userData = localStorage.getItem('userData');
       
-      // 두 가지 조건 모두 확인
-      return isLoggedIn && userData !== null;
+      if (isLoggedIn && userData !== null) {
+        console.log('[auth-guard] ✅ localStorage에서 로그인 상태 확인됨');
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.warn('[auth-guard] 로그인 상태 확인 실패:', error);
+      return false;
+    }
+  }
+
+  // 동기 버전 (기존 호환성 유지)
+  function isUserLoggedInSync() {
+    try {
+      // localStorage만 빠르게 확인 (동기)
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const userData = localStorage.getItem('userData');
+      return isLoggedIn && userData !== null;
+    } catch (error) {
       return false;
     }
   }
@@ -42,15 +71,16 @@
   }
 
   // 로그인 필요 알림 표시 및 로그인 페이지 이동 확인
-  function showLoginRequiredAlert(event) {
+  async function showLoginRequiredAlert(event) {
     // 이벤트 기본 동작 막기
     if (event) {
       event.preventDefault();
       event.stopPropagation();
     }
 
-    // 로그인 상태 재확인
-    if (isUserLoggedIn()) {
+    // 로그인 상태 재확인 (비동기)
+    const loggedIn = await isUserLoggedIn();
+    if (loggedIn) {
       return true; // 로그인되어 있으면 통과
     }
 
@@ -85,9 +115,10 @@
     let alertShown = false;
 
     // 키보드 입력 시도 시에만 팝업 표시
-    element.addEventListener('keydown', function(event) {
-      // 로그인 상태 체크 (가장 먼저)
-      if (isUserLoggedIn()) {
+    element.addEventListener('keydown', async function(event) {
+      // 로그인 상태 체크 (가장 먼저) - 비동기
+      const loggedIn = await isUserLoggedIn();
+      if (loggedIn) {
         return; // 로그인되어 있으면 정상 작동
       }
       
@@ -95,7 +126,7 @@
         event.preventDefault();
         event.stopPropagation();
         alertShown = true; // 팝업 표시 플래그 설정
-        showLoginRequiredAlert(event);
+        await showLoginRequiredAlert(event);
         
         // 입력 필드 blur 처리
         if (element.blur) {
@@ -108,9 +139,10 @@
     }, false); // 캡처 단계에서 버블링 단계로 변경
 
     // input 이벤트 (붙여넣기, 드래그 등)
-    element.addEventListener('input', function(event) {
-      // 로그인 상태 체크 (가장 먼저)
-      if (isUserLoggedIn()) {
+    element.addEventListener('input', async function(event) {
+      // 로그인 상태 체크 (가장 먼저) - 비동기
+      const loggedIn = await isUserLoggedIn();
+      if (loggedIn) {
         return; // 로그인되어 있으면 아무것도 하지 않음
       }
       
@@ -124,7 +156,7 @@
           event.preventDefault();
           event.stopPropagation();
           alertShown = true;
-          showLoginRequiredAlert(event);
+          await showLoginRequiredAlert(event);
           
           // 3초 후 플래그 리셋
           setTimeout(() => { alertShown = false; }, 3000);
@@ -133,9 +165,10 @@
     }, false); // 캡처 단계에서 버블링 단계로 변경
 
     // paste 이벤트 (붙여넣기 시도)
-    element.addEventListener('paste', function(event) {
-      // 로그인 상태 체크 (가장 먼저)
-      if (isUserLoggedIn()) {
+    element.addEventListener('paste', async function(event) {
+      // 로그인 상태 체크 (가장 먼저) - 비동기
+      const loggedIn = await isUserLoggedIn();
+      if (loggedIn) {
         return; // 로그인되어 있으면 정상 작동
       }
       
@@ -143,7 +176,7 @@
         event.preventDefault();
         event.stopPropagation();
         alertShown = true;
-        showLoginRequiredAlert(event);
+        await showLoginRequiredAlert(event);
         
         // 3초 후 플래그 리셋
         setTimeout(() => { alertShown = false; }, 3000);
@@ -165,9 +198,10 @@
     // 중복 팝업 방지
     let alertShown = false;
 
-    button.addEventListener('click', function(event) {
-      // 로그인 상태 체크 (가장 먼저)
-      if (isUserLoggedIn()) {
+    button.addEventListener('click', async function(event) {
+      // 로그인 상태 체크 (가장 먼저) - 비동기
+      const loggedIn = await isUserLoggedIn();
+      if (loggedIn) {
         return; // 로그인되어 있으면 정상 작동
       }
       
@@ -175,7 +209,7 @@
         event.preventDefault();
         event.stopPropagation();
         alertShown = true;
-        showLoginRequiredAlert(event);
+        await showLoginRequiredAlert(event);
         
         // 3초 후 플래그 리셋
         setTimeout(() => { alertShown = false; }, 3000);
@@ -184,9 +218,10 @@
   }
 
   // 페이지의 모든 입력 필드 자동 보호
-  function protectAllInputFields() {
-    // 로그인되어 있으면 보호 불필요
-    if (isUserLoggedIn()) {
+  async function protectAllInputFields() {
+    // 로그인되어 있으면 보호 불필요 (비동기 확인)
+    const loggedIn = await isUserLoggedIn();
+    if (loggedIn) {
       console.log('[auth-guard] ✅ 로그인 상태 - 모든 기능 사용 가능');
       return;
     }
@@ -247,8 +282,9 @@
   }
 
   // DOM 변경 감지 (동적으로 추가된 요소 보호)
-  function observeDOMChanges() {
-    if (isUserLoggedIn()) {
+  async function observeDOMChanges() {
+    const loggedIn = await isUserLoggedIn();
+    if (loggedIn) {
       return; // 로그인되어 있으면 감시 불필요
     }
 
@@ -278,20 +314,28 @@
   }
 
   // 페이지 로드 완료 후 실행
-  function initAuthGuard() {
-    // 로그인 상태 확인
-    const loggedIn = isUserLoggedIn();
+  async function initAuthGuard() {
+    // auth-state.js가 로드될 때까지 대기 (최대 5초)
+    let waitCount = 0;
+    const maxWait = 50; // 5초 (50 * 100ms)
+    while (!window.authState?.supabase && waitCount < maxWait) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      waitCount++;
+    }
+
+    // 로그인 상태 확인 (비동기)
+    const loggedIn = await isUserLoggedIn();
     console.log('[auth-guard] 페이지 로드 - 로그인 상태:', loggedIn);
 
     if (!loggedIn) {
       // 비로그인 시 입력 필드 보호
-      protectAllInputFields();
-      observeDOMChanges();
+      await protectAllInputFields();
+      await observeDOMChanges();
     }
 
     // 로그인 상태 변경 이벤트 리스너
-    window.addEventListener('auth:state-changed', function() {
-      const newState = isUserLoggedIn();
+    window.addEventListener('auth:state-changed', async function() {
+      const newState = await isUserLoggedIn();
       console.log('[auth-guard] 인증 상태 변경:', newState);
       
       // 로그인됨 - 이벤트 리스너 제거 (페이지 새로고침 제거)
@@ -308,7 +352,8 @@
 
   // 전역 함수로 노출 (수동 보호용)
   window.authGuard = {
-    isLoggedIn: isUserLoggedIn,
+    isLoggedIn: isUserLoggedIn, // 비동기 버전
+    isLoggedInSync: isUserLoggedInSync, // 동기 버전 (기존 호환성)
     protect: protectInputField,
     protectButton: protectButton,
     showLoginAlert: showLoginRequiredAlert,

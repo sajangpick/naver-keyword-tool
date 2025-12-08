@@ -3057,33 +3057,64 @@
         // 완료된 영상의 video 태그에 이벤트 리스너 추가
         result.data.filter(v => v.status === 'completed' && v.video_url).forEach(video => {
           const videoId = video.id;
-          const videoEl = document.getElementById(`video-${videoId}`);
-          if (videoEl) {
-            // 에러 핸들링
-            videoEl.addEventListener('error', function(e) {
-              console.error('영상 로드 오류:', e, this.src);
-              const container = document.getElementById(`video-container-${videoId}`);
-              if (container) {
-                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999; background: #f5f5f5; border-radius: 8px;"><i class="fas fa-exclamation-triangle"></i><br>영상을 불러올 수 없습니다</div>';
-              }
-            });
-            
-            // 로드 완료 이벤트
-            videoEl.addEventListener('loadedmetadata', function() {
-              console.log('✅ 영상 메타데이터 로드 완료:', videoId, this.videoWidth, 'x', this.videoHeight);
-            });
-            
-            videoEl.addEventListener('canplay', function() {
-              console.log('✅ 영상 재생 가능:', videoId);
-            });
-            
-            // 강제로 로드 시도 (메타데이터만)
-            setTimeout(() => {
+          setTimeout(() => {
+            const videoEl = document.getElementById(`video-${videoId}`);
+            if (videoEl) {
+              const videoSrc = videoEl.getAttribute('data-video-src') || videoEl.querySelector('source')?.src;
+              console.log('🎬 영상 로드 시도:', videoId, videoSrc);
+              
+              // 에러 핸들링
+              videoEl.addEventListener('error', function(e) {
+                console.error('❌ 영상 로드 오류:', {
+                  videoId: videoId,
+                  src: this.src,
+                  error: e,
+                  networkState: this.networkState,
+                  readyState: this.readyState,
+                  errorCode: this.error?.code,
+                  errorMessage: this.error?.message
+                });
+                
+                const container = document.getElementById(`video-container-${videoId}`);
+                if (container) {
+                  container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #999; background: #f5f5f5; border-radius: 8px;">
+                      <i class="fas fa-exclamation-triangle"></i><br>
+                      영상을 불러올 수 없습니다<br>
+                      <small style="font-size: 10px; color: #ccc;">${this.error?.message || '알 수 없는 오류'}</small>
+                    </div>
+                  `;
+                }
+              }, { once: true });
+              
+              // 로드 완료 이벤트
+              videoEl.addEventListener('loadedmetadata', function() {
+                console.log('✅ 영상 메타데이터 로드 완료:', videoId, this.videoWidth, 'x', this.videoHeight);
+              });
+              
+              videoEl.addEventListener('canplay', function() {
+                console.log('✅ 영상 재생 가능:', videoId);
+              });
+              
+              videoEl.addEventListener('loadstart', function() {
+                console.log('🔄 영상 로드 시작:', videoId);
+              });
+              
+              // 강제로 로드 시도
               if (videoEl.readyState === 0) {
+                console.log('🔄 영상 강제 로드 시도:', videoId);
                 videoEl.load();
               }
-            }, 100);
-          }
+              
+              // 3초 후에도 로드되지 않으면 재시도
+              setTimeout(() => {
+                if (videoEl.readyState === 0 || videoEl.networkState === 3) {
+                  console.log('🔄 영상 로드 재시도:', videoId);
+                  videoEl.load();
+                }
+              }, 3000);
+            }
+          }, 200);
         });
 
         // #shorts 해시가 있으면 해당 섹션으로 스크롤

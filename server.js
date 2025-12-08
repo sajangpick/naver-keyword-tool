@@ -6324,7 +6324,7 @@ app.get("/api/shorts/download", async (req, res) => {
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, user-id");
 
-    const videoUrl = req.query.url;
+    let videoUrl = req.query.url;
     const videoId = req.query.videoId;
     const userId = req.query.userId || req.headers['user-id'];
     
@@ -6335,15 +6335,38 @@ app.get("/api/shorts/download", async (req, res) => {
       });
     }
 
+    // URL 디코딩 (이중 인코딩 방지)
+    try {
+      videoUrl = decodeURIComponent(videoUrl);
+    } catch (e) {
+      // 이미 디코딩된 경우 무시
+    }
+
     devLog("🔵 [다운로드 프록시] 영상 다운로드 시작:", videoUrl);
 
     // Google API URL인 경우 API 키 추가
     let downloadUrl = videoUrl;
-    if (videoUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
-      // URL에 API 키 추가
-      const separator = videoUrl.includes('?') ? '&' : '?';
-      downloadUrl = `${videoUrl}${separator}key=${GEMINI_API_KEY}`;
-      devLog("🔵 [다운로드 프록시] API 키 추가됨");
+    if (videoUrl.includes('generativelanguage.googleapis.com')) {
+      if (!GEMINI_API_KEY) {
+        devError("❌ [다운로드 프록시] GEMINI_API_KEY가 설정되지 않았습니다");
+        return res.status(500).json({
+          success: false,
+          error: "API 키가 설정되지 않았습니다."
+        });
+      }
+      
+      // URL에 API 키 추가 (이미 key 파라미터가 있으면 덮어쓰기)
+      try {
+        const urlObj = new URL(videoUrl);
+        urlObj.searchParams.set('key', GEMINI_API_KEY);
+        downloadUrl = urlObj.toString();
+        devLog("🔵 [다운로드 프록시] API 키 추가됨:", downloadUrl.substring(0, 100) + '...');
+      } catch (urlError) {
+        // URL 파싱 실패 시 기존 방식 사용
+        const separator = videoUrl.includes('?') ? '&' : '?';
+        downloadUrl = `${videoUrl}${separator}key=${GEMINI_API_KEY}`;
+        devLog("🔵 [다운로드 프록시] API 키 추가됨 (fallback)");
+      }
     }
 
     // 영상 다운로드
@@ -6352,6 +6375,10 @@ app.get("/api/shorts/download", async (req, res) => {
       timeout: 120000, // 2분 타임아웃
       headers: {
         'Accept': 'video/*',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      },
+      validateStatus: function (status) {
+        return status >= 200 && status < 400; // 2xx, 3xx 허용
       }
     });
 
@@ -6416,7 +6443,7 @@ app.get("/api/shorts/play", async (req, res) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, user-id, Range");
     res.setHeader("Accept-Ranges", "bytes");
 
-    const videoUrl = req.query.url;
+    let videoUrl = req.query.url;
     
     if (!videoUrl) {
       return res.status(400).json({
@@ -6425,15 +6452,38 @@ app.get("/api/shorts/play", async (req, res) => {
       });
     }
 
+    // URL 디코딩 (이중 인코딩 방지)
+    try {
+      videoUrl = decodeURIComponent(videoUrl);
+    } catch (e) {
+      // 이미 디코딩된 경우 무시
+    }
+
     devLog("🔵 [재생 프록시] 영상 재생 시작:", videoUrl);
 
     // Google API URL인 경우 API 키 추가
     let playUrl = videoUrl;
-    if (videoUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
-      // URL에 API 키 추가
-      const separator = videoUrl.includes('?') ? '&' : '?';
-      playUrl = `${videoUrl}${separator}key=${GEMINI_API_KEY}`;
-      devLog("🔵 [재생 프록시] API 키 추가됨");
+    if (videoUrl.includes('generativelanguage.googleapis.com')) {
+      if (!GEMINI_API_KEY) {
+        devError("❌ [재생 프록시] GEMINI_API_KEY가 설정되지 않았습니다");
+        return res.status(500).json({
+          success: false,
+          error: "API 키가 설정되지 않았습니다."
+        });
+      }
+      
+      // URL에 API 키 추가 (이미 key 파라미터가 있으면 덮어쓰기)
+      try {
+        const urlObj = new URL(videoUrl);
+        urlObj.searchParams.set('key', GEMINI_API_KEY);
+        playUrl = urlObj.toString();
+        devLog("🔵 [재생 프록시] API 키 추가됨:", playUrl.substring(0, 100) + '...');
+      } catch (urlError) {
+        // URL 파싱 실패 시 기존 방식 사용
+        const separator = videoUrl.includes('?') ? '&' : '?';
+        playUrl = `${videoUrl}${separator}key=${GEMINI_API_KEY}`;
+        devLog("🔵 [재생 프록시] API 키 추가됨 (fallback)");
+      }
     }
 
     // Range 헤더 처리 (비디오 스트리밍을 위해)
