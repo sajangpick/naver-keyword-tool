@@ -460,52 +460,49 @@
         .side-nav {
           position: fixed;
           bottom: 50px;
-          left: 50%;
-          transform: translateX(-50%);
+          left: 20px;
+          right: 20px;
+          transform: none;
           top: auto;
           flex-direction: row;
-          flex-wrap: wrap;
-          width: auto;
+          flex-wrap: nowrap;
+          width: calc(100vw - 40px);
           max-width: calc(100vw - 40px);
           padding: 12px 16px;
-          overflow-x: hidden;
+          overflow-x: auto;
           overflow-y: hidden;
           gap: 8px;
           border-radius: 24px;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
           z-index: 100;
-          justify-content: center;
+          justify-content: flex-start;
           align-items: center;
           align-content: center;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+
+        .side-nav::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .side-nav::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 10px;
+        }
+
+        .side-nav::-webkit-scrollbar-thumb {
+          background: rgba(255, 123, 84, 0.5);
+          border-radius: 10px;
         }
 
         .side-nav .menu-item {
           flex-direction: column;
-          min-width: 0;
+          min-width: 50px;
+          flex: 0 0 50px;
           padding: 8px 6px;
           font-size: 8px;
           box-sizing: border-box;
-        }
-
-        /* 첫 5개 아이템 (첫 번째 줄) - 각각 20% 너비로 정확히 배치 */
-        .side-nav .menu-item:nth-child(1),
-        .side-nav .menu-item:nth-child(2),
-        .side-nav .menu-item:nth-child(3),
-        .side-nav .menu-item:nth-child(4),
-        .side-nav .menu-item:nth-child(5) {
-          flex: 0 0 calc((100% - 32px) / 5);
-          width: calc((100% - 32px) / 5);
-          max-width: calc((100% - 32px) / 5);
-        }
-
-        /* 나머지 4개 아이템 (두 번째 줄) - 각각 25% 너비로 가운데 정렬 */
-        .side-nav .menu-item:nth-child(6),
-        .side-nav .menu-item:nth-child(7),
-        .side-nav .menu-item:nth-child(8),
-        .side-nav .menu-item:nth-child(9) {
-          flex: 0 0 calc((100% - 24px) / 4);
-          width: calc((100% - 24px) / 4);
-          max-width: calc((100% - 24px) / 4);
         }
 
         .side-nav .menu-item .ico {
@@ -539,44 +536,44 @@
 
       @media (max-width: 360px) {
         .side-nav {
-          bottom: 12px;
-          max-width: calc(100vw - 16px);
+          bottom: 50px;
+          left: 12px;
+          right: 12px;
+          max-width: calc(100vw - 24px);
+          width: calc(100vw - 24px);
           padding: 8px 4px;
           gap: 4px;
           border-radius: 18px;
-          overflow-x: hidden;
-          justify-content: center;
-          flex-wrap: wrap;
+          overflow-x: auto;
+          overflow-y: hidden;
+          justify-content: flex-start;
+          flex-wrap: nowrap;
           align-content: center;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+
+        .side-nav::-webkit-scrollbar {
+          height: 3px;
+        }
+
+        .side-nav::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 10px;
+        }
+
+        .side-nav::-webkit-scrollbar-thumb {
+          background: rgba(255, 123, 84, 0.5);
+          border-radius: 10px;
         }
 
         .side-nav .menu-item {
-          min-width: 0;
+          min-width: 45px;
+          flex: 0 0 45px;
           padding: 4px 1px;
           font-size: 6px;
           gap: 2px;
           box-sizing: border-box;
-        }
-
-        /* 첫 5개 아이템 (첫 번째 줄) */
-        .side-nav .menu-item:nth-child(1),
-        .side-nav .menu-item:nth-child(2),
-        .side-nav .menu-item:nth-child(3),
-        .side-nav .menu-item:nth-child(4),
-        .side-nav .menu-item:nth-child(5) {
-          flex: 0 0 calc((100% - 16px) / 5);
-          width: calc((100% - 16px) / 5);
-          max-width: calc((100% - 16px) / 5);
-        }
-
-        /* 나머지 4개 아이템 (두 번째 줄) */
-        .side-nav .menu-item:nth-child(6),
-        .side-nav .menu-item:nth-child(7),
-        .side-nav .menu-item:nth-child(8),
-        .side-nav .menu-item:nth-child(9) {
-          flex: 0 0 calc((100% - 12px) / 4);
-          width: calc((100% - 12px) / 4);
-          max-width: calc((100% - 12px) / 4);
         }
 
         .side-nav .menu-item .ico {
@@ -1397,8 +1394,11 @@
         }
 
         .suggestion-btn {
-          padding: 6px 12px;
+          padding: 8px 14px;
           font-size: 12px;
+          white-space: normal;
+          text-align: left;
+          line-height: 1.4;
         }
       }
 
@@ -1427,8 +1427,11 @@
         }
 
         .suggestion-btn {
-          padding: 5px 10px;
+          padding: 6px 12px;
           font-size: 11px;
+          white-space: normal;
+          text-align: left;
+          line-height: 1.4;
         }
       }
 
@@ -1443,12 +1446,17 @@
       .suggestion-btn {
         background: white;
         border: 2px solid #e0e0e0;
-        padding: 8px 16px;
+        padding: 10px 18px;
         border-radius: 20px;
         cursor: pointer;
         font-size: 13px;
         transition: all 0.3s ease;
         color: #666;
+        white-space: normal;
+        text-align: left;
+        line-height: 1.5;
+        max-width: 100%;
+        word-break: keep-all;
       }
 
       .suggestion-btn:hover {
@@ -2237,7 +2245,7 @@
         selected.forEach(item => {
           const button = document.createElement('button');
           button.className = 'suggestion-btn';
-          button.textContent = item.label;
+          button.textContent = item.question;
           button.onclick = () => sendSuggestion(item.question);
           container.appendChild(button);
         });
