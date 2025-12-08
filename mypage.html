@@ -2982,14 +2982,14 @@
               ${video.status === 'completed' && video.video_url ? `
                 <div style="margin-top: 12px;">
                   <video controls style="max-width: 200px; max-height: 300px; border-radius: 8px; border: 1px solid var(--border);">
-                    <source src="/api/shorts/play?url=${encodeURIComponent(video.video_url)}" type="video/mp4">
+                    <source src="${video.video_url.startsWith('http') ? video.video_url : '/api/shorts/play?url=' + encodeURIComponent(video.video_url)}" type="video/mp4">
                     브라우저가 비디오 태그를 지원하지 않습니다.
                   </video>
                 </div>
               ` : ''}
-              ${video.status === 'failed' && video.error_message ? `
+              ${video.status === 'failed' ? `
                 <div style="margin-top: 8px; padding: 8px; background: #fee2e2; border-radius: 6px; font-size: 12px; color: #dc2626;">
-                  <i class="fas fa-exclamation-triangle"></i> ${video.error_message}
+                  <i class="fas fa-exclamation-triangle"></i> 생성 실패
                 </div>
               ` : ''}
               <div class="activity-meta" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
@@ -3002,10 +3002,6 @@
                 })}</span>
                 <div style="display: flex; gap: 8px;">
                   ${video.status === 'completed' && video.video_url ? `
-                    <a href="/api/shorts/play?url=${encodeURIComponent(video.video_url)}" target="_blank" 
-                       style="padding: 6px 12px; background: var(--accent-color); color: white; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                      <i class="fas fa-play"></i> 영상 보기
-                    </a>
                     <button onclick="downloadVideo('${video.video_url}', '${(video.menu_name || video.title || 'video').replace(/[^a-zA-Z0-9가-힣]/g, '_')}.mp4')" 
                             style="padding: 6px 12px; background: var(--white); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                       <i class="fas fa-download"></i> 다운로드
