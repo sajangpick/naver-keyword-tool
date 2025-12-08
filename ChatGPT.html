@@ -1743,36 +1743,8 @@
             <h3>안녕하세요! ChatGPT입니다.</h3>
             <p>무엇이든 물어보세요. 도움이 되도록 최선을 다하겠습니다!</p>
 
-            <div class="suggestions">
-              <button
-                class="suggestion-btn"
-                onclick="sendSuggestion('안녕하세요!')"
-              >
-                안녕하세요!
-              </button>
-              <button
-                class="suggestion-btn"
-                onclick="sendSuggestion('오늘 날씨가 어때요?')"
-              >
-                오늘 날씨 문의
-              </button>
-              <button
-                class="suggestion-btn"
-                onclick="sendSuggestion('간단한 요리 레시피 추천해주세요')"
-              >
-                요리 레시피
-              </button>
-              <button
-                class="suggestion-btn"
-                onclick="sendSuggestion('신제품 마케팅 방법이 궁금해요')"
-              >
-마케팅방법              </button>
-              <button
-                class="suggestion-btn"
-                onclick="sendSuggestion('창의적인 아이디어가 필요해요')"
-              >
-                창의적 아이디어
-              </button>
+            <div class="suggestions" id="suggestionsContainer">
+              <!-- 추천 질문이 여기에 동적으로 생성됩니다 -->
             </div>
           </div>
         </div>
@@ -2215,10 +2187,69 @@
         }
       });
 
+      // 소상공인 추천 질문 목록
+      const businessQuestions = [
+        { question: '간이과세자 vs 일반과세자 차이점이 뭐예요?', label: '간이과세 vs 일반과세' },
+        { question: '사업용 신용카드와 개인용 신용카드의 차이점은?', label: '사업용 카드 차이' },
+        { question: '틈새형 무인 창업 아이템 추천해주세요', label: '무인 창업 아이템' },
+        { question: '최근 3개월 가장 많이 창업한 업종은?', label: '인기 창업 업종' },
+        { question: '부가세 신고는 언제 해야 하나요?', label: '부가세 신고 시기' },
+        { question: '사업자 등록 후 해야 할 일은?', label: '사업자 등록 후' },
+        { question: '식당 마케팅 방법 추천해주세요', label: '식당 마케팅' },
+        { question: '고객 유치를 위한 전략이 궁금해요', label: '고객 유치 전략' },
+        { question: '메뉴 가격 책정 방법 알려주세요', label: '메뉴 가격 책정' },
+        { question: '인건비 절감 방법이 있을까요?', label: '인건비 절감' },
+        { question: '원가 계산은 어떻게 하나요?', label: '원가 계산' },
+        { question: '식자재 발주 최적화 방법은?', label: '식자재 발주' },
+        { question: '직원 채용 시 주의사항은?', label: '직원 채용' },
+        { question: '음식점 인테리어 비용 절감 팁', label: '인테리어 비용' },
+        { question: '온라인 주문 시스템 도입 가이드', label: '온라인 주문 시스템' },
+        { question: '배달 앱 수수료 협상 방법은?', label: '배달 앱 수수료' },
+        { question: '식당 리뷰 관리 전략 알려주세요', label: '리뷰 관리' },
+        { question: '신메뉴 개발 프로세스는?', label: '신메뉴 개발' },
+        { question: '식당 운영 수익성 개선 방법', label: '수익성 개선' },
+        { question: '세금 절감 방법이 있을까요?', label: '세금 절감' },
+        { question: '사업자 대출 받는 방법은?', label: '사업자 대출' },
+        { question: '소상공인 정책자금 신청 방법', label: '정책자금 신청' },
+        { question: '식당 홍보 효과적인 방법은?', label: '식당 홍보' },
+        { question: 'SNS 마케팅 전략 수립 방법', label: 'SNS 마케팅' },
+        { question: '고객 재방문율 높이는 방법', label: '재방문율 향상' },
+        { question: '식당 운영비 절감 노하우', label: '운영비 절감' },
+        { question: '계절별 메뉴 전략은?', label: '계절별 메뉴' },
+        { question: '식당 창업 자금 조달 방법', label: '창업 자금' },
+        { question: '프랜차이즈 vs 개인 창업 비교', label: '프랜차이즈 비교' },
+        { question: '식당 위치 선정 가이드', label: '위치 선정' }
+      ];
+
+      // 추천 질문 랜덤 생성 함수
+      function generateSuggestions() {
+        const container = document.getElementById('suggestionsContainer');
+        if (!container) return;
+
+        // 기존 버튼 제거
+        container.innerHTML = '';
+
+        // 랜덤하게 4-5개 선택 (배열 섞기)
+        const shuffled = [...businessQuestions].sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, Math.floor(Math.random() * 2) + 4); // 4개 또는 5개
+
+        // 버튼 생성
+        selected.forEach(item => {
+          const button = document.createElement('button');
+          button.className = 'suggestion-btn';
+          button.textContent = item.label;
+          button.onclick = () => sendSuggestion(item.question);
+          container.appendChild(button);
+        });
+      }
+
       // 페이지 로드 시 초기화
       window.addEventListener("load", function () {
         messageInput.focus();
         checkConnection();
+        
+        // 추천 질문 생성
+        generateSuggestions();
 
         // 5분마다 연결 상태 확인
         setInterval(checkConnection, 5 * 60 * 1000);
