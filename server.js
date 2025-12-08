@@ -6346,30 +6346,37 @@ app.get("/api/shorts/download", async (req, res) => {
     // 응답 헤더 설정
     res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-    res.setHeader('Content-Length', response.headers['content-length'] || '');
+    
+    // Content-Length가 있으면 설정 (없으면 생략)
+    if (response.headers['content-length']) {
+      res.setHeader('Content-Length', response.headers['content-length']);
+    }
 
     devLog("🔵 [다운로드 프록시] 영상 스트리밍 시작");
     
-    // 다운로드 기록 저장 (비동기, 실패해도 다운로드는 계속 진행)
-    if (supabase && userId && videoId) {
-      try {
-        // shorts_videos 테이블에 다운로드 기록 업데이트 (다운로드 카운트 증가)
-        await supabase
-          .from('shorts_videos')
-          .update({ 
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', videoId)
-          .eq('user_id', userId);
-        
-        devLog("✅ [다운로드 기록] 다운로드 기록 저장 완료");
-      } catch (recordError) {
-        devError("⚠️ [다운로드 기록] 기록 저장 실패 (다운로드는 계속 진행):", recordError);
-      }
-    }
-    
     // 스트림을 클라이언트로 전송
     response.data.pipe(res);
+    
+    // 다운로드 기록 저장 (스트림 전송 후 비동기로 처리)
+    if (supabase && userId && videoId) {
+      // 비동기로 처리 (다운로드에 영향 없음)
+      setImmediate(async () => {
+        try {
+          // shorts_videos 테이블에 다운로드 기록 업데이트
+          await supabase
+            .from('shorts_videos')
+            .update({ 
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', videoId)
+            .eq('user_id', userId);
+          
+          devLog("✅ [다운로드 기록] 다운로드 기록 저장 완료");
+        } catch (recordError) {
+          devError("⚠️ [다운로드 기록] 기록 저장 실패:", recordError);
+        }
+      });
+    }
     
   } catch (error) {
     devError("🔴 [다운로드 프록시] 오류:", error.message);

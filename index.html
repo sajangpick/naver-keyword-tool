@@ -2915,13 +2915,18 @@
 
       @media (max-width: 768px) {
         .site-footer {
-          padding: 16px 12px;
+          padding: 10px 8px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 30;
           margin-top: 0;
         }
 
         .footer-content {
-          gap: 8px;
-          font-size: 11px;
+          gap: 5px;
+          font-size: 8px;
           flex-direction: row;
           flex-wrap: wrap;
           line-height: 1.4;
@@ -2930,16 +2935,16 @@
         .footer-item {
           flex-direction: row;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
         }
 
         .footer-label {
-          font-size: 11px;
+          font-size: 8px;
           margin-bottom: 0;
         }
 
         .footer-value {
-          font-size: 11px;
+          font-size: 8px;
         }
       }
       /* -----------------------------

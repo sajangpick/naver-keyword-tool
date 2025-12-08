@@ -1726,28 +1726,35 @@
 
       @media (max-width: 768px) {
         .site-footer {
-          padding: 32px 16px;
+          padding: 10px 8px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 30;
+          margin-top: 0;
         }
 
         .footer-content {
-          gap: 16px;
-          font-size: 12px;
+          gap: 5px;
+          font-size: 8px;
           flex-direction: row;
           flex-wrap: wrap;
+          line-height: 1.4;
         }
 
         .footer-item {
           flex-direction: row;
           align-items: center;
-          gap: 6px;
+          gap: 3px;
         }
 
         .footer-label {
-          font-size: 12px;
+          font-size: 8px;
         }
 
         .footer-value {
-          font-size: 12px;
+          font-size: 8px;
         }
       }
     </style>

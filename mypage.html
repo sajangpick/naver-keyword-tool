@@ -799,28 +799,35 @@
 
     @media (max-width: 768px) {
       .site-footer {
-        padding: 32px 16px;
+        padding: 10px 8px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        margin-top: 0;
       }
 
       .footer-content {
-        gap: 16px;
-        font-size: 12px;
+        gap: 5px;
+        font-size: 8px;
         flex-direction: row;
         flex-wrap: wrap;
+        line-height: 1.4;
       }
 
       .footer-item {
         flex-direction: row;
         align-items: center;
-        gap: 6px;
+        gap: 3px;
       }
 
       .footer-label {
-        font-size: 12px;
+        font-size: 8px;
       }
 
       .footer-value {
-        font-size: 12px;
+        font-size: 8px;
       }
     }
   </style>
@@ -1802,7 +1809,7 @@
           key: 'seed', 
           name: '라이트', 
           icon: '🌱', 
-          color: 'var(--success)',
+          color: '#ffb6c1',
           priceKey: 'owner_seed_price',
           tokenKey: 'owner_seed_limit',
           defaultPrice: 0,
@@ -3208,7 +3215,7 @@
     // 영상 다운로드 함수
     async function downloadVideo(videoUrl, filename, videoId) {
       try {
-        console.log('📥 영상 다운로드 시작:', videoUrl);
+        console.log('📥 영상 다운로드 시작:', videoUrl, filename, videoId);
         
         // 현재 사용자 ID 가져오기
         let userId = null;
@@ -3228,9 +3235,30 @@
           proxyUrl += `&userId=${encodeURIComponent(userId)}`;
         }
         
+        console.log('📥 다운로드 URL:', proxyUrl);
+        
+        // fetch를 사용해서 blob으로 다운로드
+        const response = await fetch(proxyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'video/mp4, video/*, */*'
+          }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ 다운로드 응답 오류:', response.status, errorText);
+          throw new Error(`다운로드 실패 (${response.status}): ${errorText}`);
+        }
+        
+        // blob으로 변환
+        const blob = await response.blob();
+        console.log('✅ Blob 생성 완료:', blob.size, 'bytes');
+        
         // 다운로드 링크 생성
+        const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = proxyUrl;
+        a.href = url;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
@@ -3238,12 +3266,13 @@
         // 정리
         setTimeout(() => {
           document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
         }, 100);
         
-        console.log('✅ 영상 다운로드 시작됨:', filename);
+        console.log('✅ 영상 다운로드 완료:', filename);
       } catch (error) {
         console.error('❌ 영상 다운로드 실패:', error);
-        alert('영상 다운로드 중 오류가 발생했습니다: ' + error.message);
+        alert('영상 다운로드 중 오류가 발생했습니다: ' + (error.message || '알 수 없는 오류'));
       }
     }
 
