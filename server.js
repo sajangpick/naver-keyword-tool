@@ -3962,23 +3962,14 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
 
     const bounds = getRangeBounds(normalizedRange);
 
+    // 1단계: ebook_downloads 조회
     let query = supabase
       .from("ebook_downloads")
-      .select(`
-        *,
-        profiles!user_id (
-          user_type,
-          membership_level,
-          name,
-          email
-        )
-      `, { count: "exact" });
+      .select("*", { count: "exact" });
 
     query = applyRangeBounds(query, bounds);
 
     if (sanitizedSearch) {
-      // 검색은 ebook_downloads 테이블의 컬럼만 사용
-      // profiles 조인 후 별도로 처리
       query = query.or(
         `email.ilike.%${sanitizedSearch}%,name.ilike.%${sanitizedSearch}%`
       );
@@ -4000,27 +3991,43 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
       });
     }
 
-    // profiles 테이블과 조인된 데이터 처리
-    // profiles의 최신 정보를 우선 사용
+    // 2단계: user_id 목록 추출
+    const userIds = [...new Set(
+      (downloads || [])
+        .map((d) => d.user_id)
+        .filter((id) => id != null)
+    )];
+
+    // 3단계: profiles 테이블에서 최신 회원 정보 조회
+    let profilesMap = new Map();
+    if (userIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, user_type, membership_level, name, email")
+        .in("id", userIds);
+
+      if (!profilesError && profiles) {
+        profiles.forEach((profile) => {
+          profilesMap.set(profile.id, profile);
+        });
+      }
+    }
+
+    // 4단계: 다운로드 데이터와 profiles 데이터 병합
     let processedDownloads = (downloads || []).map((download) => {
-      // profiles는 배열로 반환될 수 있으므로 첫 번째 요소 사용
-      const profile = Array.isArray(download.profiles) 
-        ? download.profiles[0] 
-        : download.profiles;
+      const profile = download.user_id ? profilesMap.get(download.user_id) : null;
       
       return {
         ...download,
-        // profiles의 최신 정보가 있으면 사용, 없으면 기존 값 사용
-        user_type: profile?.user_type || download.user_type,
-        membership_level: profile?.membership_level || download.membership_level,
-        name: profile?.name || download.name,
-        email: profile?.email || download.email,
-        // profiles 객체는 제거 (프론트엔드에서 사용하지 않음)
-        profiles: undefined
+        // profiles의 최신 정보를 우선 사용, 없으면 기존 값 사용
+        user_type: profile?.user_type || download.user_type || null,
+        membership_level: profile?.membership_level || download.membership_level || null,
+        name: profile?.name || download.name || null,
+        email: profile?.email || download.email || null,
       };
     });
 
-    // 검색어가 있고 profiles로도 검색해야 하는 경우 추가 필터링
+    // 5단계: 검색어가 있고 profiles로도 검색해야 하는 경우 추가 필터링
     if (sanitizedSearch) {
       const searchLower = sanitizedSearch.toLowerCase();
       processedDownloads = processedDownloads.filter((download) => {
