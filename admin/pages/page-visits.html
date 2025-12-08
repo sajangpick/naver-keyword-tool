@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>접속 기록 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <!-- Admin Bootstrap -->
+    <script src="/admin/assets/admin-bootstrap.js"></script>
+    
+    <!-- Admin Sidebar -->
+    <script src="/admin/assets/admin-sidebar.js"></script>
+    
+    <style>
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        font-size: 28px;
+        margin: 0;
+        color: var(--text);
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: var(--naver-green-dark);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .filters {
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .filter-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      select {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+      }
+
+      .table-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+      }
+
+      thead {
+        background: var(--bg);
+      }
+
+      th {
+        padding: 16px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border);
+      }
+
+      td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        color: var(--text);
+      }
+
+      tbody tr:hover {
+        background: var(--bg);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .page-path {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+      }
+
+      .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+      }
+
+      .device-icon {
+        font-size: 16px;
+        margin-right: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>
+          <h1>📊 접속 기록</h1>
+          <div style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">
+            회원들의 페이지 접속 기록을 확인할 수 있습니다
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="loadVisits()">
+            <i class="fas fa-sync-alt"></i> 새로고침
+          </button>
+        </div>
+      </div>
+
+      <!-- 통계 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">전체 접속</div>
+          <div class="stat-value" id="totalCount">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">회원 접속</div>
+          <div class="stat-value" id="memberCount">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">익명 접속</div>
+          <div class="stat-value" id="anonymousCount">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">모바일</div>
+          <div class="stat-value" id="mobileCount">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">데스크톱</div>
+          <div class="stat-value" id="desktopCount">-</div>
+        </div>
+      </div>
+
+      <!-- 필터 -->
+      <div class="filters">
+        <div class="filter-group">
+          <label class="filter-label">기기 타입:</label>
+          <select id="filterDeviceType" onchange="loadVisits()">
+            <option value="">전체</option>
+            <option value="desktop">데스크톱</option>
+            <option value="mobile">모바일</option>
+            <option value="tablet">태블릿</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">페이지 경로:</label>
+          <input type="text" id="filterPagePath" placeholder="예: /index.html" 
+                 style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;"
+                 onkeypress="if(event.key==='Enter') loadVisits()">
+        </div>
+      </div>
+
+      <!-- 테이블 -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>시간</th>
+              <th>사용자</th>
+              <th>페이지</th>
+              <th>제목</th>
+              <th>유입 경로</th>
+              <th>기기</th>
+              <th>브라우저</th>
+              <th>IP 주소</th>
+            </tr>
+          </thead>
+          <tbody id="visitsTableBody">
+            <tr>
+              <td colspan="8" class="loading">데이터 로딩 중...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      let allVisits = [];
+
+      async function getSupabase() {
+        return await AdminBootstrap.getSupabaseClient();
+      }
+
+      async function getAuthToken() {
+        const supabase = await getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token;
+      }
+
+      async function loadVisits() {
+        try {
+          const tbody = document.getElementById('visitsTableBody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">데이터 로딩 중...</td></tr>';
+
+          const token = await getAuthToken();
+          if (!token) {
+            throw new Error('로그인이 필요합니다');
+          }
+
+          // 필터 값 가져오기
+          const deviceType = document.getElementById('filterDeviceType').value;
+          const pagePath = document.getElementById('filterPagePath').value;
+
+          // API 엔드포인트 결정
+          const isLocalDev = window.location.hostname === 'localhost' || 
+                             window.location.hostname === '127.0.0.1';
+          const apiBaseUrl = isLocalDev 
+            ? 'http://127.0.0.1:3003'
+            : window.location.origin;
+
+          // 쿼리 파라미터 구성
+          const params = new URLSearchParams({
+            limit: '100',
+            offset: '0',
+          });
+          if (deviceType) params.append('deviceType', deviceType);
+          if (pagePath) params.append('pagePath', pagePath);
+
+          const response = await fetch(`${apiBaseUrl}/api/admin/page-visits?${params}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || '접속 기록을 불러올 수 없습니다');
+          }
+
+          const result = await response.json();
+          allVisits = result.data || [];
+
+          updateStats(allVisits);
+          displayVisits(allVisits);
+
+        } catch (error) {
+          console.error('접속 기록 로드 실패:', error);
+          document.getElementById('visitsTableBody').innerHTML = `
+            <tr>
+              <td colspan="8" class="empty-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>${error.message || '접속 기록을 불러올 수 없습니다'}</div>
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      function updateStats(visits) {
+        const total = visits.length;
+        const member = visits.filter(v => v.user_id).length;
+        const anonymous = visits.filter(v => !v.user_id).length;
+        const mobile = visits.filter(v => v.device_type === 'mobile').length;
+        const desktop = visits.filter(v => v.device_type === 'desktop').length;
+
+        document.getElementById('totalCount').textContent = total;
+        document.getElementById('memberCount').textContent = member;
+        document.getElementById('anonymousCount').textContent = anonymous;
+        document.getElementById('mobileCount').textContent = mobile;
+        document.getElementById('desktopCount').textContent = desktop;
+      }
+
+      function displayVisits(visits) {
+        const tbody = document.getElementById('visitsTableBody');
+
+        if (visits.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <div>접속 기록이 없습니다</div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = visits.map(visit => {
+          const time = formatDate(visit.created_at);
+          const user = visit.user_id ? '회원' : '익명';
+          const pagePath = visit.page_path || '-';
+          const pageTitle = visit.page_title || '-';
+          const referrer = visit.referrer ? new URL(visit.referrer).pathname : '-';
+          const device = getDeviceIcon(visit.device_type) + ' ' + (visit.device_type || '-');
+          const browser = visit.browser ? `${visit.browser} ${visit.browser_version || ''}`.trim() : '-';
+          const ip = visit.ip_address || '-';
+
+          return `
+            <tr>
+              <td>${time}</td>
+              <td>${user}</td>
+              <td class="page-path" title="${visit.page_url || ''}">${pagePath}</td>
+              <td>${pageTitle}</td>
+              <td class="page-path" title="${visit.referrer || ''}">${referrer}</td>
+              <td>${device}</td>
+              <td>${browser}</td>
+              <td>${ip}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (minutes < 1) return '방금 전';
+        if (minutes < 60) return `${minutes}분 전`;
+        if (hours < 24) return `${hours}시간 전`;
+        if (days < 7) return `${days}일 전`;
+
+        return date.toLocaleString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+
+      function getDeviceIcon(deviceType) {
+        if (!deviceType) return '💻';
+        if (deviceType === 'mobile') return '📱';
+        if (deviceType === 'tablet') return '📱';
+        return '💻';
+      }
+
+      // 페이지 로드 시 데이터 불러오기
+      document.addEventListener('DOMContentLoaded', () => {
+        loadVisits();
+      });
+    </script>
+  </body>
+</html>
+

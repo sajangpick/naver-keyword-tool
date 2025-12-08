@@ -123,6 +123,15 @@
     }
   }
 
+  // 페이지 접속 기록 추적 스크립트 로드
+  if (!document.getElementById('page-visit-tracker-script')) {
+    const script = document.createElement('script');
+    script.id = 'page-visit-tracker-script';
+    script.src = './assets/page-visit-tracker.js';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
   // Utilities
   function setLoading(el, isLoading, textWhenLoading = "검색 중...") {
     if (!el) return;

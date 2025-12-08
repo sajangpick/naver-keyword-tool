@@ -116,6 +116,12 @@
       title: '로그인 기록',
       path: '/admin/pages/login-logs.html',
       badge: null
+    },
+    {
+      icon: '📊',
+      title: '접속 기록',
+      path: '/admin/pages/page-visits.html',
+      badge: null
     }
   ];
 

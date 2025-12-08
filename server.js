@@ -1100,6 +1100,14 @@ app.post("/api/auth/login-log", loginLogHandler);
 const adminLoginLogsHandler = require("./api/admin/login-logs");
 app.get("/api/admin/login-logs", adminLoginLogsHandler);
 
+// ==================== 접속 기록 API ====================
+const pageVisitHandler = require("./api/auth/page-visit");
+app.post("/api/auth/page-visit", pageVisitHandler);
+
+// 관리자 접속 기록 조회 API
+const adminPageVisitsHandler = require("./api/admin/page-visits");
+app.get("/api/admin/page-visits", adminPageVisitsHandler);
+
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);
