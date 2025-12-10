@@ -101,10 +101,19 @@
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      // 성공 (조용히 처리, 로그 최소화)
+      const result = await response.json();
+      console.log('[page-visit-tracker] ✅ 접속 기록 저장 완료:', {
+        page: pageTitle,
+        userId: userId || '익명',
+        id: result.data?.id
+      });
     } catch (error) {
       // 접속 기록 저장 실패는 페이지 로딩에 영향을 주지 않음
-      console.warn('[page-visit-tracker] 접속 기록 저장 실패 (무시됨):', error.message);
+      console.error('[page-visit-tracker] ❌ 접속 기록 저장 실패:', {
+        message: error.message,
+        page: document.title,
+        url: window.location.href
+      });
     }
   }
 
@@ -125,10 +134,16 @@
   });
 
   // 페이지 로드 시 접속 기록 저장
+  console.log('[page-visit-tracker] 스크립트 로드 완료');
+  
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', savePageVisit);
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('[page-visit-tracker] DOMContentLoaded - 접속 기록 저장 시작');
+      savePageVisit();
+    });
   } else {
     // 이미 로드된 경우 즉시 실행
+    console.log('[page-visit-tracker] 이미 로드됨 - 접속 기록 저장 시작');
     savePageVisit();
   }
 

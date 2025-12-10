@@ -18,8 +18,26 @@
       // 인증 토큰 가져오기 (선택적)
       let authToken = null;
       try {
-        const supabase = window.supabase || (window.supabaseClient ? window.supabaseClient() : null);
-        if (supabase) {
+        // 여러 방법으로 Supabase 클라이언트 찾기
+        let supabase = null;
+        
+        // 1. authState에서 찾기 (가장 일반적)
+        if (window.authState?.supabase) {
+          supabase = window.authState.supabase;
+        }
+        // 2. window.supabase에서 직접 찾기
+        else if (window.supabase && typeof window.supabase.createClient === 'function') {
+          // createClient로 클라이언트 생성 필요
+          if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+            supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+          }
+        }
+        // 3. 전역 supabaseClient 찾기
+        else if (window.supabaseClient) {
+          supabase = typeof window.supabaseClient === 'function' ? window.supabaseClient() : window.supabaseClient;
+        }
+        
+        if (supabase && supabase.auth) {
           const { data: { session } } = await supabase.auth.getSession();
           authToken = session?.access_token;
         }

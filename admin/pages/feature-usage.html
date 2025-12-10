@@ -459,8 +459,26 @@
 
         tbody.innerHTML = logs.map(log => {
           const time = formatDate(log.created_at);
-          const user = log.user_email || log.user_name || '익명';
-          const userName = log.user_name || '';
+          
+          // 사용자 정보 표시: user_id가 있으면 회원, 없으면 익명
+          let userDisplay = '익명';
+          let userNameDisplay = '';
+          
+          if (log.user_id) {
+            // 회원인 경우 - 이메일 또는 이름 표시
+            if (log.user_email) {
+              userDisplay = log.user_email;
+              userNameDisplay = log.user_name || '';
+            } else if (log.user_name) {
+              userDisplay = log.user_name;
+            } else {
+              userDisplay = '회원';
+            }
+          } else {
+            // 익명 사용자인 경우
+            userDisplay = '익명';
+          }
+          
           const featureType = log.feature_type || 'unknown';
           const featureName = log.feature_name || '-';
           const actionType = log.action_type || '-';
@@ -474,8 +492,8 @@
               <td>${time}</td>
               <td>
                 <div class="user-info">
-                  <div>${user}</div>
-                  ${userName ? `<div class="user-email">${userName}</div>` : ''}
+                  <div>${userDisplay}</div>
+                  ${userNameDisplay ? `<div class="user-email">${userNameDisplay}</div>` : ''}
                 </div>
               </td>
               <td><span class="badge ${featureType}">${featureName}</span></td>

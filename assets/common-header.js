@@ -127,8 +127,18 @@
   if (!document.getElementById('page-visit-tracker-script')) {
     const script = document.createElement('script');
     script.id = 'page-visit-tracker-script';
-    script.src = './assets/page-visit-tracker.js';
+    // 경로를 절대 경로로 수정 (상대 경로 문제 해결)
+    const scriptPath = window.location.pathname.includes('/admin/') 
+      ? '/assets/page-visit-tracker.js'
+      : './assets/page-visit-tracker.js';
+    script.src = scriptPath;
     script.async = true;
+    script.onerror = function() {
+      console.error('[common-header] page-visit-tracker.js 로드 실패:', scriptPath);
+    };
+    script.onload = function() {
+      console.log('[common-header] ✅ page-visit-tracker.js 로드 완료');
+    };
     document.head.appendChild(script);
   }
 

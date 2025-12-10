@@ -214,6 +214,12 @@
   <body>
     <main class="admin-main">
       <div class="container">
+        <!-- 테스트 버튼 (임시) -->
+        <div style="margin-bottom: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+          <button class="btn btn-primary" onclick="testPageVisit()" style="background: #3b82f6;">
+            <i class="fas fa-flask"></i> 테스트 저장
+          </button>
+        </div>
 
       <!-- 통계 -->
       <div class="stats-grid">
@@ -416,23 +422,16 @@
 
       function formatDate(dateString) {
         const date = new Date(dateString);
-        const now = new Date();
-        const diff = now - date;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (minutes < 1) return '방금 전';
-        if (minutes < 60) return `${minutes}분 전`;
-        if (hours < 24) return `${hours}시간 전`;
-        if (days < 7) return `${days}일 전`;
-
+        
+        // 정확한 날짜/시간 형식으로 표시
         return date.toLocaleString('ko-KR', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
           hour: '2-digit',
           minute: '2-digit',
+          second: '2-digit',
+          hour12: false, // 24시간 형식
         });
       }
 
@@ -441,6 +440,49 @@
         if (deviceType === 'mobile') return '📱';
         if (deviceType === 'tablet') return '📱';
         return '💻';
+      }
+
+      // 테스트: 접속 기록 수동 저장
+      async function testPageVisit() {
+        try {
+          const token = await getAuthToken();
+          if (!token) {
+            alert('로그인이 필요합니다');
+            return;
+          }
+
+          const isLocalDev = window.location.hostname === 'localhost' || 
+                             window.location.hostname === '127.0.0.1';
+          const apiBaseUrl = isLocalDev 
+            ? 'http://127.0.0.1:3003'
+            : window.location.origin;
+
+          const response = await fetch(`${apiBaseUrl}/api/auth/page-visit`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: null, // 테스트용
+              pageUrl: window.location.href,
+              pageTitle: document.title,
+              referrer: document.referrer || null,
+              sessionId: 'test_' + Date.now(),
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || '저장 실패');
+          }
+
+          const result = await response.json();
+          alert('✅ 접속 기록 저장 성공!\n\n이제 새로고침 버튼을 눌러 확인하세요.');
+          loadVisits();
+        } catch (error) {
+          console.error('테스트 저장 실패:', error);
+          alert('❌ 저장 실패: ' + error.message);
+        }
       }
 
       // 새로고침 함수를 전역으로 등록 (헤더의 새로고침 버튼에서 사용)
