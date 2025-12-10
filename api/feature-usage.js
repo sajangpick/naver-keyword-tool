@@ -109,31 +109,53 @@ module.exports = async (req, res) => {
     let userName = null;
 
     const authHeader = req.headers.authorization;
+    console.log('[feature-usage] Authorization 헤더:', authHeader ? '있음' : '없음');
+    
     if (authHeader) {
       try {
         const token = authHeader.replace('Bearer ', '');
+        console.log('[feature-usage] 토큰 추출:', token ? '성공' : '실패');
+        
         const { data: { user }, error: authError } = await supabase.auth.getUser(token);
         
+        if (authError) {
+          console.log('[feature-usage] 인증 오류:', authError.message);
+        }
+        
         if (!authError && user) {
+          console.log('[feature-usage] 사용자 찾음:', user.id, user.email);
           userId = user.id;
           userEmail = user.email;
           
-          // 프로필에서 이름 가져오기
-          const { data: profile } = await supabase
+          // 프로필에서 이름 가져오기 (profiles 테이블의 id는 auth.users의 id와 동일)
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('name, store_name')
+            .select('id, name, store_name, email')
             .eq('id', user.id)
             .single();
           
-          if (profile) {
+          if (profileError) {
+            console.log('[feature-usage] 프로필 조회 오류:', profileError.message);
+          } else if (profile) {
+            console.log('[feature-usage] 프로필 찾음:', profile.name || profile.store_name);
             userName = profile.name || profile.store_name || null;
+            // 프로필에 이메일이 더 정확할 수 있음
+            if (profile.email && !userEmail) {
+              userEmail = profile.email;
+            }
           }
+        } else {
+          console.log('[feature-usage] 사용자를 찾을 수 없음');
         }
       } catch (error) {
         // 인증 실패해도 기록은 남김 (익명 사용자)
         console.log('[feature-usage] 인증 실패 (익명 사용자로 기록):', error.message);
       }
+    } else {
+      console.log('[feature-usage] Authorization 헤더가 없어 익명으로 기록');
     }
+    
+    console.log('[feature-usage] 최종 사용자 정보:', { userId, userEmail, userName });
 
     // 기기 정보 추출
     const userAgent = req.headers['user-agent'] || '';

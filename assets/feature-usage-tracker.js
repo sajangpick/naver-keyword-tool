@@ -24,26 +24,38 @@
         // 1. authState에서 찾기 (가장 일반적)
         if (window.authState?.supabase) {
           supabase = window.authState.supabase;
+          console.log('[feature-usage-tracker] authState에서 Supabase 클라이언트 찾음');
         }
         // 2. window.supabase에서 직접 찾기
         else if (window.supabase && typeof window.supabase.createClient === 'function') {
           // createClient로 클라이언트 생성 필요
           if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
             supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            console.log('[feature-usage-tracker] createClient로 Supabase 클라이언트 생성');
           }
         }
         // 3. 전역 supabaseClient 찾기
         else if (window.supabaseClient) {
           supabase = typeof window.supabaseClient === 'function' ? window.supabaseClient() : window.supabaseClient;
+          console.log('[feature-usage-tracker] 전역 supabaseClient 사용');
         }
         
         if (supabase && supabase.auth) {
-          const { data: { session } } = await supabase.auth.getSession();
-          authToken = session?.access_token;
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) {
+            console.log('[feature-usage-tracker] 세션 조회 오류:', sessionError.message);
+          } else if (session?.access_token) {
+            authToken = session.access_token;
+            console.log('[feature-usage-tracker] 인증 토큰 가져오기 성공');
+          } else {
+            console.log('[feature-usage-tracker] 세션이 없음 (로그인 안 됨)');
+          }
+        } else {
+          console.log('[feature-usage-tracker] Supabase 클라이언트를 찾을 수 없음');
         }
       } catch (error) {
         // 인증 실패해도 기록은 남김 (익명 사용자)
-        console.log('[feature-usage] 인증 토큰 가져오기 실패 (익명으로 기록):', error.message);
+        console.log('[feature-usage-tracker] 인증 토큰 가져오기 실패 (익명으로 기록):', error.message);
       }
 
       // 현재 페이지 정보
