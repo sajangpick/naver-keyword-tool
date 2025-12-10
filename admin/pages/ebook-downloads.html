@@ -510,13 +510,32 @@
           seed: "씨앗",
           power: "파워",
           big_power: "빅파워",
+          bigpower: "빅파워",
           premium: "프리미엄",
           elite: "엘리트",
           expert: "엑스퍼트",
           master: "마스터",
           platinum: "플래티넘",
           admin: "관리자",
+          free: "씨앗",
         };
+
+        // 등급 정규화 함수 (member-management.html과 동일)
+        function normalizeMembershipLevel(level) {
+          if (!level) {
+            return 'seed';
+          }
+          const normalized = level.toLowerCase();
+          // FREE 또는 free를 seed로 변환
+          if (normalized === 'free') {
+            return 'seed';
+          }
+          // big_power를 bigpower로 변환
+          if (normalized === 'big_power') {
+            return 'bigpower';
+          }
+          return normalized;
+        }
 
         const DEVICE_LABELS = {
           mobile: "모바일",
@@ -666,7 +685,9 @@
           const rows = downloads
             .map((item) => {
               const userTypeClass = item.user_type || "unknown";
-              const levelClass = item.membership_level || "unknown";
+              // 등급 정규화 적용
+              const normalizedLevel = normalizeMembershipLevel(item.membership_level);
+              const levelClass = normalizedLevel || "unknown";
               const sourceLabel =
                 SOURCE_LABELS[item.download_source] ||
                 item.download_source ||
@@ -699,7 +720,7 @@
                     </span>
                     <span class="badge membership ${escapeHtml(levelClass)}">
                       ${escapeHtml(
-                        LEVEL_LABELS[item.membership_level] || "기본"
+                        LEVEL_LABELS[normalizedLevel] || "기본"
                       )}
                     </span>
                   </td>
