@@ -6493,63 +6493,26 @@ app.get("/api/shorts/download", async (req, res) => {
       if (status === 400) {
         let errorMessage = '영상 다운로드 실패: 잘못된 요청입니다. 영상 URL이 만료되었거나 접근이 제한되었을 수 있습니다.';
         
-        // 에러 데이터 처리
-        if (errorData) {
+        // 에러 데이터 처리 (스트림이 아닌 경우만)
+        if (errorData && typeof errorData.pipe !== 'function') {
           try {
-            // 스트림인 경우 버퍼로 변환
-            if (typeof errorData.pipe === 'function') {
-              const chunks = [];
-              return new Promise((resolve) => {
-                errorData.on('data', chunk => chunks.push(chunk));
-                errorData.on('end', () => {
-                  try {
-                    const errorText = Buffer.concat(chunks).toString();
-                    devError("🔴 [다운로드 프록시] 400 에러 상세:", errorText);
-                    
-                    // JSON 파싱 시도
-                    try {
-                      const errorJson = JSON.parse(errorText);
-                      if (errorJson.error?.message) {
-                        errorMessage = `영상 다운로드 실패: ${errorJson.error.message}`;
-                      } else if (errorJson.error) {
-                        errorMessage = `영상 다운로드 실패: ${errorJson.error}`;
-                      }
-                    } catch (e) {
-                      // JSON이 아니면 텍스트 그대로 사용
-                      if (errorText.length < 200) {
-                        errorMessage = `영상 다운로드 실패: ${errorText}`;
-                      }
-                    }
-                  } catch (e) {
-                    devError("🔴 [다운로드 프록시] 에러 텍스트 처리 실패:", e);
-                  }
-                  
-                  if (!res.headersSent) {
-                    res.status(400).json({
-                      success: false,
-                      error: errorMessage
-                    });
-                  }
-                  resolve();
-                });
-              });
-            } else {
-              // 일반 데이터
-              devError("🔴 [다운로드 프록시] 400 에러 상세:", JSON.stringify(errorData));
-              
-              if (typeof errorData === 'string') {
-                errorMessage = `영상 다운로드 실패: ${errorData.substring(0, 200)}`;
-              } else if (errorData.error?.message) {
-                errorMessage = `영상 다운로드 실패: ${errorData.error.message}`;
-              } else if (errorData.error) {
-                errorMessage = `영상 다운로드 실패: ${errorData.error}`;
-              } else if (errorData.message) {
-                errorMessage = `영상 다운로드 실패: ${errorData.message}`;
-              }
+            devError("🔴 [다운로드 프록시] 400 에러 상세:", JSON.stringify(errorData).substring(0, 500));
+            
+            if (typeof errorData === 'string') {
+              errorMessage = `영상 다운로드 실패: ${errorData.substring(0, 200)}`;
+            } else if (errorData.error?.message) {
+              errorMessage = `영상 다운로드 실패: ${errorData.error.message}`;
+            } else if (errorData.error) {
+              errorMessage = `영상 다운로드 실패: ${errorData.error}`;
+            } else if (errorData.message) {
+              errorMessage = `영상 다운로드 실패: ${errorData.message}`;
             }
           } catch (parseError) {
             devError("🔴 [다운로드 프록시] 에러 데이터 파싱 실패:", parseError);
           }
+        } else if (errorData && typeof errorData.pipe === 'function') {
+          // 스트림인 경우 - 간단히 로그만 남기고 기본 메시지 사용
+          devError("🔴 [다운로드 프록시] 400 에러 (스트림 응답)");
         }
         
         if (!res.headersSent) {
