@@ -2971,10 +2971,13 @@
           const videoId = video.id;
           const isProcessing = video.status === 'processing';
           
-          // 영상 URL 처리 (Google API URL은 항상 프록시 사용)
+          // 영상 URL 처리
           let videoSrc = '';
           if (video.status === 'completed' && video.video_url) {
-            if (video.video_url.includes('generativelanguage.googleapis.com')) {
+            if (video.video_url.includes('supabase.co/storage')) {
+              // Supabase Storage URL은 직접 사용 (서버에 저장된 영상)
+              videoSrc = video.video_url;
+            } else if (video.video_url.includes('generativelanguage.googleapis.com')) {
               // Google API URL은 항상 프록시 사용
               videoSrc = '/api/shorts/play?url=' + encodeURIComponent(video.video_url);
             } else if (video.video_url.startsWith('http')) {
@@ -3035,6 +3038,13 @@
                             style="padding: 6px 12px; background: var(--white); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                       <i class="fas fa-download"></i> 다운로드
                     </button>
+                    ${!video.video_url.includes('supabase.co/storage') ? `
+                      <button onclick="saveVideoToServer('${videoId}')" 
+                              style="padding: 6px 12px; background: var(--secondary); color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                              title="만료된 영상을 서버에 저장">
+                        <i class="fas fa-cloud-upload-alt"></i> 서버 저장
+                      </button>
+                    ` : ''}
                   ` : ''}
                   ${isProcessing ? `
                     <button onclick="checkVideoStatus('${videoId}')" 
@@ -3318,7 +3328,72 @@
         console.log('✅ 영상 다운로드 완료:', filename);
       } catch (error) {
         console.error('❌ 영상 다운로드 실패:', error);
+        
+        // Google API URL이고 400/403 에러인 경우 서버에 저장 시도
+        if (videoUrl.includes('generativelanguage.googleapis.com') && 
+            (error.message.includes('400') || error.message.includes('403') || error.message.includes('만료'))) {
+          console.log('💾 만료된 영상 감지 - 서버에 저장 시도...');
+          try {
+            await saveVideoToServer(videoId);
+            // 저장 성공 후 다시 다운로드 시도
+            setTimeout(() => {
+              downloadVideo(videoUrl, filename, videoId);
+            }, 1000);
+            return;
+          } catch (saveError) {
+            console.error('❌ 서버 저장 실패:', saveError);
+          }
+        }
+        
         alert('영상 다운로드 중 오류가 발생했습니다: ' + (error.message || '알 수 없는 오류'));
+      }
+    }
+
+    // 영상을 서버에 저장하는 함수
+    async function saveVideoToServer(videoId) {
+      try {
+        if (!supabase) {
+          throw new Error('Supabase가 초기화되지 않았습니다');
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          throw new Error('로그인이 필요합니다');
+        }
+
+        console.log('💾 영상 서버 저장 시작:', videoId);
+
+        const response = await fetch('/api/shorts/save-to-server', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': session.user.id
+          },
+          body: JSON.stringify({ videoId })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '서버 저장 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ 영상 서버 저장 완료:', result.video_url);
+          alert('✅ 영상이 서버에 저장되었습니다!\n이제 다운로드와 재생이 가능합니다.');
+          
+          // 영상 목록 새로고침
+          if (session?.user) {
+            await loadShortsVideos(session.user.id);
+          }
+        } else {
+          throw new Error(result.error || '서버 저장 실패');
+        }
+      } catch (error) {
+        console.error('❌ 영상 서버 저장 실패:', error);
+        alert('영상 서버 저장 실패: ' + error.message);
+        throw error;
       }
     }
 

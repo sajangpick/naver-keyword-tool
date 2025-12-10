@@ -6517,9 +6517,52 @@ app.get("/api/shorts/download", async (req, res) => {
 
     // Supabase Storage URL인 경우 직접 다운로드 (서버에 저장된 영상)
     if (videoUrl.includes('supabase.co/storage') || videoUrl.includes('supabase.co/storage/v1/object/public')) {
-      devLog("✅ [다운로드 프록시] Supabase Storage URL - 직접 다운로드");
-      // Supabase Storage는 직접 접근 가능하므로 리다이렉트
-      return res.redirect(videoUrl);
+      devLog("✅ [다운로드 프록시] Supabase Storage URL - 프록시를 통해 다운로드");
+      
+      // Supabase Storage에서 직접 다운로드
+      try {
+        const response = await axios.get(videoUrl, {
+          responseType: 'stream',
+          timeout: 120000,
+          headers: {
+            'Accept': 'video/*, */*'
+          }
+        });
+        
+        const filename = req.query.filename || 'sajangpick-video.mp4';
+        res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        
+        if (response.headers['content-length']) {
+          res.setHeader('Content-Length', response.headers['content-length']);
+        }
+        
+        response.data.pipe(res);
+        
+        // 다운로드 기록 저장
+        if (supabase && userId && videoId) {
+          setImmediate(async () => {
+            try {
+              await supabase
+                .from('shorts_videos')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', videoId)
+                .eq('user_id', userId);
+              devLog("✅ [다운로드 기록] 다운로드 기록 저장 완료");
+            } catch (recordError) {
+              devError("⚠️ [다운로드 기록] 기록 저장 실패:", recordError);
+            }
+          });
+        }
+        
+        return;
+      } catch (storageError) {
+        devError("❌ [다운로드 프록시] Supabase Storage 다운로드 실패:", storageError.message);
+        return res.status(500).json({
+          success: false,
+          error: "영상 다운로드 실패: " + storageError.message
+        });
+      }
     }
 
     // Google API URL인 경우 API 키 추가
@@ -6694,6 +6737,167 @@ app.get("/api/shorts/download", async (req, res) => {
   }
 });
 
+// ==================== 기존 영상 서버 저장 API ====================
+// 만료된 URL을 가진 기존 영상들을 서버에 저장
+app.post("/api/shorts/save-to-server", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({
+        success: false,
+        error: "Supabase가 설정되지 않았습니다"
+      });
+    }
+
+    const { videoId } = req.body;
+    const userId = req.headers['user-id'] || req.body.userId;
+
+    if (!videoId) {
+      return res.status(400).json({
+        success: false,
+        error: "영상 ID가 필요합니다"
+      });
+    }
+
+    // 영상 정보 조회
+    const { data: video, error: videoError } = await supabase
+      .from('shorts_videos')
+      .select('*')
+      .eq('id', videoId)
+      .single();
+
+    if (videoError || !video) {
+      return res.status(404).json({
+        success: false,
+        error: "영상을 찾을 수 없습니다"
+      });
+    }
+
+    // 권한 확인 (본인 영상이거나 관리자만)
+    if (userId && video.user_id !== userId) {
+      // 관리자 권한 확인
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type, membership_level')
+        .eq('id', userId)
+        .single();
+      
+      if (profile?.user_type !== 'admin' && profile?.membership_level !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: "권한이 없습니다"
+        });
+      }
+    }
+
+    if (!video.video_url || video.status !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        error: "완료된 영상이 아니거나 URL이 없습니다"
+      });
+    }
+
+    // 이미 서버에 저장된 영상인지 확인
+    if (video.video_url.includes('supabase.co/storage')) {
+      return res.json({
+        success: true,
+        message: "이미 서버에 저장된 영상입니다",
+        video_url: video.video_url
+      });
+    }
+
+    devLog("💾 기존 영상 서버 저장 시작:", { videoId, originalUrl: video.video_url });
+
+    // 영상 다운로드 및 저장
+    let savedVideoUrl = video.video_url;
+    try {
+      // Google API URL인 경우 API 키 추가
+      let downloadUrl = video.video_url;
+      if (video.video_url.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
+        try {
+          const urlObj = new URL(video.video_url);
+          urlObj.searchParams.set('key', GEMINI_API_KEY);
+          downloadUrl = urlObj.toString();
+        } catch (urlError) {
+          const separator = video.video_url.includes('?') ? '&' : '?';
+          downloadUrl = `${video.video_url}${separator}key=${GEMINI_API_KEY}`;
+        }
+      }
+      
+      // 영상 다운로드
+      const videoResponse = await axios.get(downloadUrl, {
+        responseType: 'arraybuffer',
+        timeout: 120000,
+        headers: {
+          'Accept': 'video/*, */*',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      // Supabase Storage에 업로드
+      const videoBuffer = Buffer.from(videoResponse.data);
+      const fileName = `${video.user_id}/${videoId}.mp4`;
+      const filePath = `shorts-videos/${fileName}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("uploads")
+        .upload(filePath, videoBuffer, {
+          contentType: 'video/mp4',
+          upsert: true,
+        });
+      
+      if (uploadError) {
+        throw new Error(`업로드 실패: ${uploadError.message}`);
+      }
+      
+      // Public URL 생성
+      const { data: urlData } = supabase.storage
+        .from("uploads")
+        .getPublicUrl(filePath);
+      
+      if (!urlData?.publicUrl) {
+        throw new Error("Public URL 생성 실패");
+      }
+      
+      savedVideoUrl = urlData.publicUrl;
+      
+      // DB 업데이트
+      const { error: updateError } = await supabase
+        .from('shorts_videos')
+        .update({
+          video_url: savedVideoUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', videoId);
+      
+      if (updateError) {
+        throw new Error(`DB 업데이트 실패: ${updateError.message}`);
+      }
+      
+      devLog("✅ 기존 영상 서버 저장 완료:", { videoId, savedUrl: savedVideoUrl });
+      
+      res.json({
+        success: true,
+        message: "영상이 서버에 저장되었습니다",
+        video_url: savedVideoUrl
+      });
+      
+    } catch (saveError) {
+      devError("❌ 기존 영상 서버 저장 실패:", saveError);
+      return res.status(500).json({
+        success: false,
+        error: `영상 저장 실패: ${saveError.message}`
+      });
+    }
+    
+  } catch (error) {
+    devError("❌ 기존 영상 서버 저장 API 오류:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "서버 오류가 발생했습니다"
+    });
+  }
+});
+
 // ==================== 영상 재생 프록시 ====================
 // Google API에서 직접 재생하면 403 오류가 발생하므로 서버를 통해 프록시
 app.get("/api/shorts/play", async (req, res) => {
@@ -6722,11 +6926,48 @@ app.get("/api/shorts/play", async (req, res) => {
 
     devLog("🔵 [재생 프록시] 영상 재생 시작:", videoUrl);
 
-    // Supabase Storage URL인 경우 직접 재생 (서버에 저장된 영상)
+    // Supabase Storage URL인 경우 프록시를 통해 재생 (서버에 저장된 영상)
     if (videoUrl.includes('supabase.co/storage') || videoUrl.includes('supabase.co/storage/v1/object/public')) {
-      devLog("✅ [재생 프록시] Supabase Storage URL - 직접 재생");
-      // Supabase Storage는 직접 접근 가능하므로 리다이렉트
-      return res.redirect(videoUrl);
+      devLog("✅ [재생 프록시] Supabase Storage URL - 프록시를 통해 재생");
+      
+      // Supabase Storage에서 직접 스트리밍
+      try {
+        const range = req.headers.range;
+        const headers = {
+          'Accept': 'video/*, */*'
+        };
+        
+        if (range) {
+          headers['Range'] = range;
+        }
+        
+        const response = await axios.get(videoUrl, {
+          responseType: 'stream',
+          timeout: 120000,
+          headers: headers
+        });
+        
+        res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        
+        if (range && response.headers['content-range']) {
+          res.setHeader('Content-Range', response.headers['content-range']);
+          res.status(206); // Partial Content
+        }
+        
+        if (response.headers['content-length']) {
+          res.setHeader('Content-Length', response.headers['content-length']);
+        }
+        
+        response.data.pipe(res);
+        return;
+      } catch (storageError) {
+        devError("❌ [재생 프록시] Supabase Storage 재생 실패:", storageError.message);
+        return res.status(500).json({
+          success: false,
+          error: "영상 재생 실패: " + storageError.message
+        });
+      }
     }
 
     // Google API URL인 경우 API 키 추가
