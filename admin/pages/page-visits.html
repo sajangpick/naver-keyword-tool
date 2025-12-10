@@ -23,6 +23,9 @@
     <!-- Admin Sidebar -->
     <script src="/admin/assets/admin-sidebar.js"></script>
     
+    <!-- Admin Header -->
+    <script src="/admin/assets/admin-header.js"></script>
+    
     <style>
       .container {
         max-width: 1600px;
@@ -209,20 +212,8 @@
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="header">
-        <div>
-          <h1>📊 접속 기록</h1>
-          <div style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">
-            회원들의 페이지 접속 기록을 확인할 수 있습니다
-          </div>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-primary" onclick="loadVisits()">
-            <i class="fas fa-sync-alt"></i> 새로고침
-          </button>
-        </div>
-      </div>
+    <main class="admin-main">
+      <div class="container">
 
       <!-- 통계 -->
       <div class="stats-grid">
@@ -289,7 +280,8 @@
           </tbody>
         </table>
       </div>
-    </div>
+      </div>
+    </main>
 
     <script>
       let allVisits = [];
@@ -450,6 +442,9 @@
         if (deviceType === 'tablet') return '📱';
         return '💻';
       }
+
+      // 새로고침 함수를 전역으로 등록 (헤더의 새로고침 버튼에서 사용)
+      window.refreshData = loadVisits;
 
       // 페이지 로드 시 데이터 불러오기
       document.addEventListener('DOMContentLoaded', () => {

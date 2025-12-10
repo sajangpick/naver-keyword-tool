@@ -122,6 +122,12 @@
       title: '접속 기록',
       path: '/admin/pages/page-visits.html',
       badge: null
+    },
+    {
+      icon: '📊',
+      title: '사용 기록',
+      path: '/admin/pages/feature-usage.html',
+      badge: null
     }
   ];
 

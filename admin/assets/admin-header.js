@@ -52,6 +52,16 @@
       title: '뉴스 관리',
       subtitle: '뉴스 게시판 관리',
       icon: '📰'
+    },
+    '/admin/pages/login-logs.html': {
+      title: '로그인 기록',
+      subtitle: '회원 로그인 기록 조회',
+      icon: '🔐'
+    },
+    '/admin/pages/page-visits.html': {
+      title: '접속 기록',
+      subtitle: '회원 페이지 접속 기록 조회',
+      icon: '📊'
     }
   };
 

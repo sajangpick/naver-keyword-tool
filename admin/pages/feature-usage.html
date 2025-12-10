@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>로그인 기록 - 사장픽 관리자</title>
+    <title>사용 기록 - 사장픽 관리자</title>
     
     <!-- Font Awesome -->
     <link
@@ -23,9 +23,6 @@
     <!-- Admin Sidebar -->
     <script src="/admin/assets/admin-sidebar.js"></script>
     
-    <!-- Admin Header -->
-    <script src="/admin/assets/admin-header.js"></script>
-    
     <style>
       .container {
         max-width: 1600px;
@@ -33,7 +30,6 @@
         padding: 24px;
       }
 
-      /* 헤더 */
       .header {
         display: flex;
         justify-content: space-between;
@@ -75,7 +71,6 @@
         background: var(--naver-green-dark);
       }
 
-      /* 통계 카드 */
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -104,15 +99,6 @@
         color: var(--text);
       }
 
-      .stat-value.success {
-        color: var(--success);
-      }
-
-      .stat-value.danger {
-        color: var(--danger);
-      }
-
-      /* 필터 */
       .filters {
         background: white;
         padding: 16px;
@@ -137,7 +123,7 @@
         color: var(--text-secondary);
       }
 
-      select {
+      select, input {
         padding: 8px 12px;
         border: 1px solid var(--border);
         border-radius: 6px;
@@ -146,18 +132,23 @@
         cursor: pointer;
       }
 
-      /* 테이블 */
+      input {
+        cursor: text;
+      }
+
       .table-container {
         background: white;
         border-radius: 12px;
         border: 1px solid var(--border);
         overflow: hidden;
         box-shadow: var(--shadow-sm);
+        overflow-x: auto;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
+        min-width: 1200px;
       }
 
       thead {
@@ -198,24 +189,29 @@
         font-weight: 600;
       }
 
-      .badge.success {
-        background: #d1fae5;
-        color: #065f46;
-      }
-
-      .badge.danger {
-        background: #fee2e2;
-        color: #991b1b;
-      }
-
-      .badge.auto {
+      .badge.blog {
         background: #dbeafe;
         color: #1e40af;
       }
 
-      .badge.manual {
+      .badge.review {
         background: #fef3c7;
         color: #92400e;
+      }
+
+      .badge.keyword {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .badge.recipe {
+        background: #fce7f3;
+        color: #9f1239;
+      }
+
+      .badge.video {
+        background: #e0e7ff;
+        color: #3730a3;
       }
 
       .empty-state {
@@ -240,61 +236,90 @@
         font-size: 16px;
         margin-right: 4px;
       }
+
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .user-email {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
     </style>
   </head>
   <body>
-    <main class="admin-main">
-      <div class="container">
+    <div class="container">
+      <div class="header">
+        <div>
+          <h1>📊 사용 기록</h1>
+          <div style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">
+            블로그, 리뷰, 키워드검색, 레시피, 영상 기능 사용 기록을 확인할 수 있습니다
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="loadUsageLogs()">
+            <i class="fas fa-sync-alt"></i> 새로고침
+          </button>
+        </div>
+      </div>
 
       <!-- 통계 -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-label">전체 로그인</div>
+          <div class="stat-label">전체 사용</div>
           <div class="stat-value" id="totalCount">-</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">성공</div>
-          <div class="stat-value success" id="successCount">-</div>
+          <div class="stat-label">블로그</div>
+          <div class="stat-value" id="blogCount">-</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">실패</div>
-          <div class="stat-value danger" id="failCount">-</div>
+          <div class="stat-label">리뷰</div>
+          <div class="stat-value" id="reviewCount">-</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">간편 로그인</div>
-          <div class="stat-value" id="autoCount">-</div>
+          <div class="stat-label">키워드검색</div>
+          <div class="stat-value" id="keywordCount">-</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">수동 로그인</div>
-          <div class="stat-value" id="manualCount">-</div>
+          <div class="stat-label">레시피</div>
+          <div class="stat-value" id="recipeCount">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">영상</div>
+          <div class="stat-value" id="videoCount">-</div>
         </div>
       </div>
 
       <!-- 필터 -->
       <div class="filters">
         <div class="filter-group">
-          <label class="filter-label">로그인 타입:</label>
-          <select id="filterLoginType" onchange="loadLogs()">
+          <label class="filter-label">기능:</label>
+          <select id="filterFeatureType" onchange="loadUsageLogs()">
             <option value="">전체</option>
-            <option value="auto">간편 로그인</option>
-            <option value="manual">수동 로그인</option>
+            <option value="blog">블로그</option>
+            <option value="review">리뷰</option>
+            <option value="keyword">키워드검색</option>
+            <option value="recipe">레시피</option>
+            <option value="video">영상</option>
           </select>
         </div>
         <div class="filter-group">
-          <label class="filter-label">상태:</label>
-          <select id="filterSuccess" onchange="loadLogs()">
+          <label class="filter-label">기기 타입:</label>
+          <select id="filterDeviceType" onchange="loadUsageLogs()">
             <option value="">전체</option>
-            <option value="true">성공</option>
-            <option value="false">실패</option>
+            <option value="desktop">데스크톱</option>
+            <option value="mobile">모바일</option>
+            <option value="tablet">태블릿</option>
           </select>
         </div>
         <div class="filter-group">
-          <label class="filter-label">제공자:</label>
-          <select id="filterProvider" onchange="loadLogs()">
-            <option value="">전체</option>
-            <option value="kakao">카카오</option>
-            <option value="email">이메일</option>
-          </select>
+          <label class="filter-label">사용자 이메일:</label>
+          <input type="text" id="filterUserEmail" placeholder="이메일 검색" 
+                 style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;"
+                 onkeypress="if(event.key==='Enter') loadUsageLogs()">
         </div>
       </div>
 
@@ -305,23 +330,22 @@
             <tr>
               <th>시간</th>
               <th>사용자</th>
-              <th>타입</th>
-              <th>제공자</th>
-              <th>상태</th>
+              <th>기능</th>
+              <th>액션</th>
+              <th>페이지</th>
               <th>기기</th>
               <th>브라우저</th>
               <th>IP 주소</th>
             </tr>
           </thead>
-          <tbody id="logsTableBody">
+          <tbody id="usageTableBody">
             <tr>
               <td colspan="8" class="loading">데이터 로딩 중...</td>
             </tr>
           </tbody>
         </table>
       </div>
-      </div>
-    </main>
+    </div>
 
     <script>
       let allLogs = [];
@@ -336,9 +360,9 @@
         return session?.access_token;
       }
 
-      async function loadLogs() {
+      async function loadUsageLogs() {
         try {
-          const tbody = document.getElementById('logsTableBody');
+          const tbody = document.getElementById('usageTableBody');
           tbody.innerHTML = '<tr><td colspan="8" class="loading">데이터 로딩 중...</td></tr>';
 
           const token = await getAuthToken();
@@ -347,9 +371,9 @@
           }
 
           // 필터 값 가져오기
-          const loginType = document.getElementById('filterLoginType').value;
-          const loginSuccess = document.getElementById('filterSuccess').value;
-          const provider = document.getElementById('filterProvider').value;
+          const featureType = document.getElementById('filterFeatureType').value;
+          const deviceType = document.getElementById('filterDeviceType').value;
+          const userEmail = document.getElementById('filterUserEmail').value;
 
           // API 엔드포인트 결정
           const isLocalDev = window.location.hostname === 'localhost' || 
@@ -363,11 +387,11 @@
             limit: '100',
             offset: '0',
           });
-          if (loginType) params.append('loginType', loginType);
-          if (loginSuccess) params.append('loginSuccess', loginSuccess);
-          if (provider) params.append('provider', provider);
+          if (featureType) params.append('featureType', featureType);
+          if (deviceType) params.append('deviceType', deviceType);
+          if (userEmail) params.append('userEmail', userEmail);
 
-          const response = await fetch(`${apiBaseUrl}/api/admin/login-logs?${params}`, {
+          const response = await fetch(`${apiBaseUrl}/api/admin/feature-usage?${params}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -375,8 +399,8 @@
 
           if (!response.ok) {
             const error = await response.json();
-            console.error('[로그인 기록] API 오류:', error);
-            throw new Error(error.error || error.details || '로그인 기록을 불러올 수 없습니다');
+            console.error('[사용 기록] API 오류:', error);
+            throw new Error(error.error || error.details || '사용 기록을 불러올 수 없습니다');
           }
 
           const result = await response.json();
@@ -386,9 +410,9 @@
           displayLogs(allLogs);
 
         } catch (error) {
-          console.error('로그인 기록 로드 실패:', error);
-          const errorMessage = error.message || '로그인 기록을 불러올 수 없습니다';
-          document.getElementById('logsTableBody').innerHTML = `
+          console.error('사용 기록 로드 실패:', error);
+          const errorMessage = error.message || '사용 기록을 불러올 수 없습니다';
+          document.getElementById('usageTableBody').innerHTML = `
             <tr>
               <td colspan="8" class="empty-state">
                 <i class="fas fa-exclamation-circle"></i>
@@ -404,27 +428,29 @@
 
       function updateStats(logs) {
         const total = logs.length;
-        const success = logs.filter(l => l.login_success).length;
-        const fail = logs.filter(l => !l.login_success).length;
-        const auto = logs.filter(l => l.login_type === 'auto').length;
-        const manual = logs.filter(l => l.login_type === 'manual').length;
+        const blog = logs.filter(l => l.feature_type === 'blog').length;
+        const review = logs.filter(l => l.feature_type === 'review').length;
+        const keyword = logs.filter(l => l.feature_type === 'keyword').length;
+        const recipe = logs.filter(l => l.feature_type === 'recipe').length;
+        const video = logs.filter(l => l.feature_type === 'video').length;
 
         document.getElementById('totalCount').textContent = total;
-        document.getElementById('successCount').textContent = success;
-        document.getElementById('failCount').textContent = fail;
-        document.getElementById('autoCount').textContent = auto;
-        document.getElementById('manualCount').textContent = manual;
+        document.getElementById('blogCount').textContent = blog;
+        document.getElementById('reviewCount').textContent = review;
+        document.getElementById('keywordCount').textContent = keyword;
+        document.getElementById('recipeCount').textContent = recipe;
+        document.getElementById('videoCount').textContent = video;
       }
 
       function displayLogs(logs) {
-        const tbody = document.getElementById('logsTableBody');
+        const tbody = document.getElementById('usageTableBody');
 
         if (logs.length === 0) {
           tbody.innerHTML = `
             <tr>
               <td colspan="8" class="empty-state">
                 <i class="fas fa-inbox"></i>
-                <div>로그인 기록이 없습니다</div>
+                <div>사용 기록이 없습니다</div>
               </td>
             </tr>
           `;
@@ -434,9 +460,11 @@
         tbody.innerHTML = logs.map(log => {
           const time = formatDate(log.created_at);
           const user = log.user_email || log.user_name || '익명';
-          const loginType = log.login_type === 'auto' ? '간편' : '수동';
-          const provider = log.provider || '-';
-          const success = log.login_success;
+          const userName = log.user_name || '';
+          const featureType = log.feature_type || 'unknown';
+          const featureName = log.feature_name || '-';
+          const actionType = log.action_type || '-';
+          const pagePath = log.page_url ? new URL(log.page_url).pathname : '-';
           const device = getDeviceIcon(log.device_type) + ' ' + (log.device_type || '-');
           const browser = log.browser ? `${log.browser} ${log.browser_version || ''}`.trim() : '-';
           const ip = log.ip_address || '-';
@@ -444,14 +472,15 @@
           return `
             <tr>
               <td>${time}</td>
-              <td>${user}</td>
-              <td><span class="badge ${log.login_type}">${loginType}</span></td>
-              <td>${provider}</td>
               <td>
-                <span class="badge ${success ? 'success' : 'danger'}">
-                  ${success ? '성공' : '실패'}
-                </span>
+                <div class="user-info">
+                  <div>${user}</div>
+                  ${userName ? `<div class="user-email">${userName}</div>` : ''}
+                </div>
               </td>
+              <td><span class="badge ${featureType}">${featureName}</span></td>
+              <td>${actionType}</td>
+              <td class="page-path" title="${log.page_url || ''}">${pagePath}</td>
               <td>${device}</td>
               <td>${browser}</td>
               <td>${ip}</td>
@@ -489,12 +518,9 @@
         return '💻';
       }
 
-      // 새로고침 함수를 전역으로 등록 (헤더의 새로고침 버튼에서 사용)
-      window.refreshData = loadLogs;
-
       // 페이지 로드 시 데이터 불러오기
       document.addEventListener('DOMContentLoaded', () => {
-        loadLogs();
+        loadUsageLogs();
       });
     </script>
   </body>

@@ -49,7 +49,7 @@ module.exports = async (req, res) => {
     // 관리자 권한 확인
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, membership_level, role')
+      .select('user_type, membership_level')
       .eq('id', user.id)
       .single();
 
@@ -62,21 +62,19 @@ module.exports = async (req, res) => {
       });
     }
 
-    // user_type, membership_level, role 중 하나라도 'admin'이면 관리자
+    // user_type 또는 membership_level이 'admin'이면 관리자
     const isAdmin = profile.user_type === 'admin' || 
-                    profile.membership_level === 'admin' || 
-                    profile.role === 'admin';
+                    profile.membership_level === 'admin';
 
     if (!isAdmin) {
       console.warn('[page-visits] 관리자 권한 없음:', { 
         userId: user.id, 
         user_type: profile.user_type, 
-        membership_level: profile.membership_level,
-        role: profile.role 
+        membership_level: profile.membership_level
       });
       return res.status(403).json({ 
         error: '관리자 권한이 필요합니다.',
-        details: `현재 권한: user_type=${profile.user_type}, membership_level=${profile.membership_level}, role=${profile.role || 'null'}`
+        details: `현재 권한: user_type=${profile.user_type}, membership_level=${profile.membership_level}`
       });
     }
 

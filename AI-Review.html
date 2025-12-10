@@ -1183,6 +1183,58 @@
         gap: 8px;
       }
 
+      .copy-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 2px solid var(--accent-color);
+        background: white;
+        color: var(--accent-color);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .copy-btn:hover:not(:disabled) {
+        background: var(--accent-color);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 126, 70, 0.3);
+      }
+
+      .copy-btn:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .copy-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      .copy-btn.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .copy-btn.copied {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: white;
+      }
+
+      .copy-btn.copied:hover {
+        background: #16a34a;
+        border-color: #16a34a;
+      }
+
       .result-content {
         background: white;
         padding: 20px;
@@ -1640,9 +1692,19 @@
             </div>
 
             <div class="result-section">
-              <h3>
-                <i class="fas fa-comment-dots"></i>
-                생성된 답글
+              <h3 style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <i class="fas fa-comment-dots"></i>
+                  생성된 답글
+                </span>
+                <button
+                  id="copyReplyBtn"
+                  class="copy-btn"
+                  title="답글 복사하기"
+                >
+                  <i class="fas fa-copy"></i>
+                  복사
+                </button>
               </h3>
               <div id="reviewOutput" class="result-content"></div>
             </div>
@@ -1708,6 +1770,7 @@
         const placeInfoText = document.getElementById("placeInfoText");
         const loadStoreInfoBtn = document.getElementById("loadStoreInfoBtn");
         const saveStoreInfoBtn = document.getElementById("saveStoreInfoBtn");
+        const copyReplyBtn = document.getElementById("copyReplyBtn");
 
         // 프로모션 데이터 전역 변수
         let globalPromotionData = null;
@@ -1788,8 +1851,22 @@
             } else {
               reviewOutput.textContent = JSON.stringify(data, null, 2);
             }
+            
+            // 답글이 생성되면 복사 버튼 활성화
+            if (copyReplyBtn && reviewOutput.textContent.trim()) {
+              copyReplyBtn.classList.add("active");
+              copyReplyBtn.style.opacity = "1";
+              copyReplyBtn.style.pointerEvents = "auto";
+            }
           } catch (e) {
             reviewOutput.textContent = String(data);
+            
+            // 답글이 생성되면 복사 버튼 활성화
+            if (copyReplyBtn && reviewOutput.textContent.trim()) {
+              copyReplyBtn.classList.add("active");
+              copyReplyBtn.style.opacity = "1";
+              copyReplyBtn.style.pointerEvents = "auto";
+            }
           }
         }
 
@@ -1824,6 +1901,75 @@
           }
 
           reviewOutput.textContent = errorMessage;
+          
+          // 에러 발생 시 복사 버튼 비활성화
+          if (copyReplyBtn) {
+            copyReplyBtn.classList.remove("active");
+            copyReplyBtn.style.opacity = "0.6";
+            copyReplyBtn.style.pointerEvents = "none";
+          }
+        }
+
+        // 답글 복사 함수
+        async function copyReplyToClipboard() {
+          if (!copyReplyBtn || !reviewOutput) return;
+          
+          const textToCopy = reviewOutput.textContent.trim();
+          
+          if (!textToCopy || textToCopy === "생성된 답글이 여기에 표시됩니다...") {
+            alert("복사할 답글이 없습니다.");
+            return;
+          }
+
+          try {
+            // 클립보드 API 사용
+            await navigator.clipboard.writeText(textToCopy);
+            
+            // 복사 성공 피드백
+            const originalText = copyReplyBtn.innerHTML;
+            copyReplyBtn.classList.add("copied");
+            copyReplyBtn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
+            
+            // 2초 후 원래 상태로 복구
+            setTimeout(() => {
+              copyReplyBtn.classList.remove("copied");
+              copyReplyBtn.innerHTML = originalText;
+            }, 2000);
+            
+          } catch (err) {
+            console.error("복사 실패:", err);
+            
+            // 클립보드 API 실패 시 fallback 방법 사용
+            try {
+              const textArea = document.createElement("textarea");
+              textArea.value = textToCopy;
+              textArea.style.position = "fixed";
+              textArea.style.left = "-999999px";
+              textArea.style.top = "-999999px";
+              document.body.appendChild(textArea);
+              textArea.focus();
+              textArea.select();
+              
+              const successful = document.execCommand("copy");
+              document.body.removeChild(textArea);
+              
+              if (successful) {
+                const originalText = copyReplyBtn.innerHTML;
+                copyReplyBtn.classList.add("copied");
+                copyReplyBtn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
+                
+                setTimeout(() => {
+                  copyReplyBtn.classList.remove("copied");
+                  copyReplyBtn.innerHTML = originalText;
+                }, 2000);
+              } else {
+                alert("복사에 실패했습니다. 답글을 직접 선택하여 복사해주세요.");
+              }
+            } catch (fallbackErr) {
+              console.error("Fallback 복사도 실패:", fallbackErr);
+              alert("복사에 실패했습니다. 답글을 직접 선택하여 복사해주세요.");
+            }
+          }
         }
 
         // 가게 정보 저장 기능 (localStorage 기반)
@@ -1929,6 +2075,15 @@
 
           setLoading(buttonElement, true, "생성 중...");
           reviewOutput.textContent = "";
+          
+          // 답글 생성 시작 시 복사 버튼 비활성화
+          if (copyReplyBtn) {
+            copyReplyBtn.classList.remove("active", "copied");
+            copyReplyBtn.style.opacity = "0.6";
+            copyReplyBtn.style.pointerEvents = "none";
+            copyReplyBtn.innerHTML = '<i class="fas fa-copy"></i> 복사';
+          }
+          
           showPlaceInfoStatus("💭 답글 생성 중", "loading");
 
           try {
@@ -2008,6 +2163,14 @@
 
             showOutput(data.data?.reply || data.reply || data);
 
+            // 기능 사용 기록 남기기
+            if (window.trackFeatureUsage) {
+                window.trackFeatureUsage('review', '리뷰', 'generate', {
+                    hasPlaceInfo: !!placeInfo,
+                    tone: formData.get('tone') || 'default'
+                });
+            }
+
             // 성공 메시지 표시
             const styleNames = {
               promo: "홍보형",
@@ -2063,6 +2226,11 @@
         }
         if (loadStoreInfoBtn) {
           loadStoreInfoBtn.addEventListener("click", loadStoreInfo);
+        }
+
+        // 복사 버튼 이벤트 리스너
+        if (copyReplyBtn) {
+          copyReplyBtn.addEventListener("click", copyReplyToClipboard);
         }
 
         // 페이지 로드 시 초기화
@@ -2217,6 +2385,7 @@
       crossorigin="anonymous"
     ></script>
     <script src="./assets/auth-state.js?v=202410"></script>
+    <script src="/assets/feature-usage-tracker.js"></script>
     <script>
       // 인증 상태 UI 업데이트 (즉시 실행 및 auth-state.js 로드 후 재실행)
       async function initAuthUI() {

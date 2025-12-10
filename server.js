@@ -1108,6 +1108,13 @@ app.post("/api/auth/page-visit", pageVisitHandler);
 const adminPageVisitsHandler = require("./api/admin/page-visits");
 app.get("/api/admin/page-visits", adminPageVisitsHandler);
 
+// 기능 사용 기록 API
+const featureUsageHandler = require("./api/feature-usage");
+app.post("/api/feature-usage", featureUsageHandler);
+
+const adminFeatureUsageHandler = require("./api/admin/feature-usage");
+app.get("/api/admin/feature-usage", adminFeatureUsageHandler);
+
 // ==================== ChatGPT 블로그 생성 API ====================
 const chatgptBlogHandler = require("./api/chatgpt-blog");
 app.post("/api/chatgpt-blog", chatgptBlogHandler);

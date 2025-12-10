@@ -3596,6 +3596,16 @@
                 console.log('생성된 블로그:', blogContentText);
                 console.log('글쓰기 앵글:', metadata.writingAngle);
                 
+                // 기능 사용 기록 남기기
+                if (window.trackFeatureUsage) {
+                    window.trackFeatureUsage('blog', '블로그', 'create', {
+                        tab: '우리매장',
+                        hasPlaceUrl: !!formData.get('placeUrl'),
+                        hasMenu: !!formData.get('mainMenu'),
+                        hasKeywords: !!formData.get('keywords')
+                    });
+                }
+                
                 showSuccess();
                 
                 // 앵글 정보 표시
@@ -3856,6 +3866,14 @@
                 const blogContentText = result.data;
                 console.log('생성된 체험단 블로그:', blogContentText);
                 
+                // 기능 사용 기록 남기기
+                if (window.trackFeatureUsage) {
+                    window.trackFeatureUsage('blog', '블로그', 'create', {
+                        tab: '체험단',
+                        hasExistingBlog: !!formData.get('existingBlog')
+                    });
+                }
+                
                 showSuccess();
                 blogContent.style.display = 'block';
                 blogText.textContent = blogContentText;
@@ -3877,6 +3895,7 @@
     <!-- 추적 및 모니터링 스크립트 -->
     <script src="/assets/analytics.js"></script>
     <script src="/assets/error-logger.js"></script>
+    <script src="/assets/feature-usage-tracker.js"></script>
     <script src="/assets/performance-tracker.js"></script>
 
     <script>

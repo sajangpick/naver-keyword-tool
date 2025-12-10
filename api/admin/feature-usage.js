@@ -1,6 +1,6 @@
 /**
- * 관리자 로그인 기록 조회 API
- * 회원들의 로그인 기록을 조회합니다.
+ * 관리자 기능 사용 기록 조회 API
+ * 블로그, 리뷰, 키워드검색, 레시피, 영상 기능 사용 기록을 조회합니다.
  */
 
 const { createClient } = require('@supabase/supabase-js');
@@ -13,7 +13,7 @@ if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL.trim() !== '' && SUPABASE_KEY.t
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   } catch (error) {
-    console.error('[login-logs] Supabase 클라이언트 초기화 실패:', error.message);
+    console.error('[feature-usage] Supabase 클라이언트 초기화 실패:', error.message);
   }
 }
 
@@ -49,32 +49,34 @@ module.exports = async (req, res) => {
     // 관리자 권한 확인
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, membership_level')
+      .select('user_type, membership_level, role')
       .eq('id', user.id)
       .single();
 
     // 프로필 조회 실패 또는 프로필이 없는 경우
     if (profileError || !profile) {
-      console.error('[login-logs] 프로필 조회 실패:', profileError?.message || '프로필이 없습니다', { userId: user.id });
+      console.error('[feature-usage] 프로필 조회 실패:', profileError?.message || '프로필이 없습니다', { userId: user.id });
       return res.status(403).json({ 
         error: '관리자 권한이 필요합니다.',
         details: profileError?.message || '프로필을 찾을 수 없습니다'
       });
     }
 
-    // user_type 또는 membership_level이 'admin'이면 관리자
+    // user_type, membership_level, role 중 하나라도 'admin'이면 관리자
     const isAdmin = profile.user_type === 'admin' || 
-                    profile.membership_level === 'admin';
+                    profile.membership_level === 'admin' || 
+                    profile.role === 'admin';
 
     if (!isAdmin) {
-      console.warn('[login-logs] 관리자 권한 없음:', { 
+      console.warn('[feature-usage] 관리자 권한 없음:', { 
         userId: user.id, 
         user_type: profile.user_type, 
-        membership_level: profile.membership_level
+        membership_level: profile.membership_level,
+        role: profile.role 
       });
       return res.status(403).json({ 
         error: '관리자 권한이 필요합니다.',
-        details: `현재 권한: user_type=${profile.user_type}, membership_level=${profile.membership_level}`
+        details: `현재 권한: user_type=${profile.user_type}, membership_level=${profile.membership_level}, role=${profile.role || 'null'}`
       });
     }
 
@@ -85,9 +87,10 @@ module.exports = async (req, res) => {
     // 쿼리 파라미터
     const {
       userId,
-      loginType,
-      provider,
-      loginSuccess,
+      featureType,
+      featureName,
+      actionType,
+      deviceType,
       startDate,
       endDate,
       limit = 100,
@@ -96,7 +99,7 @@ module.exports = async (req, res) => {
 
     // 쿼리 빌드
     let query = supabase
-      .from('login_logs')
+      .from('feature_usage_log')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
@@ -104,14 +107,17 @@ module.exports = async (req, res) => {
     if (userId) {
       query = query.eq('user_id', userId);
     }
-    if (loginType) {
-      query = query.eq('login_type', loginType);
+    if (featureType) {
+      query = query.eq('feature_type', featureType);
     }
-    if (provider) {
-      query = query.eq('provider', provider);
+    if (featureName) {
+      query = query.eq('feature_name', featureName);
     }
-    if (loginSuccess !== undefined) {
-      query = query.eq('login_success', loginSuccess === 'true');
+    if (actionType) {
+      query = query.eq('action_type', actionType);
+    }
+    if (deviceType) {
+      query = query.eq('device_type', deviceType);
     }
     if (startDate) {
       query = query.gte('created_at', startDate);
@@ -126,8 +132,8 @@ module.exports = async (req, res) => {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('[login-logs] 조회 실패:', error);
-      return res.status(500).json({ error: '로그인 기록 조회 중 오류가 발생했습니다.' });
+      console.error('[feature-usage] 조회 실패:', error);
+      return res.status(500).json({ error: '기능 사용 기록 조회 중 오류가 발생했습니다.' });
     }
 
     return res.status(200).json({
@@ -140,9 +146,9 @@ module.exports = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[login-logs] 예외 발생:', error);
+    console.error('[feature-usage] 예외 발생:', error);
     return res.status(500).json({
-      error: error.message || '로그인 기록 조회 중 오류가 발생했습니다',
+      error: error.message || '기능 사용 기록 조회 중 오류가 발생했습니다',
     });
   }
 };
