@@ -2166,8 +2166,8 @@
             // 기능 사용 기록 남기기
             if (window.trackFeatureUsage) {
                 window.trackFeatureUsage('review', '리뷰', 'generate', {
-                    hasPlaceInfo: !!placeInfo,
-                    tone: formData.get('tone') || 'default'
+                    replyStyle: style,
+                    hasOwnerTips: !!tips
                 });
             }
 

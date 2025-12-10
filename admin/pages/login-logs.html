@@ -358,9 +358,9 @@
             ? 'http://127.0.0.1:3003'
             : window.location.origin;
 
-          // 쿼리 파라미터 구성
+          // 쿼리 파라미터 구성 (무제한)
           const params = new URLSearchParams({
-            limit: '100',
+            limit: '10000', // 충분히 큰 값으로 설정
             offset: '0',
           });
           if (loginType) params.append('loginType', loginType);

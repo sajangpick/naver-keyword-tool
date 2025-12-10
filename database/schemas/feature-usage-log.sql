@@ -52,7 +52,7 @@ CREATE POLICY "관리자는 모든 기능 사용 기록 조회 가능"
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND (profiles.user_type = 'admin' OR profiles.membership_level = 'admin' OR profiles.role = 'admin')
+      AND (profiles.user_type = 'admin' OR profiles.membership_level = 'admin')
     )
   );
 

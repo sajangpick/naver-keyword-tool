@@ -89,7 +89,7 @@ module.exports = async (req, res) => {
       deviceType,
       startDate,
       endDate,
-      limit = 100,
+      limit = 10000, // 기본값을 10000으로 증가 (무제한에 가깝게)
       offset = 0,
     } = req.query || {};
 

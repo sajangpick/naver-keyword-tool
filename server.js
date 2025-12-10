@@ -4030,71 +4030,61 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
 
     devLog(`[ebook-admin] 조회된 다운로드 수: ${downloads?.length || 0}, user_id 수: ${userIds.length}, email 수: ${emails.length}`);
 
-    // 3단계: profiles 테이블에서 최신 회원 정보 조회
+    // 3단계: profiles 테이블에서 모든 관련 회원 정보 조회
+    // 가장 확실한 방법: profiles 테이블의 모든 사용자를 가져와서 Map에 저장
     let profilesMap = new Map();
     let profilesByEmailMap = new Map();
     
-    // user_id로 조회
-    if (userIds.length > 0) {
-      const { data: profiles, error: profilesError } = await supabase
+    try {
+      // profiles 테이블의 모든 사용자 조회 (email이 있는 것만)
+      const { data: allProfiles, error: allProfilesError } = await supabase
         .from("profiles")
         .select("id, user_type, membership_level, name, email")
-        .in("id", userIds);
+        .not("email", "is", null);
 
-      if (profilesError) {
-        devError("[ebook-admin] profiles 조회 실패 (user_id):", profilesError.message);
-      } else if (profiles && profiles.length > 0) {
-        devLog(`[ebook-admin] profiles 조회 성공 (user_id): ${profiles.length}개`);
-        profiles.forEach((profile) => {
-          profilesMap.set(profile.id, profile);
-          if (profile.email) {
-            profilesByEmailMap.set(profile.email.toLowerCase().trim(), profile);
+      if (allProfilesError) {
+        devError("[ebook-admin] profiles 전체 조회 실패:", allProfilesError.message);
+        // 실패 시 user_id로만 조회 시도
+        if (userIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .from("profiles")
+            .select("id, user_type, membership_level, name, email")
+            .in("id", userIds);
+          
+          if (!profilesError && profiles) {
+            profiles.forEach((profile) => {
+              profilesMap.set(profile.id, profile);
+              if (profile.email) {
+                const normalizedEmail = profile.email.toLowerCase().trim();
+                profilesByEmailMap.set(normalizedEmail, profile);
+              }
+            });
           }
-          devLog(`[ebook-admin] profile 매핑: ${profile.id} (${profile.email}) -> ${profile.user_type}/${profile.membership_level}`);
-        });
-      } else {
-        devLog("[ebook-admin] profiles 조회 결과 없음 (user_id)");
-      }
-    }
-    
-    // email로도 조회 (user_id가 없거나 매칭되지 않은 경우)
-    // Supabase는 대소문자를 구분하므로, 모든 가능한 email 변형으로 조회
-    if (emails.length > 0) {
-      // 원본 emails와 대문자 변형도 포함
-      const allEmailVariants = new Set(emails);
-      emails.forEach(email => {
-        allEmailVariants.add(email.toUpperCase());
-        allEmailVariants.add(email.charAt(0).toUpperCase() + email.slice(1));
-      });
-      
-      const emailArray = Array.from(allEmailVariants);
-      devLog(`[ebook-admin] email 조회 시도: ${emailArray.length}개 (원본: ${emails.length}개)`);
-      
-      const { data: profilesByEmail, error: emailError } = await supabase
-        .from("profiles")
-        .select("id, user_type, membership_level, name, email")
-        .in("email", emailArray);
-
-      if (emailError) {
-        devError("[ebook-admin] profiles 조회 실패 (email):", emailError.message);
-      } else if (profilesByEmail && profilesByEmail.length > 0) {
-        devLog(`[ebook-admin] profiles 조회 성공 (email): ${profilesByEmail.length}개`);
-        profilesByEmail.forEach((profile) => {
+        }
+      } else if (allProfiles && allProfiles.length > 0) {
+        devLog(`[ebook-admin] profiles 전체 조회 성공: ${allProfiles.length}개`);
+        allProfiles.forEach((profile) => {
+          // user_id로 매핑
           if (profile.id) {
             profilesMap.set(profile.id, profile);
           }
+          // email로 매핑 (모든 변형 포함)
           if (profile.email) {
-            // 모든 가능한 email 변형으로 매핑
             const normalizedEmail = profile.email.toLowerCase().trim();
             profilesByEmailMap.set(normalizedEmail, profile);
-            profilesByEmailMap.set(profile.email.toUpperCase().trim(), profile);
             profilesByEmailMap.set(profile.email.trim(), profile);
-            devLog(`[ebook-admin] profile 매핑 (email): ${profile.email} -> ${profile.user_type}/${profile.membership_level}`);
+            // 대문자 변형도 추가
+            if (profile.email !== profile.email.toUpperCase()) {
+              profilesByEmailMap.set(profile.email.toUpperCase().trim(), profile);
+            }
           }
         });
+        devLog(`[ebook-admin] 매핑 완료: profilesMap=${profilesMap.size}개, profilesByEmailMap=${profilesByEmailMap.size}개`);
       } else {
-        devLog(`[ebook-admin] profiles 조회 결과 없음 (email): ${emailArray.join(', ')}`);
+        devLog("[ebook-admin] profiles 테이블에 데이터가 없습니다");
       }
+    } catch (error) {
+      devError("[ebook-admin] profiles 조회 중 예외 발생:", error);
     }
 
     // 4단계: 다운로드 데이터와 profiles 데이터 병합
