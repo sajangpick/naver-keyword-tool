@@ -341,7 +341,8 @@
 
           if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error || '접속 기록을 불러올 수 없습니다');
+            console.error('[접속 기록] API 오류:', error);
+            throw new Error(error.error || error.details || '접속 기록을 불러올 수 없습니다');
           }
 
           const result = await response.json();
@@ -352,11 +353,15 @@
 
         } catch (error) {
           console.error('접속 기록 로드 실패:', error);
+          const errorMessage = error.message || '접속 기록을 불러올 수 없습니다';
           document.getElementById('visitsTableBody').innerHTML = `
             <tr>
               <td colspan="8" class="empty-state">
                 <i class="fas fa-exclamation-circle"></i>
-                <div>${error.message || '접속 기록을 불러올 수 없습니다'}</div>
+                <div style="margin-bottom: 8px;">${errorMessage}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                  💡 관리자 권한이 필요합니다. profiles 테이블에서 user_type 또는 membership_level을 'admin'으로 설정해주세요.
+                </div>
               </td>
             </tr>
           `;

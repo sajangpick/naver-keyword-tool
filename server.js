@@ -4051,11 +4051,22 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
     }
     
     // email로도 조회 (user_id가 없거나 매칭되지 않은 경우)
+    // Supabase는 대소문자를 구분하므로, 모든 가능한 email 변형으로 조회
     if (emails.length > 0) {
+      // 원본 emails와 대문자 변형도 포함
+      const allEmailVariants = new Set(emails);
+      emails.forEach(email => {
+        allEmailVariants.add(email.toUpperCase());
+        allEmailVariants.add(email.charAt(0).toUpperCase() + email.slice(1));
+      });
+      
+      const emailArray = Array.from(allEmailVariants);
+      devLog(`[ebook-admin] email 조회 시도: ${emailArray.length}개 (원본: ${emails.length}개)`);
+      
       const { data: profilesByEmail, error: emailError } = await supabase
         .from("profiles")
         .select("id, user_type, membership_level, name, email")
-        .in("email", emails);
+        .in("email", emailArray);
 
       if (emailError) {
         devError("[ebook-admin] profiles 조회 실패 (email):", emailError.message);
@@ -4066,10 +4077,16 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
             profilesMap.set(profile.id, profile);
           }
           if (profile.email) {
-            profilesByEmailMap.set(profile.email.toLowerCase().trim(), profile);
+            // 모든 가능한 email 변형으로 매핑
+            const normalizedEmail = profile.email.toLowerCase().trim();
+            profilesByEmailMap.set(normalizedEmail, profile);
+            profilesByEmailMap.set(profile.email.toUpperCase().trim(), profile);
+            profilesByEmailMap.set(profile.email.trim(), profile);
+            devLog(`[ebook-admin] profile 매핑 (email): ${profile.email} -> ${profile.user_type}/${profile.membership_level}`);
           }
-          devLog(`[ebook-admin] profile 매핑 (email): ${profile.email} -> ${profile.user_type}/${profile.membership_level}`);
         });
+      } else {
+        devLog(`[ebook-admin] profiles 조회 결과 없음 (email): ${emailArray.join(', ')}`);
       }
     }
 
@@ -4077,21 +4094,35 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
     let processedDownloads = (downloads || []).map((download) => {
       // user_id로 먼저 찾고, 없으면 email로 찾기
       let profile = null;
+      const downloadEmail = download.email ? download.email.toLowerCase().trim() : null;
+      
       if (download.user_id) {
         profile = profilesMap.get(download.user_id);
+        if (profile) {
+          devLog(`[ebook-admin] ${download.email}: user_id로 매칭 성공 -> ${profile.user_type}/${profile.membership_level}`);
+        }
       }
-      if (!profile && download.email) {
-        profile = profilesByEmailMap.get(download.email.toLowerCase().trim());
+      
+      if (!profile && downloadEmail) {
+        profile = profilesByEmailMap.get(downloadEmail);
+        if (profile) {
+          devLog(`[ebook-admin] ${download.email}: email로 매칭 성공 -> ${profile.user_type}/${profile.membership_level}`);
+        }
       }
       
       // profiles의 최신 정보를 우선 사용
       const finalUserType = profile?.user_type || download.user_type || null;
       const finalMembershipLevel = profile?.membership_level || download.membership_level || null;
       
-      if (profile) {
-        devLog(`[ebook-admin] ${download.email}: profiles에서 가져옴 (${profile.user_type}/${profile.membership_level})`);
-      } else {
-        devLog(`[ebook-admin] ${download.email}: profiles 없음, 기존 값 사용 (${download.user_type}/${download.membership_level})`);
+      if (!profile) {
+        devLog(`[ebook-admin] ⚠️ ${download.email} (user_id: ${download.user_id}): profiles 매칭 실패, 기존 값 사용 (${download.user_type}/${download.membership_level})`);
+        devLog(`[ebook-admin]   - profilesMap 크기: ${profilesMap.size}, profilesByEmailMap 크기: ${profilesByEmailMap.size}`);
+        if (download.user_id) {
+          devLog(`[ebook-admin]   - user_id 존재 여부: ${profilesMap.has(download.user_id)}`);
+        }
+        if (downloadEmail) {
+          devLog(`[ebook-admin]   - email 존재 여부: ${profilesByEmailMap.has(downloadEmail)}`);
+        }
       }
       
       return {

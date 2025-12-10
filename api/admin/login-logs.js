@@ -47,21 +47,37 @@ module.exports = async (req, res) => {
     }
 
     // 관리자 권한 확인
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('user_type, membership_level, role')
       .eq('id', user.id)
       .single();
 
+    // 프로필 조회 실패 또는 프로필이 없는 경우
+    if (profileError || !profile) {
+      console.error('[login-logs] 프로필 조회 실패:', profileError?.message || '프로필이 없습니다', { userId: user.id });
+      return res.status(403).json({ 
+        error: '관리자 권한이 필요합니다.',
+        details: profileError?.message || '프로필을 찾을 수 없습니다'
+      });
+    }
+
     // user_type, membership_level, role 중 하나라도 'admin'이면 관리자
-    const isAdmin = profile && (
-      profile.user_type === 'admin' || 
-      profile.membership_level === 'admin' || 
-      profile.role === 'admin'
-    );
+    const isAdmin = profile.user_type === 'admin' || 
+                    profile.membership_level === 'admin' || 
+                    profile.role === 'admin';
 
     if (!isAdmin) {
-      return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+      console.warn('[login-logs] 관리자 권한 없음:', { 
+        userId: user.id, 
+        user_type: profile.user_type, 
+        membership_level: profile.membership_level,
+        role: profile.role 
+      });
+      return res.status(403).json({ 
+        error: '관리자 권한이 필요합니다.',
+        details: `현재 권한: user_type=${profile.user_type}, membership_level=${profile.membership_level}, role=${profile.role || 'null'}`
+      });
     }
 
     if (!supabase) {
