@@ -1235,6 +1235,242 @@
         border-color: #16a34a;
       }
 
+      /* 토큰 확인 팝업 */
+      .token-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .token-modal.active {
+        display: flex;
+      }
+
+      .token-modal-content {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        max-width: 480px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: modalSlideIn 0.3s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .token-modal-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .token-modal-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 123, 84, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 32px;
+        color: var(--accent-color);
+      }
+
+      .token-modal-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .token-modal-subtitle {
+        font-size: 16px;
+        color: var(--text-secondary);
+      }
+
+      .token-info-box {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 32px;
+      }
+
+      .token-info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .token-info-item:last-child {
+        border-bottom: none;
+      }
+
+      .token-info-label {
+        font-size: 15px;
+        color: var(--text-secondary);
+      }
+
+      .token-info-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .token-info-value.warning {
+        color: #ef4444;
+      }
+
+      .token-info-value.success {
+        color: #22c55e;
+      }
+
+      .token-modal-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .token-modal-actions .btn {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .token-warning-box {
+        background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 123, 84, 0.1) 100%);
+        border: 2px solid #f59e0b;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        text-align: center;
+      }
+
+      .token-warning-box.hidden {
+        display: none;
+      }
+
+      .token-warning-icon {
+        width: 48px;
+        height: 48px;
+        background: #f59e0b;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 24px;
+        color: white;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .token-warning-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #f59e0b;
+        margin-bottom: 8px;
+      }
+
+      .token-warning-message {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .token-modal-icon.warning {
+        background: rgba(255, 152, 0, 0.15);
+        color: #f59e0b;
+      }
+
+      @media (max-width: 768px) {
+        .token-modal {
+          padding: 16px;
+          align-items: flex-end;
+        }
+
+        .token-modal-content {
+          width: 100%;
+          max-width: 100%;
+          border-radius: 24px 24px 0 0;
+          padding: 24px 20px;
+          max-height: 85vh;
+          margin-bottom: 0;
+        }
+
+        .token-modal-header {
+          margin-bottom: 24px;
+        }
+
+        .token-modal-icon {
+          width: 56px;
+          height: 56px;
+          font-size: 28px;
+          margin-bottom: 16px;
+        }
+
+        .token-modal-title {
+          font-size: 20px;
+        }
+
+        .token-modal-subtitle {
+          font-size: 14px;
+        }
+
+        .token-info-box {
+          padding: 20px;
+          margin-bottom: 24px;
+        }
+
+        .token-info-item {
+          padding: 10px 0;
+        }
+
+        .token-info-label {
+          font-size: 14px;
+        }
+
+        .token-info-value {
+          font-size: 16px;
+        }
+
+        .token-modal-actions {
+          gap: 8px;
+        }
+
+        .token-modal-actions .btn {
+          min-width: 0;
+          padding: 0 16px;
+          font-size: 14px;
+        }
+      }
+
       .result-content {
         background: white;
         padding: 20px;
@@ -1775,6 +2011,12 @@
         // 프로모션 데이터 전역 변수
         let globalPromotionData = null;
         let globalHasPromotion = false;
+        
+        // 가게 정보 전역 변수
+        let globalPlaceInfo = null;
+        
+        // 답글 생성 대기 변수
+        let pendingReplyGeneration = null;
 
         // 공통 유틸리티 함수
         function setLoading(el, isLoading, textWhenLoading = "처리 중...") {
@@ -2063,8 +2305,247 @@
           }
         }
 
-        // 답글 생성 공통 함수 (스타일별)
-        async function generateReply(style, buttonElement) {
+        // 토큰 정보 조회 함수
+        async function fetchTokenInfo() {
+          try {
+            const userId = await getUserId();
+            if (!userId) {
+              console.warn('⚠️ [토큰 조회] 사용자 ID가 없습니다.');
+              return null;
+            }
+
+            const response = await fetch(`/api/subscription/user-dashboard?action=usage&userId=${userId}`);
+            if (!response.ok) {
+              console.error('❌ [토큰 조회] API 응답 실패:', response.status);
+              return null;
+            }
+
+            const result = await response.json();
+            if (result.success && result.data) {
+              const { cycle, profile } = result.data;
+              
+              if (cycle) {
+                // 등급 정규화
+                const normalizedLevel = (profile?.membership_level || '').toLowerCase().replace(/\s+/g, '');
+                const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
+                
+                // 토큰 사용량 계산
+                const tokensUsed = cycle.tokens_used || 0;
+                let tokensLimit = cycle.monthly_token_limit || 100;
+                let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+                
+                // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리
+                if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
+                  tokensLimit = null;
+                  tokensRemaining = null;
+                }
+                
+                return {
+                  remaining: tokensRemaining,
+                  used: tokensUsed,
+                  limit: tokensLimit,
+                  isUnlimited: tokensRemaining === null || tokensLimit === null
+                };
+              } else {
+                return {
+                  remaining: 100,
+                  used: 0,
+                  limit: 100,
+                  isUnlimited: false
+                };
+              }
+            }
+            return null;
+          } catch (error) {
+            console.error('❌ [토큰 조회] 예외 발생:', error);
+            return null;
+          }
+        }
+
+        // 토큰 모달 표시
+        async function showTokenModal(showWarning = false) {
+          const modal = document.getElementById('tokenModal');
+          if (!modal) {
+            console.error('❌ [토큰 모달] 모달 요소를 찾을 수 없습니다');
+            return;
+          }
+
+          const estimatedTokens = 500;
+          const warningBox = document.getElementById('tokenWarningBox');
+          const modalIcon = document.querySelector('.token-modal-icon');
+          
+          // 경고 메시지 초기화
+          if (warningBox) {
+            warningBox.classList.add('hidden');
+          }
+          if (modalIcon) {
+            modalIcon.classList.remove('warning');
+            modalIcon.innerHTML = '<i class="fa-solid fa-coins"></i>';
+          }
+          
+          // 로딩 상태 표시
+          document.getElementById('remainingTokens').textContent = '조회 중...';
+          document.getElementById('afterTokens').textContent = '조회 중...';
+          document.getElementById('estimatedTokens').textContent = estimatedTokens.toLocaleString() + ' 토큰';
+          
+          modal.classList.add('active');
+          
+          // 토큰 정보 조회
+          const tokenInfo = await fetchTokenInfo();
+          
+          if (tokenInfo) {
+            const isUnlimited = tokenInfo.isUnlimited === true;
+            
+            if (isUnlimited) {
+              // 무제한 토큰인 경우
+              document.getElementById('remainingTokens').textContent = '무제한';
+              document.getElementById('remainingTokens').className = 'token-info-value success';
+              document.getElementById('afterTokens').textContent = '무제한';
+              document.getElementById('afterTokens').className = 'token-info-value success';
+            } else {
+              // 제한이 있는 토큰인 경우
+              const remaining = Number(tokenInfo.remaining) || 0;
+              const limit = Number(tokenInfo.limit) || 100;
+              const afterTokens = remaining - estimatedTokens;
+              const isInsufficient = remaining < estimatedTokens || showWarning;
+              
+              // 토큰 부족 시 경고 표시
+              if (isInsufficient && warningBox) {
+                warningBox.classList.remove('hidden');
+              }
+              if (isInsufficient && modalIcon) {
+                modalIcon.classList.add('warning');
+                modalIcon.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
+              }
+              
+              // 현재 남은 토큰 표시
+              const remainingEl = document.getElementById('remainingTokens');
+              remainingEl.textContent = remaining.toLocaleString() + ' 토큰';
+              remainingEl.className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
+              
+              // 사용 후 남은 토큰 표시
+              const afterEl = document.getElementById('afterTokens');
+              afterEl.textContent = afterTokens.toLocaleString() + ' 토큰';
+              afterEl.className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
+            }
+          } else {
+            // 조회 실패 시
+            document.getElementById('remainingTokens').textContent = '조회 실패';
+            document.getElementById('remainingTokens').className = 'token-info-value warning';
+            document.getElementById('afterTokens').textContent = '확인 불가';
+            document.getElementById('afterTokens').className = 'token-info-value warning';
+          }
+        }
+
+        // 토큰 모달 닫기
+        function closeTokenModal() {
+          const modal = document.getElementById('tokenModal');
+          if (modal) {
+            modal.classList.remove('active');
+          }
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.addEventListener('DOMContentLoaded', function() {
+          const tokenModal = document.getElementById('tokenModal');
+          if (tokenModal) {
+            tokenModal.addEventListener('click', function(e) {
+              if (e.target === tokenModal) {
+                closeTokenModal();
+              }
+            });
+          }
+        });
+
+        // 답글 생성 확인 후 실행
+        async function confirmReplyGeneration() {
+          const estimatedTokens = 500;
+          const tokenInfo = await fetchTokenInfo();
+          
+          if (!tokenInfo) {
+            alert('토큰 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
+            return;
+          }
+          
+          // 무제한이 아닌 경우 토큰 부족 체크
+          if (!tokenInfo.isUnlimited) {
+            const remaining = Number(tokenInfo.remaining) || 0;
+            if (remaining < estimatedTokens) {
+              // 토큰 부족 시 모달을 닫지 않고 경고 표시
+              const warningBox = document.getElementById('tokenWarningBox');
+              const modalIcon = document.querySelector('.token-modal-icon');
+              
+              if (warningBox) {
+                warningBox.classList.remove('hidden');
+              }
+              if (modalIcon) {
+                modalIcon.classList.add('warning');
+                modalIcon.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
+              }
+              
+              alert(`토큰이 부족합니다.\n\n현재 남은 토큰: ${remaining.toLocaleString()} 토큰\n필요한 토큰: ${estimatedTokens.toLocaleString()} 토큰\n\n토큰을 충전하거나 구독을 업그레이드해주세요.`);
+              return;
+            }
+          }
+          
+          // 토큰이 충분한 경우에만 진행
+          closeTokenModal();
+          
+          if (pendingReplyGeneration) {
+            const { style, buttonElement } = pendingReplyGeneration;
+            pendingReplyGeneration = null;
+            await executeReplyGeneration(style, buttonElement);
+          }
+        }
+
+        // 가게 정보 불러오기
+        async function loadPlaceInfo() {
+          try {
+            const userId = await getUserId();
+            if (!userId) {
+              console.warn('⚠️ [가게 정보] 사용자 ID가 없습니다.');
+              return null;
+            }
+
+            const response = await fetch(`/api/store-info?userId=${userId}`);
+            if (!response.ok) {
+              console.warn('⚠️ [가게 정보] 조회 실패:', response.status);
+              return null;
+            }
+
+            const result = await response.json();
+            if (result.success && result.data) {
+              const storeData = result.data;
+              
+              // placeInfo 형식으로 변환
+              const placeInfo = {
+                basic: {
+                  name: storeData.store_name || null,
+                  category: null,
+                },
+                contact: {
+                  road_address: storeData.store_address || null,
+                  phone_display: storeData.store_phone_number || null,
+                },
+                business: {
+                  hours: storeData.store_business_hours || null,
+                },
+                menu: storeData.store_main_menu || null,
+                landmarks: storeData.store_landmarks || null,
+                keywords: storeData.store_keywords || null,
+              };
+              
+              return placeInfo;
+            }
+            return null;
+          } catch (error) {
+            console.error('❌ [가게 정보] 조회 오류:', error);
+            return null;
+          }
+        }
+
+        // 답글 생성 실행 함수
+        async function executeReplyGeneration(style, buttonElement) {
           const text = reviewText.value.trim();
           const tips = ownerTips.value.trim();
 
@@ -2090,6 +2571,11 @@
             // 사용자 ID 가져오기
             const userId = await getUserId();
 
+            // 가게 정보 불러오기 (없으면 null)
+            if (!globalPlaceInfo) {
+              globalPlaceInfo = await loadPlaceInfo();
+            }
+
             // 답글 생성 (스타일 포함)
             const requestBody = {
               reviewText: text,
@@ -2098,6 +2584,11 @@
 
             if (tips) {
               requestBody.ownerTips = tips;
+            }
+
+            // 가게 정보 추가
+            if (globalPlaceInfo) {
+              requestBody.placeInfo = globalPlaceInfo;
             }
 
             // 사용자 ID 추가
@@ -2190,6 +2681,20 @@
           } finally {
             setLoading(buttonElement, false);
           }
+        }
+
+        // 답글 생성 공통 함수 (스타일별) - 토큰 확인 후 실행
+        async function generateReply(style, buttonElement) {
+          const text = reviewText.value.trim();
+          
+          if (!text) {
+            showError({ message: "리뷰 원문을 입력하세요." });
+            return;
+          }
+          
+          // 토큰 확인 팝업 표시
+          pendingReplyGeneration = { style, buttonElement };
+          await showTokenModal();
         }
 
         // 3개의 답글 스타일 버튼 이벤트 (DOMContentLoaded 후 실행)
@@ -2524,6 +3029,53 @@
         observer.observe(sideNav, { childList: true, subtree: true });
       })();
     </script>
+
+    <!-- 토큰 확인 팝업 -->
+    <div class="token-modal" id="tokenModal">
+      <div class="token-modal-content">
+        <div class="token-modal-header">
+          <div class="token-modal-icon">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+          <h2 class="token-modal-title">토큰 사용 확인</h2>
+          <p class="token-modal-subtitle">답글 생성에 필요한 토큰을 확인해주세요</p>
+        </div>
+        <!-- 토큰 부족 경고 메시지 (토큰 부족 시에만 표시) -->
+        <div class="token-warning-box hidden" id="tokenWarningBox">
+          <div class="token-warning-icon">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+          </div>
+          <div class="token-warning-title">토큰이 부족합니다</div>
+          <div class="token-warning-message">
+            답글 생성에 필요한 토큰이 부족합니다.<br>
+            토큰을 충전하거나 구독을 업그레이드해주세요.
+          </div>
+        </div>
+        <div class="token-info-box">
+          <div class="token-info-item">
+            <span class="token-info-label">예상 사용 토큰</span>
+            <span class="token-info-value" id="estimatedTokens">500 토큰</span>
+          </div>
+          <div class="token-info-item">
+            <span class="token-info-label">현재 남은 토큰</span>
+            <span class="token-info-value" id="remainingTokens">-</span>
+          </div>
+          <div class="token-info-item">
+            <span class="token-info-label">사용 후 남은 토큰</span>
+            <span class="token-info-value" id="afterTokens">-</span>
+          </div>
+        </div>
+        <div class="token-modal-actions">
+          <button class="btn btn-secondary" onclick="closeTokenModal()">
+            취소
+          </button>
+          <button class="btn btn-primary" onclick="confirmReplyGeneration()">
+            <i class="fa-solid fa-check"></i>
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- 푸터 -->
     <footer class="site-footer">
