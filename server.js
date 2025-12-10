@@ -4007,37 +4007,97 @@ app.get("/api/admin/ebook-downloads", async (req, res) => {
       });
     }
 
-    // 2단계: user_id 목록 추출
+    // 2단계: user_id와 email 목록 추출
     const userIds = [...new Set(
       (downloads || [])
         .map((d) => d.user_id)
         .filter((id) => id != null)
     )];
+    
+    const emails = [...new Set(
+      (downloads || [])
+        .map((d) => d.email)
+        .filter((email) => email && email.trim())
+        .map((email) => email.toLowerCase().trim())
+    )];
+
+    devLog(`[ebook-admin] 조회된 다운로드 수: ${downloads?.length || 0}, user_id 수: ${userIds.length}, email 수: ${emails.length}`);
 
     // 3단계: profiles 테이블에서 최신 회원 정보 조회
     let profilesMap = new Map();
+    let profilesByEmailMap = new Map();
+    
+    // user_id로 조회
     if (userIds.length > 0) {
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, user_type, membership_level, name, email")
         .in("id", userIds);
 
-      if (!profilesError && profiles) {
+      if (profilesError) {
+        devError("[ebook-admin] profiles 조회 실패 (user_id):", profilesError.message);
+      } else if (profiles && profiles.length > 0) {
+        devLog(`[ebook-admin] profiles 조회 성공 (user_id): ${profiles.length}개`);
         profiles.forEach((profile) => {
           profilesMap.set(profile.id, profile);
+          if (profile.email) {
+            profilesByEmailMap.set(profile.email.toLowerCase().trim(), profile);
+          }
+          devLog(`[ebook-admin] profile 매핑: ${profile.id} (${profile.email}) -> ${profile.user_type}/${profile.membership_level}`);
+        });
+      } else {
+        devLog("[ebook-admin] profiles 조회 결과 없음 (user_id)");
+      }
+    }
+    
+    // email로도 조회 (user_id가 없거나 매칭되지 않은 경우)
+    if (emails.length > 0) {
+      const { data: profilesByEmail, error: emailError } = await supabase
+        .from("profiles")
+        .select("id, user_type, membership_level, name, email")
+        .in("email", emails);
+
+      if (emailError) {
+        devError("[ebook-admin] profiles 조회 실패 (email):", emailError.message);
+      } else if (profilesByEmail && profilesByEmail.length > 0) {
+        devLog(`[ebook-admin] profiles 조회 성공 (email): ${profilesByEmail.length}개`);
+        profilesByEmail.forEach((profile) => {
+          if (profile.id) {
+            profilesMap.set(profile.id, profile);
+          }
+          if (profile.email) {
+            profilesByEmailMap.set(profile.email.toLowerCase().trim(), profile);
+          }
+          devLog(`[ebook-admin] profile 매핑 (email): ${profile.email} -> ${profile.user_type}/${profile.membership_level}`);
         });
       }
     }
 
     // 4단계: 다운로드 데이터와 profiles 데이터 병합
     let processedDownloads = (downloads || []).map((download) => {
-      const profile = download.user_id ? profilesMap.get(download.user_id) : null;
+      // user_id로 먼저 찾고, 없으면 email로 찾기
+      let profile = null;
+      if (download.user_id) {
+        profile = profilesMap.get(download.user_id);
+      }
+      if (!profile && download.email) {
+        profile = profilesByEmailMap.get(download.email.toLowerCase().trim());
+      }
+      
+      // profiles의 최신 정보를 우선 사용
+      const finalUserType = profile?.user_type || download.user_type || null;
+      const finalMembershipLevel = profile?.membership_level || download.membership_level || null;
+      
+      if (profile) {
+        devLog(`[ebook-admin] ${download.email}: profiles에서 가져옴 (${profile.user_type}/${profile.membership_level})`);
+      } else {
+        devLog(`[ebook-admin] ${download.email}: profiles 없음, 기존 값 사용 (${download.user_type}/${download.membership_level})`);
+      }
       
       return {
         ...download,
-        // profiles의 최신 정보를 우선 사용, 없으면 기존 값 사용
-        user_type: profile?.user_type || download.user_type || null,
-        membership_level: profile?.membership_level || download.membership_level || null,
+        user_type: finalUserType,
+        membership_level: finalMembershipLevel,
         name: profile?.name || download.name || null,
         email: profile?.email || download.email || null,
       };
@@ -6350,7 +6410,18 @@ app.get("/api/shorts/download", async (req, res) => {
       // 이미 디코딩된 경우 무시
     }
 
-    devLog("🔵 [다운로드 프록시] 영상 다운로드 시작:", videoUrl);
+    devLog("🔵 [다운로드 프록시] 영상 다운로드 시작:", videoUrl.substring(0, 200));
+
+    // URL 유효성 검증
+    try {
+      new URL(videoUrl);
+    } catch (urlError) {
+      devError("❌ [다운로드 프록시] 잘못된 URL 형식:", videoUrl);
+      return res.status(400).json({
+        success: false,
+        error: "잘못된 영상 URL 형식입니다."
+      });
+    }
 
     // Google API URL인 경우 API 키 추가
     let downloadUrl = videoUrl;
@@ -6366,10 +6437,13 @@ app.get("/api/shorts/download", async (req, res) => {
       // URL에 API 키 추가 (이미 key 파라미터가 있으면 덮어쓰기)
       try {
         const urlObj = new URL(videoUrl);
+        // 기존 key 파라미터 제거 후 새로 추가
+        urlObj.searchParams.delete('key');
         urlObj.searchParams.set('key', GEMINI_API_KEY);
         downloadUrl = urlObj.toString();
-        devLog("🔵 [다운로드 프록시] API 키 추가됨:", downloadUrl.substring(0, 100) + '...');
+        devLog("🔵 [다운로드 프록시] API 키 추가됨:", downloadUrl.substring(0, 150) + '...');
       } catch (urlError) {
+        devError("❌ [다운로드 프록시] URL 파싱 실패:", urlError.message);
         // URL 파싱 실패 시 기존 방식 사용
         const separator = videoUrl.includes('?') ? '&' : '?';
         downloadUrl = `${videoUrl}${separator}key=${GEMINI_API_KEY}`;
@@ -6390,15 +6464,106 @@ app.get("/api/shorts/download", async (req, res) => {
       headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
     }
     
-    const response = await axios.get(downloadUrl, {
-      responseType: 'stream',
-      timeout: 120000, // 2분 타임아웃
-      headers: headers,
-      maxRedirects: 5,
-      validateStatus: function (status) {
-        return status >= 200 && status < 400; // 2xx, 3xx 허용
+    let response;
+    try {
+      response = await axios.get(downloadUrl, {
+        responseType: 'stream',
+        timeout: 120000, // 2분 타임아웃
+        headers: headers,
+        maxRedirects: 5,
+        validateStatus: function (status) {
+          return status >= 200 && status < 400; // 2xx, 3xx 허용
+        }
+      });
+    } catch (axiosError) {
+      // axios 에러 처리
+      const status = axiosError.response?.status;
+      const statusText = axiosError.response?.statusText;
+      const errorData = axiosError.response?.data;
+      
+      devError("🔴 [다운로드 프록시] axios 에러:", {
+        status: status,
+        statusText: statusText,
+        message: axiosError.message,
+        url: downloadUrl.substring(0, 200),
+        hasData: !!errorData
+      });
+      
+      // 400 에러인 경우 상세 정보 로깅
+      if (status === 400) {
+        let errorMessage = '영상 다운로드 실패: 잘못된 요청입니다. 영상 URL이 만료되었거나 접근이 제한되었을 수 있습니다.';
+        
+        // 에러 데이터 처리
+        if (errorData) {
+          try {
+            // 스트림인 경우 버퍼로 변환
+            if (typeof errorData.pipe === 'function') {
+              const chunks = [];
+              return new Promise((resolve) => {
+                errorData.on('data', chunk => chunks.push(chunk));
+                errorData.on('end', () => {
+                  try {
+                    const errorText = Buffer.concat(chunks).toString();
+                    devError("🔴 [다운로드 프록시] 400 에러 상세:", errorText);
+                    
+                    // JSON 파싱 시도
+                    try {
+                      const errorJson = JSON.parse(errorText);
+                      if (errorJson.error?.message) {
+                        errorMessage = `영상 다운로드 실패: ${errorJson.error.message}`;
+                      } else if (errorJson.error) {
+                        errorMessage = `영상 다운로드 실패: ${errorJson.error}`;
+                      }
+                    } catch (e) {
+                      // JSON이 아니면 텍스트 그대로 사용
+                      if (errorText.length < 200) {
+                        errorMessage = `영상 다운로드 실패: ${errorText}`;
+                      }
+                    }
+                  } catch (e) {
+                    devError("🔴 [다운로드 프록시] 에러 텍스트 처리 실패:", e);
+                  }
+                  
+                  if (!res.headersSent) {
+                    res.status(400).json({
+                      success: false,
+                      error: errorMessage
+                    });
+                  }
+                  resolve();
+                });
+              });
+            } else {
+              // 일반 데이터
+              devError("🔴 [다운로드 프록시] 400 에러 상세:", JSON.stringify(errorData));
+              
+              if (typeof errorData === 'string') {
+                errorMessage = `영상 다운로드 실패: ${errorData.substring(0, 200)}`;
+              } else if (errorData.error?.message) {
+                errorMessage = `영상 다운로드 실패: ${errorData.error.message}`;
+              } else if (errorData.error) {
+                errorMessage = `영상 다운로드 실패: ${errorData.error}`;
+              } else if (errorData.message) {
+                errorMessage = `영상 다운로드 실패: ${errorData.message}`;
+              }
+            }
+          } catch (parseError) {
+            devError("🔴 [다운로드 프록시] 에러 데이터 파싱 실패:", parseError);
+          }
+        }
+        
+        if (!res.headersSent) {
+          return res.status(400).json({
+            success: false,
+            error: errorMessage
+          });
+        }
+        return;
       }
-    });
+      
+      // 다른 에러들
+      throw axiosError;
+    }
 
     // 파일명 추출
     const filename = req.query.filename || 'sajangpick-video.mp4';

@@ -47,6 +47,12 @@ CREATE INDEX IF NOT EXISTS idx_page_visits_ip_address ON public.page_visits(ip_a
 -- RLS (Row Level Security) 활성화
 ALTER TABLE public.page_visits ENABLE ROW LEVEL SECURITY;
 
+-- 기존 정책 삭제 (이미 존재하는 경우)
+DROP POLICY IF EXISTS "관리자는 모든 접속 기록 조회 가능" ON public.page_visits;
+DROP POLICY IF EXISTS "사용자는 자신의 접속 기록 조회 가능" ON public.page_visits;
+DROP POLICY IF EXISTS "인증된 사용자는 접속 기록 생성 가능" ON public.page_visits;
+DROP POLICY IF EXISTS "익명 사용자도 접속 기록 생성 가능" ON public.page_visits;
+
 -- RLS 정책: 관리자는 모든 접속 기록 조회 가능
 CREATE POLICY "관리자는 모든 접속 기록 조회 가능"
   ON public.page_visits
