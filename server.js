@@ -6378,13 +6378,23 @@ app.get("/api/shorts/download", async (req, res) => {
     }
 
     // 영상 다운로드
+    const headers = {
+      'Accept': 'video/*, */*',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://generativelanguage.googleapis.com/',
+      'Origin': 'https://generativelanguage.googleapis.com'
+    };
+    
+    // Google API URL인 경우 Authorization 헤더도 추가
+    if (downloadUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
+      headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
+    }
+    
     const response = await axios.get(downloadUrl, {
       responseType: 'stream',
       timeout: 120000, // 2분 타임아웃
-      headers: {
-        'Accept': 'video/*',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
+      headers: headers,
+      maxRedirects: 5,
       validateStatus: function (status) {
         return status >= 200 && status < 400; // 2xx, 3xx 허용
       }
@@ -6430,12 +6440,28 @@ app.get("/api/shorts/download", async (req, res) => {
     
   } catch (error) {
     devError("🔴 [다운로드 프록시] 오류:", error.message);
-    console.error("🔴 [다운로드 프록시] 오류:", error);
+    console.error("🔴 [다운로드 프록시] 오류 상세:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      headers: error.response?.headers,
+      data: error.response?.data
+    });
     
     if (!res.headersSent) {
-      res.status(500).json({
+      let errorMessage = '영상 다운로드 실패';
+      
+      if (error.response?.status === 403) {
+        errorMessage = '영상 다운로드 권한이 없습니다. 영상 URL이 만료되었거나 접근이 제한되었을 수 있습니다.';
+      } else if (error.response?.status === 404) {
+        errorMessage = '영상을 찾을 수 없습니다. 영상이 삭제되었거나 URL이 잘못되었을 수 있습니다.';
+      } else if (error.message) {
+        errorMessage = `영상 다운로드 실패: ${error.message}`;
+      }
+      
+      res.status(error.response?.status || 500).json({
         success: false,
-        error: `영상 다운로드 실패: ${error.message || "알 수 없는 오류"}`
+        error: errorMessage
       });
     }
   }
@@ -6497,18 +6523,27 @@ app.get("/api/shorts/play", async (req, res) => {
     // Range 헤더 처리 (비디오 스트리밍을 위해)
     const range = req.headers.range;
     const headers = {
-      'Accept': 'video/*',
+      'Accept': 'video/*, */*',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://generativelanguage.googleapis.com/',
+      'Origin': 'https://generativelanguage.googleapis.com'
     };
     
     if (range) {
       headers['Range'] = range;
+    }
+    
+    // Google API URL인 경우 Authorization 헤더도 추가
+    if (playUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
+      headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
     }
 
     // 영상 다운로드
     const response = await axios.get(playUrl, {
       responseType: 'stream',
       timeout: 120000, // 2분 타임아웃
-      headers: headers
+      headers: headers,
+      maxRedirects: 5
     });
 
     // 응답 헤더 설정 (재생용)

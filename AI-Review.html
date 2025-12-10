@@ -1479,19 +1479,6 @@
               ></textarea>
             </div>
 
-            <div class="form-group">
-              <label for="placeUrl">
-                <i class="fas fa-link"></i>
-                네이버 플레이스 URL (선택사항)
-              </label>
-              <input
-                type="text"
-                id="placeUrl"
-                class="input-field"
-                placeholder="https://place.map.naver.com/restaurant/..."
-              />
-            </div>
-
             <!-- 가게 정보 저장/불러오기 안내 -->
             <div
               style="
@@ -1683,14 +1670,9 @@
                 "
               >
                 <li style="margin-bottom: 8px">
-                  <strong>네이버 플레이스 URL (선택):</strong> 식당의 플레이스
-                  URL을 입력하면, 식당 이름, 업종, 위치, 메뉴 등을 자동으로
-                  파악하여 더욱 맞춤화된 답글을 생성합니다.
-                </li>
-                <li style="margin-bottom: 8px">
                   <strong> 사장님 추천 포인트 (선택):</strong> 강조하고 싶은
                   메뉴, 분위기, 특징을 직접 입력하면 AI가 이를 우선 반영하여
-                  답글을 작성합니다. 크롤링 정보보다 사장님의 의견이 우선됩니다!
+                  답글을 작성합니다.
                 </li>
                 <li style="margin-bottom: 8px">
                   <strong> 답글 생성하기:</strong> 식당 정보와 사장님 추천
@@ -1714,7 +1696,6 @@
         console.log("Using backend URL:", "/api");
 
         // DOM 요소
-        const placeUrl = document.getElementById("placeUrl");
         const ownerTips = document.getElementById("ownerTips");
         const reviewText = document.getElementById("reviewText");
         const replyPromoBtn = document.getElementById("replyPromoBtn");
@@ -1727,9 +1708,6 @@
         const placeInfoText = document.getElementById("placeInfoText");
         const loadStoreInfoBtn = document.getElementById("loadStoreInfoBtn");
         const saveStoreInfoBtn = document.getElementById("saveStoreInfoBtn");
-
-        // 크롤링된 식당 정보를 저장할 변수
-        let placeInfo = null;
 
         // 프로모션 데이터 전역 변수
         let globalPromotionData = null;
@@ -1778,72 +1756,6 @@
 
         function hidePlaceInfoStatus() {
           placeInfoStatus.style.display = "none";
-        }
-
-        // URL에서 place_id 추출 함수
-        function extractPlaceId(url) {
-          // URL 형식: https://m.place.naver.com/restaurant/1390003666
-          //          https://pcmap.place.naver.com/restaurant/1390003666
-          //          https://place.map.naver.com/restaurant/1390003666
-          const match = url.match(/\/restaurant\/(\d+)/);
-          if (match && match[1]) {
-            return match[1];
-          }
-
-          // 숫자만 입력한 경우
-          if (/^\d+$/.test(url.trim())) {
-            return url.trim();
-          }
-
-          return null;
-        }
-
-        // 플레이스 URL 크롤링 함수
-        async function crawlPlaceUrl(url) {
-          try {
-            // URL에서 place_id 추출
-            const placeId = extractPlaceId(url);
-
-            if (!placeId) {
-              throw new Error(
-                "올바른 네이버 플레이스 URL이 아닙니다. URL을 확인해주세요."
-              );
-            }
-
-            // 타임아웃 설정 (15초)
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-            try {
-              const res = await fetch(`/api/place-detail-crawl`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ place_id: placeId }),
-                signal: controller.signal,
-              });
-
-              clearTimeout(timeoutId);
-
-              const data = await readJsonSafely(res);
-
-              if (!res.ok || data.success === false) {
-                throw new Error(data.error || "크롤링 실패");
-              }
-
-              return data.data || data;
-            } catch (fetchError) {
-              clearTimeout(timeoutId);
-              if (fetchError.name === "AbortError") {
-                throw new Error(
-                  "크롤링 시간이 초과되었습니다. URL 없이 진행합니다."
-                );
-              }
-              throw fetchError;
-            }
-          } catch (e) {
-            console.error("크롤링 오류:", e);
-            throw e;
-          }
         }
 
         async function readJsonSafely(res) {
@@ -1918,7 +1830,6 @@
         async function saveStoreInfo() {
           try {
             const storeInfo = {
-              placeUrl: placeUrl.value.trim(),
               ownerTips: ownerTips.value.trim(),
             };
 
@@ -1947,9 +1858,6 @@
 
             const storeInfo = JSON.parse(saved);
 
-            if (storeInfo.placeUrl) {
-              placeUrl.value = storeInfo.placeUrl;
-            }
             if (storeInfo.ownerTips) {
               ownerTips.value = storeInfo.ownerTips;
             }
@@ -2012,7 +1920,6 @@
         // 답글 생성 공통 함수 (스타일별)
         async function generateReply(style, buttonElement) {
           const text = reviewText.value.trim();
-          const url = placeUrl.value.trim();
           const tips = ownerTips.value.trim();
 
           if (!text) {
@@ -2022,52 +1929,17 @@
 
           setLoading(buttonElement, true, "생성 중...");
           reviewOutput.textContent = "";
-          hidePlaceInfoStatus();
+          showPlaceInfoStatus("💭 답글 생성 중", "loading");
 
           try {
-            // 1단계: URL이 있고 아직 크롤링 안했으면 먼저 크롤링
-            if (url && !placeInfo) {
-              showPlaceInfoStatus(
-                "🔍 식당 정보 수집 중 (약 10~15초 소요)",
-                "loading"
-              );
-              try {
-                placeInfo = await crawlPlaceUrl(url);
-                showPlaceInfoStatus(
-                  "✅ 식당 정보 수집 완료! 답글 생성 중",
-                  "success"
-                );
-              } catch (crawlError) {
-                console.error("크롤링 실패:", crawlError);
-                if (crawlError.message.includes("시간이 초과")) {
-                  showPlaceInfoStatus(
-                    "⏱️ 시간 초과! 입력하신 정보로 답글 생성 중",
-                    "warning"
-                  );
-                } else {
-                  showPlaceInfoStatus(
-                    "⚠️ 식당 정보를 가져올 수 없습니다. 입력하신 정보로 답글 생성 중",
-                    "warning"
-                  );
-                }
-                placeInfo = null;
-              }
-            } else if (!url && !placeInfo) {
-              showPlaceInfoStatus("💭 답글 생성 중", "loading");
-            }
-
             // 사용자 ID 가져오기
             const userId = await getUserId();
 
-            // 2단계: 답글 생성 (스타일 포함)
+            // 답글 생성 (스타일 포함)
             const requestBody = {
               reviewText: text,
               replyStyle: style, // 'promo', 'professional', 'friendly'
             };
-
-            if (placeInfo) {
-              requestBody.placeInfo = placeInfo;
-            }
 
             if (tips) {
               requestBody.ownerTips = tips;
@@ -2157,22 +2029,41 @@
           }
         }
 
-        // 3개의 답글 스타일 버튼 이벤트
-        replyPromoBtn.addEventListener("click", async () => {
-          await generateReply("promo", replyPromoBtn);
-        });
+        // 3개의 답글 스타일 버튼 이벤트 (DOMContentLoaded 후 실행)
+        function initReplyButtons() {
+          if (replyPromoBtn) {
+            replyPromoBtn.addEventListener("click", async () => {
+              await generateReply("promo", replyPromoBtn);
+            });
+          }
 
-        replyProfessionalBtn.addEventListener("click", async () => {
-          await generateReply("professional", replyProfessionalBtn);
-        });
+          if (replyProfessionalBtn) {
+            replyProfessionalBtn.addEventListener("click", async () => {
+              await generateReply("professional", replyProfessionalBtn);
+            });
+          }
 
-        replyFriendlyBtn.addEventListener("click", async () => {
-          await generateReply("friendly", replyFriendlyBtn);
-        });
+          if (replyFriendlyBtn) {
+            replyFriendlyBtn.addEventListener("click", async () => {
+              await generateReply("friendly", replyFriendlyBtn);
+            });
+          }
+        }
+
+        // DOM이 로드된 후 버튼 이벤트 등록
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", initReplyButtons);
+        } else {
+          initReplyButtons();
+        }
 
         // 가게 정보 저장/불러오기 버튼 이벤트
-        saveStoreInfoBtn.addEventListener("click", saveStoreInfo);
-        loadStoreInfoBtn.addEventListener("click", loadStoreInfo);
+        if (saveStoreInfoBtn) {
+          saveStoreInfoBtn.addEventListener("click", saveStoreInfo);
+        }
+        if (loadStoreInfoBtn) {
+          loadStoreInfoBtn.addEventListener("click", loadStoreInfo);
+        }
 
         // 페이지 로드 시 초기화
         window.addEventListener("load", function () {

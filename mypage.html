@@ -3008,7 +3008,8 @@
                     controls 
                     preload="metadata" 
                     crossorigin="anonymous"
-                    style="max-width: 200px; max-height: 300px; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: #000; display: block;"
+                    playsinline
+                    style="max-width: 200px; max-height: 300px; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: #000; display: block; cursor: pointer; pointer-events: auto;"
                     data-video-src="${videoSrc}">
                     <source src="${videoSrc}" type="video/mp4">
                     브라우저가 비디오 태그를 지원하지 않습니다.
@@ -3277,9 +3278,23 @@
         });
         
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ 다운로드 응답 오류:', response.status, errorText);
-          throw new Error(`다운로드 실패 (${response.status}): ${errorText}`);
+          let errorMessage = '다운로드 실패';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            const errorText = await response.text();
+            errorMessage = errorText || errorMessage;
+          }
+          
+          console.error('❌ 다운로드 응답 오류:', response.status, errorMessage);
+          
+          // 403 에러인 경우 특별한 메시지
+          if (response.status === 403) {
+            throw new Error('영상 다운로드 권한이 없습니다. 영상 URL이 만료되었거나 접근이 제한되었을 수 있습니다.');
+          }
+          
+          throw new Error(errorMessage);
         }
         
         // blob으로 변환
