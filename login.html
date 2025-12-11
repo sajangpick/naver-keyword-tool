@@ -1045,22 +1045,45 @@
           let retryCount = 0;
           const maxRetries = 50; // 최대 5초 대기
           
+          console.log('[카카오 로그인] Supabase 클라이언트 초기화 대기 중...');
           while (!supabaseClient && retryCount < maxRetries) {
             if (window.authState?.supabase) {
               supabaseClient = window.authState.supabase;
+              console.log('[카카오 로그인] ✅ Supabase 클라이언트 찾음');
               break;
             }
             await new Promise(resolve => setTimeout(resolve, 100));
             retryCount++;
+            if (retryCount % 10 === 0) {
+              console.log(`[카카오 로그인] 대기 중... (${retryCount * 100}ms)`);
+            }
           }
           
           if (!supabaseClient) {
             // fallback: supabase 변수 확인
-            if (supabase) {
+            console.log('[카카오 로그인] window.authState.supabase 없음, supabase 변수 확인 중...');
+            if (typeof supabase !== 'undefined' && supabase) {
               supabaseClient = supabase;
+              console.log('[카카오 로그인] ✅ supabase 변수에서 클라이언트 찾음');
             } else {
-              throw new Error('Supabase 클라이언트를 초기화할 수 없습니다. 페이지를 새로고침해주세요.');
+              const errorMsg = 'Supabase 클라이언트를 초기화할 수 없습니다. 페이지를 새로고침해주세요.';
+              console.error('[카카오 로그인] ❌', errorMsg);
+              console.error('[카카오 로그인] 디버깅 정보:', {
+                hasAuthState: !!window.authState,
+                hasSupabase: !!window.supabase,
+                supabaseType: typeof supabase
+              });
+              throw new Error(errorMsg);
             }
+          }
+          
+          // Supabase 클라이언트가 제대로 작동하는지 확인
+          try {
+            const testSession = await supabaseClient.auth.getSession();
+            console.log('[카카오 로그인] Supabase 클라이언트 테스트 성공');
+          } catch (testError) {
+            console.error('[카카오 로그인] Supabase 클라이언트 테스트 실패:', testError);
+            throw new Error('Supabase 클라이언트가 제대로 작동하지 않습니다: ' + testError.message);
           }
           
           console.log('[카카오 로그인] Supabase 클라이언트 준비 완료');
@@ -1128,17 +1151,50 @@
           }
           
           console.log('[카카오 로그인] OAuth 요청 시작...');
-          const { data, error } = await supabaseClient.auth.signInWithOAuth({
-            provider: 'kakao',
-            options: oauthOptions
-          });
+          console.log('[카카오 로그인] OAuth 옵션:', JSON.stringify(oauthOptions, null, 2));
+          
+          let oauthResponse;
+          try {
+            oauthResponse = await supabaseClient.auth.signInWithOAuth({
+              provider: 'kakao',
+              options: oauthOptions
+            });
+          } catch (oauthError) {
+            console.error('[카카오 로그인] OAuth 요청 중 예외 발생:', oauthError);
+            hideLoading();
+            const errorMsg = oauthError.message || 'OAuth 요청 중 오류가 발생했습니다.';
+            showError('로그인 실패: ' + errorMsg);
+            
+            // Supabase Dashboard 설정 확인 안내
+            if (errorMsg.includes('provider') || errorMsg.includes('kakao')) {
+              console.error('[카카오 로그인] 💡 해결 방법:');
+              console.error('1. Supabase Dashboard → Authentication → Providers → Kakao 활성화 확인');
+              console.error('2. 카카오 개발자 콘솔에서 Redirect URI 확인');
+              console.error('3. 브라우저 콘솔의 전체 에러 메시지 확인');
+            }
+            return;
+          }
 
-          console.log('[카카오 로그인] OAuth 응답:', { data, error });
+          const { data, error } = oauthResponse;
+          console.log('[카카오 로그인] OAuth 응답:', { 
+            hasData: !!data, 
+            hasError: !!error,
+            dataKeys: data ? Object.keys(data) : [],
+            errorMessage: error?.message 
+          });
 
           if (error) {
             hideLoading();
-            showError('로그인 실패: ' + error.message);
-            console.error('카카오 로그인 오류:', error);
+            const errorMsg = error.message || '알 수 없는 오류';
+            showError('로그인 실패: ' + errorMsg);
+            console.error('[카카오 로그인] ❌ OAuth 오류:', error);
+            console.error('[카카오 로그인] 오류 상세:', JSON.stringify(error, null, 2));
+            
+            // 일반적인 오류에 대한 안내
+            if (errorMsg.includes('provider') || errorMsg.includes('not configured')) {
+              console.error('[카카오 로그인] 💡 해결 방법:');
+              console.error('Supabase Dashboard → Authentication → Providers → Kakao를 활성화해주세요.');
+            }
             return;
           }
           
@@ -1149,8 +1205,14 @@
             window.location.href = data.url;
           } else {
             hideLoading();
-            showError('로그인 URL을 받지 못했습니다. 다시 시도해주세요.');
-            console.error('[카카오 로그인] data.url이 없습니다. data:', data);
+            const errorMsg = '로그인 URL을 받지 못했습니다. Supabase 설정을 확인해주세요.';
+            showError(errorMsg);
+            console.error('[카카오 로그인] ❌ data.url이 없습니다.');
+            console.error('[카카오 로그인] 응답 데이터:', JSON.stringify(data, null, 2));
+            console.error('[카카오 로그인] 💡 해결 방법:');
+            console.error('1. Supabase Dashboard → Authentication → Providers → Kakao 활성화 확인');
+            console.error('2. 카카오 개발자 콘솔에서 Redirect URI가 올바르게 설정되었는지 확인');
+            console.error('   Redirect URI: https://[프로젝트ID].supabase.co/auth/v1/callback');
           }
         } catch (err) {
           hideLoading();
