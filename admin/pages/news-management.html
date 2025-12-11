@@ -4269,16 +4269,15 @@
         // 항상 패널을 표시하고 뉴스를 렌더링 (데이터가 없어도 표시)
         if (panel) {
           panel.style.display = 'block';
-          // 뉴스 렌더링 (데이터가 있으면 표시, 없으면 빈 상태 메시지)
-          renderNaverNews();
           
-          // 데이터가 있으면 로그 출력
-          const hasData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
+          // localStorage 데이터가 있으면 먼저 표시 (빠른 로딩)
+          const hasLocalData = Object.keys(NAVER_SECTION_CONFIG).some(key => {
             const items = sections[key] || [];
             return Array.isArray(items) && items.length > 0;
           });
           
-          if (hasData) {
+          if (hasLocalData) {
+            renderNaverNews();
             console.log('✅ localStorage에서 뉴스 데이터 자동 로드 완료:', {
               social: sections.social?.length || 0,
               economy: sections.economy?.length || 0,
@@ -4288,14 +4287,18 @@
               }, 0),
             });
           } else {
-            console.log('ℹ️ localStorage에 뉴스 데이터가 없습니다. 서버에서 기존 뉴스를 불러오는 중...');
-            // localStorage에 데이터가 없으면 서버에서 기존 뉴스 자동으로 불러오기
-            // (다른 사람이 수집한 뉴스도 포함)
-            collectNewsData().catch(error => {
-              console.error('페이지 로드 시 뉴스 자동 수집 실패:', error);
-              // 에러가 발생해도 계속 진행 (사용자가 수동으로 수집할 수 있음)
-            });
+            // 데이터가 없으면 빈 상태 메시지 표시
+            renderNaverNews();
+            console.log('ℹ️ localStorage에 뉴스 데이터가 없습니다.');
           }
+          
+          // 백그라운드에서 서버에서 최신 뉴스 자동으로 불러오기
+          // (다른 사용자가 수집한 뉴스도 포함, localStorage 데이터와 병합)
+          console.log('🔄 서버에서 최신 뉴스를 불러오는 중... (다른 사용자가 수집한 뉴스 포함)');
+          collectNewsData().catch(error => {
+            console.error('페이지 로드 시 뉴스 자동 수집 실패:', error);
+            // 에러가 발생해도 계속 진행 (사용자가 수동으로 수집할 수 있음)
+          });
         }
 
         // 폼 제출
