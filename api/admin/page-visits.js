@@ -93,10 +93,17 @@ module.exports = async (req, res) => {
       offset = 0,
     } = req.query || {};
 
-    // 쿼리 빌드
+    // 쿼리 빌드 (profiles 테이블과 JOIN하여 사용자 정보 가져오기)
     let query = supabase
       .from('page_visits')
-      .select('*', { count: 'exact' })
+      .select(`
+        *,
+        profiles:user_id (
+          email,
+          name,
+          store_name
+        )
+      `, { count: 'exact' })
       .order('created_at', { ascending: false });
 
     // 필터 적용
@@ -126,9 +133,32 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: '접속 기록 조회 중 오류가 발생했습니다.' });
     }
 
+    // profiles 정보를 user_email, user_name에 병합
+    const enrichedData = (data || []).map(visit => {
+      const profile = visit.profiles;
+      if (profile && Array.isArray(profile) && profile.length > 0) {
+        const p = profile[0];
+        return {
+          ...visit,
+          user_email: visit.user_email || p.email || null,
+          user_name: visit.user_name || p.name || p.store_name || null,
+          profiles: undefined // 제거
+        };
+      } else if (profile && !Array.isArray(profile)) {
+        // 단일 객체인 경우
+        return {
+          ...visit,
+          user_email: visit.user_email || profile.email || null,
+          user_name: visit.user_name || profile.name || profile.store_name || null,
+          profiles: undefined // 제거
+        };
+      }
+      return visit;
+    });
+
     return res.status(200).json({
       success: true,
-      data: data || [],
+      data: enrichedData,
       pagination: {
         total: count || 0,
         limit: parseInt(limit),

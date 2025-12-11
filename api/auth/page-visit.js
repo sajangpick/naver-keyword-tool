@@ -171,6 +171,57 @@ module.exports = async (req, res) => {
       });
     }
 
+    // 사용자 정보 추출 (Authorization 헤더에서)
+    let finalUserId = userId || null;
+    let userEmail = null;
+    let userName = null;
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && !finalUserId) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+        
+        if (!authError && user) {
+          finalUserId = user.id;
+          userEmail = user.email;
+          
+          // 프로필에서 이름 가져오기
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name, store_name, email')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile) {
+            userName = profile.name || profile.store_name || null;
+            if (profile.email && !userEmail) {
+              userEmail = profile.email;
+            }
+          }
+        }
+      } catch (error) {
+        // 인증 실패해도 기록은 남김 (익명 사용자)
+        console.log('[page-visit] 인증 실패 (익명 사용자로 기록):', error.message);
+      }
+    } else if (finalUserId) {
+      // userId가 body에 있으면 프로필에서 정보 가져오기
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, store_name, email')
+          .eq('id', finalUserId)
+          .single();
+        
+        if (profile) {
+          userEmail = profile.email || null;
+          userName = profile.name || profile.store_name || null;
+        }
+      } catch (error) {
+        console.log('[page-visit] 프로필 조회 실패:', error.message);
+      }
+    }
+
     // User-Agent 파싱
     const userAgent = req.headers['user-agent'] || '';
     const parsedUA = parseUserAgent(userAgent);
@@ -179,7 +230,9 @@ module.exports = async (req, res) => {
 
     // 접속 기록 저장
     const visitData = {
-      user_id: userId || null, // 익명 사용자도 가능
+      user_id: finalUserId,
+      user_email: userEmail,
+      user_name: userName,
       page_url: pageUrl,
       page_title: pageTitle || null,
       page_path: pagePath,

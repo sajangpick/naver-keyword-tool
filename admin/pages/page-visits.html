@@ -212,6 +212,17 @@
         font-size: 16px;
         margin-right: 4px;
       }
+
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .user-email {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
     </style>
   </head>
   <body>
@@ -400,7 +411,26 @@
 
         tbody.innerHTML = visits.map(visit => {
           const time = formatDate(visit.created_at);
-          const user = visit.user_id ? '회원' : '익명';
+          
+          // 사용자 정보 표시: user_id가 있으면 회원 정보 표시
+          let userDisplay = '익명';
+          let userNameDisplay = '';
+          
+          if (visit.user_id) {
+            // 회원인 경우 - 이메일 또는 이름 표시
+            if (visit.user_email) {
+              userDisplay = visit.user_email;
+              userNameDisplay = visit.user_name || '';
+            } else if (visit.user_name) {
+              userDisplay = visit.user_name;
+            } else {
+              userDisplay = '회원';
+            }
+          } else {
+            // 익명 사용자인 경우
+            userDisplay = '익명';
+          }
+          
           const pagePath = visit.page_path || '-';
           const pageTitle = visit.page_title || '-';
           const referrer = visit.referrer ? new URL(visit.referrer).pathname : '-';
@@ -411,7 +441,12 @@
           return `
             <tr>
               <td>${time}</td>
-              <td>${user}</td>
+              <td>
+                <div class="user-info">
+                  <div>${userDisplay}</div>
+                  ${userNameDisplay ? `<div class="user-email">${userNameDisplay}</div>` : ''}
+                </div>
+              </td>
               <td class="page-path" title="${visit.page_url || ''}">${pagePath}</td>
               <td>${pageTitle}</td>
               <td class="page-path" title="${visit.referrer || ''}">${referrer}</td>
