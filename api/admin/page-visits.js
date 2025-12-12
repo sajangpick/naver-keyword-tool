@@ -93,7 +93,6 @@ module.exports = async (req, res) => {
       profile: {
         user_type: profile.user_type,
         membership_level: profile.membership_level,
-        role: profile.role,
         email: profile.email,
         name: profile.name
       }

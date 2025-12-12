@@ -107,9 +107,8 @@
           <h1 class="page-title">${config.title}</h1>
           <p class="page-subtitle">${config.subtitle}</p>
         </div>
-        <button class="header-btn main-page-btn" id="mainPageBtn" title="메인 페이지로 이동">
+        <button class="header-btn" id="mainPageBtn" title="메인 페이지로 이동">
           <i class="fas fa-home"></i>
-          <span>메인 페이지로 이동하기</span>
         </button>
       </div>
 
