@@ -85,6 +85,7 @@
             <a class="app" href="./naver_search.html"><div class="app-icon"><i class="fa-solid fa-key" style="font-size:20px"></i></div><div class="app-label">키워드</div></a>
                         <a class="app" href="./AI-Review.html"><div class="app-icon"><i class="fa-solid fa-robot" style="font-size:20px"></i></div><div class="app-label">AI채팅</div></a>
             <a class="app" href="./AI-Review.html"><div class="app-icon"><i class="fa-solid fa-pen-nib" style="font-size:20px"></i></div><div class="app-label">리뷰작성</div></a>
+            <a class="app" href="./ai-review-automation.html"><div class="app-icon"><i class="fab fa-neos" style="font-size:20px"></i></div><div class="app-label">리뷰자동</div></a>
             <a class="app" href="./Blog-Editor.html"><div class="app-icon"><i class="fa-solid fa-blog" style="font-size:20px"></i></div><div class="app-label">블로그</div></a>
             <a class="app" href="./shorts-editor.html"><div class="app-icon"><i class="fa-solid fa-film" style="font-size:20px"></i></div><div class="app-label">영상편집</div></a>
             <a class="app" href="./sajangpick-book.html"><div class="app-icon"><i class="fa-solid fa-book-open" style="font-size:20px"></i></div><div class="app-label">전자책</div></a>

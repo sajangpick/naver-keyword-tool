@@ -1354,6 +1354,66 @@
             <i class="fas fa-save"></i> 정보 저장
           </button>
         </section>
+
+        <!-- 5. 네이버 스마트플레이스 연동 -->
+        <section class="section" id="naverSmartplaceSection">
+          <h3 class="section-title">
+            <i class="fab fa-neos"></i>
+            네이버 스마트플레이스 연동
+          </h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+            네이버 스마트플레이스를 연동하면 리뷰를 자동으로 가져와서 AI 답글을 등록할 수 있습니다.
+          </p>
+
+          <!-- 연동된 플레이스 목록 -->
+          <div id="connectedPlaces" style="margin-bottom: 30px;">
+            <div class="loading">
+              <div class="spinner"></div>
+            </div>
+          </div>
+
+          <!-- 연동 폼 (연동 안 되어있을 때만 표시) -->
+          <div id="connectForm" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-user"></i> 네이버 아이디
+              </label>
+              <input type="text" class="form-input" id="naverId" placeholder="스마트플레이스 관리자 계정 아이디">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-lock"></i> 네이버 비밀번호
+              </label>
+              <input type="password" class="form-input" id="naverPassword" placeholder="스마트플레이스 관리자 계정 비밀번호">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-link"></i> 스마트플레이스 URL
+              </label>
+              <input type="text" class="form-input" id="placeUrl" placeholder="https://pcmap.place.naver.com/restaurant/1234567890/home">
+              <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
+                네이버 플레이스 페이지에서 주소창의 전체 URL을 복사해 붙여넣어주세요
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-comment-dots"></i> 답글 톤 설정
+              </label>
+              <select id="replyTone" class="form-control">
+                <option value="friendly">친근한 톤 (50자 이내, 이모지 1-2개)</option>
+                <option value="professional">전문적인 톤 (70자 이내, 정중하게)</option>
+                <option value="casual">캐주얼 톤 (40자 이내, 반말 가능)</option>
+              </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="connectNaverPlace()" id="connectBtn">
+              <i class="fas fa-plug"></i> 스마트플레이스 연동하기
+            </button>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -1492,7 +1552,8 @@
         await Promise.all([
           loadStoreInfo(),
           loadPromotion(),
-          loadBlogStyle()
+          loadBlogStyle(),
+          loadNaverSmartplaceConnections(user.id)  // 네이버 스마트플레이스 연동 정보
         ]);
 
         // 실시간 작성 현황 리스너 설정
@@ -3442,6 +3503,252 @@
             alert('로그아웃 중 오류가 발생했습니다.');
           }
         });
+      }
+    }
+
+    // ========== 네이버 스마트플레이스 연동 관련 함수 ==========
+    
+    // 연동된 플레이스 목록 로드
+    async function loadNaverSmartplaceConnections(userId) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const response = await fetch('/api/naver/connections', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('연동 정보를 불러올 수 없습니다');
+        }
+
+        const result = await response.json();
+        updateNaverSmartplaceUI(result.connections || []);
+      } catch (error) {
+        console.error('❌ 네이버 스마트플레이스 연동 정보 로드 실패:', error);
+        updateNaverSmartplaceUI([]);
+      }
+    }
+
+    // UI 업데이트
+    function updateNaverSmartplaceUI(connections) {
+      const container = document.getElementById('connectedPlaces');
+      const form = document.getElementById('connectForm');
+
+      if (connections.length === 0) {
+        // 연동 안 되어있으면 폼 표시
+        container.innerHTML = '';
+        form.style.display = 'block';
+      } else {
+        // 연동되어있으면 카드 표시
+        form.style.display = 'none';
+        container.innerHTML = connections.map(conn => `
+          <div class="naver-place-card" style="
+            background: var(--white);
+            border: 2px solid var(--accent-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div>
+                <h4 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+                  <i class="fab fa-neos" style="color: #03c75a; margin-right: 8px;"></i>
+                  ${conn.place_name || '업소명 없음'}
+                </h4>
+                <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">
+                  플레이스 ID: ${conn.place_id}
+                </p>
+              </div>
+              <span style="
+                padding: 6px 12px;
+                background: ${conn.is_active ? '#dcfce7' : '#fee2e2'};
+                color: ${conn.is_active ? '#166534' : '#991b1b'};
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 600;
+              ">
+                ${conn.is_active ? '✓ 활성화' : '✗ 비활성화'}
+              </span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">마지막 동기화</div>
+                <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
+                  ${conn.last_sync_at ? new Date(conn.last_sync_at).toLocaleString('ko-KR') : '아직 없음'}
+                </div>
+              </div>
+              <div>
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 톤</div>
+                <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
+                  ${conn.reply_tone === 'friendly' ? '친근한' : conn.reply_tone === 'professional' ? '전문적인' : '캐주얼'}
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+              <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">총 리뷰</div>
+                <div style="color: var(--accent-color); font-size: 20px; font-weight: 700;">
+                  ${conn.total_reviews || 0}건
+                </div>
+              </div>
+              <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 대기중</div>
+                <div style="color: var(--warning); font-size: 20px; font-weight: 700;">
+                  ${conn.pending_replies || 0}건
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <a href="/app/ai-review-automation.html" class="btn" style="
+                flex: 1;
+                background: var(--accent-color);
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                text-align: center;
+                text-decoration: none;
+                font-weight: 600;
+                cursor: pointer;
+              ">
+                <i class="fas fa-robot"></i> 리뷰 관리하기
+              </a>
+              <button onclick="disconnectNaverPlace('${conn.id}')" class="btn" style="
+                background: var(--error);
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+              ">
+                <i class="fas fa-unlink"></i> 연동 해제
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // 네이버 플레이스 연동
+    async function connectNaverPlace() {
+      const naverId = document.getElementById('naverId').value.trim();
+      const naverPassword = document.getElementById('naverPassword').value.trim();
+      const placeUrl = document.getElementById('placeUrl').value.trim();
+      const replyTone = document.getElementById('replyTone').value;
+
+      if (!naverId || !naverPassword || !placeUrl) {
+        alert('모든 필드를 입력해주세요.');
+        return;
+      }
+
+      // 플레이스 URL에서 place_id 추출
+      const placeIdMatch = placeUrl.match(/\/restaurant\/(\d+)/);
+      if (!placeIdMatch) {
+        alert('올바른 네이버 플레이스 URL을 입력해주세요.\n예: https://pcmap.place.naver.com/restaurant/1234567890/home');
+        return;
+      }
+
+      const connectBtn = document.getElementById('connectBtn');
+      const originalText = connectBtn.innerHTML;
+      connectBtn.disabled = true;
+      connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 연동 중...';
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('로그인이 필요합니다');
+        }
+
+        const response = await fetch('/api/naver/connect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': session.user.id
+          },
+          body: JSON.stringify({
+            naverId,
+            naverPassword,
+            placeUrl,
+            placeId: placeIdMatch[1],
+            replyTone
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '연동 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ 네이버 스마트플레이스 연동이 완료되었습니다!\n이제 10분마다 자동으로 리뷰를 가져옵니다.');
+          
+          // 폼 초기화
+          document.getElementById('naverId').value = '';
+          document.getElementById('naverPassword').value = '';
+          document.getElementById('placeUrl').value = '';
+          
+          // 연동 정보 다시 로드
+          await loadNaverSmartplaceConnections(session.user.id);
+        } else {
+          throw new Error(result.error || '연동 실패');
+        }
+      } catch (error) {
+        console.error('❌ 네이버 플레이스 연동 실패:', error);
+        alert('연동 실패: ' + error.message);
+      } finally {
+        connectBtn.disabled = false;
+        connectBtn.innerHTML = originalText;
+      }
+    }
+
+    // 네이버 플레이스 연동 해제
+    async function disconnectNaverPlace(connectionId) {
+      if (!confirm('정말 연동을 해제하시겠습니까?\n연동 해제 후 리뷰 자동 수집이 중단됩니다.')) {
+        return;
+      }
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('로그인이 필요합니다');
+        }
+
+        const response = await fetch(`/api/naver/disconnect/${connectionId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': session.user.id
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '연동 해제 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ 연동이 해제되었습니다.');
+          await loadNaverSmartplaceConnections(session.user.id);
+        } else {
+          throw new Error(result.error || '연동 해제 실패');
+        }
+      } catch (error) {
+        console.error('❌ 연동 해제 실패:', error);
+        alert('연동 해제 실패: ' + error.message);
       }
     }
 

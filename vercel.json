@@ -74,6 +74,10 @@
     {
       "path": "/api/cron/keep-alive",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-reviews",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

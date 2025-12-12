@@ -1169,6 +1169,22 @@ const testPolicyApiHandler = require("./api/test-policy-api");
 app.get("/api/test-policy-api", testPolicyApiHandler);
 app.post("/api/test-policy-api", testPolicyApiHandler);
 
+// ==================== 네이버 스마트플레이스 연동 API ====================
+const naverConnectHandler = require("./api/naver/connect");
+app.post("/api/naver/connect", naverConnectHandler);
+
+const naverConnectionsHandler = require("./api/naver/connections");
+app.get("/api/naver/connections", naverConnectionsHandler);
+
+const naverDisconnectHandler = require("./api/naver/disconnect");
+app.delete("/api/naver/disconnect/:id", (req, res) => {
+  // URL 파라미터를 req.url에 포함시켜서 전달
+  naverDisconnectHandler(req, res);
+});
+
+const naverAutoReplyHandler = require("./api/naver/auto-reply");
+app.post("/api/naver/auto-reply", naverAutoReplyHandler);
+
 // ==================== 레시피 관리 시스템 API ====================
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");
@@ -1228,6 +1244,11 @@ app.post("/api/payment/connect-naverpay", connectNaverPayHandler);
 // 크론 작업 API (수동 실행용)
 const subscriptionRenewalHandler = require("./api/cron/subscription-renewal");
 app.get("/api/cron/subscription-renewal", subscriptionRenewalHandler);
+
+// 네이버 리뷰 동기화 크론잡
+const syncReviewsHandler = require("./api/cron/sync-reviews");
+app.post("/api/cron/sync-reviews", syncReviewsHandler);
+app.get("/api/cron/sync-reviews", syncReviewsHandler);
 
 // ==================== 블로그 스타일 설정 API ====================
 const blogStyleHandler = require("./api/blog-style");

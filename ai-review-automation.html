@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com wss://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; base-uri 'self'; form-action 'self'" />
+  <title>AI 리뷰 자동화 - 사장픽</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ff7b54'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <script src="/assets/auth-state.js" defer></script>
+  <style>
+    :root {
+      --accent-color: #ff7b54;
+      --bg-color: #fff7f0;
+      --text-primary: #201a17;
+      --text-secondary: #7a6a60;
+      --white: #ffffff;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --error: #f44336;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 16px;
+    }
+
+    .refresh-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    .section {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--accent-color);
+      color: white;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .review-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid #e9ecef;
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .review-rating {
+      color: var(--warning);
+      font-size: 18px;
+    }
+
+    .review-author {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .review-date {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .review-text {
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .reply-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .reply-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .reply-preview {
+      background: #e8f5e9;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--accent-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--success);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 AI 리뷰 자동화</h1>
+      <p>네이버 스마트플레이스 리뷰를 자동으로 가져와서 AI 답글을 등록하세요</p>
+      <button class="refresh-btn" onclick="loadReviews()">
+        <i class="fas fa-sync-alt"></i> 새로고침
+      </button>
+    </div>
+
+    <!-- 연동 상태 -->
+    <div class="section" id="connectionStatus">
+      <div class="loading">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- 답글 대기중인 리뷰 -->
+    <div class="section" id="pendingSection" style="display: none;">
+      <h2 class="section-title">
+        📩 답글 대기중인 리뷰
+        <span class="badge" id="pendingCount">0</span>
+      </h2>
+      <div id="pendingReviews"></div>
+    </div>
+
+    <!-- 완료된 리뷰 -->
+    <div class="section" id="completedSection" style="display: none;">
+      <h2 class="section-title">
+        ✅ 답글 등록 완료
+      </h2>
+      <div id="completedReviews"></div>
+    </div>
+
+    <!-- 실패한 리뷰 -->
+    <div class="section" id="failedSection" style="display: none;">
+      <h2 class="section-title">
+        ❌ 등록 실패
+      </h2>
+      <div id="failedReviews"></div>
+    </div>
+  </div>
+
+  <script>
+    let supabase;
+    let currentUser = null;
+    let refreshInterval;
+
+    // Supabase 초기화
+    async function initSupabase() {
+      while (!window.authState?.supabase) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      supabase = window.authState.supabase;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = '/login.html';
+        return;
+      }
+      currentUser = session.user;
+      loadReviews();
+      
+      // 30초마다 자동 새로고침
+      refreshInterval = setInterval(loadReviews, 30000);
+    }
+
+    // 리뷰 로드
+    async function loadReviews() {
+      if (!currentUser) return;
+
+      try {
+        // 연동 상태 확인
+        const connResponse = await fetch('/api/naver/connections', {
+          headers: { 'user-id': currentUser.id }
+        });
+        const connResult = await connResponse.json();
+
+        if (!connResult.success || connResult.connections.length === 0) {
+          document.getElementById('connectionStatus').innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-exclamation-circle"></i>
+              <h3>네이버 스마트플레이스 연동이 필요합니다</h3>
+              <p style="margin-top: 16px;">
+                <a href="/mypage.html" style="color: var(--accent-color); text-decoration: underline;">
+                  마이페이지에서 연동하기
+                </a>
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        document.getElementById('connectionStatus').innerHTML = `
+          <div style="text-align: center; padding: 20px;">
+            <i class="fab fa-neos" style="font-size: 32px; color: #03c75a; margin-bottom: 8px;"></i>
+            <h3>${connResult.connections[0].place_name}</h3>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
+              마지막 동기화: ${new Date(connResult.connections[0].last_sync_at).toLocaleString('ko-KR')}
+            </p>
+          </div>
+        `;
+
+        // 리뷰 조회
+        const { data: reviews, error } = await supabase
+          .from('naver_reviews')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const pending = reviews.filter(r => r.reply_status === 'pending');
+        const completed = reviews.filter(r => r.reply_status === 'registered');
+        const failed = reviews.filter(r => r.reply_status === 'failed');
+
+        // UI 업데이트
+        document.getElementById('pendingCount').textContent = pending.length;
+        document.getElementById('pendingSection').style.display = pending.length > 0 ? 'block' : 'none';
+        document.getElementById('completedSection').style.display = completed.length > 0 ? 'block' : 'none';
+        document.getElementById('failedSection').style.display = failed.length > 0 ? 'block' : 'none';
+
+        renderReviews('pendingReviews', pending, 'pending');
+        renderReviews('completedReviews', completed, 'registered');
+        renderReviews('failedReviews', failed, 'failed');
+
+      } catch (error) {
+        console.error('리뷰 로드 실패:', error);
+        showToast('리뷰를 불러오는데 실패했습니다', 'error');
+      }
+    }
+
+    // 리뷰 렌더링
+    function renderReviews(containerId, reviews, status) {
+      const container = document.getElementById(containerId);
+      
+      if (reviews.length === 0) {
+        container.innerHTML = '<div class="empty-state">리뷰가 없습니다</div>';
+        return;
+      }
+
+      container.innerHTML = reviews.map(review => `
+        <div class="review-card">
+          <div class="review-header">
+            <div>
+              <div class="review-rating">${'⭐'.repeat(review.rating)}</div>
+              <div class="review-author">${review.reviewer_name || '익명'}</div>
+            </div>
+            <div class="review-date">${new Date(review.review_date).toLocaleDateString('ko-KR')}</div>
+          </div>
+          <div class="review-text">${review.review_text}</div>
+          ${status === 'pending' ? `
+            <button class="reply-btn" onclick="registerReply('${review.id}')" id="btn-${review.id}">
+              <i class="fas fa-robot"></i> AI 답글 생성하고 네이버에 등록
+            </button>
+          ` : status === 'registered' ? `
+            <div class="reply-preview">
+              <strong>등록된 답글:</strong><br>
+              ${review.ai_reply_text || '답글 없음'}
+            </div>
+            <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+              등록 완료: ${new Date(review.registered_at).toLocaleString('ko-KR')}
+            </div>
+          ` : `
+            <div style="color: var(--error); margin-bottom: 8px;">
+              <i class="fas fa-exclamation-triangle"></i> ${review.error_message || '등록 실패'}
+            </div>
+            <button class="reply-btn" onclick="registerReply('${review.id}')">
+              <i class="fas fa-redo"></i> 다시 시도
+            </button>
+          `}
+        </div>
+      `).join('');
+    }
+
+    // 답글 등록
+    async function registerReply(reviewId) {
+      const btn = document.getElementById(`btn-${reviewId}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
+      }
+
+      try {
+        const response = await fetch('/api/naver/auto-reply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': currentUser.id
+          },
+          body: JSON.stringify({ reviewId })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast('네이버에 답글이 등록되었습니다!', 'success');
+          setTimeout(() => loadReviews(), 1000);
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        console.error('답글 등록 실패:', error);
+        showToast('답글 등록 실패: ' + error.message, 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-robot"></i> AI 답글 생성하고 네이버에 등록';
+        }
+      }
+    }
+
+    // 토스트 메시지
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.background = type === 'success' ? 'var(--success)' : 'var(--error)';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideUp 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // 페이지 언로드 시 인터벌 정리
+    window.addEventListener('beforeunload', () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    });
+
+    // 초기화
+    window.addEventListener('load', initSupabase);
+  </script>
+</body>
+</html>
+
