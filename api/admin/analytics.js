@@ -56,12 +56,12 @@ module.exports = async (req, res) => {
     // 프로필에서 관리자 권한 확인
     const { data: profile } = await supabase
       .from('profiles')
-      .select('user_type, membership_level, role')
+      .select('user_type, membership_level')
       .eq('id', user.id)
       .single();
 
-    // user_type, membership_level, role 중 하나라도 'admin'이면 관리자
-    if (!profile || (profile.user_type !== 'admin' && profile.membership_level !== 'admin' && profile.role !== 'admin')) {
+    // user_type 또는 membership_level이 'admin'이면 관리자
+    if (!profile || (profile.user_type !== 'admin' && profile.membership_level !== 'admin')) {
       return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
     }
 

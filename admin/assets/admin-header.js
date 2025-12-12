@@ -124,10 +124,14 @@
         </button>
         
         <div class="user-info" id="adminUserInfo">
-          <div class="user-avatar">👤</div>
+          <div class="user-avatar" id="userAvatar">
+            <i class="fas fa-user"></i>
+          </div>
           <div class="user-details">
-            <div class="user-name">로딩 중...</div>
-            <div class="user-role">관리자</div>
+            <div class="user-name" id="userName">로딩 중...</div>
+            <div class="user-role">
+              <span class="role-badge">관리자</span>
+            </div>
           </div>
         </div>
 
@@ -169,10 +173,19 @@
       const { data: { user } = { user: null } } = await supabaseClient.auth.getUser();
 
       if (user) {
-        const userNameEl = document.querySelector('#adminUserInfo .user-name');
+        // 사용자 이름 업데이트
+        const userNameEl = document.getElementById('userName');
         if (userNameEl) {
           userNameEl.textContent = user.email || '관리자';
         }
+        
+        // 아바타에 이니셜 표시
+        const avatarEl = document.getElementById('userAvatar');
+        if (avatarEl && user.email) {
+          const initial = user.email.charAt(0).toUpperCase();
+          avatarEl.innerHTML = `<span class="avatar-initial">${initial}</span>`;
+        }
+        
         // 로그인된 상태: 로그인 버튼 숨기고 사용자 정보/로그아웃 버튼 표시
         hideLoginButton();
       } else {
