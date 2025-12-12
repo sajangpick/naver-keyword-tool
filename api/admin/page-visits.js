@@ -131,17 +131,11 @@ module.exports = async (req, res) => {
       offset = 0,
     } = req.query || {};
 
-    // 쿼리 빌드 (profiles 테이블과 JOIN하여 사용자 정보 가져오기)
+    // 쿼리 빌드
+    // RLS를 우회하기 위해 service_role 사용 (이미 supabase는 service_role로 초기화됨)
     let query = supabase
       .from('page_visits')
-      .select(`
-        *,
-        profiles:user_id (
-          email,
-          name,
-          store_name
-        )
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
     // 필터 적용
@@ -167,32 +161,52 @@ module.exports = async (req, res) => {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('[page-visits] 조회 실패:', error);
-      return res.status(500).json({ error: '접속 기록 조회 중 오류가 발생했습니다.' });
+      console.error('[page-visits] 조회 실패:', {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      return res.status(500).json({ 
+        error: '접속 기록 조회 중 오류가 발생했습니다.',
+        details: error.message || '알 수 없는 오류',
+        debug: {
+          errorCode: error.code,
+          errorDetails: error.details
+        }
+      });
     }
 
-    // profiles 정보를 user_email, user_name에 병합
-    const enrichedData = (data || []).map(visit => {
-      const profile = visit.profiles;
-      if (profile && Array.isArray(profile) && profile.length > 0) {
-        const p = profile[0];
-        return {
-          ...visit,
-          user_email: visit.user_email || p.email || null,
-          user_name: visit.user_name || p.name || p.store_name || null,
-          profiles: undefined // 제거
-        };
-      } else if (profile && !Array.isArray(profile)) {
-        // 단일 객체인 경우
-        return {
-          ...visit,
-          user_email: visit.user_email || profile.email || null,
-          user_name: visit.user_name || profile.name || profile.store_name || null,
-          profiles: undefined // 제거
-        };
+    // user_id가 있는 경우 profiles에서 사용자 정보 가져오기
+    const enrichedData = await Promise.all((data || []).map(async (visit) => {
+      if (visit.user_id) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, name, store_name')
+            .eq('id', visit.user_id)
+            .single();
+          
+          if (profile) {
+            return {
+              ...visit,
+              user_email: profile.email || null,
+              user_name: profile.name || profile.store_name || null
+            };
+          }
+        } catch (profileError) {
+          console.warn('[page-visits] 프로필 조회 실패:', {
+            userId: visit.user_id,
+            error: profileError.message
+          });
+        }
       }
-      return visit;
-    });
+      return {
+        ...visit,
+        user_email: null,
+        user_name: null
+      };
+    }));
 
     return res.status(200).json({
       success: true,

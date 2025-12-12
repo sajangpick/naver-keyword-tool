@@ -3,9 +3,21 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const { OpenAI } = require('openai');
-const puppeteer = require('puppeteer');
 const CryptoJS = require('crypto-js');
 const { trackTokenUsage, checkTokenLimit } = require('../middleware/token-tracker');
+
+// Puppeteer 환경 설정 (Render/Vercel 호환)
+const isProduction = process.env.NODE_ENV === 'production';
+let chromium, puppeteer;
+
+if (isProduction) {
+  // Render/Vercel: @sparticuz/chromium 사용 (경량 Chromium 바이너리)
+  chromium = require('@sparticuz/chromium');
+  puppeteer = require('puppeteer-core');
+} else {
+  // 로컬: 일반 puppeteer 사용 (자동 Chrome 다운로드)
+  puppeteer = require('puppeteer');
+}
 
 // Supabase 클라이언트 초기화
 let supabase = null;
@@ -104,10 +116,37 @@ ${reviewText}
 
 // 네이버 스마트플레이스에 답글 등록
 async function registerReplyOnNaver(connection, reviewId, replyText) {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  let launchOptions;
+  
+  if (isProduction) {
+    // Render/Vercel: chromium 사용
+    const executablePath = await chromium.executablePath();
+    launchOptions = {
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+      defaultViewport: { width: 1920, height: 1080 },
+      executablePath,
+      headless: chromium.headless,
+    };
+  } else {
+    // 로컬: 일반 puppeteer
+    launchOptions = {
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+      headless: true,
+    };
+  }
+  
+  const browser = await puppeteer.launch(launchOptions);
 
   const page = await browser.newPage();
 

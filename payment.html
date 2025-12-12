@@ -671,10 +671,19 @@
     // URL 파라미터에서 플랜 정보 가져오기
     const urlParams = new URLSearchParams(window.location.search);
     let plan = urlParams.get('plan');
+    const isDemoMode = urlParams.get('demo') === 'true'; // 데모 모드 확인
     
     let pricingData = null;
     let tokenData = null;
     let currentUserPlan = null; // 현재 사용 중인 플랜
+    
+    // 데모 모드 배너 추가
+    if (isDemoMode) {
+      const demoBanner = document.createElement('div');
+      demoBanner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #ff7b54, #e56548); color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);';
+      demoBanner.innerHTML = '🔍 데모 모드: 카카오페이 심사용 테스트 페이지입니다. 실제 결제는 진행되지 않습니다.';
+      document.body.insertBefore(demoBanner, document.body.firstChild);
+    }
     
     // 즉시 초기 화면 설정 (로딩 전에)
     (function() {
@@ -691,24 +700,104 @@
     
     // 페이지 초기화 - 데이터 로드 후 렌더링
     window.addEventListener('load', async function() {
+      // 데모 모드가 아닐 때만 로그인 체크
+      if (!isDemoMode) {
+        // Supabase 초기화 대기
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        const supabase = window.authState.supabase;
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+          return;
+        }
+      }
+      
       // plan 파라미터가 없으면 데이터 로드 후 플랜 카드 렌더링
       if (!plan) {
-        // 가격 및 토큰 설정 로드
-        await loadPlanSettings();
+        // 가격 및 토큰 설정 로드 (데모 모드면 기본값 사용)
+        if (isDemoMode) {
+          // 데모 모드: 기본값 사용
+          pricingData = {
+            owner_seed_price: 0,
+            owner_power_price: 30000,
+            owner_bigpower_price: 50000,
+            owner_premium_price: 70000
+          };
+          tokenData = {
+            owner_seed_limit: 100,
+            owner_power_limit: 500,
+            owner_bigpower_limit: 833,
+            owner_premium_limit: 1166
+          };
+        } else {
+          await loadPlanSettings();
+        }
         
-        // 현재 사용 중인 플랜 정보 로드
-        await loadCurrentUserPlan();
+        // 현재 사용 중인 플랜 정보 로드 (데모 모드가 아닐 때만)
+        if (!isDemoMode) {
+          await loadCurrentUserPlan();
+        }
         
         // 데이터 로드 완료 후 플랜 카드 렌더링
         renderPlanSelection();
       } else {
         // plan 파라미터가 있으면 결제 화면용 데이터 로드
-        await loadPlanSettings();
+        if (isDemoMode) {
+          // 데모 모드: 기본값 사용
+          pricingData = {
+            owner_seed_price: 0,
+            owner_power_price: 30000,
+            owner_bigpower_price: 50000,
+            owner_premium_price: 70000
+          };
+          tokenData = {
+            owner_seed_limit: 100,
+            owner_power_limit: 500,
+            owner_bigpower_limit: 833,
+            owner_premium_limit: 1166
+          };
+        } else {
+          await loadPlanSettings();
+        }
         showPaymentScreen(plan);
       }
       
-      // 등록된 카드 목록 로드
-      await loadRegisteredCards();
+      // 등록된 카드 목록 로드 (데모 모드가 아닐 때만)
+      if (!isDemoMode) {
+        await loadRegisteredCards();
+      } else {
+        // 데모 모드: 카드 목록 비우기
+        document.getElementById('registeredCards').innerHTML = '';
+      }
+      
+      // 데모 모드일 때 결제 버튼 비활성화 및 안내 메시지
+      if (isDemoMode) {
+        const paymentBtn = document.querySelector('.btn-payment');
+        if (paymentBtn) {
+          paymentBtn.disabled = true;
+          paymentBtn.style.opacity = '0.6';
+          paymentBtn.style.cursor = 'not-allowed';
+          paymentBtn.textContent = '데모 모드: 실제 결제는 불가능합니다';
+        }
+        
+        // 결제 방법 선택 비활성화
+        document.querySelectorAll('.payment-method input[type="radio"]').forEach(radio => {
+          radio.disabled = true;
+        });
+        
+        // 결제 화면에 데모 안내 추가
+        const paymentContainer = document.getElementById('paymentContainer');
+        if (paymentContainer && plan) {
+          const demoNotice = document.createElement('div');
+          demoNotice.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;';
+          demoNotice.innerHTML = '<strong style="color: #856404;">⚠️ 데모 모드</strong><br><span style="color: #856404; font-size: 14px;">이 페이지는 카카오페이 심사용 테스트 페이지입니다. 실제 결제는 진행되지 않습니다.</span>';
+          paymentContainer.insertBefore(demoNotice, paymentContainer.querySelector('.plan-info'));
+        }
+      }
     });
 
     // 플랜 설정 로드 (가격 및 토큰)
@@ -888,12 +977,15 @@
 
     // 플랜 선택
     function selectPlan(planKey) {
-      // 현재 사용 중인 플랜이면 선택 불가
-      if (currentUserPlan === planKey) {
+      // 데모 모드에서는 URL에 demo 파라미터 유지
+      const demoParam = isDemoMode ? '&demo=true' : '';
+      
+      // 현재 사용 중인 플랜이면 선택 불가 (데모 모드가 아닐 때만)
+      if (!isDemoMode && currentUserPlan === planKey) {
         alert('이미 사용 중인 플랜입니다.');
         return;
       }
-      window.location.href = `/payment.html?plan=${planKey}`;
+      window.location.href = `/payment.html?plan=${planKey}${demoParam}`;
     }
 
     // 이전 화면으로 돌아가기
@@ -1155,6 +1247,12 @@
     
     // 결제 처리
     async function processPayment() {
+      // 데모 모드에서는 결제 불가
+      if (isDemoMode) {
+        alert('데모 모드에서는 실제 결제를 진행할 수 없습니다.\n카카오페이 심사용 테스트 페이지입니다.');
+        return;
+      }
+      
       if (!plan) {
         alert('플랜을 선택해주세요.');
         return;

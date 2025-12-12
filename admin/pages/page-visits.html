@@ -345,14 +345,33 @@
           if (deviceType) params.append('deviceType', deviceType);
           if (pagePath) params.append('pagePath', pagePath);
 
+          console.log('[접속 기록] API 호출 시작:', {
+            url: `${apiBaseUrl}/api/admin/page-visits?${params}`,
+            hasToken: !!token
+          });
+
           const response = await fetch(`${apiBaseUrl}/api/admin/page-visits?${params}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
           });
 
+          console.log('[접속 기록] API 응답:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+          });
+
           if (!response.ok) {
-            const errorData = await response.json();
+            let errorData;
+            try {
+              errorData = await response.json();
+            } catch (e) {
+              errorData = {
+                error: `HTTP ${response.status}: ${response.statusText}`,
+                details: '응답을 파싱할 수 없습니다'
+              };
+            }
             console.error('[접속 기록] API 오류:', errorData);
             
             // 상세 오류 정보를 포함한 에러 객체 생성

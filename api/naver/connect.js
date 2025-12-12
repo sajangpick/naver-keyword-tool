@@ -2,8 +2,20 @@
 // Puppeteer로 네이버 로그인 후 세션 쿠키 저장
 
 const { createClient } = require('@supabase/supabase-js');
-const puppeteer = require('puppeteer');
 const CryptoJS = require('crypto-js');
+
+// Puppeteer 환경 설정 (Render/Vercel 호환)
+const isProduction = process.env.NODE_ENV === 'production';
+let chromium, puppeteer;
+
+if (isProduction) {
+  // Render/Vercel: @sparticuz/chromium 사용 (경량 Chromium 바이너리)
+  chromium = require('@sparticuz/chromium');
+  puppeteer = require('puppeteer-core');
+} else {
+  // 로컬: 일반 puppeteer 사용 (자동 Chrome 다운로드)
+  puppeteer = require('puppeteer');
+}
 
 // Supabase 클라이언트 초기화
 let supabase = null;
@@ -30,11 +42,39 @@ function decrypt(encryptedText) {
 
 // 플레이스 URL에서 업소명 추출
 async function extractPlaceName(placeUrl) {
+  let browser = null;
   try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    let launchOptions;
+    
+    if (isProduction) {
+      // Render/Vercel: chromium 사용
+      const executablePath = await chromium.executablePath();
+      launchOptions = {
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+        defaultViewport: { width: 1920, height: 1080 },
+        executablePath,
+        headless: chromium.headless,
+      };
+    } else {
+      // 로컬: 일반 puppeteer
+      launchOptions = {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+        headless: true,
+      };
+    }
+    
+    browser = await puppeteer.launch(launchOptions);
     
     const page = await browser.newPage();
     await page.goto(placeUrl, { waitUntil: 'networkidle2', timeout: 30000 });
@@ -62,6 +102,13 @@ async function extractPlaceName(placeUrl) {
     return placeName || '업소명 없음';
   } catch (error) {
     console.error('업소명 추출 실패:', error);
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (e) {
+        // 브라우저 종료 실패는 무시
+      }
+    }
     return '업소명 없음';
   }
 }
@@ -98,10 +145,37 @@ module.exports = async (req, res) => {
     console.log(`[네이버 연동] 사용자 ${userId} 연동 시작 - 플레이스 ID: ${placeId}`);
 
     // Puppeteer로 네이버 로그인
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    let launchOptions;
+    
+    if (isProduction) {
+      // Render/Vercel: chromium 사용
+      const executablePath = await chromium.executablePath();
+      launchOptions = {
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+        defaultViewport: { width: 1920, height: 1080 },
+        executablePath,
+        headless: chromium.headless,
+      };
+    } else {
+      // 로컬: 일반 puppeteer
+      launchOptions = {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+        headless: true,
+      };
+    }
+    
+    const browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     
