@@ -13,6 +13,13 @@
   // 로그인 체크 함수 (Supabase 세션 + localStorage 모두 확인)
   async function isUserLoggedIn() {
     try {
+      // 데모 모드일 때는 항상 로그인된 것으로 처리
+      const isDemoMode = window.isDemoMode ? window.isDemoMode() : false;
+      if (isDemoMode) {
+        console.log('[auth-guard] 데모 모드: 로그인 체크 우회');
+        return true;
+      }
+
       // 1. Supabase 세션 확인 (우선순위 1)
       if (window.authState?.supabase) {
         try {
@@ -45,6 +52,12 @@
   // 동기 버전 (기존 호환성 유지)
   function isUserLoggedInSync() {
     try {
+      // 데모 모드일 때는 항상 로그인된 것으로 처리
+      const isDemoMode = window.isDemoMode ? window.isDemoMode() : false;
+      if (isDemoMode) {
+        return true;
+      }
+
       // localStorage만 빠르게 확인 (동기)
       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
       const userData = localStorage.getItem('userData');

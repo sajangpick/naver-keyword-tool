@@ -3,6 +3,9 @@
     return; // already initialized
   }
   
+  // 데모 모드 확인 (전역 데모 모드 지원)
+  const isDemoMode = window.isDemoMode ? window.isDemoMode() : false;
+  
   // Supabase SDK 로드 대기 (최대 5초)
   let waitCount = 0;
   const maxWait = 50; // 5초 (50 * 100ms)
@@ -306,6 +309,30 @@
 
   async function syncSession() {
     try {
+      // 데모 모드일 때는 가짜 세션 반환
+      const isDemoMode = window.isDemoMode ? window.isDemoMode() : false;
+      if (isDemoMode) {
+        console.log("[auth] 데모 모드: 가짜 세션 생성");
+        const demoSession = {
+          user: {
+            id: 'demo_user_12345',
+            email: 'demo@sajangpick.co.kr',
+            user_metadata: {
+              full_name: '데모 사용자',
+              name: '데모 사용자'
+            },
+            app_metadata: {
+              provider: 'demo'
+            }
+          },
+          access_token: 'demo_token'
+        };
+        // persistSession은 session 객체를 직접 받음
+        persistSession(demoSession);
+        window.dispatchEvent(new CustomEvent("auth:state-changed"));
+        return demoSession;
+      }
+
       const {
         data: { session },
       } = await supabaseClient.auth.getSession();

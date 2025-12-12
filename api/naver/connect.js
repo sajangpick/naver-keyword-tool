@@ -133,16 +133,16 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: '사용자 ID가 필요합니다' });
     }
 
-    const { naverId, naverPassword, placeUrl, placeId, replyTone } = req.body;
+    const { naverId, naverPassword, placeId, replyTone } = req.body;
 
-    if (!naverId || !naverPassword || !placeUrl || !placeId) {
+    if (!naverId || !naverPassword) {
       return res.status(400).json({
         success: false,
-        error: '네이버 아이디, 비밀번호, 플레이스 URL이 모두 필요합니다'
+        error: '네이버 아이디와 비밀번호가 필요합니다'
       });
     }
 
-    console.log(`[네이버 연동] 사용자 ${userId} 연동 시작 - 플레이스 ID: ${placeId}`);
+    console.log(`[네이버 연동] 사용자 ${userId} 연동 시작`);
 
     // Puppeteer로 네이버 로그인
     let launchOptions;
@@ -206,10 +206,70 @@ module.exports = async (req, res) => {
       const cookies = await page.cookies();
       const sessionCookies = JSON.stringify(cookies);
 
-      // 업소명 추출
-      const placeName = await extractPlaceName(placeUrl);
+      // 플레이스 목록 가져오기
+      let places = [];
+      try {
+        // 플레이스 목록이 있는지 확인
+        await page.waitForSelector('a[href*="/restaurant/"], a[href*="/place/"], .place-item, [class*="place"]', {
+          timeout: 5000
+        });
+
+        // 플레이스 목록 추출
+        places = await page.evaluate(() => {
+          const placeLinks = [];
+          
+          // 여러 선택자 시도
+          const selectors = [
+            'a[href*="/restaurant/"]',
+            'a[href*="/place/"]',
+            '.place-item a',
+            '[class*="place"] a'
+          ];
+
+          for (const selector of selectors) {
+            const links = document.querySelectorAll(selector);
+            links.forEach(link => {
+              const href = link.getAttribute('href');
+              if (href && (href.includes('/restaurant/') || href.includes('/place/'))) {
+                const placeIdMatch = href.match(/(?:restaurant|place)\/(\d+)/);
+                if (placeIdMatch && placeIdMatch[1]) {
+                  const name = link.textContent.trim() || link.querySelector('span')?.textContent.trim() || '업소명 없음';
+                  if (!placeLinks.find(p => p.placeId === placeIdMatch[1])) {
+                    placeLinks.push({
+                      placeId: placeIdMatch[1],
+                      placeName: name,
+                      placeUrl: href.startsWith('http') ? href : `https://m.place.naver.com${href}`
+                    });
+                  }
+                }
+              }
+            });
+          }
+
+          return placeLinks;
+        });
+      } catch (error) {
+        console.log('[플레이스 목록] 자동 추출 실패, 수동 입력된 placeId 사용:', error.message);
+      }
 
       await browser.close();
+
+      // placeId가 제공된 경우 해당 플레이스 사용, 없으면 첫 번째 플레이스 사용
+      let selectedPlace = null;
+      if (placeId) {
+        selectedPlace = places.find(p => p.placeId === placeId) || { placeId, placeName: '업소명 없음', placeUrl: `https://m.place.naver.com/restaurant/${placeId}` };
+      } else if (places.length > 0) {
+        selectedPlace = places[0];
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: '관리하는 플레이스를 찾을 수 없습니다. 플레이스 ID를 직접 입력해주세요.'
+        });
+      }
+
+      const finalPlaceId = selectedPlace.placeId;
+      const placeName = selectedPlace.placeName;
+      const placeUrl = selectedPlace.placeUrl;
 
       // DB에 저장
       const encryptedId = encrypt(naverId);
@@ -222,7 +282,7 @@ module.exports = async (req, res) => {
           naver_id_encrypted: encryptedId,
           naver_password_encrypted: encryptedPassword,
           session_cookies: sessionCookies,
-          place_id: placeId,
+          place_id: finalPlaceId,
           place_name: placeName,
           place_url: placeUrl,
           reply_tone: replyTone || 'friendly',
@@ -260,7 +320,7 @@ module.exports = async (req, res) => {
         }
       }, 2000);
 
-      console.log(`[네이버 연동] 사용자 ${userId} 연동 완료 - 플레이스 ID: ${placeId}`);
+      console.log(`[네이버 연동] 사용자 ${userId} 연동 완료 - 플레이스 ID: ${finalPlaceId}`);
 
       res.json({
         success: true,

@@ -1388,13 +1388,15 @@
               <input type="password" class="form-input" id="naverPassword" placeholder="스마트플레이스 관리자 계정 비밀번호">
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="placeSelectGroup" style="display: none;">
               <label class="form-label">
-                <i class="fas fa-link"></i> 스마트플레이스 URL
+                <i class="fas fa-store"></i> 관리하는 플레이스 선택
               </label>
-              <input type="text" class="form-input" id="placeUrl" placeholder="https://pcmap.place.naver.com/restaurant/1234567890/home">
+              <select id="placeSelect" class="form-control">
+                <option value="">플레이스 목록을 불러오는 중...</option>
+              </select>
               <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
-                네이버 플레이스 페이지에서 주소창의 전체 URL을 복사해 붙여넣어주세요
+                로그인 후 관리하는 플레이스 목록이 자동으로 표시됩니다
               </small>
             </div>
 
@@ -3643,31 +3645,89 @@
     async function connectNaverPlace() {
       const naverId = document.getElementById('naverId').value.trim();
       const naverPassword = document.getElementById('naverPassword').value.trim();
-      const placeUrl = document.getElementById('placeUrl').value.trim();
+      const placeSelect = document.getElementById('placeSelect');
+      const selectedPlaceId = placeSelect ? placeSelect.value : null;
       const replyTone = document.getElementById('replyTone').value;
 
-      if (!naverId || !naverPassword || !placeUrl) {
-        alert('모든 필드를 입력해주세요.');
-        return;
-      }
-
-      // 플레이스 URL에서 place_id 추출
-      const placeIdMatch = placeUrl.match(/\/restaurant\/(\d+)/);
-      if (!placeIdMatch) {
-        alert('올바른 네이버 플레이스 URL을 입력해주세요.\n예: https://pcmap.place.naver.com/restaurant/1234567890/home');
+      if (!naverId || !naverPassword) {
+        alert('네이버 아이디와 비밀번호를 입력해주세요.');
         return;
       }
 
       const connectBtn = document.getElementById('connectBtn');
       const originalText = connectBtn.innerHTML;
       connectBtn.disabled = true;
-      connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 연동 중...';
+      connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 로그인 중...';
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           throw new Error('로그인이 필요합니다');
         }
+
+        // 플레이스 목록 가져오기 (아직 선택 안 했으면)
+        let finalPlaceId = selectedPlaceId;
+        if (!finalPlaceId) {
+          connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 플레이스 목록 불러오는 중...';
+          
+          const listResponse = await fetch('/api/naver/get-places', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'user-id': session.user.id
+            },
+            body: JSON.stringify({ naverId, naverPassword })
+          });
+
+          if (!listResponse.ok) {
+            const error = await listResponse.json();
+            throw new Error(error.error || '플레이스 목록을 가져올 수 없습니다');
+          }
+
+          const listResult = await listResponse.json();
+          if (!listResult.success || !listResult.places || listResult.places.length === 0) {
+            throw new Error('관리하는 플레이스를 찾을 수 없습니다.');
+          }
+
+          // 플레이스가 1개면 자동 선택, 여러 개면 선택 UI 표시
+          if (listResult.places.length === 1) {
+            finalPlaceId = listResult.places[0].placeId;
+          } else {
+            // 여러 개면 선택 UI 표시
+            const placeSelectGroup = document.getElementById('placeSelectGroup');
+            const placeSelectEl = document.getElementById('placeSelect');
+            
+            if (placeSelectGroup && placeSelectEl) {
+              placeSelectGroup.style.display = 'block';
+              placeSelectEl.innerHTML = '<option value="">플레이스를 선택해주세요</option>' +
+                listResult.places.map(p => 
+                  `<option value="${p.placeId}">${p.placeName} (ID: ${p.placeId})</option>`
+                ).join('');
+              
+              connectBtn.innerHTML = '<i class="fas fa-hand-pointer"></i> 플레이스를 선택해주세요';
+              connectBtn.disabled = false;
+              
+              // 플레이스 선택 시 자동으로 연동 진행
+              const handlePlaceSelect = async function() {
+                if (placeSelectEl.value) {
+                  await connectNaverPlace(); // 재귀 호출
+                }
+              };
+              
+              // 기존 이벤트 리스너 제거 후 새로 추가
+              placeSelectEl.removeEventListener('change', handlePlaceSelect);
+              placeSelectEl.addEventListener('change', handlePlaceSelect);
+              
+              return; // 사용자 선택 대기
+            } else {
+              // UI가 없으면 첫 번째 플레이스 사용
+              finalPlaceId = listResult.places[0].placeId;
+            }
+          }
+        }
+
+        connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 연동 중...';
+        connectBtn.disabled = true;
 
         const response = await fetch('/api/naver/connect', {
           method: 'POST',
@@ -3678,8 +3738,7 @@
           body: JSON.stringify({
             naverId,
             naverPassword,
-            placeUrl,
-            placeId: placeIdMatch[1],
+            placeId: finalPlaceId,
             replyTone
           })
         });
@@ -3697,7 +3756,8 @@
           // 폼 초기화
           document.getElementById('naverId').value = '';
           document.getElementById('naverPassword').value = '';
-          document.getElementById('placeUrl').value = '';
+          const placeSelectGroup = document.getElementById('placeSelectGroup');
+          if (placeSelectGroup) placeSelectGroup.style.display = 'none';
           
           // 연동 정보 다시 로드
           await loadNaverSmartplaceConnections(session.user.id);

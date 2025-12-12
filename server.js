@@ -1185,6 +1185,9 @@ app.delete("/api/naver/disconnect/:id", (req, res) => {
 const naverAutoReplyHandler = require("./api/naver/auto-reply");
 app.post("/api/naver/auto-reply", naverAutoReplyHandler);
 
+const naverGetPlacesHandler = require("./api/naver/get-places");
+app.post("/api/naver/get-places", naverGetPlacesHandler);
+
 // ==================== 레시피 관리 시스템 API ====================
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");
