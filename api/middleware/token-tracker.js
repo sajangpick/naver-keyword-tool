@@ -19,19 +19,51 @@ if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL.trim() !== '' && SUPABASE_KEY.t
 }
 
 /**
+ * 데모 모드 확인
+ */
+function isDemoMode(req) {
+  // 헤더에서 데모 모드 확인
+  const demoHeader = req.headers['x-demo-mode'];
+  if (demoHeader === 'true') {
+    return true;
+  }
+  
+  // body에서 데모 모드 확인
+  if (req.body?.demoMode === true || req.body?.isDemoMode === true) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * 사용자 ID 추출 (다양한 소스에서)
  */
 async function extractUserId(req) {
   try {
+    // 데모 모드일 때는 데모 사용자 ID 반환
+    if (isDemoMode(req)) {
+      return 'demo_user_12345';
+    }
+
     // 1. 요청 body에서 직접 전달된 경우
     if (req.body?.userId || req.body?.user_id) {
-      return req.body.userId || req.body.user_id;
+      const userId = req.body.userId || req.body.user_id;
+      // 데모 사용자 ID인 경우
+      if (userId === 'demo_user_12345') {
+        return userId;
+      }
+      return userId;
     }
 
     // 2. Authorization 헤더에서 추출
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
+      // 데모 토큰인 경우
+      if (token === 'demo_token') {
+        return 'demo_user_12345';
+      }
       const { data: { user } } = await supabase.auth.getUser(token);
       if (user) return user.id;
     }
@@ -40,7 +72,13 @@ async function extractUserId(req) {
     const cookies = req.headers.cookie;
     if (cookies) {
       const userIdMatch = cookies.match(/userId=([^;]+)/);
-      if (userIdMatch) return userIdMatch[1];
+      if (userIdMatch) {
+        const userId = userIdMatch[1];
+        if (userId === 'demo_user_12345') {
+          return userId;
+        }
+        return userId;
+      }
     }
 
     return null;
@@ -53,7 +91,18 @@ async function extractUserId(req) {
 /**
  * 토큰 한도 체크 및 차감 (직접 Supabase 접근)
  */
-async function checkAndUpdateTokenLimit(userId, tokensToUse) {
+async function checkAndUpdateTokenLimit(userId, tokensToUse, isDemoMode = false) {
+  // 데모 모드일 때는 토큰 체크 우회
+  if (isDemoMode || userId === 'demo_user_12345' || !userId) {
+    console.log('✅ [token-tracker] 데모 모드 또는 userId 없음: 토큰 체크 우회');
+    return {
+      success: true,
+      tokensUsed: 0,
+      tokensRemaining: 999999,
+      monthlyLimit: 999999
+    };
+  }
+
   if (!supabase) {
     console.error('❌ Supabase 클라이언트가 초기화되지 않았습니다');
     return { success: false, error: 'Supabase 클라이언트 초기화 실패' };
@@ -123,7 +172,7 @@ async function checkAndUpdateTokenLimit(userId, tokensToUse) {
 
       if (createError) throw createError;
       
-      return checkAndUpdateTokenLimit(userId, tokensToUse); // 재귀 호출
+      return checkAndUpdateTokenLimit(userId, tokensToUse, isDemoMode); // 재귀 호출
     }
 
     // 토큰 한도 체크
@@ -208,8 +257,20 @@ async function checkAndUpdateTokenLimit(userId, tokensToUse) {
 /**
  * 토큰 사용량 기록 및 한도 체크
  */
-async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = null) {
+async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = null, isDemoMode = false) {
   try {
+    // 데모 모드일 때는 토큰 추적 우회
+    if (isDemoMode || userId === 'demo_user_12345' || !userId) {
+      console.log('✅ [token-tracker] 데모 모드 또는 userId 없음: 토큰 추적 우회');
+      return { 
+        success: true, 
+        tracked: false,
+        tokensUsed: 0,
+        remaining: 999999,
+        limit: 999999
+      };
+    }
+
     if (!userId) {
       console.warn('⚠️ 사용자 ID가 없어 토큰 추적을 건너뜁니다');
       return { success: true, tracked: false };
@@ -230,7 +291,7 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
     }
 
     // 토큰 한도 체크 및 차감
-    const limitCheck = await checkAndUpdateTokenLimit(userId, totalTokens);
+    const limitCheck = await checkAndUpdateTokenLimit(userId, totalTokens, isDemoMode);
     
     if (!limitCheck.success) {
       console.error('❌ 토큰 사용량 기록 실패:', limitCheck.error);
@@ -286,8 +347,22 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
 /**
  * 토큰 한도 사전 체크
  */
-async function checkTokenLimit(userId, estimatedTokens = 100) {
+async function checkTokenLimit(userId, estimatedTokens = 100, isDemoMode = false) {
   try {
+    // 데모 모드일 때는 토큰 체크 우회
+    if (isDemoMode || userId === 'demo_user_12345' || !userId) {
+      console.log('✅ [token-tracker] 데모 모드 또는 userId 없음: 토큰 한도 체크 우회');
+      return {
+        success: true,
+        hasLimit: false,
+        isUnlimited: true,
+        remaining: null,
+        limit: null,
+        monthlyLimit: null,
+        tokensRemaining: null
+      };
+    }
+
     if (!userId) {
       return { success: true, hasLimit: true };
     }
@@ -578,5 +653,6 @@ module.exports = {
   trackTokenUsage,
   checkTokenLimit,
   extractUserId,
-  tokenTrackerMiddleware
+  tokenTrackerMiddleware,
+  isDemoMode
 };

@@ -44,6 +44,12 @@ module.exports = async (req, res) => {
       });
     }
 
+    // 데모 모드 확인
+    const demoMode = isDemoMode(req);
+    if (demoMode) {
+      console.log('✅ [news-ai-summary] 데모 모드 감지: 토큰 체크 우회');
+    }
+    
     // 사용자 ID 추출
     const userId = await extractUserId(req) || req.body.userId || null;
 
@@ -180,9 +186,9 @@ ${url ? `원문 링크: ${url}` : '원문 링크: (정보 없음)'}
 
 위 형식에 맞춰 해석을 작성해주세요:`;
 
-    // 토큰 한도 체크
-    if (userId) {
-      const limitCheck = await checkTokenLimit(userId, 2000);
+    // 토큰 한도 체크 (데모 모드일 때는 우회)
+    if (userId && userId !== 'demo_user_12345') {
+      const limitCheck = await checkTokenLimit(userId, 2000, demoMode);
       if (!limitCheck.success) {
         return res.status(403).json({
           success: false,
@@ -215,9 +221,11 @@ ${url ? `원문 링크: ${url}` : '원문 링크: (정보 없음)'}
       max_tokens: 2500
     });
 
-    // 토큰 사용량 추적
-    if (userId && completion.usage) {
-      await trackTokenUsage(userId, completion.usage, 'news-ai-summary');
+    // 토큰 사용량 추적 (데모 모드일 때는 우회)
+    if (userId && completion.usage && userId !== 'demo_user_12345') {
+      await trackTokenUsage(userId, completion.usage, 'news-ai-summary', null, demoMode);
+    } else if (demoMode || userId === 'demo_user_12345') {
+      console.log('✅ [news-ai-summary] 데모 모드: 토큰 추적 우회');
     }
 
     const analysis = completion.choices[0].message.content;

@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const { trackTokenUsage, checkTokenLimit, extractUserId } = require('./middleware/token-tracker');
+const { trackTokenUsage, checkTokenLimit, extractUserId, isDemoMode } = require('./middleware/token-tracker');
 
 // OpenAI 초기화 (키가 없으면 null)
 let openai = null;
@@ -43,6 +43,12 @@ module.exports = async (req, res) => {
       });
     }
 
+    // 데모 모드 확인
+    const demoMode = isDemoMode(req);
+    if (demoMode) {
+      console.log('✅ [ai-news-recommend] 데모 모드 감지: 토큰 체크 우회');
+    }
+    
     // 사용자 ID 추출
     const userId = await extractUserId(req) || req.body.userId || null;
 
@@ -61,9 +67,9 @@ module.exports = async (req, res) => {
       ? categoryPrompts[category] 
       : '외식업 전반';
 
-    // 토큰 한도 체크
-    if (userId) {
-      const limitCheck = await checkTokenLimit(userId, 1000);
+    // 토큰 한도 체크 (데모 모드일 때는 우회)
+    if (userId && userId !== 'demo_user_12345') {
+      const limitCheck = await checkTokenLimit(userId, 1000, demoMode);
       if (!limitCheck.success) {
         return res.status(403).json({
           success: false,
@@ -110,9 +116,11 @@ module.exports = async (req, res) => {
       response_format: { type: 'json_object' }
     });
 
-    // 토큰 사용량 추적
-    if (userId && completion.usage) {
-      await trackTokenUsage(userId, completion.usage, 'ai-news-recommend');
+    // 토큰 사용량 추적 (데모 모드일 때는 우회)
+    if (userId && completion.usage && userId !== 'demo_user_12345') {
+      await trackTokenUsage(userId, completion.usage, 'ai-news-recommend', null, demoMode);
+    } else if (demoMode || userId === 'demo_user_12345') {
+      console.log('✅ [ai-news-recommend] 데모 모드: 토큰 추적 우회');
     }
 
     const result = JSON.parse(completion.choices[0].message.content);

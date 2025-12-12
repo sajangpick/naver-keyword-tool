@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { trackTokenUsage, checkTokenLimit, extractUserId } from './middleware/token-tracker';
+import { trackTokenUsage, checkTokenLimit, extractUserId, isDemoMode } from './middleware/token-tracker';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -22,6 +22,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 데모 모드 확인
+    const demoMode = isDemoMode(req);
+    if (demoMode) {
+      console.log('✅ [generate-reply] 데모 모드 감지: 토큰 체크 우회');
+    }
+    
     // 사용자 ID 추출
     const userId = await extractUserId(req) || req.body.userId || null;
 
@@ -150,9 +156,9 @@ ${promotionPrompt}
 포인트3
 ...`;
 
-  // 토큰 한도 체크
-  if (userId) {
-    const limitCheck = await checkTokenLimit(userId, 500);
+  // 토큰 한도 체크 (데모 모드일 때는 우회)
+  if (userId && userId !== 'demo_user_12345') {
+    const limitCheck = await checkTokenLimit(userId, 500, false);
     if (!limitCheck.success) {
       throw new Error(limitCheck.error);
     }
@@ -167,9 +173,9 @@ ${promotionPrompt}
     temperature: 0.7,
   });
 
-  // 토큰 사용량 추적
-  if (userId && response.usage) {
-    await trackTokenUsage(userId, response.usage, 'review-reply-promo');
+  // 토큰 사용량 추적 (데모 모드일 때는 우회)
+  if (userId && response.usage && userId !== 'demo_user_12345') {
+    await trackTokenUsage(userId, response.usage, 'review-reply-promo', null, false);
   }
 
   const content = response.choices[0]?.message?.content || '';
@@ -308,9 +314,9 @@ ${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 - 자연스럽고 진심 어린 답글로 작성해주세요
 - 답글만 출력하고, 다른 설명은 하지 마세요`;
 
-  // 토큰 한도 체크
-  if (userId) {
-    const limitCheck = await checkTokenLimit(userId, 1000);
+  // 토큰 한도 체크 (데모 모드일 때는 우회)
+  if (userId && userId !== 'demo_user_12345') {
+    const limitCheck = await checkTokenLimit(userId, 1000, false);
     if (!limitCheck.success) {
       throw new Error(limitCheck.error);
     }
@@ -325,9 +331,9 @@ ${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
     temperature: 0.7,
   });
 
-  // 토큰 사용량 추적
-  if (userId && response.usage) {
-    await trackTokenUsage(userId, response.usage, 'review-reply');
+  // 토큰 사용량 추적 (데모 모드일 때는 우회)
+  if (userId && response.usage && userId !== 'demo_user_12345') {
+    await trackTokenUsage(userId, response.usage, 'review-reply', null, false);
   }
 
   const reply = response.choices[0]?.message?.content || '';

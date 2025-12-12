@@ -15,6 +15,17 @@ const supabase = createClient(
  * 토큰 한도 체크 및 차감
  */
 async function checkAndUpdateTokenLimit(userId, tokensToUse) {
+  // 데모 모드일 때는 토큰 체크 우회
+  if (userId === 'demo_user_12345' || !userId) {
+    console.log('✅ [token-usage] 데모 모드 또는 userId 없음: 토큰 체크 우회');
+    return {
+      success: true,
+      tokensUsed: 0,
+      tokensRemaining: 999999,
+      monthlyLimit: 999999
+    };
+  }
+
   try {
     // 사용자의 현재 구독 사이클 조회
     const { data: cycle, error: cycleError } = await supabase

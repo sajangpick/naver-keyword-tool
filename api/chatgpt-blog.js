@@ -11,7 +11,7 @@
 
 const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
-const { trackTokenUsage, checkTokenLimit, extractUserId } = require('./middleware/token-tracker');
+const { trackTokenUsage, checkTokenLimit, extractUserId, isDemoMode } = require('./middleware/token-tracker');
 
 // Supabase 클라이언트 초기화
 let supabase = null;
@@ -34,11 +34,12 @@ const openai = new OpenAI({
 /**
  * OpenAI API 호출을 토큰 추적과 함께 실행
  */
-async function callOpenAIWithTracking(userId, apiCall, apiType = 'chatgpt-blog') {
+async function callOpenAIWithTracking(userId, apiCall, apiType = 'chatgpt-blog', isDemoMode = false) {
     try {
-        // 토큰 한도 사전 체크 (예상 토큰: 7000 - 블로그 생성 전체 프로세스)
-        if (userId) {
-            const limitCheck = await checkTokenLimit(userId, 7000);
+        // 데모 모드일 때는 토큰 체크 우회
+        if (!isDemoMode && userId && userId !== 'demo_user_12345') {
+            // 토큰 한도 사전 체크 (예상 토큰: 7000 - 블로그 생성 전체 프로세스)
+            const limitCheck = await checkTokenLimit(userId, 7000, isDemoMode);
             if (!limitCheck.success) {
                 throw new Error(limitCheck.error);
             }
@@ -47,14 +48,16 @@ async function callOpenAIWithTracking(userId, apiCall, apiType = 'chatgpt-blog')
         // OpenAI API 호출
         const completion = await apiCall();
 
-        // 토큰 사용량 추적
-        if (userId && completion.usage) {
-            const trackingResult = await trackTokenUsage(userId, completion.usage, apiType);
+        // 토큰 사용량 추적 (데모 모드일 때는 우회)
+        if (userId && completion.usage && !isDemoMode && userId !== 'demo_user_12345') {
+            const trackingResult = await trackTokenUsage(userId, completion.usage, apiType, null, isDemoMode);
             console.log('토큰 추적 결과:', trackingResult);
             
             if (!trackingResult.success && trackingResult.exceeded) {
                 console.warn('⚠️ 토큰 한도 초과됨');
             }
+        } else if (isDemoMode || userId === 'demo_user_12345') {
+            console.log('✅ [chatgpt-blog] 데모 모드: 토큰 추적 우회');
         }
 
         return completion;
@@ -1743,20 +1746,30 @@ module.exports = async function handler(req, res) {
             throw new Error('OPENAI_API_KEY가 설정되지 않았습니다.');
         }
 
+        // 데모 모드 확인
+        const demoMode = isDemoMode(req);
+        if (demoMode) {
+            console.log('✅ [chatgpt-blog] 데모 모드 감지: 토큰 체크 우회');
+            // 데모 모드일 때 userId를 데모 사용자로 설정
+            if (!data.userId) {
+                data.userId = 'demo_user_12345';
+            }
+        }
+
         let result;
 
         switch (step) {
             case 'crawl':
-                result = await crawlOrStructurePlaceInfo(data.placeUrl, data, data.userId);
+                result = await crawlOrStructurePlaceInfo(data.placeUrl, data, data.userId || 'demo_user_12345');
                 break;
 
             case 'analyze':
-                result = await analyzeMainMenu(data.placeInfo, data.userId);
+                result = await analyzeMainMenu(data.placeInfo, data.userId || 'demo_user_12345');
                 break;
 
             case 'recommend':
                 {
-                    const rawResult = await recommendBlogTopics(data.placeInfo, data.menuAnalysis, data.userId);
+                    const rawResult = await recommendBlogTopics(data.placeInfo, data.menuAnalysis, data.userId || 'demo_user_12345');
                     
                     // ✅ 주제 검증 및 필터링 (undefined 오류 방지)
                     if (rawResult.topics && Array.isArray(rawResult.topics)) {

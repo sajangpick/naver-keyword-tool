@@ -129,5 +129,22 @@
   }
 
   console.log('[demo-mode] 전역 데모 모드:', window.isDemoMode() ? '활성화됨' : '비활성화됨');
+
+  // 데모 모드일 때 모든 fetch 요청에 헤더 추가
+  if (window.isDemoMode()) {
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const [url, options = {}] = args;
+      const newOptions = {
+        ...options,
+        headers: {
+          ...options.headers,
+          'X-Demo-Mode': 'true'
+        }
+      };
+      return originalFetch(url, newOptions);
+    };
+    console.log('[demo-mode] fetch 요청에 데모 모드 헤더 자동 추가 활성화');
+  }
 })();
 

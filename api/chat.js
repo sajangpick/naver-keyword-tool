@@ -12,7 +12,7 @@
  */
 
 const axios = require('axios');
-const { trackTokenUsage, checkTokenLimit, extractUserId } = require('./middleware/token-tracker');
+const { trackTokenUsage, checkTokenLimit, extractUserId, isDemoMode } = require('./middleware/token-tracker');
 
 // 입력값 정제 함수
 function sanitizeString(str) {
@@ -399,8 +399,14 @@ module.exports = async (req, res) => {
     const rawMsg = req.body?.message || '';
     const message = sanitizeString(rawMsg);
     const userId = await extractUserId(req);
+    
+    // 데모 모드 확인
+    const demoMode = isDemoMode(req);
+    if (demoMode) {
+      console.log('✅ [chat] 데모 모드 감지: 토큰 체크 우회');
+    }
 
-    console.log('ChatGPT 채팅 요청 수신:', { messageLength: message.length, userId });
+    console.log('ChatGPT 채팅 요청 수신:', { messageLength: message.length, userId, demoMode });
 
     // 입력 데이터 검증
     if (!message || message.trim().length === 0) {
@@ -417,9 +423,9 @@ module.exports = async (req, res) => {
       });
     }
 
-    // 토큰 한도 사전 체크 (예상 토큰: 1500)
-    if (userId) {
-      const limitCheck = await checkTokenLimit(userId, 1500);
+    // 토큰 한도 사전 체크 (예상 토큰: 1500) - 데모 모드일 때는 우회
+    if (userId && userId !== 'demo_user_12345') {
+      const limitCheck = await checkTokenLimit(userId, 1500, demoMode);
       if (!limitCheck.success) {
         return res.status(403).json({
           success: false,
@@ -602,11 +608,13 @@ module.exports = async (req, res) => {
       finalResponse = messages[messages.length - 1]?.content || '응답을 생성하는데 시간이 걸렸습니다. 다시 시도해주세요.';
     }
 
-    // 토큰 사용량 추적
+    // 토큰 사용량 추적 (데모 모드일 때는 우회)
     let tokenTracking = null;
-    if (userId && totalUsage) {
-      tokenTracking = await trackTokenUsage(userId, totalUsage, 'chat');
+    if (userId && totalUsage && userId !== 'demo_user_12345') {
+      tokenTracking = await trackTokenUsage(userId, totalUsage, 'chat', null, demoMode);
       console.log('토큰 추적 결과:', tokenTracking);
+    } else if (demoMode || userId === 'demo_user_12345') {
+      console.log('✅ [chat] 데모 모드: 토큰 추적 우회');
     }
 
     return res.json({
