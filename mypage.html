@@ -1393,27 +1393,12 @@
                 <li>아래 버튼을 클릭하면 네이버 로그인 페이지로 이동합니다</li>
                 <li>네이버 계정으로 로그인하세요</li>
                 <li>로그인 후 스마트플레이스 관리 페이지로 이동합니다</li>
-                <li>스마트플레이스 관리 페이지에서 <strong>주소창의 URL을 복사</strong>해주세요</li>
-                <li>다시 이 페이지로 돌아와서 URL을 붙여넣고 연동을 완료하세요</li>
+                <li><strong>자동으로 연동이 완료됩니다!</strong></li>
               </ol>
             </div>
 
-            <div class="form-group" style="display: none;" id="urlInputGroup">
-              <label class="form-label">
-                <i class="fas fa-link"></i> 스마트플레이스 관리 페이지 URL
-              </label>
-              <input type="text" class="form-input" id="smartplaceUrl" placeholder="https://new.smartplace.naver.com/... 또는 https://m.place.naver.com/my-place/...">
-              <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
-                스마트플레이스 관리 페이지의 주소창 URL을 복사해 붙여넣어주세요
-              </small>
-            </div>
-
-            <button class="btn btn-primary" onclick="redirectToNaverLogin()" id="connectBtn" style="width: 100%; padding: 16px; font-size: 16px; margin-bottom: 12px;">
-              <i class="fab fa-neos"></i> 네이버 로그인하고 스마트플레이스로 이동
-            </button>
-
-            <button class="btn btn-primary" onclick="connectFromUrl()" id="connectFromUrlBtn" style="width: 100%; padding: 16px; font-size: 16px; display: none; background: #4caf50;">
-              <i class="fas fa-check"></i> URL로 연동 완료하기
+            <button class="btn btn-primary" onclick="redirectToNaverLogin()" id="connectBtn" style="width: 100%; padding: 16px; font-size: 16px;">
+              <i class="fab fa-neos"></i> 네이버 로그인하고 스마트플레이스 연동하기
             </button>
           </div>
         </section>
@@ -3657,17 +3642,15 @@
 
       // 답글 톤 설정을 세션 스토리지에 저장
       sessionStorage.setItem('naver_reply_tone', replyTone);
+      sessionStorage.setItem('naver_user_id', session.user.id);
 
-      // URL 입력 필드 표시
-      document.getElementById('urlInputGroup').style.display = 'block';
-      document.getElementById('connectFromUrlBtn').style.display = 'block';
-      document.getElementById('connectBtn').style.display = 'none';
-
-      // 네이버 로그인 페이지로 리다이렉트 (스마트플레이스로 돌아오도록)
-      const naverLoginUrl = 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=https%3A%2F%2Fnew.smartplace.naver.com%2F&area=bbt';
-      window.open(naverLoginUrl, '_blank');
+      // 네이버 로그인 페이지로 리다이렉트
+      // 로그인 후 스마트플레이스로 이동
+      // 스마트플레이스 페이지에서 콜백 페이지로 돌아오면 자동으로 플레이스 ID 추출하여 연동
+      const callbackUrl = `${window.location.origin}/naver-callback.html`;
+      const naverLoginUrl = `https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=${encodeURIComponent(`https://new.smartplace.naver.com/?callback=${encodeURIComponent(callbackUrl)}`)}&area=bbt`;
       
-      alert('네이버 로그인 페이지가 새 창에서 열렸습니다.\n로그인 후 스마트플레이스 관리 페이지의 URL을 복사해서 아래 입력란에 붙여넣어주세요.');
+      window.location.href = naverLoginUrl;
     }
 
     // URL로 연동 완료
