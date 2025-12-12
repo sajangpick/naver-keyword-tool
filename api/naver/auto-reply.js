@@ -4,7 +4,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const { OpenAI } = require('openai');
 const CryptoJS = require('crypto-js');
-const { trackTokenUsage, checkTokenLimit } = require('../middleware/token-tracker');
+const { trackTokenUsage, checkTokenLimit, isDemoMode } = require('../middleware/token-tracker');
 
 // Puppeteer 환경 설정 (Render/Vercel 호환)
 const isProduction = process.env.NODE_ENV === 'production';
@@ -344,13 +344,21 @@ module.exports = async (req, res) => {
 
     const connection = review.naver_place_connections;
 
-    // 토큰 한도 체크
-    const limitCheck = await checkTokenLimit(userId, 500);
-    if (!limitCheck.success) {
-      return res.status(403).json({
-        success: false,
-        error: limitCheck.error
-      });
+    // 데모 모드 확인
+    const demoMode = isDemoMode(req);
+    if (demoMode) {
+      console.log('✅ [naver/auto-reply] 데모 모드 감지: 토큰 체크 우회');
+    }
+
+    // 토큰 한도 체크 (데모 모드일 때는 우회)
+    if (userId && userId !== 'demo_user_12345') {
+      const limitCheck = await checkTokenLimit(userId, 500, demoMode);
+      if (!limitCheck.success) {
+        return res.status(403).json({
+          success: false,
+          error: limitCheck.error
+        });
+      }
     }
 
     // AI 답글 생성
@@ -362,9 +370,12 @@ module.exports = async (req, res) => {
         connection.place_name || ''
       );
 
-      // 토큰 사용량 추적 (generateAIReply에서 직접 추적하지 않으므로 여기서)
-      // 실제로는 OpenAI 응답에서 usage를 받아야 하지만, 간단히 처리
-      await trackTokenUsage(userId, { total_tokens: 200 }, 'naver-auto-reply');
+      // 토큰 사용량 추적 (데모 모드일 때는 우회)
+      if (userId && userId !== 'demo_user_12345') {
+        await trackTokenUsage(userId, { total_tokens: 200 }, 'naver-auto-reply', null, demoMode);
+      } else if (demoMode || userId === 'demo_user_12345') {
+        console.log('✅ [naver/auto-reply] 데모 모드: 토큰 추적 우회');
+      }
     } catch (error) {
       console.error('[AI 답글 생성] 실패:', error);
       return res.status(500).json({

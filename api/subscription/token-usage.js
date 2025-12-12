@@ -4,6 +4,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const { isDemoMode } = require('../middleware/token-tracker');
 
 // Supabase 클라이언트 초기화
 const supabase = createClient(
@@ -260,6 +261,23 @@ module.exports = async (req, res) => {
         return res.status(400).json({
           success: false,
           error: '사용자 ID가 필요합니다'
+        });
+      }
+
+      // 데모 모드일 때는 무제한 토큰 반환
+      const demoMode = isDemoMode(req);
+      if (demoMode || user_id === 'demo_user_12345') {
+        console.log('✅ [token-usage] 데모 모드 감지: 무제한 토큰 반환');
+        return res.json({
+          success: true,
+          usage: [],
+          cycle: null,
+          summary: {
+            monthlyLimit: 999999,
+            tokensUsed: 0,
+            tokensRemaining: 999999,
+            isExceeded: false
+          }
         });
       }
 

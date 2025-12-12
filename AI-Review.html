@@ -2325,6 +2325,17 @@
         // 토큰 정보 조회 함수 (mypage.html과 동일한 로직)
         async function fetchTokenInfo() {
           try {
+            // 데모 모드일 때는 무제한 토큰 반환
+            if (window.isDemoMode && window.isDemoMode()) {
+              console.log('✅ [데모 모드] 토큰 조회 우회 - 무제한 토큰 반환');
+              return {
+                remaining: 999999,
+                used: 0,
+                limit: 999999,
+                isUnlimited: true
+              };
+            }
+            
             // Supabase 세션 토큰 가져오기
             if (!window.authState?.supabase) {
               console.warn('⚠️ [토큰 조회] Supabase 클라이언트가 없습니다.');
@@ -2496,6 +2507,19 @@
 
         // 답글 생성 확인 후 실행
         async function confirmReplyGeneration() {
+          // 데모 모드일 때는 토큰 체크 완전히 우회
+          if (window.isDemoMode && window.isDemoMode()) {
+            console.log('✅ [데모 모드] 토큰 체크 우회 - 답글 생성 진행');
+            closeTokenModal();
+            
+            if (pendingReplyGeneration) {
+              const { style, buttonElement } = pendingReplyGeneration;
+              pendingReplyGeneration = null;
+              await executeReplyGeneration(style, buttonElement);
+            }
+            return;
+          }
+          
           const estimatedTokens = 500;
           const tokenInfo = await fetchTokenInfo();
           

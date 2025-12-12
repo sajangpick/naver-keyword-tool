@@ -3069,6 +3069,17 @@
         // 토큰 정보 조회 (mypage.html의 loadTokenInfo와 완전히 동일)
         async function fetchTokenInfo() {
             try {
+                // 데모 모드일 때는 무제한 토큰 반환
+                if (window.isDemoMode && window.isDemoMode()) {
+                    console.log('✅ [데모 모드] 토큰 조회 우회 - 무제한 토큰 반환');
+                    return {
+                        remaining: 999999,
+                        used: 0,
+                        limit: 999999,
+                        isUnlimited: true
+                    };
+                }
+                
                 // Supabase 초기화 확인 (mypage.html과 동일)
                 if (!supabase) {
                     await initSupabase();
@@ -3387,6 +3398,15 @@
         // 영상 생성 확인 후 실행
         let pendingVideoGeneration = false;
         async function confirmVideoGeneration() {
+            // 데모 모드일 때는 토큰 체크 완전히 우회
+            if (window.isDemoMode && window.isDemoMode()) {
+                console.log('✅ [데모 모드] 토큰 체크 우회 - 영상 생성 진행');
+                closeTokenModal();
+                pendingVideoGeneration = true;
+                await executeVideoGeneration();
+                return;
+            }
+            
             // 토큰 부족 여부 확인 (실제 토큰 정보로 재확인)
             const estimatedTokens = 1500;
             const tokenInfo = await fetchTokenInfo();

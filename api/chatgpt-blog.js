@@ -38,7 +38,7 @@ async function callOpenAIWithTracking(userId, apiCall, apiType = 'chatgpt-blog',
     try {
         // 데모 모드일 때는 토큰 체크 우회
         if (!isDemoMode && userId && userId !== 'demo_user_12345') {
-            // 토큰 한도 사전 체크 (예상 토큰: 7000 - 블로그 생성 전체 프로세스)
+        // 토큰 한도 사전 체크 (예상 토큰: 7000 - 블로그 생성 전체 프로세스)
             const limitCheck = await checkTokenLimit(userId, 7000, isDemoMode);
             if (!limitCheck.success) {
                 throw new Error(limitCheck.error);

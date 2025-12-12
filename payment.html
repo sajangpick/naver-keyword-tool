@@ -735,12 +735,12 @@
             owner_premium_limit: 1166
           };
         } else {
-          await loadPlanSettings();
+        await loadPlanSettings();
         }
         
         // 현재 사용 중인 플랜 정보 로드 (데모 모드가 아닐 때만)
         if (!isDemoMode) {
-          await loadCurrentUserPlan();
+        await loadCurrentUserPlan();
         }
         
         // 데이터 로드 완료 후 플랜 카드 렌더링
@@ -762,14 +762,14 @@
             owner_premium_limit: 1166
           };
         } else {
-          await loadPlanSettings();
+        await loadPlanSettings();
         }
         showPaymentScreen(plan);
       }
       
       // 등록된 카드 목록 로드 (데모 모드가 아닐 때만)
       if (!isDemoMode) {
-        await loadRegisteredCards();
+      await loadRegisteredCards();
       } else {
         // 데모 모드: 카드 목록 비우기
         document.getElementById('registeredCards').innerHTML = '';
