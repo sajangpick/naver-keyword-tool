@@ -55,7 +55,7 @@
       gap: 10px;
     `;
     banner.innerHTML = `
-      <span>🔍 데모 모드: 카카오페이 심사용 테스트 페이지입니다. 실제 기능은 작동하지 않습니다.</span>
+      <span>🔍 데모 모드: 테스트 페이지입니다. 실제 기능은 작동하지 않습니다.</span>
       <button onclick="exitDemoMode()" style="
         background: rgba(255,255,255,0.2);
         border: 1px solid rgba(255,255,255,0.3);

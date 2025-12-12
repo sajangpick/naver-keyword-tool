@@ -1376,32 +1376,6 @@
           <div id="connectForm" style="display: none;">
             <div class="form-group">
               <label class="form-label">
-                <i class="fas fa-user"></i> 네이버 아이디
-              </label>
-              <input type="text" class="form-input" id="naverId" placeholder="스마트플레이스 관리자 계정 아이디">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-lock"></i> 네이버 비밀번호
-              </label>
-              <input type="password" class="form-input" id="naverPassword" placeholder="스마트플레이스 관리자 계정 비밀번호">
-            </div>
-
-            <div class="form-group" id="placeSelectGroup" style="display: none;">
-              <label class="form-label">
-                <i class="fas fa-store"></i> 관리하는 플레이스 선택
-              </label>
-              <select id="placeSelect" class="form-control">
-                <option value="">플레이스 목록을 불러오는 중...</option>
-              </select>
-              <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
-                로그인 후 관리하는 플레이스 목록이 자동으로 표시됩니다
-              </small>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">
                 <i class="fas fa-comment-dots"></i> 답글 톤 설정
               </label>
               <select id="replyTone" class="form-control">
@@ -1411,8 +1385,35 @@
               </select>
             </div>
 
-            <button class="btn btn-primary" onclick="connectNaverPlace()" id="connectBtn">
-              <i class="fas fa-plug"></i> 스마트플레이스 연동하기
+            <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <p style="margin: 0 0 12px 0; color: #1976d2; font-weight: 600;">
+                <i class="fas fa-info-circle"></i> 연동 방법
+              </p>
+              <ol style="margin: 0; padding-left: 20px; color: #424242; font-size: 14px; line-height: 1.8;">
+                <li>아래 버튼을 클릭하면 네이버 로그인 페이지로 이동합니다</li>
+                <li>네이버 계정으로 로그인하세요</li>
+                <li>로그인 후 스마트플레이스 관리 페이지로 이동합니다</li>
+                <li>스마트플레이스 관리 페이지에서 <strong>주소창의 URL을 복사</strong>해주세요</li>
+                <li>다시 이 페이지로 돌아와서 URL을 붙여넣고 연동을 완료하세요</li>
+              </ol>
+            </div>
+
+            <div class="form-group" style="display: none;" id="urlInputGroup">
+              <label class="form-label">
+                <i class="fas fa-link"></i> 스마트플레이스 관리 페이지 URL
+              </label>
+              <input type="text" class="form-input" id="smartplaceUrl" placeholder="https://new.smartplace.naver.com/... 또는 https://m.place.naver.com/my-place/...">
+              <small style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
+                스마트플레이스 관리 페이지의 주소창 URL을 복사해 붙여넣어주세요
+              </small>
+            </div>
+
+            <button class="btn btn-primary" onclick="redirectToNaverLogin()" id="connectBtn" style="width: 100%; padding: 16px; font-size: 16px; margin-bottom: 12px;">
+              <i class="fab fa-neos"></i> 네이버 로그인하고 스마트플레이스로 이동
+            </button>
+
+            <button class="btn btn-primary" onclick="connectFromUrl()" id="connectFromUrlBtn" style="width: 100%; padding: 16px; font-size: 16px; display: none; background: #4caf50;">
+              <i class="fas fa-check"></i> URL로 연동 완료하기
             </button>
           </div>
         </section>
@@ -1428,6 +1429,7 @@
   </div>
 
   <!-- 공통 인증 스크립트 -->
+  <script src="/assets/demo-mode.js?v=20241125"></script>
   <script src="/assets/auth-state.js?v=202410" defer></script>
 
   <script>
@@ -3641,10 +3643,112 @@
       }
     }
 
-    // 네이버 플레이스 연동
+    // 네이버 로그인 페이지로 리다이렉트
+    async function redirectToNaverLogin() {
+      const replyTone = document.getElementById('replyTone').value;
+      
+      // 현재 사용자 ID 확인
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      // 답글 톤 설정을 세션 스토리지에 저장
+      sessionStorage.setItem('naver_reply_tone', replyTone);
+
+      // URL 입력 필드 표시
+      document.getElementById('urlInputGroup').style.display = 'block';
+      document.getElementById('connectFromUrlBtn').style.display = 'block';
+      document.getElementById('connectBtn').style.display = 'none';
+
+      // 네이버 로그인 페이지로 리다이렉트 (스마트플레이스로 돌아오도록)
+      const naverLoginUrl = 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=https%3A%2F%2Fnew.smartplace.naver.com%2F&area=bbt';
+      window.open(naverLoginUrl, '_blank');
+      
+      alert('네이버 로그인 페이지가 새 창에서 열렸습니다.\n로그인 후 스마트플레이스 관리 페이지의 URL을 복사해서 아래 입력란에 붙여넣어주세요.');
+    }
+
+    // URL로 연동 완료
+    async function connectFromUrl() {
+      const smartplaceUrl = document.getElementById('smartplaceUrl').value.trim();
+      const replyTone = document.getElementById('replyTone').value;
+
+      if (!smartplaceUrl) {
+        alert('스마트플레이스 URL을 입력해주세요.');
+        return;
+      }
+
+      // URL에서 플레이스 ID 추출
+      const placeIdMatch = smartplaceUrl.match(/(?:restaurant|place)\/(\d+)/) || 
+                          smartplaceUrl.match(/\/my-place\/(\d+)/) ||
+                          smartplaceUrl.match(/\/place\/(\d+)/);
+      
+      if (!placeIdMatch) {
+        alert('올바른 스마트플레이스 URL이 아닙니다.\n예: https://new.smartplace.naver.com/... 또는 https://m.place.naver.com/my-place/...');
+        return;
+      }
+
+      const placeId = placeIdMatch[1];
+      const connectBtn = document.getElementById('connectFromUrlBtn');
+      const originalText = connectBtn.innerHTML;
+      connectBtn.disabled = true;
+      connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 연동 중...';
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('로그인이 필요합니다');
+        }
+
+        const response = await fetch('/api/naver/connect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': session.user.id
+          },
+          body: JSON.stringify({
+            placeId,
+            replyTone,
+            smartplaceUrl
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '연동 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ 네이버 스마트플레이스 연동이 완료되었습니다!\n이제 10분마다 자동으로 리뷰를 가져옵니다.');
+          
+          // 폼 초기화
+          document.getElementById('smartplaceUrl').value = '';
+          document.getElementById('urlInputGroup').style.display = 'none';
+          document.getElementById('connectFromUrlBtn').style.display = 'none';
+          document.getElementById('connectBtn').style.display = 'block';
+          
+          // 연동 정보 다시 로드
+          await loadNaverSmartplaceConnections(session.user.id);
+        } else {
+          throw new Error(result.error || '연동 실패');
+        }
+      } catch (error) {
+        console.error('❌ 네이버 플레이스 연동 실패:', error);
+        alert('연동 실패: ' + error.message);
+      } finally {
+        connectBtn.disabled = false;
+        connectBtn.innerHTML = originalText;
+      }
+    }
+
+    // 네이버 플레이스 연동 (기존 함수는 백업용)
     async function connectNaverPlace() {
-      const naverId = document.getElementById('naverId').value.trim();
-      const naverPassword = document.getElementById('naverPassword').value.trim();
+      const naverId = document.getElementById('naverId')?.value.trim();
+      const naverPassword = document.getElementById('naverPassword')?.value.trim();
       const placeSelect = document.getElementById('placeSelect');
       const selectedPlaceId = placeSelect ? placeSelect.value : null;
       const replyTone = document.getElementById('replyTone').value;

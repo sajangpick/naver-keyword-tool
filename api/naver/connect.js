@@ -133,162 +133,175 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: '사용자 ID가 필요합니다' });
     }
 
-    const { naverId, naverPassword, placeId, replyTone } = req.body;
+    const { naverId, naverPassword, placeId, replyTone, smartplaceUrl } = req.body;
 
-    if (!naverId || !naverPassword) {
+    // placeId는 필수, 계정 정보는 선택 (URL 방식 사용 시)
+    if (!placeId) {
       return res.status(400).json({
         success: false,
-        error: '네이버 아이디와 비밀번호가 필요합니다'
+        error: '플레이스 ID가 필요합니다'
       });
     }
 
-    console.log(`[네이버 연동] 사용자 ${userId} 연동 시작`);
+    console.log(`[네이버 연동] 사용자 ${userId} 연동 시작 - 플레이스 ID: ${placeId}`);
 
-    // Puppeteer로 네이버 로그인
-    let launchOptions;
-    
-    if (isProduction) {
-      // Render/Vercel: chromium 사용
-      const executablePath = await chromium.executablePath();
-      launchOptions = {
-        args: [
-          ...chromium.args,
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-        ],
-        defaultViewport: { width: 1920, height: 1080 },
-        executablePath,
-        headless: chromium.headless,
-      };
-    } else {
-      // 로컬: 일반 puppeteer
-      launchOptions = {
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-        ],
-        headless: true,
-      };
-    }
-    
-    const browser = await puppeteer.launch(launchOptions);
+    // 계정 정보가 있으면 로그인, 없으면 URL만 사용
+    let sessionCookies = null;
+    let placeName = '업소명 없음';
+    let placeUrl = `https://m.place.naver.com/restaurant/${placeId}`;
 
-    const page = await browser.newPage();
-    
-    try {
-      // 네이버 로그인 페이지로 이동
-      await page.goto('https://nid.naver.com/nidlogin.login', {
-        waitUntil: 'networkidle2',
-        timeout: 30000
-      });
-
-      // 아이디 입력
-      await page.waitForSelector('#id', { timeout: 10000 });
-      await page.type('#id', naverId, { delay: 100 });
-
-      // 비밀번호 입력
-      await page.waitForSelector('#pw', { timeout: 10000 });
-      await page.type('#pw', naverPassword, { delay: 100 });
-
-      // 로그인 버튼 클릭
-      await page.click('#log\\.login');
-      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
-
-      // 로그인 성공 확인 (스마트플레이스 관리자 페이지 접근 시도)
-      const myPlaceUrl = 'https://m.place.naver.com/my-place';
-      await page.goto(myPlaceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-
-      // 세션 쿠키 가져오기
-      const cookies = await page.cookies();
-      const sessionCookies = JSON.stringify(cookies);
-
-      // 플레이스 목록 가져오기
-      let places = [];
-      try {
-        // 플레이스 목록이 있는지 확인
-        await page.waitForSelector('a[href*="/restaurant/"], a[href*="/place/"], .place-item, [class*="place"]', {
-          timeout: 5000
-        });
-
-        // 플레이스 목록 추출
-        places = await page.evaluate(() => {
-          const placeLinks = [];
-          
-          // 여러 선택자 시도
-          const selectors = [
-            'a[href*="/restaurant/"]',
-            'a[href*="/place/"]',
-            '.place-item a',
-            '[class*="place"] a'
-          ];
-
-          for (const selector of selectors) {
-            const links = document.querySelectorAll(selector);
-            links.forEach(link => {
-              const href = link.getAttribute('href');
-              if (href && (href.includes('/restaurant/') || href.includes('/place/'))) {
-                const placeIdMatch = href.match(/(?:restaurant|place)\/(\d+)/);
-                if (placeIdMatch && placeIdMatch[1]) {
-                  const name = link.textContent.trim() || link.querySelector('span')?.textContent.trim() || '업소명 없음';
-                  if (!placeLinks.find(p => p.placeId === placeIdMatch[1])) {
-                    placeLinks.push({
-                      placeId: placeIdMatch[1],
-                      placeName: name,
-                      placeUrl: href.startsWith('http') ? href : `https://m.place.naver.com${href}`
-                    });
-                  }
-                }
-              }
-            });
-          }
-
-          return placeLinks;
-        });
-      } catch (error) {
-        console.log('[플레이스 목록] 자동 추출 실패, 수동 입력된 placeId 사용:', error.message);
-      }
-
-      await browser.close();
-
-      // placeId가 제공된 경우 해당 플레이스 사용, 없으면 첫 번째 플레이스 사용
-      let selectedPlace = null;
-      if (placeId) {
-        selectedPlace = places.find(p => p.placeId === placeId) || { placeId, placeName: '업소명 없음', placeUrl: `https://m.place.naver.com/restaurant/${placeId}` };
-      } else if (places.length > 0) {
-        selectedPlace = places[0];
+    if (naverId && naverPassword) {
+      // 계정 정보가 있으면 Puppeteer로 로그인
+      let launchOptions;
+      
+      if (isProduction) {
+        const executablePath = await chromium.executablePath();
+        launchOptions = {
+          args: [
+            ...chromium.args,
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+          ],
+          defaultViewport: { width: 1920, height: 1080 },
+          executablePath,
+          headless: chromium.headless,
+        };
       } else {
-        return res.status(400).json({
-          success: false,
-          error: '관리하는 플레이스를 찾을 수 없습니다. 플레이스 ID를 직접 입력해주세요.'
-        });
+        launchOptions = {
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+          ],
+          headless: true,
+        };
       }
+      
+      const browser = await puppeteer.launch(launchOptions);
+      const page = await browser.newPage();
+      
+      try {
+        // 네이버 로그인
+        await page.goto('https://nid.naver.com/nidlogin.login', {
+          waitUntil: 'networkidle2',
+          timeout: 30000
+        });
 
-      const finalPlaceId = selectedPlace.placeId;
-      const placeName = selectedPlace.placeName;
-      const placeUrl = selectedPlace.placeUrl;
+        await page.waitForSelector('#id', { timeout: 10000 });
+        await page.type('#id', naverId, { delay: 100 });
+        await page.waitForSelector('#pw', { timeout: 10000 });
+        await page.type('#pw', naverPassword, { delay: 100 });
+        await page.click('#log\\.login');
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
 
-      // DB에 저장
-      const encryptedId = encrypt(naverId);
-      const encryptedPassword = encrypt(naverPassword);
+        // 스마트플레이스 관리 페이지로 이동
+        const myPlaceUrl = smartplaceUrl || 'https://m.place.naver.com/my-place';
+        await page.goto(myPlaceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+
+        // 세션 쿠키 가져오기
+        const cookies = await page.cookies();
+        sessionCookies = JSON.stringify(cookies);
+
+        // 플레이스 정보 가져오기 (URL에서 추출)
+        if (smartplaceUrl) {
+          await page.goto(smartplaceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        } else {
+          // 플레이스 페이지로 이동하여 업소명 추출
+          const placePageUrl = `https://m.place.naver.com/restaurant/${placeId}`;
+          await page.goto(placePageUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        }
+
+        // 업소명 추출
+        placeName = await page.evaluate(() => {
+          const selectors = ['h2._3ocDE', 'h2[class*="place"]', '.place_name', 'h2', '.name', '[class*="name"]'];
+          for (const selector of selectors) {
+            const element = document.querySelector(selector);
+            if (element && element.textContent.trim()) {
+              return element.textContent.trim();
+            }
+          }
+          return '업소명 없음';
+        });
+
+        await browser.close();
+
+    } else if (smartplaceUrl) {
+      // URL만 제공된 경우 (계정 정보 없음)
+      try {
+        let launchOptions;
+        
+        if (isProduction) {
+          const executablePath = await chromium.executablePath();
+          launchOptions = {
+            args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+            defaultViewport: { width: 1920, height: 1080 },
+            executablePath,
+            headless: chromium.headless,
+          };
+        } else {
+          launchOptions = {
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+            headless: true,
+          };
+        }
+        
+        const browser = await puppeteer.launch(launchOptions);
+        const page = await browser.newPage();
+        
+        await page.goto(smartplaceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        
+        // 세션 쿠키 가져오기 (로그인된 상태면)
+        const cookies = await page.cookies();
+        if (cookies.length > 0) {
+          sessionCookies = JSON.stringify(cookies);
+        }
+        
+        // 업소명 추출
+        placeName = await page.evaluate(() => {
+          const selectors = ['h2._3ocDE', 'h2[class*="place"]', '.place_name', 'h2', '.name', '[class*="name"]'];
+          for (const selector of selectors) {
+            const element = document.querySelector(selector);
+            if (element && element.textContent.trim()) {
+              return element.textContent.trim();
+            }
+          }
+          return '업소명 없음';
+        });
+        
+        await browser.close();
+      } catch (error) {
+        console.error('[URL 크롤링] 실패:', error);
+        // 실패해도 계속 진행
+      }
+    }
+
+    // 최종 플레이스 정보
+    placeUrl = `https://m.place.naver.com/restaurant/${placeId}`;
+
+    // DB에 저장
+    const connectionData = {
+      user_id: userId,
+      session_cookies: sessionCookies,
+      place_id: placeId,
+      place_name: placeName,
+      place_url: placeUrl,
+      reply_tone: replyTone || 'friendly',
+      is_active: true,
+      last_sync_at: new Date().toISOString()
+    };
+
+    // 계정 정보가 있으면 암호화해서 저장
+    if (naverId && naverPassword) {
+      connectionData.naver_id_encrypted = encrypt(naverId);
+      connectionData.naver_password_encrypted = encrypt(naverPassword);
+    }
 
       const { data: connection, error } = await supabase
         .from('naver_place_connections')
-        .upsert({
-          user_id: userId,
-          naver_id_encrypted: encryptedId,
-          naver_password_encrypted: encryptedPassword,
-          session_cookies: sessionCookies,
-          place_id: finalPlaceId,
-          place_name: placeName,
-          place_url: placeUrl,
-          reply_tone: replyTone || 'friendly',
-          is_active: true,
-          last_sync_at: new Date().toISOString()
-        }, {
+        .upsert(connectionData, {
           onConflict: 'user_id,place_id'
         })
         .select()
@@ -302,8 +315,35 @@ module.exports = async (req, res) => {
         });
       }
 
-      // 연동 성공 시 즉시 첫 리뷰 크롤링 실행 (비동기)
-      // 크롤링은 백그라운드에서 실행되므로 응답은 먼저 반환
+      // 세션 쿠키가 있으면 첫 리뷰 크롤링 실행 (비동기)
+      if (sessionCookies) {
+        setTimeout(async () => {
+          try {
+            const crawlResponse = await fetch(
+              `${process.env.RENDER_URL || 'https://naver-keyword-tool.onrender.com'}/api/cron/sync-reviews`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ connectionId: connection.id })
+              }
+            );
+            console.log('[네이버 연동] 첫 리뷰 크롤링 시작:', crawlResponse.status);
+          } catch (crawlError) {
+            console.error('[네이버 연동] 첫 리뷰 크롤링 실패:', crawlError);
+          }
+        }, 2000);
+      }
+
+    if (error) {
+      console.error('DB 저장 실패:', error);
+      return res.status(500).json({
+        success: false,
+        error: '연동 정보 저장 실패: ' + error.message
+      });
+    }
+
+    // 세션 쿠키가 있으면 첫 리뷰 크롤링 실행 (비동기)
+    if (sessionCookies) {
       setTimeout(async () => {
         try {
           const crawlResponse = await fetch(
@@ -319,37 +359,21 @@ module.exports = async (req, res) => {
           console.error('[네이버 연동] 첫 리뷰 크롤링 실패:', crawlError);
         }
       }, 2000);
-
-      console.log(`[네이버 연동] 사용자 ${userId} 연동 완료 - 플레이스 ID: ${finalPlaceId}`);
-
-      res.json({
-        success: true,
-        connection: {
-          id: connection.id,
-          place_id: connection.place_id,
-          place_name: connection.place_name,
-          reply_tone: connection.reply_tone,
-          is_active: connection.is_active
-        }
-      });
-
-    } catch (error) {
-      await browser.close();
-      console.error('[네이버 연동] 로그인 실패:', error);
-      
-      // 로그인 실패 원인 파악
-      let errorMessage = '네이버 로그인에 실패했습니다.';
-      if (error.message.includes('timeout')) {
-        errorMessage = '로그인 시간이 초과되었습니다. 네이버 서버가 느릴 수 있습니다.';
-      } else if (error.message.includes('navigation')) {
-        errorMessage = '로그인 후 페이지 이동에 실패했습니다. 아이디/비밀번호를 확인해주세요.';
-      }
-
-      return res.status(400).json({
-        success: false,
-        error: errorMessage
-      });
     }
+
+    console.log(`[네이버 연동] 사용자 ${userId} 연동 완료 - 플레이스 ID: ${placeId}`);
+
+    res.json({
+      success: true,
+      connection: {
+        id: connection.id,
+        place_id: connection.place_id,
+        place_name: connection.place_name,
+        reply_tone: connection.reply_tone,
+        is_active: connection.is_active
+      },
+      message: sessionCookies ? undefined : '⚠️ 세션 쿠키가 없어 리뷰 크롤링이 제한될 수 있습니다. 나중에 계정 정보를 추가해주세요.'
+    });
 
   } catch (error) {
     console.error('[네이버 연동] 오류:', error);

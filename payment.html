@@ -682,7 +682,7 @@
     if (isDemoMode) {
       const demoBanner = document.createElement('div');
       demoBanner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #ff7b54, #e56548); color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px; z-index: 10000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);';
-      demoBanner.innerHTML = '🔍 데모 모드: 카카오페이 심사용 테스트 페이지입니다. 실제 결제는 진행되지 않습니다.';
+      demoBanner.innerHTML = '🔍 데모 모드: 테스트 페이지입니다. 실제 결제는 진행되지 않습니다.';
       document.body.insertBefore(demoBanner, document.body.firstChild);
     }
     
@@ -795,7 +795,7 @@
         if (paymentContainer && plan) {
           const demoNotice = document.createElement('div');
           demoNotice.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;';
-          demoNotice.innerHTML = '<strong style="color: #856404;">⚠️ 데모 모드</strong><br><span style="color: #856404; font-size: 14px;">이 페이지는 카카오페이 심사용 테스트 페이지입니다. 실제 결제는 진행되지 않습니다.</span>';
+          demoNotice.innerHTML = '<strong style="color: #856404;">⚠️ 데모 모드</strong><br><span style="color: #856404; font-size: 14px;">이 페이지는 테스트 페이지입니다. 실제 결제는 진행되지 않습니다.</span>';
           paymentContainer.insertBefore(demoNotice, paymentContainer.querySelector('.plan-info'));
         }
       }
@@ -1250,7 +1250,7 @@
     async function processPayment() {
       // 데모 모드에서는 결제 불가
       if (isDemoMode) {
-        alert('데모 모드에서는 실제 결제를 진행할 수 없습니다.\n카카오페이 심사용 테스트 페이지입니다.');
+        alert('데모 모드에서는 실제 결제를 진행할 수 없습니다.\n테스트 페이지입니다.');
         return;
       }
       

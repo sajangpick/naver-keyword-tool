@@ -1188,6 +1188,9 @@ app.post("/api/naver/auto-reply", naverAutoReplyHandler);
 const naverGetPlacesHandler = require("./api/naver/get-places");
 app.post("/api/naver/get-places", naverGetPlacesHandler);
 
+const naverConnectFromCallbackHandler = require("./api/naver/connect-from-callback");
+app.post("/api/naver/connect-from-callback", naverConnectFromCallbackHandler);
+
 // ==================== 레시피 관리 시스템 API ====================
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");
