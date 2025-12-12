@@ -352,9 +352,15 @@
           });
 
           if (!response.ok) {
-            const error = await response.json();
-            console.error('[접속 기록] API 오류:', error);
-            throw new Error(error.error || error.details || '접속 기록을 불러올 수 없습니다');
+            const errorData = await response.json();
+            console.error('[접속 기록] API 오류:', errorData);
+            
+            // 상세 오류 정보를 포함한 에러 객체 생성
+            const error = new Error(errorData.error || '접속 기록을 불러올 수 없습니다');
+            error.details = errorData.details;
+            error.debug = errorData.debug;
+            error.help = errorData.help;
+            throw error;
           }
 
           const result = await response.json();
@@ -366,14 +372,34 @@
         } catch (error) {
           console.error('접속 기록 로드 실패:', error);
           const errorMessage = error.message || '접속 기록을 불러올 수 없습니다';
+          
+          // 상세 오류 정보 구성
+          let errorDetails = '';
+          if (error.details) {
+            errorDetails += `<div style="margin-top: 8px; padding: 12px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 4px; font-size: 13px;">
+              <strong>상세 정보:</strong><br>${error.details}
+            </div>`;
+          }
+          
+          if (error.debug) {
+            errorDetails += `<div style="margin-top: 8px; padding: 12px; background: #f3f4f6; border-left: 4px solid #6b7280; border-radius: 4px; font-size: 12px; font-family: monospace;">
+              <strong>디버그 정보:</strong><br>
+              ${JSON.stringify(error.debug, null, 2)}
+            </div>`;
+          }
+          
+          if (error.help) {
+            errorDetails += `<div style="margin-top: 8px; padding: 12px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px; font-size: 13px;">
+              <strong>💡 해결 방법:</strong><br>${error.help}
+            </div>`;
+          }
+          
           document.getElementById('visitsTableBody').innerHTML = `
             <tr>
               <td colspan="8" class="empty-state">
                 <i class="fas fa-exclamation-circle"></i>
-                <div style="margin-bottom: 8px;">${errorMessage}</div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-                  💡 관리자 권한이 필요합니다. profiles 테이블에서 user_type 또는 membership_level을 'admin'으로 설정해주세요.
-                </div>
+                <div style="margin-bottom: 8px; font-size: 16px; font-weight: 600;">${errorMessage}</div>
+                ${errorDetails || '<div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">💡 관리자 권한이 필요합니다. profiles 테이블에서 user_type, membership_level, 또는 role을 \'admin\'으로 설정해주세요.</div>'}
               </td>
             </tr>
           `;
