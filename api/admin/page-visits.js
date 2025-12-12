@@ -49,18 +49,55 @@ module.exports = async (req, res) => {
     // 관리자 권한 확인
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, membership_level, role')
+      .select('user_type, membership_level, role, email, name')
       .eq('id', user.id)
       .single();
 
     // 프로필 조회 실패 또는 프로필이 없는 경우
-    if (profileError || !profile) {
-      console.error('[page-visits] 프로필 조회 실패:', profileError?.message || '프로필이 없습니다', { userId: user.id });
+    if (profileError) {
+      console.error('[page-visits] 프로필 조회 실패:', {
+        error: profileError.message,
+        code: profileError.code,
+        details: profileError.details,
+        hint: profileError.hint,
+        userId: user.id,
+        userEmail: user.email
+      });
       return res.status(403).json({ 
         error: '관리자 권한이 필요합니다.',
-        details: profileError?.message || '프로필을 찾을 수 없습니다'
+        details: `프로필 조회 실패: ${profileError.message || '프로필을 찾을 수 없습니다'}`,
+        debug: {
+          userId: user.id,
+          userEmail: user.email,
+          errorCode: profileError.code
+        }
       });
     }
+
+    if (!profile) {
+      console.error('[page-visits] 프로필이 없습니다:', { userId: user.id, userEmail: user.email });
+      return res.status(403).json({ 
+        error: '관리자 권한이 필요합니다.',
+        details: 'profiles 테이블에 해당 사용자의 프로필이 없습니다. 프로필을 먼저 생성해주세요.',
+        debug: {
+          userId: user.id,
+          userEmail: user.email
+        }
+      });
+    }
+
+    // 디버깅: 프로필 정보 로그
+    console.log('[page-visits] 프로필 조회 성공:', {
+      userId: user.id,
+      userEmail: user.email,
+      profile: {
+        user_type: profile.user_type,
+        membership_level: profile.membership_level,
+        role: profile.role,
+        email: profile.email,
+        name: profile.name
+      }
+    });
 
     // user_type, membership_level, role 중 하나라도 'admin'이면 관리자
     const isAdmin = profile.user_type === 'admin' || 
@@ -69,14 +106,16 @@ module.exports = async (req, res) => {
 
     if (!isAdmin) {
       console.warn('[page-visits] 관리자 권한 없음:', { 
-        userId: user.id, 
+        userId: user.id,
+        userEmail: user.email,
         user_type: profile.user_type, 
         membership_level: profile.membership_level,
         role: profile.role
       });
       return res.status(403).json({ 
         error: '관리자 권한이 필요합니다.',
-        details: `현재 권한: user_type=${profile.user_type}, membership_level=${profile.membership_level}, role=${profile.role}`
+        details: `현재 권한: user_type=${profile.user_type || 'null'}, membership_level=${profile.membership_level || 'null'}, role=${profile.role || 'null'}`,
+        help: 'profiles 테이블에서 다음 중 하나를 "admin"으로 설정해주세요: user_type, membership_level, role'
       });
     }
 
