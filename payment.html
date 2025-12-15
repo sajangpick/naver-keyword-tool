@@ -497,26 +497,26 @@
     <div class="plan-info">
       <div class="plan-name" id="planName">스탠다드 플랜</div>
       <div class="plan-details">
-        <span>월 정액</span>
+        <span>월 최소 이용료</span>
         <strong id="priceAmount">30,000원</strong>
       </div>
       <div class="plan-details">
-        <span>기본 제공 토큰</span>
-        <strong id="tokenAmount">350,000 토큰</strong>
+        <span>포함된 작업 크레딧</span>
+        <strong id="creditAmount">37,500 크레딧</strong>
       </div>
       <div class="plan-details" style="padding: 12px; background: rgba(255, 123, 84, 0.1); border-radius: 8px; margin-top: 12px;">
-        <span style="font-weight: 600; color: var(--accent-color);">초과분 요금</span>
-        <strong style="color: var(--accent-color);">1,000토큰당 1,000원</strong>
+        <span style="font-weight: 600; color: var(--accent-color);">초과 작업 크레딧당 단가</span>
+        <strong style="color: var(--accent-color);">0.8원/크레딧</strong>
       </div>
       <div style="margin-top: 12px; padding: 10px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 4px; font-size: 13px; color: var(--text-secondary);">
-        <strong style="color: #856404;">💡 안내:</strong> 기본 제공량을 초과 사용 시 자동으로 추가 요금이 청구됩니다. 매월 말일 기준으로 사용량을 집계하여 익월 초에 청구서가 발행됩니다.
+        <strong style="color: #856404;">💡 안내:</strong> 월 최소 이용료와 실제 사용 금액 중 더 큰 금액이 청구됩니다. 실제 사용 금액 = (총 사용 크레딧) × (초과 작업 크레딧당 단가)
       </div>
     </div>
 
     <div class="price">
       <span id="priceAmountDisplay">30,000</span>원
       <div style="font-size: 14px; color: var(--text-secondary); margin-top: 8px; font-weight: 400;">
-        (월 정액 + 초과분 별도 청구)
+        (월 최소 이용료, 초과 시 추가 청구)
       </div>
     </div>
 
@@ -727,19 +727,26 @@
       if (!plan) {
         // 가격 및 토큰 설정 로드 (데모 모드면 기본값 사용)
         if (isDemoMode) {
-          // 데모 모드: 새로운 기본값 사용 (2025-11-25 업데이트)
+          // 데모 모드: 작업 크레딧 기반 기본값 (2025-11-25 업데이트)
           pricingData = {
             owner_seed_price: 0,
+            owner_seed_minimum_fee: 0,
+            owner_seed_included_credits: 0,
+            owner_seed_excess_rate: 1.2,
             owner_power_price: 30000,
+            owner_power_minimum_fee: 30000,
+            owner_power_included_credits: 37500,
+            owner_power_excess_rate: 0.8,
             owner_bigpower_price: 50000,
-            owner_premium_price: 100000
+            owner_bigpower_minimum_fee: 50000,
+            owner_bigpower_included_credits: 83333,
+            owner_bigpower_excess_rate: 0.6,
+            owner_premium_price: 100000,
+            owner_premium_minimum_fee: 100000,
+            owner_premium_included_credits: 200000,
+            owner_premium_excess_rate: 0.5
           };
-          tokenData = {
-            owner_seed_limit: 30000,
-            owner_power_limit: 350000,
-            owner_bigpower_limit: 650000,
-            owner_premium_limit: 1500000
-          };
+          tokenData = {}; // 더 이상 사용하지 않음
         } else {
         await loadPlanSettings();
         }
@@ -754,19 +761,26 @@
       } else {
         // plan 파라미터가 있으면 결제 화면용 데이터 로드
         if (isDemoMode) {
-          // 데모 모드: 새로운 기본값 사용 (2025-11-25 업데이트)
+          // 데모 모드: 작업 크레딧 기반 기본값 (2025-11-25 업데이트)
           pricingData = {
             owner_seed_price: 0,
+            owner_seed_minimum_fee: 0,
+            owner_seed_included_credits: 0,
+            owner_seed_excess_rate: 1.2,
             owner_power_price: 30000,
+            owner_power_minimum_fee: 30000,
+            owner_power_included_credits: 37500,
+            owner_power_excess_rate: 0.8,
             owner_bigpower_price: 50000,
-            owner_premium_price: 100000
+            owner_bigpower_minimum_fee: 50000,
+            owner_bigpower_included_credits: 83333,
+            owner_bigpower_excess_rate: 0.6,
+            owner_premium_price: 100000,
+            owner_premium_minimum_fee: 100000,
+            owner_premium_included_credits: 200000,
+            owner_premium_excess_rate: 0.5
           };
-          tokenData = {
-            owner_seed_limit: 30000,
-            owner_power_limit: 350000,
-            owner_bigpower_limit: 650000,
-            owner_premium_limit: 1500000
-          };
+          tokenData = {}; // 더 이상 사용하지 않음
         } else {
         await loadPlanSettings();
         }
@@ -886,25 +900,27 @@
         document.getElementById('planName').textContent = planInfo.name;
         document.getElementById('priceAmount').textContent = planInfo.price === 0 ? '무료' : planInfo.price.toLocaleString() + '원';
         document.getElementById('priceAmountDisplay').textContent = planInfo.price === 0 ? '무료' : planInfo.price.toLocaleString();
-        document.getElementById('tokenAmount').textContent = planInfo.tokens.toLocaleString() + ' 토큰';
+        document.getElementById('creditAmount').textContent = planInfo.credits.toLocaleString() + ' 크레딧';
       }
     }
 
-    // 플랜 정보 가져오기
+    // 플랜 정보 가져오기 (작업 크레딧 기반)
     function getPlanInfo(planKey) {
       if (!pricingData || !tokenData) {
-        // 새로운 기본값 (2025-11-25 업데이트)
+        // 작업 크레딧 기반 기본값 (2025-11-25 업데이트)
         const defaults = {
-          seed: { name: '라이트 플랜', price: 0, tokens: 30000, excessRate: 1000 },
-          power: { name: '스탠다드 플랜', price: 30000, tokens: 350000, excessRate: 1000 },
-          bigpower: { name: '프로 플랜', price: 50000, tokens: 650000, excessRate: 1000 },
-          premium: { name: '프리미엄 플랜', price: 100000, tokens: 1500000, excessRate: 1000 }
+          seed: { name: '라이트 플랜', price: 0, credits: 0, excessRate: 1.2 },
+          power: { name: '스탠다드 플랜', price: 30000, credits: 37500, excessRate: 0.8 },
+          bigpower: { name: '프로 플랜', price: 50000, credits: 83333, excessRate: 0.6 },
+          premium: { name: '프리미엄 플랜', price: 100000, credits: 200000, excessRate: 0.5 }
         };
         return defaults[planKey] || null;
       }
 
       const priceKey = `owner_${planKey}_price`;
-      const tokenKey = `owner_${planKey}_limit`;
+      const minimumFeeKey = `owner_${planKey}_minimum_fee`;
+      const includedCreditsKey = `owner_${planKey}_included_credits`;
+      const excessRateKey = `owner_${planKey}_excess_rate`;
       
       const planNames = {
         seed: '라이트 플랜',
@@ -913,11 +929,16 @@
         premium: '프리미엄 플랜'
       };
 
+      // 최소 이용료가 있으면 사용, 없으면 기존 가격 사용
+      const minimumFee = pricingData[minimumFeeKey] !== undefined ? pricingData[minimumFeeKey] : (pricingData[priceKey] || 0);
+      const includedCredits = pricingData[includedCreditsKey] !== undefined ? pricingData[includedCreditsKey] : 0;
+      const excessRate = pricingData[excessRateKey] !== undefined ? pricingData[excessRateKey] : 1.2;
+
       return {
         name: planNames[planKey] || planKey,
-        price: pricingData[priceKey] || 0,
-        tokens: tokenData[tokenKey] || 30000,
-        excessRate: 1000 // 1,000토큰당 1,000원
+        price: minimumFee,
+        credits: includedCredits,
+        excessRate: excessRate
       };
     }
 
@@ -971,10 +992,10 @@
               ${priceText}
             </div>
             <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">
-              월 ${planInfo.tokens.toLocaleString()} 토큰
+              포함: ${planInfo.credits.toLocaleString()} 크레딧
             </div>
             <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; padding: 8px; background: rgba(255, 123, 84, 0.05); border-radius: 8px;">
-              초과분: 1,000토큰당 1,000원
+              초과: ${planInfo.excessRate}원/크레딧
             </div>
             <button style="width: 100%; padding: 12px; background: ${isCurrentPlan ? 'var(--secondary)' : plan.gradient}; color: ${isCurrentPlan ? 'var(--accent-color)' : 'white'};
                           border: ${isCurrentPlan ? '1px solid var(--accent-color)' : 'none'}; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: ${isCurrentPlan ? 'default' : 'pointer'};

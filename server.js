@@ -7453,10 +7453,10 @@ app.put('/api/subscription/token-config', async (req, res) => {
   }
 });
 
-// 5. 청구서 계산 API
-const billingCalculator = require('./api/subscription/billing-calculator');
-app.get('/api/subscription/billing-calculator', billingCalculator);
-app.post('/api/subscription/billing-calculator', billingCalculator);
+// 5. 작업 크레딧 기반 빌링 계산 API
+const workCreditBilling = require('./api/subscription/work-credit-billing');
+app.get('/api/subscription/work-credit-billing', workCreditBilling);
+app.post('/api/subscription/work-credit-billing', workCreditBilling);
 
 // 6. 개인별 맞춤 가격 조회
 app.get('/api/subscription/member-pricing/:memberId', async (req, res) => {

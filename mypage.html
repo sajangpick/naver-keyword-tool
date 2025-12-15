@@ -1702,8 +1702,8 @@
           return;
         }
 
-        // 가격 및 토큰 설정과 사용자 정보를 동시에 로드
-        const [dashboardRes, pricingRes, tokenRes, usageRes] = await Promise.all([
+        // 가격 설정과 사용자 정보를 동시에 로드 (작업 크레딧 기반)
+        const [dashboardRes, pricingRes, usageRes] = await Promise.all([
           fetch('/api/subscription/user-dashboard?action=dashboard', {
             method: 'GET',
             headers: {
@@ -1712,8 +1712,7 @@
             }
           }),
           fetch('/api/subscription/pricing-config'),
-          fetch('/api/subscription/token-config'),
-          fetch(`/api/subscription/billing-calculator?action=get-current-usage&userId=${userId}`, {
+          fetch(`/api/subscription/work-credit-billing?action=get-current-usage&userId=${userId}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -1730,25 +1729,23 @@
 
         const dashboardResult = await dashboardRes.json();
         const pricingResult = await pricingRes.json();
-        const tokenResult = await tokenRes.json();
         const usageResult = usageRes.ok ? await usageRes.json() : null;
         
         if (dashboardResult.success && dashboardResult.data) {
           const { profile, cycle } = dashboardResult.data;
           const pricing = pricingResult.success ? pricingResult.pricing : null;
-          const tokens = tokenResult.success ? tokenResult.tokens : null;
           const usage = usageResult?.success ? usageResult.usage : null;
           
-          updatePaymentUI({ profile, cycle, pricing, tokens, usage });
+          updatePaymentUI({ profile, cycle, pricing, usage });
           
           // 플랜 버튼 렌더링 (식당 대표 등급만)
-          renderPlanButtons(pricing, tokens);
+          renderPlanButtons(pricing);
           
           // 결제 내역 로드
           await loadPaymentHistory(userId);
           
-          // 토큰 정보와 결제 섹션 동기화
-          syncTokenInfoWithPayment(cycle, profile);
+          // 작업 크레딧 정보와 결제 섹션 동기화
+          syncCreditInfoWithPayment(cycle, profile);
           
           // 실시간 사용량 표시
           if (usage) {
@@ -1770,7 +1767,7 @@
         document.getElementById('paymentPlanName').textContent = '라이트 플랜';
         document.getElementById('paymentPlanBadge').textContent = '무료';
         document.getElementById('paymentPlanPrice').textContent = '무료';
-        document.getElementById('paymentPlanTokens').textContent = '30,000 토큰';
+        document.getElementById('paymentPlanTokens').textContent = '0 크레딧';
         document.getElementById('paymentPlanDays').textContent = '30일';
         return;
       }
@@ -1778,7 +1775,6 @@
       const profile = data.profile;
       const cycle = data.cycle;
       const pricing = data.pricing;
-      const tokens = data.tokens;
 
       // 등급 정규화 (관리자 페이지와 동일한 로직)
       const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
@@ -1786,48 +1782,48 @@
       // 관리자 등급 체크
       const isAdmin = normalizedLevel === 'admin' || profile.user_type === 'admin';
       
-      // 실제 설정된 가격과 토큰 사용
+      // 실제 설정된 가격과 작업 크레딧 사용
       const membershipLevel = normalizedLevel;
       
       // 가격 정보
       let planPrice = 0;
-      let planTokens = null; // null = 무제한
+      let planCredits = null; // null = 무제한
       
       if (isAdmin) {
         // 관리자는 무제한
         planPrice = 0;
-        planTokens = null; // 무제한
-      } else if (pricing && tokens) {
+        planCredits = null; // 무제한
+      } else if (pricing) {
         // 식당 대표 등급만 처리
         switch(membershipLevel) {
           case 'seed':
-            planPrice = pricing.owner_seed_price || 0;
-            planTokens = tokens.owner_seed_limit || 30000;
+            planPrice = pricing.owner_seed_minimum_fee !== undefined ? pricing.owner_seed_minimum_fee : (pricing.owner_seed_price || 0);
+            planCredits = pricing.owner_seed_included_credits !== undefined ? pricing.owner_seed_included_credits : 0;
             break;
           case 'power':
-            planPrice = pricing.owner_power_price || 30000;
-            planTokens = tokens.owner_power_limit || 350000;
+            planPrice = pricing.owner_power_minimum_fee !== undefined ? pricing.owner_power_minimum_fee : (pricing.owner_power_price || 30000);
+            planCredits = pricing.owner_power_included_credits !== undefined ? pricing.owner_power_included_credits : 37500;
             break;
           case 'bigpower':  // 정규화된 등급 사용
-            planPrice = pricing.owner_bigpower_price || 50000;
-            planTokens = tokens.owner_bigpower_limit || 650000;
+            planPrice = pricing.owner_bigpower_minimum_fee !== undefined ? pricing.owner_bigpower_minimum_fee : (pricing.owner_bigpower_price || 50000);
+            planCredits = pricing.owner_bigpower_included_credits !== undefined ? pricing.owner_bigpower_included_credits : 83333;
             break;
           case 'premium':
-            planPrice = pricing.owner_premium_price || 100000;
-            planTokens = tokens.owner_premium_limit || 1500000;
+            planPrice = pricing.owner_premium_minimum_fee !== undefined ? pricing.owner_premium_minimum_fee : (pricing.owner_premium_price || 100000);
+            planCredits = pricing.owner_premium_included_credits !== undefined ? pricing.owner_premium_included_credits : 200000;
             break;
         }
       } else {
-        // 기본값 (API 실패 시) - 새로운 요금제 구조 (2025-11-25)
+        // 기본값 (API 실패 시) - 작업 크레딧 기반 (2025-11-25)
         const defaults = {
-          seed: { price: 0, tokens: 30000 },
-          power: { price: 30000, tokens: 350000 },
-          bigpower: { price: 50000, tokens: 650000 },
-          premium: { price: 100000, tokens: 1500000 }
+          seed: { price: 0, credits: 0, excessRate: 1.2 },
+          power: { price: 30000, credits: 37500, excessRate: 0.8 },
+          bigpower: { price: 50000, credits: 83333, excessRate: 0.6 },
+          premium: { price: 100000, credits: 200000, excessRate: 0.5 }
         };
         const defaultInfo = defaults[membershipLevel] || defaults.seed;
         planPrice = defaultInfo.price;
-        planTokens = defaultInfo.tokens;
+        planCredits = defaultInfo.credits;
       }
 
       const planNames = {
@@ -1843,7 +1839,7 @@
       document.getElementById('paymentPlanName').textContent = planInfo.name;
       document.getElementById('paymentPlanBadge').textContent = planInfo.badge;
       document.getElementById('paymentPlanPrice').textContent = planPrice === 0 ? '무료' : `${planPrice.toLocaleString()}원`;
-      document.getElementById('paymentPlanTokens').textContent = planTokens ? `${planTokens.toLocaleString()} 토큰` : '무제한';
+      document.getElementById('paymentPlanTokens').textContent = planCredits !== null ? `${planCredits.toLocaleString()} 크레딧` : '무제한';
       
       if (cycle && cycle.days_remaining !== undefined) {
         document.getElementById('paymentPlanDays').textContent = `${cycle.days_remaining}일`;
@@ -1853,7 +1849,7 @@
     }
 
     // 플랜 버튼 렌더링 (식당 대표 등급만)
-    function renderPlanButtons(pricing, tokens) {
+    function renderPlanButtons(pricing) {
       const container = document.getElementById('planButtons');
       if (!container) return;
 
@@ -1867,51 +1863,59 @@
         return;
       }
 
-      // 식당 대표 등급만 표시
+      // 식당 대표 등급만 표시 (작업 크레딧 기반)
       const ownerPlans = [
         { 
           key: 'seed', 
           name: '라이트', 
           icon: '🌱', 
           color: '#ffb6c1',
+          minimumFeeKey: 'owner_seed_minimum_fee',
           priceKey: 'owner_seed_price',
-          tokenKey: 'owner_seed_limit',
+          creditsKey: 'owner_seed_included_credits',
           defaultPrice: 0,
-          defaultTokens: 30000
+          defaultCredits: 0,
+          defaultExcessRate: 1.2
         },
         { 
           key: 'power', 
           name: '스탠다드', 
           icon: '⚡', 
           color: '#f59e0b',
+          minimumFeeKey: 'owner_power_minimum_fee',
           priceKey: 'owner_power_price',
-          tokenKey: 'owner_power_limit',
+          creditsKey: 'owner_power_included_credits',
           defaultPrice: 30000,
-          defaultTokens: 350000
+          defaultCredits: 37500,
+          defaultExcessRate: 0.8
         },
         { 
           key: 'bigpower', 
           name: '프로', 
           icon: '💪', 
           color: '#f97316',
+          minimumFeeKey: 'owner_bigpower_minimum_fee',
           priceKey: 'owner_bigpower_price',
-          tokenKey: 'owner_bigpower_limit',
+          creditsKey: 'owner_bigpower_included_credits',
           defaultPrice: 50000,
-          defaultTokens: 650000
+          defaultCredits: 83333,
+          defaultExcessRate: 0.6
         },
         { 
           key: 'premium', 
           name: '프리미엄', 
           icon: '⭐', 
           color: '#ec4899',
+          minimumFeeKey: 'owner_premium_minimum_fee',
           priceKey: 'owner_premium_price',
-          tokenKey: 'owner_premium_limit',
+          creditsKey: 'owner_premium_included_credits',
           defaultPrice: 100000,
-          defaultTokens: 1500000
+          defaultCredits: 200000,
+          defaultExcessRate: 0.5
         }
       ];
 
-      if (!pricing || !tokens) {
+      if (!pricing) {
         container.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">
             <i class="fas fa-exclamation-triangle"></i> 플랜 정보를 불러올 수 없습니다
@@ -1921,9 +1925,10 @@
       }
 
       container.innerHTML = ownerPlans.map(plan => {
-        const price = pricing[plan.priceKey] !== undefined ? pricing[plan.priceKey] : plan.defaultPrice;
-        const tokenLimit = tokens[plan.tokenKey] !== undefined ? tokens[plan.tokenKey] : plan.defaultTokens;
-        const priceText = price === 0 ? '무료' : `${price.toLocaleString()}원`;
+        // 최소 이용료가 있으면 사용, 없으면 기존 가격 사용
+        const minimumFee = pricing[plan.minimumFeeKey] !== undefined ? pricing[plan.minimumFeeKey] : (pricing[plan.priceKey] !== undefined ? pricing[plan.priceKey] : plan.defaultPrice);
+        const includedCredits = pricing[plan.creditsKey] !== undefined ? pricing[plan.creditsKey] : plan.defaultCredits;
+        const priceText = minimumFee === 0 ? '무료' : `${minimumFee.toLocaleString()}원`;
         
         return `
           <button class="btn btn-primary" onclick="goToPayment('${plan.key}')" style="width: 100%; background: linear-gradient(135deg, ${plan.color}, ${plan.color}dd);">
@@ -1932,7 +1937,7 @@
                 ${plan.icon} ${plan.name}
               </div>
               <div style="font-size: 12px; opacity: 0.9;">
-                ${priceText} · ${tokenLimit.toLocaleString()} 토큰
+                ${priceText} · ${includedCredits.toLocaleString()} 크레딧
               </div>
             </div>
           </button>
@@ -2628,8 +2633,8 @@
       window.location.href = `/payment.html?plan=${plan}`;
     }
     
-    // 토큰 정보와 결제 섹션 동기화
-    function syncTokenInfoWithPayment(cycle, profile) {
+    // 작업 크레딧 정보와 결제 섹션 동기화
+    function syncCreditInfoWithPayment(cycle, profile) {
       if (!cycle || !profile) return;
       
       try {
@@ -2637,20 +2642,20 @@
         const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
         const isAdmin = normalizedLevel === 'admin' || profile.user_type === 'admin';
         
-        // 토큰 정보
-        const tokensUsed = cycle.tokens_used || 0;
-        let tokensLimit = cycle.monthly_token_limit || 30000; // 기본값 변경
-        let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+        // 작업 크레딧 정보 (credits_used, included_credits 사용)
+        const creditsUsed = cycle.credits_used || 0;
+        let creditsLimit = cycle.included_credits || 0;
+        let creditsRemaining = cycle.credits_remaining !== undefined ? cycle.credits_remaining : (creditsLimit - creditsUsed);
         
-        if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
-          tokensLimit = null;
-          tokensRemaining = null;
+        if (isAdmin || (creditsLimit && creditsLimit >= 999999)) {
+          creditsLimit = null;
+          creditsRemaining = null;
         }
         
-        // 결제 섹션의 토큰 정보 업데이트 (있는 경우)
+        // 결제 섹션의 작업 크레딧 정보 업데이트 (있는 경우)
         const paymentPlanTokensEl = document.getElementById('paymentPlanTokens');
         if (paymentPlanTokensEl) {
-          paymentPlanTokensEl.textContent = tokensLimit ? `${tokensLimit.toLocaleString()} 토큰` : '무제한';
+          paymentPlanTokensEl.textContent = creditsLimit !== null ? `${creditsLimit.toLocaleString()} 크레딧` : '무제한';
         }
         
         // 결제 섹션의 갱신일 업데이트
@@ -2659,9 +2664,9 @@
           paymentPlanDaysEl.textContent = `${cycle.days_remaining}일`;
         }
         
-        console.log('✅ 토큰 정보와 결제 섹션 동기화 완료');
+        console.log('✅ 작업 크레딧 정보와 결제 섹션 동기화 완료');
       } catch (error) {
-        console.error('❌ 토큰 정보 동기화 실패:', error);
+        console.error('❌ 작업 크레딧 정보 동기화 실패:', error);
       }
     }
 
@@ -2685,7 +2690,7 @@
       }
 
       const usagePercentage = usage.usagePercentage || 0;
-      const isExceeded = usage.excessTokens > 0;
+      const isExceeded = usage.excessCredits > 0;
       const progressColor = isExceeded ? '#ef4444' : (usagePercentage >= 80 ? '#ffc107' : 'var(--accent-color)');
 
       usageContainer.innerHTML = `
@@ -2696,7 +2701,7 @@
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span style="color: var(--text-secondary); font-size: 14px;">사용량</span>
             <strong style="color: var(--text-primary); font-size: 16px;">
-              ${usage.totalTokensUsed.toLocaleString()} / ${usage.baseTokens.toLocaleString()} 토큰
+              ${usage.totalCreditsUsed.toLocaleString()} / ${usage.includedCredits.toLocaleString()} 크레딧
             </strong>
           </div>
           <div style="width: 100%; height: 24px; background: var(--secondary); border-radius: 12px; overflow: hidden; position: relative; margin-bottom: 8px;">
@@ -2709,36 +2714,36 @@
             <div style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 4px; margin-top: 12px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: #dc2626; font-weight: 600; font-size: 14px;">
-                  ⚠️ 기본 제공량 초과
+                  ⚠️ 포함 크레딧 초과
                 </span>
                 <strong style="color: #dc2626; font-size: 16px;">
-                  +${usage.excessTokens.toLocaleString()} 토큰
+                  +${usage.excessCredits.toLocaleString()} 크레딧
                 </strong>
               </div>
               <div style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);">
                 추가 요금: <strong style="color: #dc2626;">${usage.estimatedExcessFee.toLocaleString()}원</strong>
                 <br>
-                <small>(1,000토큰당 1,000원)</small>
+                <small>(${usage.excessCreditRate}원/크레딧)</small>
               </div>
             </div>
           ` : usagePercentage >= 80 ? `
             <div style="padding: 12px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 4px; margin-top: 12px; font-size: 13px; color: #856404;">
-              ⚠️ 기본 제공량의 ${Math.round(usagePercentage)}% 사용 중입니다. 초과 시 추가 요금이 발생합니다.
+              ⚠️ 포함 크레딧의 ${Math.round(usagePercentage)}% 사용 중입니다. 초과 시 추가 요금이 발생합니다.
             </div>
           ` : ''}
-          ${usage.tokensRemaining > 0 ? `
+          ${usage.creditsRemaining > 0 ? `
             <div style="margin-top: 12px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; text-align: center;">
               <span style="color: #16a34a; font-size: 14px; font-weight: 600;">
-                남은 토큰: ${usage.tokensRemaining.toLocaleString()} 토큰
+                남은 크레딧: ${usage.creditsRemaining.toLocaleString()} 크레딧
               </span>
             </div>
           ` : ''}
           <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); text-align: center;">
             예상 이번 달 청구액: <strong style="color: var(--accent-color);">
-              ${(usage.estimatedExcessFee || 0).toLocaleString()}원
+              ${usage.estimatedTotalAmount.toLocaleString()}원
             </strong>
             <br>
-            <small>(월 정액 + 초과분 요금)</small>
+            <small>(월 최소 이용료: ${usage.minimumFee.toLocaleString()}원, 실제 사용: ${usage.actualUsageAmount.toLocaleString()}원 중 큰 금액)</small>
           </div>
         </div>
       `;
