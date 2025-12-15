@@ -303,7 +303,7 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
       };
     }
 
-    // 토큰 사용 기록 저장
+    // 토큰 사용 기록 저장 (내부 추적용)
     const { data: usageRecord, error: insertError } = await supabase
       .from('token_usage')
       .insert({
@@ -323,7 +323,135 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
       // 기록 저장 실패해도 한도는 이미 차감되었으므로 성공으로 처리
     }
 
+    // 작업 크레딧 변환 및 기록
+    try {
+      // apiType을 기반으로 서비스 타입 및 작업 크레딧 가중치 결정
+      const serviceTypeMapping = {
+        'chatgpt-blog': { serviceType: 'blog_writing', creditWeight: 5 },
+        'blog': { serviceType: 'blog_writing', creditWeight: 5 },
+        'review-reply': { serviceType: 'review_reply', creditWeight: 1 },
+        'naver-auto-reply': { serviceType: 'review_reply', creditWeight: 1 },
+        'reply': { serviceType: 'review_reply', creditWeight: 1 },
+        'video': { serviceType: 'video_generation', creditWeight: 20 },
+        'video-generation': { serviceType: 'video_generation', creditWeight: 20 },
+        'ai-news-recommend': { serviceType: 'review_reply', creditWeight: 1 }, // 뉴스는 리뷰 답글과 동일
+        'news-ai-summary': { serviceType: 'review_reply', creditWeight: 1 },
+        'chat': { serviceType: 'review_reply', creditWeight: 1 }, // 채팅은 리뷰 답글과 동일
+        'keyword': { serviceType: 'review_reply', creditWeight: 1 },
+        'recipe': { serviceType: 'review_reply', creditWeight: 1 }
+      };
+
+      const serviceInfo = serviceTypeMapping[apiType] || { 
+        serviceType: 'review_reply', 
+        creditWeight: 1 
+      };
+
+      // 작업 크레딧 계산 (기능별 가중치 적용)
+      // 실제로는 작업 단위당 크레딧이므로, 1회 작업 = 가중치 크레딧
+      // 예: 블로그 작성 1회 = 5 크레딧, 리뷰 답글 1회 = 1 크레딧
+      const workCreditsUsed = serviceInfo.creditWeight;
+
+      // 작업 크레딧 사용 기록 저장
+      const { error: creditInsertError } = await supabase
+        .from('work_credit_usage')
+        .insert({
+          user_id: userId,
+          store_id: storeId,
+          service_type: serviceInfo.serviceType,
+          work_credits_used: workCreditsUsed,
+          input_tokens: usage.prompt_tokens || usage.input_tokens || 0,
+          output_tokens: usage.completion_tokens || usage.output_tokens || 0,
+          ai_model: apiType.includes('chatgpt') ? 'chatgpt' : (apiType.includes('gemini') ? 'gemini' : 'claude'),
+          used_at: new Date().toISOString()
+        });
+
+      if (creditInsertError) {
+        console.error('❌ 작업 크레딧 사용 기록 저장 실패:', creditInsertError);
+      } else {
+        console.log(`✅ 작업 크레딧 사용 기록: ${workCreditsUsed} 크레딧 (${serviceInfo.serviceType})`);
+      }
+    } catch (creditError) {
+      console.error('❌ 작업 크레딧 변환 오류:', creditError);
+      // 작업 크레딧 기록 실패해도 토큰 추적은 성공으로 처리
+    }
+
     console.log(`✅ 토큰 사용 기록: ${totalTokens} 토큰 (남은 토큰: ${limitCheck.tokensRemaining}/${limitCheck.monthlyLimit})`);
+
+    // 기능 사용 기록도 함께 저장 (feature_usage_log)
+    try {
+      // apiType을 기반으로 기능 타입 매핑
+      const featureMapping = {
+        'chatgpt-blog': { featureType: 'blog', featureName: '블로그', actionType: 'create' },
+        'review-reply': { featureType: 'review', featureName: '리뷰', actionType: 'generate' },
+        'naver-auto-reply': { featureType: 'review', featureName: '리뷰', actionType: 'generate' },
+        'reply': { featureType: 'review', featureName: '리뷰', actionType: 'generate' },
+        'ai-news-recommend': { featureType: 'news', featureName: '뉴스', actionType: 'recommend' },
+        'news-ai-summary': { featureType: 'news', featureName: '뉴스', actionType: 'summary' },
+        'chat': { featureType: 'chat', featureName: '채팅', actionType: 'use' },
+        'keyword': { featureType: 'keyword', featureName: '키워드검색', actionType: 'search' },
+        'recipe': { featureType: 'recipe', featureName: '레시피', actionType: 'generate' },
+        'video': { featureType: 'video', featureName: '영상', actionType: 'generate' }
+      };
+
+      const featureInfo = featureMapping[apiType] || { 
+        featureType: 'other', 
+        featureName: '기타', 
+        actionType: 'use' 
+      };
+
+      // 사용자 프로필 정보 가져오기 (이메일, 이름)
+      let userEmail = null;
+      let userName = null;
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email, name, store_name')
+          .eq('id', userId)
+          .single();
+
+        if (profile) {
+          userEmail = profile.email || null;
+          userName = profile.name || profile.store_name || null;
+        }
+      } catch (profileError) {
+        console.log('[token-tracker] 프로필 조회 실패 (기능 사용 기록):', profileError.message);
+      }
+
+      // 기능 사용 기록 저장
+      const { error: featureLogError } = await supabase
+        .from('feature_usage_log')
+        .insert({
+          user_id: userId,
+          user_email: userEmail,
+          user_name: userName,
+          feature_type: featureInfo.featureType,
+          feature_name: featureInfo.featureName,
+          action_type: featureInfo.actionType,
+          action_details: {
+            api_type: apiType,
+            tokens_used: totalTokens,
+            input_tokens: usage.prompt_tokens || usage.input_tokens || 0,
+            output_tokens: usage.completion_tokens || usage.output_tokens || 0
+          },
+          page_url: null, // 서버 사이드에서는 페이지 URL을 알 수 없음
+          page_title: null,
+          device_type: null, // 서버 사이드에서는 기기 정보를 알 수 없음
+          browser: null,
+          browser_version: null,
+          user_agent: null,
+          ip_address: null
+        });
+
+      if (featureLogError) {
+        console.error('❌ 기능 사용 기록 저장 실패:', featureLogError);
+        // 기능 사용 기록 실패해도 토큰 추적은 성공으로 처리
+      } else {
+        console.log(`✅ 기능 사용 기록 저장: ${featureInfo.featureName} (${featureInfo.actionType})`);
+      }
+    } catch (featureLogError) {
+      console.error('❌ 기능 사용 기록 저장 중 오류:', featureLogError);
+      // 기능 사용 기록 실패해도 토큰 추적은 성공으로 처리
+    }
 
     return {
       success: true,
