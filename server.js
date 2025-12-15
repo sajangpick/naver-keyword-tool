@@ -7458,6 +7458,17 @@ const workCreditBilling = require('./api/subscription/work-credit-billing');
 app.get('/api/subscription/work-credit-billing', workCreditBilling);
 app.post('/api/subscription/work-credit-billing', workCreditBilling);
 
+// 6. 관리자 청구 관리 API
+const billingCalculatePreview = require('./api/admin/billing/calculate-preview');
+const billingCharge = require('./api/admin/billing/charge');
+const billingList = require('./api/admin/billing/list');
+const billingDetail = require('./api/admin/billing/detail');
+
+app.post('/api/admin/billing/calculate-preview', billingCalculatePreview);
+app.post('/api/admin/billing/charge', billingCharge);
+app.get('/api/admin/billing/list', billingList);
+app.get('/api/admin/billing/detail', billingDetail);
+
 // 6. 개인별 맞춤 가격 조회
 app.get('/api/subscription/member-pricing/:memberId', async (req, res) => {
   try {

@@ -82,6 +82,12 @@
       badge: null
     },
     {
+      icon: '💳',
+      title: '작업 크레딧 청구 관리',
+      path: '/admin/pages/billing-management.html',
+      badge: 'NEW'
+    },
+    {
       section: '기타'
     },
     {
