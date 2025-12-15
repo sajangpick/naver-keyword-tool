@@ -33,9 +33,24 @@ module.exports = async (req, res) => {
   try {
     // GET: 크레딧 한도 조회
     if (req.method === 'GET') {
-      // 기존 크레딧 설정 조회
-      const { data: existingConfig, error: fetchError } = await supabase
+      // 기존 크레딧 설정 조회 (임시: token_config도 확인)
+      let { data: existingConfig, error: fetchError } = await supabase
         .from('credit_config')
+        .select('*')
+        .single();
+      
+      // credit_config가 없으면 token_config 사용 (마이그레이션 전)
+      if (fetchError && fetchError.code === 'PGRST116') {
+        const { data: tokenConfig, error: tokenError } = await supabase
+          .from('token_config')
+          .select('*')
+          .single();
+        
+        if (!tokenError && tokenConfig) {
+          existingConfig = tokenConfig;
+          fetchError = null;
+        }
+      }
         .select('*')
         .single();
 
@@ -66,11 +81,25 @@ module.exports = async (req, res) => {
           agency_premium_enabled: true
         };
 
-        const { data: newConfig, error: insertError } = await supabase
-          .from('credit_config')
+        // credit_config가 없으면 token_config에 저장 (마이그레이션 전)
+        let targetTable = 'credit_config';
+        let { data: newConfig, error: insertError } = await supabase
+          .from(targetTable)
           .insert(defaultConfig)
           .select()
           .single();
+        
+        if (insertError && insertError.code === '42P01') {
+          // credit_config 테이블이 없으면 token_config 사용
+          targetTable = 'token_config';
+          const result = await supabase
+            .from(targetTable)
+            .insert(defaultConfig)
+            .select()
+            .single();
+          newConfig = result.data;
+          insertError = result.error;
+        }
 
         if (insertError) throw insertError;
 
@@ -104,11 +133,23 @@ module.exports = async (req, res) => {
     if (req.method === 'PUT') {
       const updateData = req.body;
 
-      // 기존 데이터 조회
-      const { data: currentConfig } = await supabase
+      // 기존 데이터 조회 (임시: token_config도 확인)
+      let { data: currentConfig } = await supabase
         .from('credit_config')
         .select('*')
         .single();
+      
+      // credit_config가 없으면 token_config 사용 (마이그레이션 전)
+      if (!currentConfig) {
+        const { data: tokenConfig } = await supabase
+          .from('token_config')
+          .select('*')
+          .single();
+        
+        if (tokenConfig) {
+          currentConfig = tokenConfig;
+        }
+      }
 
       if (!currentConfig) {
         return res.status(404).json({
@@ -163,9 +204,10 @@ module.exports = async (req, res) => {
       let updatedConfig;
       let updateError;
 
-      // 1단계: 기본 필드만 업데이트
-      const basicResult = await supabase
-        .from('credit_config')
+      // 1단계: 기본 필드만 업데이트 (임시: token_config도 시도)
+      let targetTable = 'credit_config';
+      let basicResult = await supabase
+        .from(targetTable)
         .update({
           ...basicOnlyUpdate,
           updated_at: new Date().toISOString()
@@ -173,6 +215,20 @@ module.exports = async (req, res) => {
         .eq('id', currentConfig.id)
         .select()
         .single();
+      
+      // credit_config가 없으면 token_config 사용 (마이그레이션 전)
+      if (basicResult.error && basicResult.error.code === '42P01') {
+        targetTable = 'token_config';
+        basicResult = await supabase
+          .from(targetTable)
+          .update({
+            ...basicOnlyUpdate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentConfig.id)
+          .select()
+          .single();
+      }
 
       updatedConfig = basicResult.data;
       updateError = basicResult.error;
@@ -189,7 +245,7 @@ module.exports = async (req, res) => {
         // 제한 필드 업데이트 시도 (컬럼이 없으면 에러 발생 가능)
         try {
           const restrictionResult = await supabase
-            .from('credit_config')
+            .from(targetTable)
             .update({
               ...restrictionOnlyUpdate,
               updated_at: new Date().toISOString()
