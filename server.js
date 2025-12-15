@@ -7627,32 +7627,49 @@ app.put('/api/subscription/pricing-config', async (req, res) => {
   }
 });
 
-// 3. 토큰 한도 설정 조회
+// 3. 크레딧 한도 설정 조회 (credit-config.js 사용)
+const creditConfigHandler = require('./api/subscription/credit-config');
+app.get('/api/subscription/credit-config', creditConfigHandler);
+app.put('/api/subscription/credit-config', creditConfigHandler);
+
+// 3-1. 토큰 한도 설정 조회 (하위 호환성 유지)
 app.get('/api/subscription/token-config', async (req, res) => {
   try {
     if (!supabase) {
       return res.status(503).json({ success: false, error: 'Supabase 미설정' });
     }
 
-    const { data, error } = await supabase
-      .from('token_config')
+    // credit_config 먼저 시도, 없으면 token_config 사용
+    let { data, error } = await supabase
+      .from('credit_config')
       .select('*')
       .single();
+
+    if (error && error.code === '42P01') {
+      // credit_config 테이블이 없으면 token_config 사용
+      const result = await supabase
+        .from('token_config')
+        .select('*')
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error && error.code !== 'PGRST116') {
       throw error;
     }
 
-    // 없으면 기본값으로 초기화 (블로그 1개 = 7,500 토큰 기준)
+    // 없으면 기본값으로 초기화 (블로그 1개 = 7,500 크레딧 기준)
     if (!data) {
+      const targetTable = error && error.code === '42P01' ? 'token_config' : 'credit_config';
       const { data: newConfig } = await supabase
-        .from('token_config')
+        .from(targetTable)
         .insert([{
           // 식당 대표 등급 (블로그 생성 기준)
-          owner_seed_limit: 30000,      // 라이트: 30,000 토큰 (무료)
-          owner_power_limit: 350000,    // 스탠다드: 350,000 토큰
-          owner_bigpower_limit: 650000, // 프로: 650,000 토큰
-          owner_premium_limit: 1500000,  // 프리미엄: 1,500,000 토큰
+          owner_seed_limit: 30000,      // 라이트: 30,000 크레딧 (무료)
+          owner_power_limit: 350000,    // 스탠다드: 350,000 크레딧
+          owner_bigpower_limit: 650000, // 프로: 650,000 크레딧
+          owner_premium_limit: 1500000,  // 프리미엄: 1,500,000 크레딧
           
           // 대행사 등급 (더 많은 사용량)
           agency_elite_limit: 50000,    // 엘리트: 블로그 5개
@@ -7663,12 +7680,12 @@ app.get('/api/subscription/token-config', async (req, res) => {
         .select()
         .single();
 
-      return res.json({ success: true, tokens: newConfig });
+      return res.json({ success: true, tokens: newConfig, credits: newConfig });
     }
 
-    res.json({ success: true, tokens: data });
+    res.json({ success: true, tokens: data, credits: data });
   } catch (error) {
-    devError('토큰 설정 조회 실패:', error);
+    devError('크레딧 설정 조회 실패:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
