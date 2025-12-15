@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>토큰 가격설정 - 사장픽 관리자</title>
+    <title>크레딧 가격설정 - 사장픽 관리자</title>
     
     <!-- Font Awesome -->
     <link
@@ -456,10 +456,10 @@
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
           <h1 style="margin: 0; display: flex; align-items: center; gap: 12px; font-size: 28px; color: #111827;">
             <i class="fas fa-sliders-h" style="color: var(--accent);"></i>
-            토큰 가격설정
+            크레딧 가격설정
           </h1>
         </div>
-        <div class="subtitle">구독 요금과 토큰 한도를 설정합니다</div>
+        <div class="subtitle">구독 요금과 크레딧 한도를 설정합니다</div>
 
         <!-- 상태 메시지 -->
         <div id="statusMessage" style="display: none;"></div>
@@ -511,7 +511,7 @@
       
       let supabase;
       let pricingData = {};
-      let tokenData = {};
+      let creditData = {};
 
       // ==================== 초기화 ====================
 
@@ -541,24 +541,24 @@
 
       async function loadAllSettings() {
         try {
-          // 가격과 토큰 동시 로드
-          const [pricingRes, tokenRes] = await Promise.all([
+          // 가격과 크레딧 동시 로드
+          const [pricingRes, creditRes] = await Promise.all([
             fetch('/api/subscription/pricing-config'),
-            fetch('/api/subscription/token-config')
+            fetch('/api/subscription/credit-config')
           ]);
 
           const pricingResult = await pricingRes.json();
-          const tokenResult = await tokenRes.json();
+          const creditResult = await creditRes.json();
 
           if (!pricingResult.success) throw new Error(pricingResult.error);
-          if (!tokenResult.success) throw new Error(tokenResult.error);
+          if (!creditResult.success) throw new Error(creditResult.error);
 
           pricingData = pricingResult.pricing;
-          tokenData = tokenResult.tokens;
+          creditData = creditResult.credits;
           
           // 경고 메시지가 있으면 표시 (컬럼이 없는 경우)
-          if (tokenResult.warning) {
-            showMessage('⚠️ ' + tokenResult.warning, 'warning');
+          if (creditResult.warning) {
+            showMessage('⚠️ ' + creditResult.warning, 'warning');
           }
 
           renderSettings();
@@ -568,10 +568,10 @@
         }
       }
 
-      // ==================== 기본 토큰 한도 설정 ====================
+      // ==================== 기본 크레딧 한도 설정 ====================
       
-      // 블로그 1개 = 약 7,500 토큰, 리뷰 1개 = 약 1,000 토큰 기준
-      function getDefaultTokenLimit(tokenKey) {
+      // 블로그 1개 = 약 7,500 크레딧, 리뷰 1개 = 약 1,000 크레딧 기준
+      function getDefaultCreditLimit(creditKey) {
         const defaults = {
           // 식당 대표 등급 (블로그 생성 기준)
           'owner_seed_limit': 25000,      // 씨앗: 블로그 2~3개 (15,000~22,500) + 여유분 (무료 제공)
@@ -584,7 +584,7 @@
           'agency_expert_limit': 100000,  // 프로: 블로그 10개
           'agency_master_limit': 200000   // 엔터프라이즈: 블로그 20개
         };
-        return defaults[tokenKey] || 0;
+        return defaults[creditKey] || 0;
       }
 
       // ==================== 통합 UI 렌더링 ====================
@@ -592,10 +592,10 @@
       function renderSettings() {
         // 식당 대표 등급 설정
         const ownerLevels = [
-          { priceKey: 'owner_seed_price', tokenKey: 'owner_seed_limit', label: '🌱 라이트', icon: '🌱', colorClass: 'level-seed' },
-          { priceKey: 'owner_power_price', tokenKey: 'owner_power_limit', label: '⚡ 스탠다드', icon: '⚡', colorClass: 'level-power' },
-          { priceKey: 'owner_bigpower_price', tokenKey: 'owner_bigpower_limit', label: '💪 프로', icon: '💪', colorClass: 'level-bigpower' },
-          { priceKey: 'owner_premium_price', tokenKey: 'owner_premium_limit', label: '⭐ 프리미엄', icon: '⭐', colorClass: 'level-premium' }
+          { priceKey: 'owner_seed_price', creditKey: 'owner_seed_limit', label: '🌱 라이트', icon: '🌱', colorClass: 'level-seed' },
+          { priceKey: 'owner_power_price', creditKey: 'owner_power_limit', label: '⚡ 스탠다드', icon: '⚡', colorClass: 'level-power' },
+          { priceKey: 'owner_bigpower_price', creditKey: 'owner_bigpower_limit', label: '💪 프로', icon: '💪', colorClass: 'level-bigpower' },
+          { priceKey: 'owner_premium_price', creditKey: 'owner_premium_limit', label: '⭐ 프리미엄', icon: '⭐', colorClass: 'level-premium' }
         ];
 
         document.getElementById('owner-settings').innerHTML = ownerLevels.map(level => `
@@ -611,9 +611,9 @@
                 <span class="unit">원/월</span>
               </div>
               <div class="input-group">
-                <label>🪙 토큰</label>
-                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || getDefaultTokenLimit(level.tokenKey)}" min="0" placeholder="토큰 입력"/>
-                <span class="unit">토큰/월</span>
+                <label>🪙 크레딧</label>
+                <input type="number" id="${level.creditKey}" value="${creditData[level.creditKey] || getDefaultCreditLimit(level.creditKey)}" min="0" placeholder="크레딧 입력"/>
+                <span class="unit">크레딧/월</span>
               </div>
             </div>
           </div>
@@ -621,9 +621,9 @@
 
         // 대행사 등급 설정
         const agencyLevels = [
-          { priceKey: 'agency_elite_price', tokenKey: 'agency_elite_limit', label: '🏆 스타터', icon: '🏆', colorClass: 'level-elite' },
-          { priceKey: 'agency_expert_price', tokenKey: 'agency_expert_limit', label: '🎯 프로', icon: '🎯', colorClass: 'level-expert' },
-          { priceKey: 'agency_master_price', tokenKey: 'agency_master_limit', label: '👑 엔터프라이즈', icon: '👑', colorClass: 'level-master' }
+          { priceKey: 'agency_elite_price', creditKey: 'agency_elite_limit', label: '🏆 스타터', icon: '🏆', colorClass: 'level-elite' },
+          { priceKey: 'agency_expert_price', creditKey: 'agency_expert_limit', label: '🎯 프로', icon: '🎯', colorClass: 'level-expert' },
+          { priceKey: 'agency_master_price', creditKey: 'agency_master_limit', label: '👑 엔터프라이즈', icon: '👑', colorClass: 'level-master' }
         ];
 
         document.getElementById('agency-settings').innerHTML = agencyLevels.map(level => `
@@ -639,9 +639,9 @@
                 <span class="unit">원/월</span>
               </div>
               <div class="input-group">
-                <label>🪙 토큰</label>
-                <input type="number" id="${level.tokenKey}" value="${tokenData[level.tokenKey] || getDefaultTokenLimit(level.tokenKey)}" min="0" placeholder="토큰 입력"/>
-                <span class="unit">토큰/월</span>
+                <label>🪙 크레딧</label>
+                <input type="number" id="${level.creditKey}" value="${creditData[level.creditKey] || getDefaultCreditLimit(level.creditKey)}" min="0" placeholder="크레딧 입력"/>
+                <span class="unit">크레딧/월</span>
               </div>
             </div>
           </div>
@@ -653,7 +653,7 @@
       async function saveSettings(type) {
         try {
           const pricingUpdate = {};
-          const tokenUpdate = {};
+          const creditUpdate = {};
 
           if (type === 'owner') {
             pricingUpdate.owner_seed_price = parseInt(document.getElementById('owner_seed_price').value) || 0;
@@ -661,46 +661,46 @@
             pricingUpdate.owner_bigpower_price = parseInt(document.getElementById('owner_bigpower_price').value) || 0;
             pricingUpdate.owner_premium_price = parseInt(document.getElementById('owner_premium_price').value) || 0;
 
-            tokenUpdate.owner_seed_limit = parseInt(document.getElementById('owner_seed_limit').value) || 0;
-            tokenUpdate.owner_power_limit = parseInt(document.getElementById('owner_power_limit').value) || 0;
-            tokenUpdate.owner_bigpower_limit = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
-            tokenUpdate.owner_premium_limit = parseInt(document.getElementById('owner_premium_limit').value) || 0;
+            creditUpdate.owner_seed_limit = parseInt(document.getElementById('owner_seed_limit').value) || 0;
+            creditUpdate.owner_power_limit = parseInt(document.getElementById('owner_power_limit').value) || 0;
+            creditUpdate.owner_bigpower_limit = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
+            creditUpdate.owner_premium_limit = parseInt(document.getElementById('owner_premium_limit').value) || 0;
           } else {
             pricingUpdate.agency_elite_price = parseInt(document.getElementById('agency_elite_price').value) || 0;
             pricingUpdate.agency_expert_price = parseInt(document.getElementById('agency_expert_price').value) || 0;
             pricingUpdate.agency_master_price = parseInt(document.getElementById('agency_master_price').value) || 0;
 
-            tokenUpdate.agency_elite_limit = parseInt(document.getElementById('agency_elite_limit').value) || 0;
-            tokenUpdate.agency_expert_limit = parseInt(document.getElementById('agency_expert_limit').value) || 0;
-            tokenUpdate.agency_master_limit = parseInt(document.getElementById('agency_master_limit').value) || 0;
+            creditUpdate.agency_elite_limit = parseInt(document.getElementById('agency_elite_limit').value) || 0;
+            creditUpdate.agency_expert_limit = parseInt(document.getElementById('agency_expert_limit').value) || 0;
+            creditUpdate.agency_master_limit = parseInt(document.getElementById('agency_master_limit').value) || 0;
           }
 
-          // 가격과 토큰 동시 저장
-          const [pricingRes, tokenRes] = await Promise.all([
+          // 가격과 크레딧 동시 저장
+          const [pricingRes, creditRes] = await Promise.all([
             fetch('/api/subscription/pricing-config', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(pricingUpdate)
             }),
-            fetch('/api/subscription/token-config', {
+            fetch('/api/subscription/credit-config', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(tokenUpdate)
+              body: JSON.stringify(creditUpdate)
             })
           ]);
 
           const pricingResult = await pricingRes.json();
-          const tokenResult = await tokenRes.json();
+          const creditResult = await creditRes.json();
 
           if (!pricingResult.success) throw new Error(pricingResult.error);
-          if (!tokenResult.success) throw new Error(tokenResult.error);
+          if (!creditResult.success) throw new Error(creditResult.error);
 
           pricingData = pricingResult.pricing;
-          tokenData = tokenResult.tokens;
+          creditData = creditResult.credits;
 
           // 경고 메시지가 있으면 표시 (컬럼이 없는 경우)
-          if (tokenResult.warning) {
-            showMessage('⚠️ ' + tokenResult.warning, 'warning');
+          if (creditResult.warning) {
+            showMessage('⚠️ ' + creditResult.warning, 'warning');
           } else {
             showMessage(`${type === 'owner' ? '🍽️ 식당 대표' : '🏢 대행사'} 설정이 저장되었습니다`, 'success');
           }

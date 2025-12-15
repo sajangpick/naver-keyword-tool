@@ -65,14 +65,14 @@
     },
     {
       icon: '💰',
-      title: '토큰 가격설정',
+      title: '크레딧 가격설정',
       path: '/admin/pages/subscription-settings.html',
       badge: null
     },
     {
       icon: '📊',
-      title: '토큰 대시보드',
-      path: '/admin/pages/token-dashboard.html',
+      title: '크레딧 대시보드',
+      path: '/admin/pages/credit-dashboard.html',
       badge: 'NEW'
     },
     {
