@@ -497,21 +497,27 @@
     <div class="plan-info">
       <div class="plan-name" id="planName">스탠다드 플랜</div>
       <div class="plan-details">
-        <span>월간 토큰</span>
-        <strong id="tokenAmount">500 토큰</strong>
+        <span>월 정액</span>
+        <strong id="priceAmount">30,000원</strong>
       </div>
       <div class="plan-details">
-        <span>블로그 작성 가능 횟수</span>
-        <strong>약 15-20회</strong>
+        <span>기본 제공 토큰</span>
+        <strong id="tokenAmount">350,000 토큰</strong>
       </div>
-      <div class="plan-details">
-        <span>리뷰 답글</span>
-        <strong>약 50-100회</strong>
+      <div class="plan-details" style="padding: 12px; background: rgba(255, 123, 84, 0.1); border-radius: 8px; margin-top: 12px;">
+        <span style="font-weight: 600; color: var(--accent-color);">초과분 요금</span>
+        <strong style="color: var(--accent-color);">1,000토큰당 1,000원</strong>
+      </div>
+      <div style="margin-top: 12px; padding: 10px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 4px; font-size: 13px; color: var(--text-secondary);">
+        <strong style="color: #856404;">💡 안내:</strong> 기본 제공량을 초과 사용 시 자동으로 추가 요금이 청구됩니다. 매월 말일 기준으로 사용량을 집계하여 익월 초에 청구서가 발행됩니다.
       </div>
     </div>
 
     <div class="price">
-      <span id="priceAmount">30,000</span>원
+      <span id="priceAmountDisplay">30,000</span>원
+      <div style="font-size: 14px; color: var(--text-secondary); margin-top: 8px; font-weight: 400;">
+        (월 정액 + 초과분 별도 청구)
+      </div>
     </div>
 
     <div class="payment-methods">
@@ -721,18 +727,18 @@
       if (!plan) {
         // 가격 및 토큰 설정 로드 (데모 모드면 기본값 사용)
         if (isDemoMode) {
-          // 데모 모드: 기본값 사용
+          // 데모 모드: 새로운 기본값 사용 (2025-11-25 업데이트)
           pricingData = {
             owner_seed_price: 0,
             owner_power_price: 30000,
             owner_bigpower_price: 50000,
-            owner_premium_price: 70000
+            owner_premium_price: 100000
           };
           tokenData = {
-            owner_seed_limit: 100,
-            owner_power_limit: 500,
-            owner_bigpower_limit: 833,
-            owner_premium_limit: 1166
+            owner_seed_limit: 30000,
+            owner_power_limit: 350000,
+            owner_bigpower_limit: 650000,
+            owner_premium_limit: 1500000
           };
         } else {
         await loadPlanSettings();
@@ -748,18 +754,18 @@
       } else {
         // plan 파라미터가 있으면 결제 화면용 데이터 로드
         if (isDemoMode) {
-          // 데모 모드: 기본값 사용
+          // 데모 모드: 새로운 기본값 사용 (2025-11-25 업데이트)
           pricingData = {
             owner_seed_price: 0,
             owner_power_price: 30000,
             owner_bigpower_price: 50000,
-            owner_premium_price: 70000
+            owner_premium_price: 100000
           };
           tokenData = {
-            owner_seed_limit: 100,
-            owner_power_limit: 500,
-            owner_bigpower_limit: 833,
-            owner_premium_limit: 1166
+            owner_seed_limit: 30000,
+            owner_power_limit: 350000,
+            owner_bigpower_limit: 650000,
+            owner_premium_limit: 1500000
           };
         } else {
         await loadPlanSettings();
@@ -878,7 +884,8 @@
       const planInfo = getPlanInfo(selectedPlan);
       if (planInfo) {
         document.getElementById('planName').textContent = planInfo.name;
-        document.getElementById('priceAmount').textContent = planInfo.price === 0 ? '무료' : planInfo.price.toLocaleString();
+        document.getElementById('priceAmount').textContent = planInfo.price === 0 ? '무료' : planInfo.price.toLocaleString() + '원';
+        document.getElementById('priceAmountDisplay').textContent = planInfo.price === 0 ? '무료' : planInfo.price.toLocaleString();
         document.getElementById('tokenAmount').textContent = planInfo.tokens.toLocaleString() + ' 토큰';
       }
     }
@@ -886,12 +893,12 @@
     // 플랜 정보 가져오기
     function getPlanInfo(planKey) {
       if (!pricingData || !tokenData) {
-        // 기본값
+        // 새로운 기본값 (2025-11-25 업데이트)
         const defaults = {
-          seed: { name: '라이트 플랜', price: 0, tokens: 100 },
-          power: { name: '스탠다드 플랜', price: 30000, tokens: 500 },
-          bigpower: { name: '프로 플랜', price: 50000, tokens: 833 },
-          premium: { name: '프리미엄 플랜', price: 70000, tokens: 1166 }
+          seed: { name: '라이트 플랜', price: 0, tokens: 30000, excessRate: 1000 },
+          power: { name: '스탠다드 플랜', price: 30000, tokens: 350000, excessRate: 1000 },
+          bigpower: { name: '프로 플랜', price: 50000, tokens: 650000, excessRate: 1000 },
+          premium: { name: '프리미엄 플랜', price: 100000, tokens: 1500000, excessRate: 1000 }
         };
         return defaults[planKey] || null;
       }
@@ -909,7 +916,8 @@
       return {
         name: planNames[planKey] || planKey,
         price: pricingData[priceKey] || 0,
-        tokens: tokenData[tokenKey] || 100
+        tokens: tokenData[tokenKey] || 30000,
+        excessRate: 1000 // 1,000토큰당 1,000원
       };
     }
 
@@ -962,8 +970,11 @@
             <div style="font-size: 28px; font-weight: 700; color: var(--accent-color); margin-bottom: 12px;">
               ${priceText}
             </div>
-            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 20px;">
+            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">
               월 ${planInfo.tokens.toLocaleString()} 토큰
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; padding: 8px; background: rgba(255, 123, 84, 0.05); border-radius: 8px;">
+              초과분: 1,000토큰당 1,000원
             </div>
             <button style="width: 100%; padding: 12px; background: ${isCurrentPlan ? 'var(--secondary)' : plan.gradient}; color: ${isCurrentPlan ? 'var(--accent-color)' : 'white'};
                           border: ${isCurrentPlan ? '1px solid var(--accent-color)' : 'none'}; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: ${isCurrentPlan ? 'default' : 'pointer'};

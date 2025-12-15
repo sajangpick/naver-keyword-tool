@@ -46,10 +46,10 @@ module.exports = async (req, res) => {
       // 데이터가 없으면 기본값 삽입
       if (!existingConfig) {
         const defaultConfig = {
-          owner_seed_limit: 100,
-          owner_power_limit: 500,
-          owner_bigpower_limit: 833,
-          owner_premium_limit: 1166,
+          owner_seed_limit: 30000, // 100 → 30,000으로 변경
+          owner_power_limit: 350000, // 500 → 350,000으로 변경
+          owner_bigpower_limit: 650000, // 833 → 650,000으로 변경
+          owner_premium_limit: 1500000, // 1,166 → 1,500,000으로 변경
           agency_elite_limit: 1000,
           agency_expert_limit: 3000,
           agency_master_limit: 5000,

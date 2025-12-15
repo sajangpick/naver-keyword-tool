@@ -7340,7 +7340,7 @@ app.get('/api/subscription/pricing-config', async (req, res) => {
           owner_seed_price: 0,
           owner_power_price: 30000,
           owner_bigpower_price: 50000,
-          owner_premium_price: 70000,
+          owner_premium_price: 100000,
           agency_elite_price: 100000,
           agency_expert_price: 300000,
           agency_master_price: 500000,
@@ -7405,10 +7405,10 @@ app.get('/api/subscription/token-config', async (req, res) => {
         .from('token_config')
         .insert([{
           // 식당 대표 등급 (블로그 생성 기준)
-          owner_seed_limit: 25000,      // 씨앗: 블로그 2~3개 (무료 제공)
-          owner_power_limit: 50000,     // 파워: 블로그 5개
-          owner_bigpower_limit: 75000,  // 빅파워: 블로그 8개
-          owner_premium_limit: 100000,  // 프리미엄: 블로그 10개
+          owner_seed_limit: 30000,      // 라이트: 30,000 토큰 (무료)
+          owner_power_limit: 350000,    // 스탠다드: 350,000 토큰
+          owner_bigpower_limit: 650000, // 프로: 650,000 토큰
+          owner_premium_limit: 1500000,  // 프리미엄: 1,500,000 토큰
           
           // 대행사 등급 (더 많은 사용량)
           agency_elite_limit: 50000,    // 엘리트: 블로그 5개
@@ -7453,7 +7453,12 @@ app.put('/api/subscription/token-config', async (req, res) => {
   }
 });
 
-// 5. 개인별 맞춤 가격 조회
+// 5. 청구서 계산 API
+const billingCalculator = require('./api/subscription/billing-calculator');
+app.get('/api/subscription/billing-calculator', billingCalculator);
+app.post('/api/subscription/billing-calculator', billingCalculator);
+
+// 6. 개인별 맞춤 가격 조회
 app.get('/api/subscription/member-pricing/:memberId', async (req, res) => {
   try {
     if (!supabase) {

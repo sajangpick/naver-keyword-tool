@@ -1703,7 +1703,7 @@
         }
 
         // 가격 및 토큰 설정과 사용자 정보를 동시에 로드
-        const [dashboardRes, pricingRes, tokenRes] = await Promise.all([
+        const [dashboardRes, pricingRes, tokenRes, usageRes] = await Promise.all([
           fetch('/api/subscription/user-dashboard?action=dashboard', {
             method: 'GET',
             headers: {
@@ -1712,7 +1712,14 @@
             }
           }),
           fetch('/api/subscription/pricing-config'),
-          fetch('/api/subscription/token-config')
+          fetch('/api/subscription/token-config'),
+          fetch(`/api/subscription/billing-calculator?action=get-current-usage&userId=${userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          })
         ]);
 
         if (!dashboardRes.ok) {
@@ -1724,13 +1731,15 @@
         const dashboardResult = await dashboardRes.json();
         const pricingResult = await pricingRes.json();
         const tokenResult = await tokenRes.json();
+        const usageResult = usageRes.ok ? await usageRes.json() : null;
         
         if (dashboardResult.success && dashboardResult.data) {
           const { profile, cycle } = dashboardResult.data;
           const pricing = pricingResult.success ? pricingResult.pricing : null;
           const tokens = tokenResult.success ? tokenResult.tokens : null;
+          const usage = usageResult?.success ? usageResult.usage : null;
           
-          updatePaymentUI({ profile, cycle, pricing, tokens });
+          updatePaymentUI({ profile, cycle, pricing, tokens, usage });
           
           // 플랜 버튼 렌더링 (식당 대표 등급만)
           renderPlanButtons(pricing, tokens);
@@ -1740,6 +1749,11 @@
           
           // 토큰 정보와 결제 섹션 동기화
           syncTokenInfoWithPayment(cycle, profile);
+          
+          // 실시간 사용량 표시
+          if (usage) {
+            displayRealTimeUsage(usage);
+          }
         } else {
           updatePaymentUI(null);
         }
@@ -1752,11 +1766,11 @@
     // 결제 UI 업데이트
     function updatePaymentUI(data) {
       if (!data || !data.profile) {
-        // 기본값
+        // 기본값 (새로운 요금제 구조)
         document.getElementById('paymentPlanName').textContent = '라이트 플랜';
         document.getElementById('paymentPlanBadge').textContent = '무료';
         document.getElementById('paymentPlanPrice').textContent = '무료';
-        document.getElementById('paymentPlanTokens').textContent = '100 토큰';
+        document.getElementById('paymentPlanTokens').textContent = '30,000 토큰';
         document.getElementById('paymentPlanDays').textContent = '30일';
         return;
       }
@@ -1788,28 +1802,28 @@
         switch(membershipLevel) {
           case 'seed':
             planPrice = pricing.owner_seed_price || 0;
-            planTokens = tokens.owner_seed_limit || 100;
+            planTokens = tokens.owner_seed_limit || 30000;
             break;
           case 'power':
             planPrice = pricing.owner_power_price || 30000;
-            planTokens = tokens.owner_power_limit || 500;
+            planTokens = tokens.owner_power_limit || 350000;
             break;
           case 'bigpower':  // 정규화된 등급 사용
             planPrice = pricing.owner_bigpower_price || 50000;
-            planTokens = tokens.owner_bigpower_limit || 833;
+            planTokens = tokens.owner_bigpower_limit || 650000;
             break;
           case 'premium':
-            planPrice = pricing.owner_premium_price || 70000;
-            planTokens = tokens.owner_premium_limit || 1166;
+            planPrice = pricing.owner_premium_price || 100000;
+            planTokens = tokens.owner_premium_limit || 1500000;
             break;
         }
       } else {
-        // 기본값 (API 실패 시)
+        // 기본값 (API 실패 시) - 새로운 요금제 구조 (2025-11-25)
         const defaults = {
-          seed: { price: 0, tokens: 100 },
-          power: { price: 30000, tokens: 500 },
-          bigpower: { price: 50000, tokens: 833 },
-          premium: { price: 70000, tokens: 1166 }
+          seed: { price: 0, tokens: 30000 },
+          power: { price: 30000, tokens: 350000 },
+          bigpower: { price: 50000, tokens: 650000 },
+          premium: { price: 100000, tokens: 1500000 }
         };
         const defaultInfo = defaults[membershipLevel] || defaults.seed;
         planPrice = defaultInfo.price;
@@ -1863,7 +1877,7 @@
           priceKey: 'owner_seed_price',
           tokenKey: 'owner_seed_limit',
           defaultPrice: 0,
-          defaultTokens: 100
+          defaultTokens: 30000
         },
         { 
           key: 'power', 
@@ -1873,7 +1887,7 @@
           priceKey: 'owner_power_price',
           tokenKey: 'owner_power_limit',
           defaultPrice: 30000,
-          defaultTokens: 500
+          defaultTokens: 350000
         },
         { 
           key: 'bigpower', 
@@ -1883,7 +1897,7 @@
           priceKey: 'owner_bigpower_price',
           tokenKey: 'owner_bigpower_limit',
           defaultPrice: 50000,
-          defaultTokens: 833
+          defaultTokens: 650000
         },
         { 
           key: 'premium', 
@@ -1892,8 +1906,8 @@
           color: '#ec4899',
           priceKey: 'owner_premium_price',
           tokenKey: 'owner_premium_limit',
-          defaultPrice: 70000,
-          defaultTokens: 1166
+          defaultPrice: 100000,
+          defaultTokens: 1500000
         }
       ];
 
@@ -2625,7 +2639,7 @@
         
         // 토큰 정보
         const tokensUsed = cycle.tokens_used || 0;
-        let tokensLimit = cycle.monthly_token_limit || 100;
+        let tokensLimit = cycle.monthly_token_limit || 30000; // 기본값 변경
         let tokensRemaining = cycle.tokens_remaining || tokensLimit;
         
         if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
@@ -2649,6 +2663,85 @@
       } catch (error) {
         console.error('❌ 토큰 정보 동기화 실패:', error);
       }
+    }
+
+    // 실시간 사용량 표시
+    function displayRealTimeUsage(usage) {
+      if (!usage) return;
+
+      // 사용량 표시 영역 찾기 또는 생성
+      let usageContainer = document.getElementById('realTimeUsageContainer');
+      if (!usageContainer) {
+        // 결제 섹션에 사용량 표시 영역 추가
+        const paymentSection = document.querySelector('.payment-section');
+        if (paymentSection) {
+          usageContainer = document.createElement('div');
+          usageContainer.id = 'realTimeUsageContainer';
+          usageContainer.style.cssText = 'margin-top: 20px; padding: 20px; background: var(--white); border-radius: 12px; border: 1px solid var(--border);';
+          paymentSection.appendChild(usageContainer);
+        } else {
+          return; // 결제 섹션이 없으면 표시하지 않음
+        }
+      }
+
+      const usagePercentage = usage.usagePercentage || 0;
+      const isExceeded = usage.excessTokens > 0;
+      const progressColor = isExceeded ? '#ef4444' : (usagePercentage >= 80 ? '#ffc107' : 'var(--accent-color)');
+
+      usageContainer.innerHTML = `
+        <div style="margin-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">
+            📊 이번 달 사용량
+          </h3>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: var(--text-secondary); font-size: 14px;">사용량</span>
+            <strong style="color: var(--text-primary); font-size: 16px;">
+              ${usage.totalTokensUsed.toLocaleString()} / ${usage.baseTokens.toLocaleString()} 토큰
+            </strong>
+          </div>
+          <div style="width: 100%; height: 24px; background: var(--secondary); border-radius: 12px; overflow: hidden; position: relative; margin-bottom: 8px;">
+            <div style="width: ${Math.min(100, usagePercentage)}%; height: 100%; background: ${progressColor}; transition: width 0.5s ease; border-radius: 12px;"></div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: 600; color: ${usagePercentage > 50 ? 'white' : 'var(--text-primary)'};">
+              ${usagePercentage.toFixed(1)}%
+            </div>
+          </div>
+          ${isExceeded ? `
+            <div style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 4px; margin-top: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #dc2626; font-weight: 600; font-size: 14px;">
+                  ⚠️ 기본 제공량 초과
+                </span>
+                <strong style="color: #dc2626; font-size: 16px;">
+                  +${usage.excessTokens.toLocaleString()} 토큰
+                </strong>
+              </div>
+              <div style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);">
+                추가 요금: <strong style="color: #dc2626;">${usage.estimatedExcessFee.toLocaleString()}원</strong>
+                <br>
+                <small>(1,000토큰당 1,000원)</small>
+              </div>
+            </div>
+          ` : usagePercentage >= 80 ? `
+            <div style="padding: 12px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 4px; margin-top: 12px; font-size: 13px; color: #856404;">
+              ⚠️ 기본 제공량의 ${Math.round(usagePercentage)}% 사용 중입니다. 초과 시 추가 요금이 발생합니다.
+            </div>
+          ` : ''}
+          ${usage.tokensRemaining > 0 ? `
+            <div style="margin-top: 12px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; text-align: center;">
+              <span style="color: #16a34a; font-size: 14px; font-weight: 600;">
+                남은 토큰: ${usage.tokensRemaining.toLocaleString()} 토큰
+              </span>
+            </div>
+          ` : ''}
+          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); text-align: center;">
+            예상 이번 달 청구액: <strong style="color: var(--accent-color);">
+              ${(usage.estimatedExcessFee || 0).toLocaleString()}원
+            </strong>
+            <br>
+            <small>(월 정액 + 초과분 요금)</small>
+          </div>
+        </div>
+      `;
     }
     
     // 토큰 정보 새로고침

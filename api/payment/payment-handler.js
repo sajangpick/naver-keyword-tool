@@ -290,7 +290,53 @@ async function activateSubscription(userId, orderId) {
 
     if (updateError) throw updateError;
 
-    // 3. 새 구독 사이클 생성 (관리자 설정에서 최신 한도 가져오기)
+    // 3. 플랜별 기본값 설정 (새로운 요금제 구조)
+    const planDefaults = {
+      seed: { fee: 0, tokens: 30000 },
+      light: { fee: 0, tokens: 30000 },
+      power: { fee: 30000, tokens: 350000 },
+      standard: { fee: 30000, tokens: 350000 },
+      bigpower: { fee: 50000, tokens: 650000 },
+      pro: { fee: 50000, tokens: 650000 },
+      premium: { fee: 100000, tokens: 1500000 }
+    };
+
+    const defaults = planDefaults[planType] || planDefaults.seed;
+    const monthlyFee = defaults.fee;
+    const baseTokens = defaults.tokens;
+    const excessTokenRate = 1000; // 1,000토큰당 1,000원
+
+    // 4. user_subscription 테이블에 구독 정보 저장
+    // 기존 구독이 있으면 비활성화
+    await supabase
+      .from('user_subscription')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    // 새 구독 정보 저장
+    const startDate = new Date();
+    const { error: subscriptionError } = await supabase
+      .from('user_subscription')
+      .insert({
+        user_id: userId,
+        plan_type: planType,
+        monthly_fee: monthlyFee,
+        base_tokens: baseTokens,
+        excess_token_rate: excessTokenRate,
+        subscription_start_date: startDate.toISOString().split('T')[0],
+        is_active: true,
+        auto_renew: true
+      });
+
+    if (subscriptionError) {
+      console.warn('⚠️ user_subscription 저장 실패 (무시):', subscriptionError);
+      // 기존 테이블 구조와의 호환성을 위해 계속 진행
+    } else {
+      console.log(`✅ user_subscription 저장 완료: ${userId} - ${planType}`);
+    }
+
+    // 5. 기존 subscription_cycle 테이블에도 저장 (호환성)
     const { data: tokenConfigs } = await supabase
       .from('token_config')
       .select('*')
@@ -300,11 +346,10 @@ async function activateSubscription(userId, orderId) {
 
     const tokenConfig = tokenConfigs || {};
     const tokenKey = `owner_${planType}_limit`;
-    const monthlyTokens = tokenConfig[tokenKey] || 100;
+    const monthlyTokens = tokenConfig[tokenKey] || baseTokens;
     
     console.log(`✅ [payment] 관리자 설정 토큰 한도 사용: ${monthlyTokens} (${tokenKey})`);
 
-    const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 30);
 
@@ -323,7 +368,9 @@ async function activateSubscription(userId, orderId) {
         payment_status: 'completed'
       });
 
-    if (cycleError) throw cycleError;
+    if (cycleError) {
+      console.warn('⚠️ subscription_cycle 저장 실패 (무시):', cycleError);
+    }
 
     console.log(`✅ 구독 활성화 완료: ${userId} - ${planType}`);
 
@@ -341,7 +388,7 @@ function extractPlanFromAmount(amount) {
     0: 'seed',
     30000: 'power',
     50000: 'bigpower',
-    70000: 'premium'
+    100000: 'premium'
   };
   return planMap[amount] || 'seed';
 }

@@ -49,7 +49,7 @@ module.exports = async (req, res) => {
           owner_seed_price: 0,
           owner_power_price: 30000,
           owner_bigpower_price: 50000,
-          owner_premium_price: 70000,
+          owner_premium_price: 100000, // 70,000 → 100,000으로 변경
           agency_elite_price: 100000,
           agency_expert_price: 300000,
           agency_master_price: 500000,
