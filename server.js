@@ -4426,6 +4426,250 @@ app.delete('/api/admin/members/:id', async (req, res) => {
   }
 });
 
+// ==================== 회원 결과물 조회 API ====================
+
+// 회원들의 모든 결과물 조회 (블로그, 리뷰 답글, 영상)
+app.get('/api/admin/member-creations', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Supabase가 설정되지 않았습니다' 
+      });
+    }
+
+    const { 
+      type = 'all',  // 'all', 'blog', 'review', 'video'
+      userId = null,  // 특정 회원 필터
+      page = 1, 
+      limit = 50,
+      search = ''  // 검색어 (제목, 내용 등)
+    } = req.query;
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 200);
+    const offset = (pageNum - 1) * limitNum;
+
+    let allCreations = [];
+
+    // 1. 블로그 조회
+    if (type === 'all' || type === 'blog') {
+      try {
+        let blogQuery = supabase
+          .from('blog_posts')
+          .select(`
+            id,
+            user_id,
+            blog_type,
+            blog_title,
+            blog_content,
+            store_name,
+            status,
+            created_at,
+            updated_at,
+            profiles:user_id (
+              id,
+              name,
+              email
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (userId) {
+          blogQuery = blogQuery.eq('user_id', userId);
+        }
+
+        if (search) {
+          blogQuery = blogQuery.or(`blog_title.ilike.%${search}%,blog_content.ilike.%${search}%,store_name.ilike.%${search}%`);
+        }
+
+        const { data: blogs, error: blogError } = await blogQuery;
+
+        if (!blogError && blogs) {
+          blogs.forEach(blog => {
+            allCreations.push({
+              id: blog.id,
+              type: 'blog',
+              user_id: blog.user_id,
+              user_name: blog.profiles?.name || '알 수 없음',
+              user_email: blog.profiles?.email || '',
+              title: blog.blog_title || blog.store_name || '제목 없음',
+              content: blog.blog_content?.substring(0, 200) || '',
+              metadata: {
+                blog_type: blog.blog_type,
+                store_name: blog.store_name,
+                status: blog.status
+              },
+              created_at: blog.created_at,
+              updated_at: blog.updated_at
+            });
+          });
+        }
+      } catch (err) {
+        devError('블로그 조회 오류:', err);
+      }
+    }
+
+    // 2. 리뷰 답글 조회
+    if (type === 'all' || type === 'review') {
+      try {
+        let reviewQuery = supabase
+          .from('review_responses')
+          .select(`
+            id,
+            user_id,
+            customer_review,
+            ai_response,
+            owner_tips,
+            is_used,
+            created_at,
+            updated_at,
+            profiles:user_id (
+              id,
+              name,
+              email
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (userId) {
+          reviewQuery = reviewQuery.eq('user_id', userId);
+        }
+
+        if (search) {
+          reviewQuery = reviewQuery.or(`customer_review.ilike.%${search}%,ai_response.ilike.%${search}%`);
+        }
+
+        const { data: reviews, error: reviewError } = await reviewQuery;
+
+        if (!reviewError && reviews) {
+          reviews.forEach(review => {
+            allCreations.push({
+              id: review.id,
+              type: 'review',
+              user_id: review.user_id,
+              user_name: review.profiles?.name || '알 수 없음',
+              user_email: review.profiles?.email || '',
+              title: '리뷰 답글',
+              content: review.ai_response?.substring(0, 200) || review.customer_review?.substring(0, 200) || '',
+              metadata: {
+                customer_review: review.customer_review?.substring(0, 100) || '',
+                owner_tips: review.owner_tips || '',
+                is_used: review.is_used || false
+              },
+              created_at: review.created_at,
+              updated_at: review.updated_at
+            });
+          });
+        }
+      } catch (err) {
+        devError('리뷰 조회 오류:', err);
+      }
+    }
+
+    // 3. 영상 조회
+    if (type === 'all' || type === 'video') {
+      try {
+        let videoQuery = supabase
+          .from('shorts_videos')
+          .select(`
+            id,
+            user_id,
+            title,
+            description,
+            menu_name,
+            style,
+            status,
+            video_url,
+            thumbnail_url,
+            created_at,
+            updated_at,
+            profiles:user_id (
+              id,
+              name,
+              email
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (userId) {
+          videoQuery = videoQuery.eq('user_id', userId);
+        }
+
+        if (search) {
+          videoQuery = videoQuery.or(`title.ilike.%${search}%,description.ilike.%${search}%,menu_name.ilike.%${search}%`);
+        }
+
+        const { data: videos, error: videoError } = await videoQuery;
+
+        if (!videoError && videos) {
+          videos.forEach(video => {
+            allCreations.push({
+              id: video.id,
+              type: 'video',
+              user_id: video.user_id,
+              user_name: video.profiles?.name || '알 수 없음',
+              user_email: video.profiles?.email || '',
+              title: video.title || video.menu_name || '제목 없음',
+              content: video.description || '',
+              metadata: {
+                menu_name: video.menu_name,
+                style: video.style,
+                status: video.status,
+                video_url: video.video_url,
+                thumbnail_url: video.thumbnail_url
+              },
+              created_at: video.created_at,
+              updated_at: video.updated_at
+            });
+          });
+        }
+      } catch (err) {
+        devError('영상 조회 오류:', err);
+      }
+    }
+
+    // 날짜순 정렬 (최신순)
+    allCreations.sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateB - dateA;
+    });
+
+    // 페이징
+    const total = allCreations.length;
+    const paginatedCreations = allCreations.slice(offset, offset + limitNum);
+
+    // 통계 정보
+    const stats = {
+      total: total,
+      blog: allCreations.filter(c => c.type === 'blog').length,
+      review: allCreations.filter(c => c.type === 'review').length,
+      video: allCreations.filter(c => c.type === 'video').length
+    };
+
+    res.json({
+      success: true,
+      data: paginatedCreations,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: total,
+        totalPages: Math.ceil(total / limitNum)
+      },
+      stats: stats
+    });
+
+  } catch (error) {
+    devError('회원 결과물 조회 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '서버 오류가 발생했습니다',
+      details: error.message 
+    });
+  }
+});
+
 // ==================== 관리자 권한 관리 API ====================
 
 // 일반 관리자의 권한 조회 (오너 관리자만)

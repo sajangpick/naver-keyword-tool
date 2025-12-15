@@ -25,6 +25,12 @@
       badge: null
     },
     {
+      icon: '📁',
+      title: '회원 결과물 관리',
+      path: '/admin/pages/member-creations.html',
+      badge: 'NEW'
+    },
+    {
       icon: '📚',
       title: '전자책 다운로드',
       path: '/admin/pages/ebook-downloads.html',
