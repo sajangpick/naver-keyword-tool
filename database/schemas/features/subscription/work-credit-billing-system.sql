@@ -140,19 +140,62 @@ BEFORE INSERT OR UPDATE ON public.work_credit_usage
 FOR EACH ROW
 EXECUTE FUNCTION update_work_credit_usage_date();
 
--- ==================== 4. user_subscription 테이블 수정 ====================
+-- ==================== 4. user_subscription 테이블 생성 또는 수정 ====================
 
+-- 테이블이 없으면 생성
+CREATE TABLE IF NOT EXISTS public.user_subscription (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- 회원 정보
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  
+  -- 구독 정보
+  plan_type text NOT NULL, -- 'light', 'standard', 'pro', 'premium'
+  monthly_fee integer NOT NULL, -- 월 최소 이용료: 0, 30000, 50000, 100000
+  included_credits integer DEFAULT 0, -- 포함된 작업 크레딧
+  excess_credit_rate numeric(10,2) DEFAULT 1.2, -- 초과 작업 크레딧당 단가 (원/크레딧)
+  
+  -- 구독 기간
+  subscription_start_date date NOT NULL DEFAULT CURRENT_DATE,
+  subscription_end_date date, -- NULL이면 자동 갱신
+  is_active boolean DEFAULT true,
+  auto_renew boolean DEFAULT true, -- 자동 갱신 여부
+  
+  -- 메타데이터
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.user_subscription IS '사용자별 구독 정보 (월 정액제)';
+COMMENT ON COLUMN public.user_subscription.plan_type IS 'light, standard, pro, premium';
+COMMENT ON COLUMN public.user_subscription.included_credits IS '포함된 작업 크레딧 (월 최소 이용료에 포함)';
+COMMENT ON COLUMN public.user_subscription.excess_credit_rate IS '초과 작업 크레딧당 단가 (원/크레딧)';
+
+CREATE INDEX IF NOT EXISTS idx_user_subscription_user ON public.user_subscription(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_subscription_active ON public.user_subscription(is_active);
+
+-- 기존 테이블이 있으면 컬럼 수정
 DO $$
 BEGIN
-  -- base_tokens → included_credits로 변경
+  -- base_tokens → included_credits로 변경 (기존 컬럼이 있는 경우)
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' 
     AND table_name = 'user_subscription' 
     AND column_name = 'base_tokens'
   ) THEN
-    -- 기존 base_tokens가 있으면 included_credits로 이름 변경
-    ALTER TABLE public.user_subscription RENAME COLUMN base_tokens TO included_credits;
+    -- included_credits가 없으면 이름 변경
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      AND table_name = 'user_subscription' 
+      AND column_name = 'included_credits'
+    ) THEN
+      ALTER TABLE public.user_subscription RENAME COLUMN base_tokens TO included_credits;
+    ELSE
+      -- 둘 다 있으면 base_tokens 삭제
+      ALTER TABLE public.user_subscription DROP COLUMN base_tokens;
+    END IF;
   END IF;
 
   -- included_credits 컬럼이 없으면 추가
@@ -165,14 +208,25 @@ BEGIN
     ALTER TABLE public.user_subscription ADD COLUMN included_credits integer DEFAULT 0;
   END IF;
 
-  -- excess_token_rate → excess_credit_rate로 변경
+  -- excess_token_rate → excess_credit_rate로 변경 (기존 컬럼이 있는 경우)
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' 
     AND table_name = 'user_subscription' 
     AND column_name = 'excess_token_rate'
   ) THEN
-    ALTER TABLE public.user_subscription RENAME COLUMN excess_token_rate TO excess_credit_rate;
+    -- excess_credit_rate가 없으면 이름 변경
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+      AND table_name = 'user_subscription' 
+      AND column_name = 'excess_credit_rate'
+    ) THEN
+      ALTER TABLE public.user_subscription RENAME COLUMN excess_token_rate TO excess_credit_rate;
+    ELSE
+      -- 둘 다 있으면 excess_token_rate 삭제
+      ALTER TABLE public.user_subscription DROP COLUMN excess_token_rate;
+    END IF;
   END IF;
 
   -- excess_credit_rate 컬럼이 없으면 추가
