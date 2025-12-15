@@ -337,6 +337,7 @@
   <body class="admin-body">
     <!-- 사이드바 -->
     <div id="admin-sidebar"></div>
+    <div id="adminSidebar"></div>
 
     <!-- 헤더 -->
     <div id="header"></div>
@@ -449,6 +450,7 @@
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="/admin/assets/admin-bootstrap.js" defer></script>
+    <script src="/admin/assets/admin-sidebar.js"></script>
     
     <!-- Flatpickr -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -465,12 +467,16 @@
       // ==================== 초기화 ====================
       
       window.addEventListener('load', async function() {
-        supabase = await AdminBootstrap.getSupabaseClient();
-        await AdminBootstrap.initializeHeader();
-        await AdminBootstrap.initializeSidebar();
-        
-        initializeMonthPicker();
-        loadBillingData();
+        try {
+          supabase = await AdminBootstrap.getSupabaseClient();
+          await AdminBootstrap.initializeHeader();
+          await AdminBootstrap.initializeSidebar();
+          
+          initializeMonthPicker();
+          loadBillingData();
+        } catch (error) {
+          console.error('초기화 오류:', error);
+        }
       });
 
       // 현재 월 구하기 (YYYY-MM 형식)
@@ -508,6 +514,11 @@
         try {
           // API 호출: 해당 월의 모든 사용자 청구 정보 조회
           const response = await fetch(`/api/admin/billing/list?month=${currentBillingMonth}`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
           const result = await response.json();
 
           if (!result.success) {
@@ -521,7 +532,10 @@
               <tr>
                 <td colspan="9" class="empty-state">
                   <i class="fas fa-inbox"></i>
-                  <div>해당 기간에 청구 데이터가 없습니다</div>
+                  <div style="margin-bottom: 12px;">해당 기간에 청구 데이터가 없습니다</div>
+                  <div style="font-size: 13px; color: #6b7280;">
+                    💡 <strong>청구 금액 미리보기</strong> 버튼을 클릭하여 청구 금액을 계산해주세요.
+                  </div>
                 </td>
               </tr>
             `;

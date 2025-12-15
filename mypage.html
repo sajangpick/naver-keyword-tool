@@ -910,25 +910,25 @@
 
       <!-- 컨텐츠 그리드 -->
       <div class="content-grid">
-        <!-- 0. 토큰 정보 -->
+        <!-- 0. 작업 크레딧 사용 현황 -->
         <section class="section" id="tokenSection">
           <h3 class="section-title">
             <i class="fas fa-coins"></i>
-            내 토큰 정보
+            내 작업 크레딧 사용 현황
           </h3>
           
-          <!-- 토큰 현황 카드 -->
+          <!-- 작업 크레딧 현황 카드 -->
           <div class="token-status-card">
             <div class="token-plan">
-              <span class="plan-name" id="currentPlan">라이트</span>
-              <span class="plan-badge" id="planBadge">무료</span>
+              <span class="plan-name" id="currentPlan">스탠다드</span>
+              <span class="plan-badge" id="planBadge">등급</span>
             </div>
             
             <div class="token-meter">
               <div class="meter-info">
-                <span class="meter-label">이번 달 사용량</span>
+                <span class="meter-label">이번 달 사용 크레딧</span>
                 <span class="meter-value">
-                  <span id="tokensUsed">0</span> / <span id="tokensLimit">100</span> 토큰
+                  <span id="tokensUsed">0</span> / <span id="tokensLimit">0</span> 크레딧
                 </span>
               </div>
               <div class="meter-bar">
@@ -941,16 +941,31 @@
               <div class="token-stat">
                 <i class="fas fa-battery-three-quarters"></i>
                 <div>
-                  <span class="stat-label">남은 토큰</span>
-                  <span class="stat-value" id="tokensRemaining">100</span>
+                  <span class="stat-label">포함된 기본 크레딧</span>
+                  <span class="stat-value" id="tokensRemaining">0</span>
                 </div>
               </div>
               <div class="token-stat">
                 <i class="fas fa-calendar-alt"></i>
                 <div>
-                  <span class="stat-label">갱신일까지</span>
-                  <span class="stat-value" id="daysLeft">30일</span>
+                  <span class="stat-label">다음 결제 예정일</span>
+                  <span class="stat-value" id="daysLeft">-</span>
                 </div>
+              </div>
+            </div>
+            
+            <!-- 예상 청구 금액 -->
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 16px; margin-top: 16px; border: 1px solid rgba(251, 191, 36, 0.3);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #92400e; font-size: 14px; font-weight: 600;">
+                  <i class="fas fa-info-circle"></i> 이번 달 예상 청구 금액
+                </span>
+                <span style="color: #92400e; font-size: 20px; font-weight: 700;" id="estimatedBillingAmount">0원</span>
+              </div>
+              <div style="font-size: 12px; color: #78350f; margin-top: 8px; line-height: 1.5;">
+                <div style="margin-bottom: 4px;">• 월 최소 이용료: <span id="minimumFee">0</span>원</div>
+                <div style="margin-bottom: 4px;">• 사용량 기반 청구 금액: <span id="usageBasedAmount">0</span>원</div>
+                <div style="font-weight: 600;">최종 청구 금액 = max(월 최소 이용료, 사용량 기반 금액)</div>
               </div>
             </div>
           </div>
@@ -970,7 +985,7 @@
           <!-- 업그레이드 버튼 -->
           <div id="upgradeSection" style="display: none;">
             <button class="btn btn-upgrade" onclick="goToUpgrade()">
-              <i class="fas fa-rocket"></i> 더 많은 토큰이 필요하신가요? 업그레이드 하기
+              <i class="fas fa-rocket"></i> 더 많은 크레딧이 필요하신가요? 업그레이드 하기
             </button>
           </div>
         </section>
@@ -1623,7 +1638,9 @@
         // UI 업데이트
         const avatar = (profile.name || profile.email || 'U').charAt(0).toUpperCase();
         document.getElementById('profileAvatar').textContent = avatar;
-        document.getElementById('profileName').textContent = profile.name || '이름 없음';
+        // 사용자 이름 표시 (주니형으로 표시)
+        const displayName = profile.name || '주니형' || '이름 없음';
+        document.getElementById('profileName').textContent = displayName;
         document.getElementById('profileEmail').textContent = profile.email || '이메일 없음';
 
         // 회원 유형 뱃지
@@ -2214,7 +2231,7 @@
       }
     }
 
-    // 토큰 정보 로드
+    // 작업 크레딧 사용 현황 로드
     async function loadTokenInfo(userId) {
       try {
         // Supabase 세션 토큰 가져오기
@@ -2224,50 +2241,59 @@
           throw new Error('로그인이 필요합니다');
         }
 
-        // 서버 API를 통해 토큰 정보 가져오기
-        const response = await fetch('/api/subscription/user-dashboard?action=dashboard', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        });
+        // 작업 크레딧 사용 현황 및 예상 청구 금액 가져오기
+        const [usageResponse, billingResponse] = await Promise.all([
+          fetch(`/api/subscription/work-credit-billing?action=get-current-usage&userId=${userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          }),
+          fetch(`/api/subscription/work-credit-billing?action=calculate&userId=${userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          })
+        ]);
 
-        if (!response.ok) {
-          let errorMessage = '토큰 정보 로드 실패';
+        // 응답 확인
+        if (!usageResponse.ok && !billingResponse.ok) {
+          let errorMessage = '작업 크레딧 정보 로드 실패';
           try {
-            const errorData = await response.json();
+            const errorData = await usageResponse.json();
             errorMessage = errorData.error || errorMessage;
-            console.error('❌ API 응답 오류:', response.status, errorData);
+            console.error('❌ API 응답 오류:', usageResponse.status, errorData);
           } catch (parseError) {
-            console.error('❌ 응답 파싱 오류:', response.status, response.statusText);
-            errorMessage = `서버 오류 (${response.status}): ${response.statusText}`;
+            console.error('❌ 응답 파싱 오류:', usageResponse.status, usageResponse.statusText);
+            errorMessage = `서버 오류 (${usageResponse.status}): ${usageResponse.statusText}`;
           }
           throw new Error(errorMessage);
         }
 
-        const result = await response.json();
-        console.log('📊 API 응답 결과:', result);
-        console.log('📊 API 응답 상세:', {
-          success: result.success,
-          hasData: !!result.data,
-          hasCycle: !!result.data?.cycle,
-          cycleData: result.data?.cycle,
-          profileData: result.data?.profile
-        });
+        const usageResult = usageResponse.ok ? await usageResponse.json() : null;
+        const billingResult = billingResponse.ok ? await billingResponse.json() : null;
         
-        if (!result.success) {
-          const errorMsg = result.error || '토큰 정보 조회 실패';
+        console.log('📊 작업 크레딧 사용 현황:', usageResult);
+        console.log('📊 예상 청구 금액:', billingResult);
+        
+        if (!usageResult || !usageResult.success) {
+          const errorMsg = usageResult?.error || '작업 크레딧 정보 조회 실패';
           console.error('❌ API 응답 실패:', errorMsg);
           
           // 에러가 발생해도 기본값은 표시
           document.getElementById('currentPlan').textContent = '라이트';
-          document.getElementById('planBadge').textContent = '무료';
+          document.getElementById('planBadge').textContent = '등급';
           document.getElementById('tokensUsed').textContent = '0';
-          document.getElementById('tokensLimit').textContent = '100';
-          document.getElementById('tokensRemaining').textContent = '100';
+          document.getElementById('tokensLimit').textContent = '0';
+          document.getElementById('tokensRemaining').textContent = '0';
           document.getElementById('usagePercent').textContent = '0%';
-          document.getElementById('daysLeft').textContent = '30일';
+          document.getElementById('daysLeft').textContent = '-';
+          document.getElementById('estimatedBillingAmount').textContent = '0원';
+          document.getElementById('minimumFee').textContent = '0';
+          document.getElementById('usageBasedAmount').textContent = '0';
           
           const usageList = document.getElementById('recentUsageList');
           if (usageList) {
@@ -2284,199 +2310,97 @@
           return;
         }
         
-        if (result.data) {
-          const { profile, cycle, recentUsage } = result.data;
+        const usage = usageResult.usage;
+        const billing = billingResult?.billing || null;
+        
+        // 등급 정보 표시
+        const normalizedLevel = normalizeMembershipLevel(usage.planType);
+        document.getElementById('currentPlan').textContent = LEVEL_NAMES[normalizedLevel] || '라이트';
+        document.getElementById('planBadge').textContent = '등급';
+        
+        // 작업 크레딧 사용량 표시
+        const creditsUsed = usage.totalCreditsUsed || 0;
+        const includedCredits = usage.includedCredits || 0;
+        const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+        
+        // 사용률 계산 (기본 크레딧 소진율)
+        const usagePercent = includedCredits > 0 ? 
+          Math.round((creditsUsed / includedCredits) * 100) : 0;
+        
+        document.getElementById('tokensUsed').textContent = creditsUsed.toLocaleString();
+        document.getElementById('tokensLimit').textContent = includedCredits.toLocaleString();
+        document.getElementById('tokensRemaining').textContent = creditsRemaining.toLocaleString();
+        document.getElementById('usagePercent').textContent = usagePercent + '%';
+        
+        // 다음 결제 예정일 (구독 사이클에서 가져오기)
+        // TODO: subscription_cycle 테이블에서 다음 결제일 조회
+        document.getElementById('daysLeft').textContent = '-';
+        
+        // 예상 청구 금액 표시
+        const estimatedAmount = billing?.totalAmount || usage.estimatedTotalAmount || usage.minimumFee || 0;
+        const minimumFee = usage.minimumFee || 0;
+        const usageBasedAmount = usage.actualUsageAmount || 0;
+        
+        document.getElementById('estimatedBillingAmount').textContent = estimatedAmount.toLocaleString() + '원';
+        document.getElementById('minimumFee').textContent = minimumFee.toLocaleString();
+        document.getElementById('usageBasedAmount').textContent = usageBasedAmount.toLocaleString();
+        
+        // 미터 바 업데이트
+        const meterFill = document.getElementById('tokenMeterFill');
+        if (meterFill) {
+          meterFill.style.width = Math.min(usagePercent, 100) + '%';
           
-          console.log('✅ 토큰 정보 로드 성공:', { 
-            profile: {
-              id: profile?.id,
-              email: profile?.email,
-              membership_level: profile?.membership_level,
-              user_type: profile?.user_type
-            }, 
-            cycle: {
-              id: cycle?.id,
-              monthly_token_limit: cycle?.monthly_token_limit,
-              tokens_used: cycle?.tokens_used,
-              tokens_remaining: cycle?.tokens_remaining
-            },
-            recentUsageCount: recentUsage?.length || 0 
-          });
-          
-          // 등급 정규화 (관리자 페이지와 동일한 로직)
-          const normalizedLevel = normalizeMembershipLevel(profile?.membership_level);
-          
-          // 플랜 정보 표시 (정규화된 등급 사용)
-          const planBadges = {
-            'seed': '무료',
-            'power': '베이직',
-            'bigpower': '프로',
-            'premium': 'VIP',
-            'elite': '스타터',
-            'expert': '프로',
-            'master': '엔터프라이즈',
-            'platinum': '플래티넘',
-            'admin': '관리자'
-          };
-          
-          // 디버깅: membership_level 확인
-          console.log('📊 [loadTokenInfo] 등급 정보:', {
-            original_membership_level: profile?.membership_level,
-            normalized_level: normalizedLevel,
-            plan_name: LEVEL_NAMES[normalizedLevel] || '라이트',
-            fullProfile: profile
-          });
-          
-          document.getElementById('currentPlan').textContent = 
-            LEVEL_NAMES[normalizedLevel] || '라이트';
-          document.getElementById('planBadge').textContent = 
-            planBadges[normalizedLevel] || '무료';
-          
-          if (cycle) {
-            // 관리자 등급 체크
-            const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
-            
-            // 토큰 사용량 표시
-            const tokensUsed = cycle.tokens_used || 0;
-            let tokensLimit = cycle.monthly_token_limit || 100;
-            let tokensRemaining = cycle.tokens_remaining || tokensLimit;
-            
-            // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리
-            if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
-              tokensLimit = null; // null = 무제한
-              tokensRemaining = null; // null = 무제한
-            }
-            
-            const usagePercent = tokensLimit && tokensLimit > 0 ? 
-              Math.round((tokensUsed / tokensLimit) * 100) : 0;
-            
-            console.log('📊 토큰 정보 표시:', {
-              isAdmin,
-              tokensUsed,
-              tokensLimit: tokensLimit || '무제한',
-              tokensRemaining: tokensRemaining || '무제한',
-              usagePercent,
-              daysRemaining: cycle.days_remaining,
-              cycleId: cycle.id
-            });
-            
-            document.getElementById('tokensUsed').textContent = tokensUsed;
-            document.getElementById('tokensLimit').textContent = tokensLimit ? tokensLimit : '무제한';
-            document.getElementById('tokensRemaining').textContent = tokensRemaining ? tokensRemaining : '무제한';
-            document.getElementById('usagePercent').textContent = isAdmin ? '0%' : (usagePercent + '%');
-            document.getElementById('daysLeft').textContent = 
-              cycle.days_remaining ? `${cycle.days_remaining}일` : '30일';
-            
-            // 미터 바 업데이트 (관리자는 표시하지 않음)
-            const meterFill = document.getElementById('tokenMeterFill');
-            if (meterFill) {
-              if (isAdmin) {
-                // 관리자는 미터 바 숨기거나 0%로 표시
-                meterFill.style.width = '0%';
-                meterFill.style.background = 'linear-gradient(90deg, #10b981, #059669)'; // 초록색 (무제한)
-              } else {
-                meterFill.style.width = Math.min(usagePercent, 100) + '%';
-                
-                // 사용량에 따른 색상 변경
-                if (usagePercent >= 90) {
-                  meterFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
-                } else if (usagePercent >= 70) {
-                  meterFill.style.background = 'linear-gradient(90deg, #f59e0b, #ea580c)';
-                }
-              }
-            }
-            
-            // 80% 이상 사용시 업그레이드 버튼 표시
-            if (usagePercent >= 80) {
-              const upgradeSection = document.getElementById('upgradeSection');
-              if (upgradeSection) {
-                upgradeSection.style.display = 'block';
-              }
-            }
-            
-            // 결제 섹션과 토큰 정보 동기화
-            syncTokenInfoWithPayment(cycle, profile);
+          // 사용량에 따른 색상 변경
+          if (usagePercent >= 90) {
+            meterFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+          } else if (usagePercent >= 70) {
+            meterFill.style.background = 'linear-gradient(90deg, #f59e0b, #ea580c)';
           } else {
-            // cycle이 없을 때 기본값 표시
-            console.warn('⚠️ 구독 사이클이 없습니다. 기본값을 표시합니다.');
-            document.getElementById('tokensUsed').textContent = '0';
-            document.getElementById('tokensLimit').textContent = '100';
-            document.getElementById('tokensRemaining').textContent = '100';
-            document.getElementById('usagePercent').textContent = '0%';
-            document.getElementById('daysLeft').textContent = '30일';
-            
-            const meterFill = document.getElementById('tokenMeterFill');
-            if (meterFill) {
-              meterFill.style.width = '0%';
-            }
+            meterFill.style.background = 'linear-gradient(90deg, #10b981, #059669)';
           }
+        }
+        
+        // 80% 이상 사용시 업그레이드 버튼 표시
+        if (usagePercent >= 80) {
+          const upgradeSection = document.getElementById('upgradeSection');
+          if (upgradeSection) {
+            upgradeSection.style.display = 'block';
+          }
+        }
+        
+        // 최근 사용 내역 표시 (work_credit_usage 테이블에서 조회)
+        try {
+          const { data: recentUsage } = await supabase
+            .from('work_credit_usage')
+            .select('*')
+            .eq('user_id', userId)
+            .order('used_at', { ascending: false })
+            .limit(5);
           
-          // 최근 사용 내역 표시
           const usageList = document.getElementById('recentUsageList');
           if (usageList) {
             if (recentUsage && recentUsage.length > 0) {
-              usageList.innerHTML = recentUsage.slice(0, 5).map(usage => {
-                // API 타입을 한국어로 변환
-                const apiLabels = {
-                  'chatgpt': 'ChatGPT',
-                  'chatgpt-blog': '블로그 작성',
-                  'blog-topic-recommendation': '블로그 주제 추천',
-                  'menu-analysis': '메뉴 분석',
-                  'place-info-enrichment': '가게 정보 보강',
-                  'keyword-recommendation': '키워드 추천',
-                  'blog': '블로그 작성',
-                  'reply': '리뷰 답글',
-                  'review-response': '리뷰 답글 생성',
-                  'claude': 'Claude',
-                  'news': '뉴스 추천',
-                  'ai-news-recommend': 'AI 뉴스 추천'
+              usageList.innerHTML = recentUsage.map(usage => {
+                // 서비스 타입을 한국어로 변환
+                const serviceLabels = {
+                  'blog_writing': '블로그 작성',
+                  'review_reply': '리뷰 답글',
+                  'video_generation': '영상 생성',
+                  'news': '뉴스 추천'
                 };
                 
-                // api_type이 없으면 api_name 사용
-                const apiType = usage.api_type || usage.api_name || '';
-                let apiLabel = apiType;
-                
-                // 정확한 매칭 시도
-                if (apiLabels[apiType]) {
-                  apiLabel = apiLabels[apiType];
-                } else {
-                  // 부분 매칭 시도 (예: 'chatgpt-blog' -> '블로그 작성')
-                  for (const [key, value] of Object.entries(apiLabels)) {
-                    if (apiType.includes(key) || key.includes(apiType)) {
-                      apiLabel = value;
-                      break;
-                    }
-                  }
-                  
-                  // 매칭 실패 시 기본 변환 규칙 적용
-                  if (apiLabel === apiType) {
-                    if (apiType.includes('blog')) {
-                      apiLabel = '블로그 작성';
-                    } else if (apiType.includes('review') || apiType.includes('reply')) {
-                      apiLabel = '리뷰 답글';
-                    } else if (apiType.includes('menu')) {
-                      apiLabel = '메뉴 분석';
-                    } else if (apiType.includes('place') || apiType.includes('store')) {
-                      apiLabel = '가게 정보';
-                    } else if (apiType.includes('keyword')) {
-                      apiLabel = '키워드 추천';
-                    } else if (apiType.includes('topic')) {
-                      apiLabel = '주제 추천';
-                    } else {
-                      apiLabel = apiType; // 변환 실패 시 원본 표시
-                    }
-                  }
-                }
-                
+                const serviceType = usage.service_type || '';
+                const serviceLabel = serviceLabels[serviceType] || serviceType;
+                const creditsUsed = usage.work_credits_used || 0;
                 const timeAgo = getTimeAgo(new Date(usage.used_at));
                 
                 return `
                   <div class="usage-item">
                     <div>
-                      <span class="usage-api">${apiLabel}</span>
+                      <span class="usage-api">${serviceLabel}</span>
                       <span class="usage-time">${timeAgo}</span>
                     </div>
-                    <span class="usage-tokens">-${(usage.tokens_used || 0).toLocaleString()} 토큰</span>
+                    <span class="usage-tokens">-${creditsUsed.toLocaleString()} 작업 크레딧</span>
                   </div>
                 `;
               }).join('');
@@ -2487,6 +2411,16 @@
                 </div>
               `;
             }
+          }
+        } catch (usageError) {
+          console.error('❌ 최근 사용 내역 조회 실패:', usageError);
+          const usageList = document.getElementById('recentUsageList');
+          if (usageList) {
+            usageList.innerHTML = `
+              <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                <i class="fas fa-info-circle"></i> 사용 내역을 불러올 수 없습니다.
+              </div>
+            `;
           }
         }
       } catch (error) {
@@ -2504,7 +2438,7 @@
           usageList.innerHTML = `
             <div style="text-align: center; color: #ef4444; padding: 20px;">
               <i class="fas fa-exclamation-triangle"></i> 
-              <div style="margin-top: 8px; font-size: 14px;">토큰 정보를 불러올 수 없습니다</div>
+              <div style="margin-top: 8px; font-size: 14px;">작업 크레딧 정보를 불러올 수 없습니다</div>
               <div style="margin-top: 4px; font-size: 12px; color: #999;">${errorMessage}</div>
               <button onclick="refreshTokenInfo()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                 <i class="fas fa-sync-alt"></i> 다시 시도
@@ -2522,11 +2456,19 @@
         const usagePercentEl = document.getElementById('usagePercent');
         
         if (currentPlanEl) currentPlanEl.textContent = '라이트';
-        if (planBadgeEl) planBadgeEl.textContent = '무료';
+        if (planBadgeEl) planBadgeEl.textContent = '등급';
         if (tokensUsedEl) tokensUsedEl.textContent = '0';
-        if (tokensLimitEl) tokensLimitEl.textContent = '100';
-        if (tokensRemainingEl) tokensRemainingEl.textContent = '100';
+        if (tokensLimitEl) tokensLimitEl.textContent = '0';
+        if (tokensRemainingEl) tokensRemainingEl.textContent = '0';
         if (usagePercentEl) usagePercentEl.textContent = '0%';
+        
+        // 예상 청구 금액 기본값
+        const estimatedBillingEl = document.getElementById('estimatedBillingAmount');
+        const minimumFeeEl = document.getElementById('minimumFee');
+        const usageBasedAmountEl = document.getElementById('usageBasedAmount');
+        if (estimatedBillingEl) estimatedBillingEl.textContent = '0원';
+        if (minimumFeeEl) minimumFeeEl.textContent = '0';
+        if (usageBasedAmountEl) usageBasedAmountEl.textContent = '0';
         
         const meterFill = document.getElementById('tokenMeterFill');
         if (meterFill) {
