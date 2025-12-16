@@ -370,6 +370,22 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
       } else {
         console.log(`✅ 작업 크레딧 사용 기록: ${workCreditsUsed} 크레딧 (${serviceInfo.serviceType})`);
       }
+
+      // ⚠️ 중요: subscription_cycle 테이블의 credits_used 업데이트
+      // work_credit_usage에만 기록하고 subscription_cycle을 업데이트하지 않으면 크레딧이 소진되지 않음
+      try {
+        const { checkAndUpdateCreditLimit } = require('../subscription/token-usage');
+        const creditUpdateResult = await checkAndUpdateCreditLimit(userId, workCreditsUsed);
+        
+        if (creditUpdateResult.success) {
+          console.log(`✅ [token-tracker] 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditUpdateResult.creditsRemaining}/${creditUpdateResult.monthlyLimit})`);
+        } else {
+          console.error(`❌ [token-tracker] 크레딧 차감 실패: ${creditUpdateResult.error}`);
+        }
+      } catch (creditUpdateError) {
+        console.error('❌ [token-tracker] 크레딧 차감 중 오류:', creditUpdateError);
+        // 크레딧 차감 실패해도 토큰 추적은 성공으로 처리 (기록은 이미 저장됨)
+      }
     } catch (creditError) {
       console.error('❌ 작업 크레딧 변환 오류:', creditError);
       // 작업 크레딧 기록 실패해도 토큰 추적은 성공으로 처리
