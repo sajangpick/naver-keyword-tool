@@ -3672,6 +3672,21 @@
                     }
                     showSuccessBanner();
                     startVideoStatusWatcher(result.data.id, pendingResultMeta);
+                    
+                    // 크레딧 차감 후 팝업창 크레딧 정보 업데이트
+                    console.log('🔄 [영상 생성 성공] 크레딧 정보 업데이트 중...');
+                    const updatedTokenInfo = await fetchTokenInfo();
+                    if (updatedTokenInfo) {
+                        // 팝업창이 열려있다면 크레딧 정보 업데이트
+                        const modal = document.getElementById('tokenModal');
+                        if (modal && modal.classList.contains('active')) {
+                            console.log('✅ [크레딧 업데이트] 팝업창이 열려있어 크레딧 정보를 업데이트합니다.');
+                            // 팝업창 크레딧 정보 다시 표시
+                            await showTokenModal();
+                        } else {
+                            console.log('ℹ️ [크레딧 업데이트] 팝업창이 닫혀있어 업데이트하지 않습니다.');
+                        }
+                    }
                 } else {
                     showSuccessBanner();
                     // 결과 섹션은 이미 위에서 표시됨

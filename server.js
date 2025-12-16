@@ -6491,6 +6491,89 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
           });
         }
 
+        // ==================== 크레딧 차감 로직 ====================
+        let creditDeducted = false;
+        let creditError = null;
+        let workCreditsUsed = 10; // 영상 생성: 기본 10 크레딧
+
+        if (supabase && userId && userId !== 'demo_user_12345') {
+          try {
+            devLog("💳 영상 생성 크레딧 차감 시작...");
+
+            // 1. work_credit_config에서 영상 생성 크레딧 가중치 가져오기
+            const { data: creditConfig, error: configError } = await supabase
+              .from('work_credit_config')
+              .select('video_generation_credit')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (!configError && creditConfig && creditConfig.video_generation_credit) {
+              workCreditsUsed = Number(creditConfig.video_generation_credit) || 10;
+              devLog(`✅ 영상 생성 크레딧 설정: ${workCreditsUsed} 크레딧`);
+            } else {
+              devLog(`⚠️ work_credit_config 조회 실패 또는 값 없음, 기본값 사용: ${workCreditsUsed} 크레딧`);
+            }
+
+            // 2. 크레딧 한도 체크 및 차감
+            const { checkAndUpdateCreditLimit } = require('./api/subscription/token-usage');
+            const creditCheck = await checkAndUpdateCreditLimit(userId, workCreditsUsed);
+
+            if (!creditCheck.success) {
+              creditError = creditCheck.error;
+              devError(`❌ 크레딧 한도 초과: ${creditError}`);
+              // 크레딧 부족 시 영상 생성 요청 자체를 거부
+              return res.status(403).json({
+                success: false,
+                error: creditError || "크레딧이 부족합니다. 구독을 업그레이드하거나 다음 달을 기다려주세요.",
+                creditsRemaining: creditCheck.creditsRemaining || 0,
+                monthlyLimit: creditCheck.monthlyLimit || 0
+              });
+            } else {
+              creditDeducted = true;
+              devLog(`✅ 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditCheck.creditsRemaining})`);
+
+              // 3. work_credit_usage 테이블에 사용 기록 저장
+              const { data: usageRecord, error: usageError } = await supabase
+                .from('work_credit_usage')
+                .insert({
+                  user_id: userId,
+                  service_type: 'video_generation',
+                  work_credits_used: workCreditsUsed,
+                  input_tokens: 0,
+                  output_tokens: 0,
+                  ai_model: 'gemini-veo-3.1',
+                  usage_date: new Date().toISOString().split('T')[0],
+                  used_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+              if (usageError) {
+                devError("❌ 크레딧 사용 기록 저장 실패:", usageError);
+                // 크레딧은 차감되었지만 기록 저장 실패 (로그만 남김)
+              } else {
+                devLog(`✅ 크레딧 사용 기록 저장 완료: ${usageRecord.id}`);
+              }
+            }
+          } catch (creditErr) {
+            devError("❌ 크레딧 차감 중 오류:", creditErr);
+            creditError = creditErr.message;
+            // 크레딧 차감 실패 시 영상 생성 요청 거부
+            return res.status(500).json({
+              success: false,
+              error: `크레딧 차감 중 오류가 발생했습니다: ${creditError}`
+            });
+          }
+        } else {
+          if (!userId || userId === 'demo_user_12345') {
+            devLog("⚠️ 데모 모드 또는 userId 없음: 크레딧 차감 건너뜀");
+          } else {
+            devLog("⚠️ Supabase 클라이언트가 없어 크레딧 차감을 건너뜁니다.");
+          }
+        }
+        // ==================== 크레딧 차감 로직 끝 ====================
+
         // Runway API로 영상 생성 (비동기)
         // 주의: 영상 생성은 시간이 오래 걸릴 수 있으므로 비동기로 처리
         (async () => {

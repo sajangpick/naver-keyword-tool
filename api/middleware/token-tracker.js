@@ -374,7 +374,7 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
       // ⚠️ 중요: subscription_cycle 테이블의 credits_used 업데이트
       // work_credit_usage에만 기록하고 subscription_cycle을 업데이트하지 않으면 크레딧이 소진되지 않음
       try {
-        console.log(`🔄 [token-tracker] 크레딧 차감 시작: userId=${userId}, workCreditsUsed=${workCreditsUsed}`);
+        console.log(`🔄 [token-tracker] 크레딧 차감 시작: userId=${userId}, workCreditsUsed=${workCreditsUsed}, serviceType=${serviceInfo.serviceType}, apiType=${apiType}`);
         const { checkAndUpdateCreditLimit } = require('../subscription/token-usage');
         const creditUpdateResult = await checkAndUpdateCreditLimit(userId, workCreditsUsed);
         
@@ -382,18 +382,31 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
           console.log(`✅ [token-tracker] 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditUpdateResult.creditsRemaining}/${creditUpdateResult.monthlyLimit})`);
         } else {
           const errorMsg = creditUpdateResult?.error || '알 수 없는 오류';
-          console.error(`❌ [token-tracker] 크레딧 차감 실패: ${errorMsg}`, creditUpdateResult);
+          console.error(`❌ [token-tracker] 크레딧 차감 실패: ${errorMsg}`);
+          console.error(`❌ [token-tracker] 실패 상세:`, {
+            creditUpdateResult,
+            userId,
+            workCreditsUsed,
+            serviceType: serviceInfo.serviceType,
+            apiType: apiType
+          });
           // 크레딧 차감 실패는 심각한 문제이므로 에러를 다시 throw하지 않지만 로깅은 강화
         }
       } catch (creditUpdateError) {
-        console.error('❌ [token-tracker] 크레딧 차감 중 오류:', creditUpdateError);
-        console.error('❌ [token-tracker] 오류 상세:', {
+        console.error('❌ [token-tracker] 크레딧 차감 중 예외 발생:', creditUpdateError);
+        console.error('❌ [token-tracker] 예외 상세:', {
           message: creditUpdateError.message,
-          stack: creditUpdateError.stack,
+          stack: creditUpdateError.stack?.split('\n').slice(0, 10).join('\n'),
+          code: creditUpdateError.code,
+          details: creditUpdateError.details,
+          hint: creditUpdateError.hint,
           userId,
-          workCreditsUsed
+          workCreditsUsed,
+          serviceType: serviceInfo.serviceType,
+          apiType: apiType
         });
         // 크레딧 차감 실패해도 토큰 추적은 성공으로 처리 (기록은 이미 저장됨)
+        // 하지만 이는 심각한 문제이므로 관리자가 확인할 수 있도록 로그를 남김
       }
     } catch (creditError) {
       console.error('❌ 작업 크레딧 변환 오류:', creditError);

@@ -2867,14 +2867,25 @@
             } else {
               // API 호출 실패 시 상세 정보 확인
               const errorText = await usageRes.text();
-              console.error('❌ [mypage] 크레딧 사용 내역 API 호출 실패:', usageRes.status, errorText);
+              console.error('❌ [mypage] 크레딧 사용 내역 API 호출 실패:', {
+                status: usageRes.status,
+                statusText: usageRes.statusText,
+                errorText: errorText,
+                userId: userId,
+                url: `/api/subscription/token-usage?user_id=${userId}&limit=100`
+              });
               
               let errorMessage = '사용 내역을 불러올 수 없습니다';
+              let errorDetails = '';
               try {
                 const errorData = JSON.parse(errorText);
                 errorMessage = errorData.error || errorMessage;
+                if (errorData.warning) {
+                  errorDetails = errorData.warning;
+                }
               } catch (e) {
                 // JSON 파싱 실패 시 원본 텍스트 사용
+                errorDetails = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
               }
               
               // 에러 메시지 표시
@@ -2884,9 +2895,11 @@
                 usageList.innerHTML = `
                   <div style="text-align: center; color: #ef4444; padding: 20px;">
                     <i class="fas fa-exclamation-triangle"></i> 
-                    <div style="margin-top: 8px; font-size: 14px;">${errorMessage}</div>
-                    <button onclick="location.reload()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                      <i class="fas fa-sync-alt"></i> 새로고침
+                    <div style="margin-top: 8px; font-size: 14px; font-weight: bold;">${errorMessage}</div>
+                    ${errorDetails ? `<div style="margin-top: 4px; font-size: 12px; color: #666;">${errorDetails}</div>` : ''}
+                    <div style="margin-top: 8px; font-size: 12px; color: #999;">상태 코드: ${usageRes.status}</div>
+                    <button onclick="refreshTokenInfo()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                      <i class="fas fa-sync-alt"></i> 다시 시도
                     </button>
                   </div>
                 `;

@@ -217,7 +217,7 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
     }
 
     // 크레딧 사용량 업데이트 (작업 크레딧 시스템)
-    console.log(`🔄 [credit-usage] subscription_cycle 업데이트 시작: cycle.id=${cycle.id}, 현재 credits_used=${cycle.credits_used || 0}, 새로운 credits_used=${newCreditsUsed}`);
+    console.log(`🔄 [credit-usage] subscription_cycle 업데이트 시작: cycle.id=${cycle.id}, userId=${userId}, 현재 credits_used=${cycle.credits_used || 0}, 새로운 credits_used=${newCreditsUsed}, credits_remaining=${creditsRemaining}`);
     
     const { data: updatedCycle, error: updateError } = await supabase
       .from('subscription_cycle')
@@ -234,10 +234,21 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
 
     if (updateError) {
       console.error('❌ [credit-usage] subscription_cycle 업데이트 실패:', updateError);
+      console.error('❌ [credit-usage] 업데이트 실패 상세:', {
+        message: updateError.message,
+        code: updateError.code,
+        details: updateError.details,
+        hint: updateError.hint,
+        cycle_id: cycle.id,
+        userId: userId,
+        creditsToUse: creditsToUse,
+        newCreditsUsed: newCreditsUsed,
+        creditsRemaining: creditsRemaining
+      });
       throw updateError;
     }
 
-    console.log(`✅ [credit-usage] subscription_cycle 업데이트 완료: credits_used=${updatedCycle?.credits_used || newCreditsUsed}, credits_remaining=${updatedCycle?.credits_remaining || creditsRemaining}`);
+    console.log(`✅ [credit-usage] subscription_cycle 업데이트 완료: cycle.id=${cycle.id}, credits_used=${updatedCycle?.credits_used || newCreditsUsed}, credits_remaining=${updatedCycle?.credits_remaining || creditsRemaining}`);
 
     return {
       success: true,
@@ -572,16 +583,33 @@ const apiHandler = async (req, res) => {
       console.log(`✅ 최종 크레딧 한도: ${currentCreditLimit} (사용자: ${userType}_${membershipLevel})`);
 
       // 작업 크레딧 사용 내역 조회 (work_credit_usage 테이블)
-      const { data: usage, error: fetchError } = await supabase
-        .from('work_credit_usage')
-        .select('*')
-        .eq('user_id', user_id)
-        .order('used_at', { ascending: false })
-        .limit(parseInt(limit) || 10);
+      let usage = [];
+      let fetchError = null;
+      
+      try {
+        const { data: usageData, error: usageError } = await supabase
+          .from('work_credit_usage')
+          .select('*')
+          .eq('user_id', user_id)
+          .order('used_at', { ascending: false })
+          .limit(parseInt(limit) || 10);
 
-      if (fetchError) {
-        console.error('❌ [credit-usage] work_credit_usage 조회 실패:', fetchError);
-        // 에러가 발생해도 빈 배열 반환 (테이블이 없을 수도 있음)
+        if (usageError) {
+          console.error('❌ [credit-usage] work_credit_usage 조회 실패:', usageError);
+          console.error('❌ [credit-usage] 에러 상세:', {
+            message: usageError.message,
+            code: usageError.code,
+            details: usageError.details,
+            hint: usageError.hint
+          });
+          fetchError = usageError;
+        } else {
+          usage = usageData || [];
+          console.log(`✅ [credit-usage] work_credit_usage 조회 성공: ${usage.length}개 내역`);
+        }
+      } catch (error) {
+        console.error('❌ [credit-usage] work_credit_usage 조회 중 예외 발생:', error);
+        fetchError = error;
       }
 
       // 작업 크레딧 사용량 계산 (작업 크레딧 시스템)
@@ -597,7 +625,8 @@ const apiHandler = async (req, res) => {
         creditsRemaining = currentCreditLimit;
       }
 
-      return res.json({
+      // fetchError가 있어도 사용 내역은 빈 배열로 반환 (테이블이 없거나 에러가 발생해도 계속 진행)
+      const response = {
         success: true,
         usage: usage || [],
         cycle: cycle || null,
@@ -608,7 +637,17 @@ const apiHandler = async (req, res) => {
           creditsRemaining: creditsRemaining,
           isExceeded: cycle?.is_exceeded || false
         }
-      });
+      };
+      
+      // 에러가 발생했지만 사용 내역 조회는 실패했을 수 있음 (경고만 추가)
+      if (fetchError) {
+        response.warning = '사용 내역 조회 중 오류가 발생했습니다. 크레딧 정보는 정상적으로 표시됩니다.';
+        console.warn('⚠️ [credit-usage] 사용 내역 조회 실패했지만 계속 진행:', fetchError.message);
+      }
+      
+      console.log(`✅ [credit-usage] GET 요청 완료: user_id=${user_id}, usage_count=${usage.length}, credits_used=${creditsUsed}, credits_remaining=${creditsRemaining}`);
+      
+      return res.json(response);
     }
 
     return res.status(405).json({
