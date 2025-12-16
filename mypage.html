@@ -1218,18 +1218,6 @@
             </div>
           </div>
           
-          <!-- 크레딧 소진 내역 (기능별 집계) -->
-          <div class="token-usage-history" onclick="event.stopPropagation();">
-            <h4 style="margin-bottom: 10px; color: var(--text-primary); font-size: 16px; font-weight: 600;">
-              <i class="fas fa-chart-pie"></i> 크레딧 소진 내역
-            </h4>
-            <div id="creditConsumptionList" class="usage-list">
-              <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
-              </div>
-            </div>
-          </div>
-          
           <!-- 업그레이드 버튼 -->
           <div id="upgradeSection" style="display: none;" onclick="event.stopPropagation();">
             <button class="btn btn-upgrade" onclick="goToUpgrade()">
@@ -2776,14 +2764,6 @@
             `;
           }
           
-          if (consumptionList) {
-            consumptionList.innerHTML = `
-              <div style="text-align: center; color: #ef4444; padding: 20px;">
-                <i class="fas fa-exclamation-triangle"></i> 
-                <div style="margin-top: 8px; font-size: 14px;">크레딧 소진 내역을 불러올 수 없습니다</div>
-              </div>
-            `;
-          }
           return;
         }
         
@@ -2855,6 +2835,7 @@
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
             // 크레딧 소진 내역 집계를 위해 더 많은 데이터 가져오기 (이번 달 전체)
+            console.log(`📊 [mypage] 크레딧 사용 내역 조회 시작: userId=${userId}`);
             const usageRes = await fetch(`/api/subscription/token-usage?user_id=${userId}&limit=100`, {
               headers: {
                 'Authorization': `Bearer ${session.access_token}`
@@ -2863,7 +2844,10 @@
             
             if (usageRes.ok) {
               const usageResult = await usageRes.json();
+              console.log(`📊 [mypage] 크레딧 사용 내역 API 응답:`, usageResult);
+              
               const allUsage = usageResult.usage || [];
+              console.log(`📊 [mypage] 조회된 사용 내역 개수: ${allUsage.length}개`);
               
               // 최근 사용 내역 (최근 5개만 표시)
               const recentUsage = allUsage.slice(0, 5);
@@ -2995,24 +2979,28 @@
             } else {
               // API 호출 실패 시 상세 정보 확인
               const errorText = await usageRes.text();
-              console.error('❌ API 호출 실패:', usageRes.status, errorText);
+              console.error('❌ [mypage] 크레딧 사용 내역 API 호출 실패:', usageRes.status, errorText);
               
-              // 빈 배열로 처리 (사용 내역이 없는 경우)
+              let errorMessage = '사용 내역을 불러올 수 없습니다';
+              try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorMessage;
+              } catch (e) {
+                // JSON 파싱 실패 시 원본 텍스트 사용
+              }
+              
+              // 에러 메시지 표시
               const usageList = document.getElementById('recentUsageList');
               const consumptionList = document.getElementById('creditConsumptionList');
               
               if (usageList) {
                 usageList.innerHTML = `
-                  <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                    <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
-                  </div>
-                `;
-              }
-              
-              if (consumptionList) {
-                consumptionList.innerHTML = `
-                  <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                    <i class="fas fa-info-circle"></i> 아직 소진 내역이 없습니다.
+                  <div style="text-align: center; color: #ef4444; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <div style="margin-top: 8px; font-size: 14px;">${errorMessage}</div>
+                    <button onclick="location.reload()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                      <i class="fas fa-sync-alt"></i> 새로고침
+                    </button>
                   </div>
                 `;
               }
@@ -3021,22 +3009,31 @@
             throw new Error('세션이 없습니다');
           }
         } catch (usageError) {
-          console.error('❌ 최근 사용 내역 조회 실패:', usageError);
+          console.error('❌ [mypage] 최근 사용 내역 조회 실패:', usageError);
+          console.error('❌ [mypage] 오류 상세:', {
+            message: usageError.message,
+            stack: usageError.stack
+          });
+          
           const usageList = document.getElementById('recentUsageList');
-          const consumptionList = document.getElementById('creditConsumptionList');
           
           if (usageList) {
             usageList.innerHTML = `
-              <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
+              <div style="text-align: center; color: #ef4444; padding: 20px;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <div style="margin-top: 8px; font-size: 14px;">사용 내역 조회 중 오류가 발생했습니다: ${usageError.message}</div>
+                <button onclick="location.reload()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                  <i class="fas fa-sync-alt"></i> 새로고침
+                </button>
               </div>
             `;
           }
           
           if (consumptionList) {
             consumptionList.innerHTML = `
-              <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                <i class="fas fa-info-circle"></i> 아직 소진 내역이 없습니다.
+              <div style="text-align: center; color: #ef4444; padding: 20px;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <div style="margin-top: 8px; font-size: 14px;">소진 내역 조회 중 오류가 발생했습니다</div>
               </div>
             `;
           }

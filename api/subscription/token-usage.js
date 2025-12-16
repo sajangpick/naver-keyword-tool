@@ -194,7 +194,9 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
     }
 
     // 크레딧 사용량 업데이트 (작업 크레딧 시스템)
-    const { error: updateError } = await supabase
+    console.log(`🔄 [credit-usage] subscription_cycle 업데이트 시작: cycle.id=${cycle.id}, 현재 credits_used=${cycle.credits_used || 0}, 새로운 credits_used=${newCreditsUsed}`);
+    
+    const { data: updatedCycle, error: updateError } = await supabase
       .from('subscription_cycle')
       .update({
         credits_used: newCreditsUsed,
@@ -203,9 +205,16 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
         tokens_remaining: creditsRemaining,
         updated_at: new Date().toISOString()
       })
-      .eq('id', cycle.id);
+      .eq('id', cycle.id)
+      .select()
+      .single();
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('❌ [credit-usage] subscription_cycle 업데이트 실패:', updateError);
+      throw updateError;
+    }
+
+    console.log(`✅ [credit-usage] subscription_cycle 업데이트 완료: credits_used=${updatedCycle?.credits_used || newCreditsUsed}, credits_remaining=${updatedCycle?.credits_remaining || creditsRemaining}`);
 
     return {
       success: true,
@@ -215,7 +224,15 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
     };
 
   } catch (error) {
-    console.error('크레딧 한도 체크 오류:', error);
+    console.error('❌ [credit-usage] 크레딧 한도 체크 오류:', error);
+    console.error('❌ [credit-usage] 오류 상세:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      userId,
+      creditsToUse
+    });
     throw error;
   }
 }
