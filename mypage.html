@@ -2368,6 +2368,11 @@
           }
         }
         
+        // 실시간 사용량 표시 (displayRealTimeUsage 호출)
+        if (usage) {
+          displayRealTimeUsage(usage);
+        }
+
         // 최근 사용 내역 표시 (work_credit_usage 테이블에서 조회)
         try {
           const { data: recentUsage } = await supabase
@@ -2616,6 +2621,9 @@
     function displayRealTimeUsage(usage) {
       if (!usage) return;
 
+      // 작업 크레딧 사용 현황 섹션 업데이트
+      updateWorkCreditSection(usage);
+
       // 사용량 표시 영역 찾기 또는 생성
       let usageContainer = document.getElementById('realTimeUsageContainer');
       if (!usageContainer) {
@@ -2689,6 +2697,59 @@
           </div>
         </div>
       `;
+    }
+
+    // 작업 크레딧 사용 현황 섹션 업데이트
+    function updateWorkCreditSection(usage) {
+      if (!usage) return;
+
+      try {
+        // 사용 크레딧 업데이트
+        const tokensUsedEl = document.getElementById('tokensUsed');
+        const tokensLimitEl = document.getElementById('tokensLimit');
+        const tokensRemainingEl = document.getElementById('tokensRemaining');
+        const usagePercentEl = document.getElementById('usagePercent');
+        const tokenMeterFillEl = document.getElementById('tokenMeterFill');
+        const estimatedBillingAmountEl = document.getElementById('estimatedBillingAmount');
+        const minimumFeeEl = document.getElementById('minimumFee');
+        const usageBasedAmountEl = document.getElementById('usageBasedAmount');
+
+        if (tokensUsedEl) {
+          tokensUsedEl.textContent = (usage.totalCreditsUsed || 0).toLocaleString();
+        }
+        if (tokensLimitEl) {
+          tokensLimitEl.textContent = (usage.includedCredits || 0).toLocaleString();
+        }
+        if (tokensRemainingEl) {
+          tokensRemainingEl.textContent = (usage.creditsRemaining || 0).toLocaleString();
+        }
+
+        // 사용률 계산 및 업데이트
+        const usagePercentage = usage.usagePercentage || 0;
+        if (usagePercentEl) {
+          usagePercentEl.textContent = `${usagePercentage.toFixed(1)}%`;
+        }
+        if (tokenMeterFillEl) {
+          const progressColor = usage.excessCredits > 0 ? '#ef4444' : (usagePercentage >= 80 ? '#ffc107' : 'var(--accent-color)');
+          tokenMeterFillEl.style.width = `${Math.min(100, usagePercentage)}%`;
+          tokenMeterFillEl.style.background = progressColor;
+        }
+
+        // 예상 청구 금액 업데이트
+        if (estimatedBillingAmountEl) {
+          estimatedBillingAmountEl.textContent = `${(usage.estimatedTotalAmount || 0).toLocaleString()}원`;
+        }
+        if (minimumFeeEl) {
+          minimumFeeEl.textContent = (usage.minimumFee || 0).toLocaleString();
+        }
+        if (usageBasedAmountEl) {
+          usageBasedAmountEl.textContent = (usage.actualUsageAmount || 0).toLocaleString();
+        }
+
+        console.log('✅ 작업 크레딧 사용 현황 섹션 업데이트 완료');
+      } catch (error) {
+        console.error('❌ 작업 크레딧 섹션 업데이트 실패:', error);
+      }
     }
     
     // 토큰 정보 새로고침
