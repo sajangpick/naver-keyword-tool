@@ -3641,6 +3641,7 @@
                 
                 // 기능 사용 기록 남기기
                 if (window.trackFeatureUsage) {
+                    const formData = new FormData(blogForm);
                     window.trackFeatureUsage('blog', '블로그', 'create', {
                         tab: '우리매장',
                         hasPlaceUrl: !!formData.get('placeUrl'),
