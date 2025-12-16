@@ -592,21 +592,9 @@
 
       // ==================== 기본 크레딧 한도 설정 ====================
       
-      // 블로그 1개 = 약 7,500 크레딧, 리뷰 1개 = 약 1,000 크레딧 기준
+      // 사용자가 직접 입력하도록 하므로 기본값 없음
       function getDefaultCreditLimit(creditKey) {
-        const defaults = {
-          // 식당 대표 등급 (블로그 생성 기준)
-          'owner_seed_limit': 25000,      // 씨앗: 블로그 2~3개 (15,000~22,500) + 여유분 (무료 제공)
-          'owner_power_limit': 50000,     // 파워: 블로그 5개 (37,500) + 여유분
-          'owner_bigpower_limit': 75000,  // 빅파워: 블로그 8개 (60,000) + 여유분
-          'owner_premium_limit': 100000,   // 프리미엄: 블로그 10개 (75,000) + 여유분
-          
-          // 대행사 등급 (더 많은 사용량)
-          'agency_elite_limit': 50000,    // 스타터: 블로그 5개
-          'agency_expert_limit': 100000,  // 프로: 블로그 10개
-          'agency_master_limit': 200000   // 엔터프라이즈: 블로그 20개
-        };
-        return defaults[creditKey] || 0;
+        return 0; // 항상 0으로 시작 (사용자가 직접 입력)
       }
 
       // ==================== 통합 UI 렌더링 ====================
@@ -634,7 +622,7 @@
               </div>
               <div class="input-group">
                 <label>🪙 크레딧</label>
-                <input type="number" id="${level.creditKey}" value="${creditData[level.creditKey] || getDefaultCreditLimit(level.creditKey)}" min="0" placeholder="크레딧 입력"/>
+                <input type="number" id="${level.creditKey}" value="${creditData[level.creditKey] || 0}" min="0" placeholder="크레딧 입력"/>
                 <span class="unit">크레딧/월</span>
               </div>
             </div>
@@ -662,7 +650,7 @@
               </div>
               <div class="input-group">
                 <label>🪙 크레딧</label>
-                <input type="number" id="${level.creditKey}" value="${creditData[level.creditKey] || getDefaultCreditLimit(level.creditKey)}" min="0" placeholder="크레딧 입력"/>
+                <input type="number" id="${level.creditKey}" value="${creditData[level.creditKey] || 0}" min="0" placeholder="크레딧 입력"/>
                 <span class="unit">크레딧/월</span>
               </div>
             </div>
@@ -743,6 +731,9 @@
 
           pricingData = pricingResult.pricing;
           creditData = creditResult.credits;
+
+          // 저장된 값으로 UI 다시 렌더링
+          renderSettings();
 
           // 경고 메시지가 있으면 표시 (컬럼이 없는 경우)
           if (creditResult.warning) {

@@ -51,22 +51,22 @@ module.exports = async (req, res) => {
         throw fetchError;
       }
 
-      // 데이터가 없으면 기본값 삽입
+      // 데이터가 없으면 빈 값으로 초기화 (사용자가 직접 입력하도록)
       if (!existingConfig) {
-        const defaultConfig = {
+        const emptyConfig = {
           owner_seed_price: 0,
-          owner_power_price: 30000,
-          owner_bigpower_price: 50000,
-          owner_premium_price: 100000, // 70,000 → 100,000으로 변경
-          agency_elite_price: 100000,
-          agency_expert_price: 300000,
-          agency_master_price: 500000,
-          agency_premium_price: 1000000
+          owner_power_price: 0,
+          owner_bigpower_price: 0,
+          owner_premium_price: 0,
+          agency_elite_price: 0,
+          agency_expert_price: 0,
+          agency_master_price: 0,
+          agency_premium_price: 0
         };
 
         const { data: newConfig, error: insertError } = await supabase
           .from('pricing_config')
-          .insert(defaultConfig)
+          .insert(emptyConfig)
           .select()
           .single();
 

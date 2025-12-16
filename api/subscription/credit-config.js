@@ -64,34 +64,24 @@ module.exports = async (req, res) => {
         throw fetchError;
       }
 
-      // 데이터가 없으면 기본값 삽입
+      // 데이터가 없으면 빈 값으로 초기화 (사용자가 직접 입력하도록)
       if (!existingConfig) {
-        const defaultConfig = {
-          owner_seed_limit: 30000, // 100 → 30,000으로 변경
-          owner_power_limit: 350000, // 500 → 350,000으로 변경
-          owner_bigpower_limit: 650000, // 833 → 650,000으로 변경
-          owner_premium_limit: 1500000, // 1,166 → 1,500,000으로 변경
-          agency_elite_limit: 1000,
-          agency_expert_limit: 3000,
-          agency_master_limit: 5000,
-          agency_premium_limit: 10000,
-          // 크레딧 사용 제한 필드 기본값 (컬럼이 없어도 에러 없이 처리)
-          credit_usage_enabled: true,
-          owner_seed_enabled: true,
-          owner_power_enabled: true,
-          owner_bigpower_enabled: true,
-          owner_premium_enabled: true,
-          agency_elite_enabled: true,
-          agency_expert_enabled: true,
-          agency_master_enabled: true,
-          agency_premium_enabled: true
+        const emptyConfig = {
+          owner_seed_limit: 0,
+          owner_power_limit: 0,
+          owner_bigpower_limit: 0,
+          owner_premium_limit: 0,
+          agency_elite_limit: 0,
+          agency_expert_limit: 0,
+          agency_master_limit: 0,
+          agency_premium_limit: 0
         };
 
         // credit_config가 없으면 token_config에 저장 (마이그레이션 전)
         let targetTable = 'credit_config';
         let { data: newConfig, error: insertError } = await supabase
           .from(targetTable)
-          .insert(defaultConfig)
+          .insert(emptyConfig)
           .select()
           .single();
         
@@ -100,7 +90,7 @@ module.exports = async (req, res) => {
           targetTable = 'token_config';
           const result = await supabase
             .from(targetTable)
-            .insert(defaultConfig)
+            .insert(emptyConfig)
             .select()
             .single();
           newConfig = result.data;

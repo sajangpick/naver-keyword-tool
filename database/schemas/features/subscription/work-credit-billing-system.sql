@@ -35,37 +35,18 @@ COMMENT ON COLUMN public.credit_config.agency_elite_limit IS '스타터 등급 �
 COMMENT ON COLUMN public.credit_config.agency_expert_limit IS '프로 등급 월 크레딧 한도';
 COMMENT ON COLUMN public.credit_config.agency_master_limit IS '엔터프라이즈 등급 월 크레딧 한도';
 
--- 기본값 삽입 (데이터가 없을 경우만)
-INSERT INTO public.credit_config (
-  owner_seed_limit,
-  owner_power_limit,
-  owner_bigpower_limit,
-  owner_premium_limit,
-  agency_elite_limit,
-  agency_expert_limit,
-  agency_master_limit,
-  agency_premium_limit
-)
-SELECT 
-  30000,      -- 라이트
-  37500,      -- 스탠다드
-  83333,      -- 프로
-  200000,     -- 프리미엄
-  100000,     -- 스타터
-  600000,     -- 프로
-  1666666,    -- 엔터프라이즈
-  10000000    -- 프리미엄
-WHERE NOT EXISTS (SELECT 1 FROM public.credit_config);
+-- 빈 값으로 초기화 (사용자가 관리자 페이지에서 직접 입력하도록)
+-- 기본값 삽입하지 않음 - 관리자가 직접 설정하도록 함
 
 -- ==================== 1. 작업 크레딧 설정 테이블 ====================
 
 CREATE TABLE IF NOT EXISTS public.work_credit_config (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
-  -- 기능별 작업 크레딧 가중치
+  -- 기능별 작업 크레딧 가중치 (2025-11-25 업데이트)
   review_reply_credit integer DEFAULT 1,        -- 리뷰 답글: 1 크레딧
-  blog_writing_credit integer DEFAULT 5,        -- 블로그 작성: 5 크레딧
-  video_generation_credit integer DEFAULT 20,   -- 영상 생성: 20 크레딧
+  blog_writing_credit integer DEFAULT 2,        -- 블로그 작성: 2 크레딧
+  video_generation_credit integer DEFAULT 3,    -- 영상 생성: 3 크레딧
   
   -- 메타데이터
   created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -73,14 +54,22 @@ CREATE TABLE IF NOT EXISTS public.work_credit_config (
 );
 
 COMMENT ON TABLE public.work_credit_config IS '기능별 작업 크레딧 가중치 설정';
-COMMENT ON COLUMN public.work_credit_config.review_reply_credit IS '리뷰 답글 작업 크레딧 (기본 단위)';
-COMMENT ON COLUMN public.work_credit_config.blog_writing_credit IS '블로그 작성 작업 크레딧 (리뷰 답글의 5배)';
-COMMENT ON COLUMN public.work_credit_config.video_generation_credit IS '영상 생성 작업 크레딧 (리뷰 답글의 20배)';
+COMMENT ON COLUMN public.work_credit_config.review_reply_credit IS '리뷰 답글 작업 크레딧 (1 크레딧)';
+COMMENT ON COLUMN public.work_credit_config.blog_writing_credit IS '블로그 작성 작업 크레딧 (2 크레딧)';
+COMMENT ON COLUMN public.work_credit_config.video_generation_credit IS '영상 생성 작업 크레딧 (3 크레딧)';
 
--- 기본값 삽입
+-- 기본값 삽입 (2025-11-25 업데이트: 블로그 2크레딧, 영상 3크레딧)
 INSERT INTO public.work_credit_config (review_reply_credit, blog_writing_credit, video_generation_credit)
-VALUES (1, 5, 20)
+VALUES (1, 2, 3)
 ON CONFLICT DO NOTHING;
+
+-- 기존 데이터가 있으면 업데이트
+UPDATE public.work_credit_config
+SET 
+  blog_writing_credit = 2,
+  video_generation_credit = 3,
+  updated_at = now()
+WHERE blog_writing_credit != 2 OR video_generation_credit != 3;
 
 -- ==================== 2. 등급별 가격 및 크레딧 설정 ====================
 
