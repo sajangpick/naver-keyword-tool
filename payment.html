@@ -468,7 +468,13 @@
         ←
       </button>
       <div style="flex: 1;">
-        <h1 class="plan-selection-title">플랜 선택</h1>
+        <h1 class="plan-selection-title" style="display: flex; align-items: center; gap: 10px;">
+          플랜 선택
+          <span id="excessInfoIcon_header" style="cursor: pointer; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-color); color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; transition: all 0.3s; flex-shrink: 0;" 
+                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 2px 8px rgba(255, 123, 84, 0.4)'" 
+                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'"
+                onclick="showExcessInfo(event, 'header')">?</span>
+        </h1>
         <p class="plan-selection-subtitle">원하는 플랜을 선택하고 결제하세요</p>
       </div>
     </div>
@@ -1049,12 +1055,8 @@
             <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">
               ${planInfo.credits.toLocaleString()} 크레딧
             </div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; padding: 8px; background: rgba(255, 123, 84, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-              <span>초과: ${planInfo.excessRate}원/크레딧</span>
-              <span id="excessInfoIcon_${plan.key}" style="cursor: pointer; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-color); color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; transition: all 0.3s;" 
-                    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 2px 8px rgba(255, 123, 84, 0.4)'" 
-                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'"
-                    onclick="showExcessInfo(event, '${plan.key}')">?</span>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px; padding: 8px; background: rgba(255, 123, 84, 0.05); border-radius: 8px;">
+              초과: ${planInfo.excessRate}원/크레딧
             </div>
             <button style="width: 100%; padding: 12px; background: ${isCurrentPlan ? 'var(--secondary)' : plan.gradient}; color: ${isCurrentPlan ? 'var(--accent-color)' : 'white'};
                           border: ${isCurrentPlan ? '1px solid var(--accent-color)' : 'none'}; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: ${isCurrentPlan ? 'default' : 'pointer'};

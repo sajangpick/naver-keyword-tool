@@ -69,7 +69,7 @@ const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const OPENAI_SHORTS_MODEL =
   process.env.OPENAI_SHORTS_MODEL ||
   process.env.OPENAI_CHAT_MODEL ||
-  "gpt-4o-mini";
+  "gpt-5.2";
 
 // Supabase 설정
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -1764,7 +1764,7 @@ async function callChatGPTForBlog(prompt) {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-3.5-turbo",
+        model: "gpt-5.2",
         messages: [
           {
             role: "system",
@@ -1805,7 +1805,7 @@ async function callChatGPTForReview(prompt) {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-3.5-turbo",
+        model: "gpt-5.2",
         messages: [
           {
             role: "system",
@@ -2208,7 +2208,7 @@ app.post("/api/chat", async (req, res) => {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-3.5-turbo",
+        model: "gpt-5.2",
         messages: [
           {
             role: "system",
@@ -2245,7 +2245,7 @@ app.post("/api/chat", async (req, res) => {
       reply: response.data.choices[0].message.content,
       usage: response.data.usage,
       metadata: {
-        model: "gpt-3.5-turbo",
+        model: "gpt-5.2",
         timestamp: new Date().toISOString(),
         server: "Integrated Server",
       },
@@ -7729,6 +7729,11 @@ app.post('/api/admin/billing/calculate-preview', billingCalculatePreview);
 app.post('/api/admin/billing/charge', billingCharge);
 app.get('/api/admin/billing/list', billingList);
 app.get('/api/admin/billing/detail', billingDetail);
+
+// 7. 기존 token_usage → work_credit_usage 마이그레이션 API
+const migrateTokenToWorkCredit = require('./api/admin/migrate-token-to-work-credit');
+app.post('/api/admin/migrate-token-to-work-credit', migrateTokenToWorkCredit);
+app.get('/api/admin/migrate-token-to-work-credit', migrateTokenToWorkCredit);
 
 // 6. 개인별 맞춤 가격 조회
 app.get('/api/subscription/member-pricing/:memberId', async (req, res) => {

@@ -198,7 +198,7 @@ ${url ? `원문 링크: ${url}` : '원문 링크: (정보 없음)'}
     }
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.2',
       messages: [
         {
           role: 'system',

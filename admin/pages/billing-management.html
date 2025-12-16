@@ -394,6 +394,10 @@
             <i class="fas fa-square"></i>
             전체 해제
           </button>
+          <button class="btn btn-secondary" onclick="migrateTokenToWorkCredit()" style="background: #8b5cf6; color: white;">
+            <i class="fas fa-exchange-alt"></i>
+            기존 사용 기록 마이그레이션
+          </button>
         </div>
 
         <!-- 테이블 -->
@@ -814,6 +818,45 @@
       // 숫자 포맷
       function formatNumber(num) {
         return new Intl.NumberFormat('ko-KR').format(num);
+      }
+
+      // 기존 token_usage → work_credit_usage 마이그레이션
+      async function migrateTokenToWorkCredit() {
+        if (!confirm('기존 token_usage 데이터를 work_credit_usage로 변환하시겠습니까?\n\n이 작업은 시간이 걸릴 수 있습니다.')) {
+          return;
+        }
+
+        try {
+          showAlert('info', '마이그레이션을 시작합니다...');
+
+          const response = await fetch('/api/admin/migrate-token-to-work-credit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              dryRun: false
+            })
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error || '마이그레이션 실패');
+          }
+
+          const stats = result.stats || {};
+          showAlert('success', `마이그레이션 완료! 변환: ${stats.converted || 0}건, 건너뜀: ${stats.skipped || 0}건`);
+
+          // 데이터 새로고침
+          setTimeout(() => {
+            loadBillingData();
+          }, 2000);
+
+        } catch (error) {
+          console.error('마이그레이션 오류:', error);
+          showAlert('error', `마이그레이션 실패: ${error.message}`);
+        }
       }
 
       // 알림 메시지 표시

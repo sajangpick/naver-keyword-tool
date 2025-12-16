@@ -520,7 +520,7 @@ module.exports = async (req, res) => {
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: 'gpt-4o-mini',
+          model: 'gpt-5.2',
           messages: messages,
           tools: availableTools,
           tool_choice: iteration === 0 ? 'auto' : 'auto', // 첫 번째는 자동, 이후에도 자동
@@ -623,7 +623,7 @@ module.exports = async (req, res) => {
       usage: totalUsage,
       tokenTracking,
       metadata: {
-        model: 'gpt-4o-mini',
+        model: 'gpt-5.2',
         timestamp: new Date().toISOString(),
         server: 'Vercel Serverless',
         function_calls_used: messages.filter(m => m.role === 'tool').length,

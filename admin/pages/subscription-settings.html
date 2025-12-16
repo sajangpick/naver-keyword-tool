@@ -656,23 +656,47 @@
           const creditUpdate = {};
 
           if (type === 'owner') {
+            // 가격 설정
             pricingUpdate.owner_seed_price = parseInt(document.getElementById('owner_seed_price').value) || 0;
             pricingUpdate.owner_power_price = parseInt(document.getElementById('owner_power_price').value) || 0;
             pricingUpdate.owner_bigpower_price = parseInt(document.getElementById('owner_bigpower_price').value) || 0;
             pricingUpdate.owner_premium_price = parseInt(document.getElementById('owner_premium_price').value) || 0;
 
-            creditUpdate.owner_seed_limit = parseInt(document.getElementById('owner_seed_limit').value) || 0;
-            creditUpdate.owner_power_limit = parseInt(document.getElementById('owner_power_limit').value) || 0;
-            creditUpdate.owner_bigpower_limit = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
-            creditUpdate.owner_premium_limit = parseInt(document.getElementById('owner_premium_limit').value) || 0;
+            // 포함된 크레딧 설정 (pricing_config에 저장)
+            const seedCredits = parseInt(document.getElementById('owner_seed_limit').value) || 0;
+            const powerCredits = parseInt(document.getElementById('owner_power_limit').value) || 0;
+            const bigpowerCredits = parseInt(document.getElementById('owner_bigpower_limit').value) || 0;
+            const premiumCredits = parseInt(document.getElementById('owner_premium_limit').value) || 0;
+
+            pricingUpdate.owner_seed_included_credits = seedCredits;
+            pricingUpdate.owner_power_included_credits = powerCredits;
+            pricingUpdate.owner_bigpower_included_credits = bigpowerCredits;
+            pricingUpdate.owner_premium_included_credits = premiumCredits;
+
+            // credit_config에도 저장 (하위 호환성)
+            creditUpdate.owner_seed_limit = seedCredits;
+            creditUpdate.owner_power_limit = powerCredits;
+            creditUpdate.owner_bigpower_limit = bigpowerCredits;
+            creditUpdate.owner_premium_limit = premiumCredits;
           } else {
+            // 가격 설정
             pricingUpdate.agency_elite_price = parseInt(document.getElementById('agency_elite_price').value) || 0;
             pricingUpdate.agency_expert_price = parseInt(document.getElementById('agency_expert_price').value) || 0;
             pricingUpdate.agency_master_price = parseInt(document.getElementById('agency_master_price').value) || 0;
 
-            creditUpdate.agency_elite_limit = parseInt(document.getElementById('agency_elite_limit').value) || 0;
-            creditUpdate.agency_expert_limit = parseInt(document.getElementById('agency_expert_limit').value) || 0;
-            creditUpdate.agency_master_limit = parseInt(document.getElementById('agency_master_limit').value) || 0;
+            // 포함된 크레딧 설정 (pricing_config에 저장)
+            const eliteCredits = parseInt(document.getElementById('agency_elite_limit').value) || 0;
+            const expertCredits = parseInt(document.getElementById('agency_expert_limit').value) || 0;
+            const masterCredits = parseInt(document.getElementById('agency_master_limit').value) || 0;
+
+            pricingUpdate.agency_starter_included_credits = eliteCredits;
+            pricingUpdate.agency_pro_included_credits = expertCredits;
+            pricingUpdate.agency_enterprise_included_credits = masterCredits;
+
+            // credit_config에도 저장 (하위 호환성)
+            creditUpdate.agency_elite_limit = eliteCredits;
+            creditUpdate.agency_expert_limit = expertCredits;
+            creditUpdate.agency_master_limit = masterCredits;
           }
 
           // 가격과 크레딧 동시 저장

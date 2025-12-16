@@ -100,14 +100,23 @@ async function renewExpiredSubscriptions() {
           .eq('member_id', cycle.user_id)
           .single();
 
-        // 가격 및 토큰 계산
+        // 가격 및 크레딧 계산
         const userType = profile.user_type || 'owner';
         const level = profile.membership_level || 'seed';
         const priceKey = `${userType}_${level}_price`;
         const tokenKey = `${userType}_${level}_limit`;
         
+        // 포함된 크레딧 키 (작업 크레딧 시스템)
+        const includedCreditsKey = `${userType}_${level}_included_credits`;
+        
         const monthlyPrice = customPricing?.custom_price || pricingConfig?.[priceKey] || 0;
-        const monthlyTokens = customTokenLimit?.custom_limit || tokenConfig?.[tokenKey] || 100;
+        
+        // 포함된 크레딧 우선 사용 (pricing_config의 included_credits)
+        // 없으면 token_config의 limit 사용 (하위 호환성)
+        const monthlyCredits = customTokenLimit?.custom_limit || 
+                              pricingConfig?.[includedCreditsKey] || 
+                              tokenConfig?.[tokenKey] || 
+                              100;
 
         // 새 사이클 시작/종료 날짜
         const newStartDate = new Date(cycle.cycle_end_date);
@@ -115,7 +124,7 @@ async function renewExpiredSubscriptions() {
         const newEndDate = new Date(newStartDate);
         newEndDate.setDate(newEndDate.getDate() + 30); // 30일 후
 
-        // 새 구독 사이클 생성
+        // 새 구독 사이클 생성 (작업 크레딧 시스템)
         const { data: newCycle, error: createError } = await supabase
           .from('subscription_cycle')
           .insert({
@@ -124,9 +133,12 @@ async function renewExpiredSubscriptions() {
             cycle_start_date: newStartDate.toISOString().split('T')[0],
             cycle_end_date: newEndDate.toISOString().split('T')[0],
             days_in_cycle: 30,
-            monthly_token_limit: monthlyTokens,
+            monthly_token_limit: monthlyCredits, // 하위 호환성
             tokens_used: 0,
-            tokens_remaining: monthlyTokens,
+            tokens_remaining: monthlyCredits,
+            included_credits: monthlyCredits, // 작업 크레딧 시스템
+            credits_used: 0,
+            credits_remaining: monthlyCredits,
             status: 'active',
             billing_amount: monthlyPrice,
             payment_status: monthlyPrice === 0 ? 'completed' : 'pending'

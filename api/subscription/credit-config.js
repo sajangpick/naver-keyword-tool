@@ -31,6 +31,14 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Supabase 클라이언트 확인
+    if (!supabase) {
+      return res.status(503).json({
+        success: false,
+        error: 'Supabase 클라이언트가 초기화되지 않았습니다. 환경변수를 확인해주세요.'
+      });
+    }
+
     // GET: 크레딧 한도 조회
     if (req.method === 'GET') {
       // 기존 크레딧 설정 조회 (임시: token_config도 확인)
@@ -51,8 +59,6 @@ module.exports = async (req, res) => {
           fetchError = null;
         }
       }
-        .select('*')
-        .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;

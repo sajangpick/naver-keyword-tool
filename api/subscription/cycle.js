@@ -66,19 +66,28 @@ async function createNewCycle(userId, membershipLevel = null) {
       .eq('member_id', userId)
       .single();
 
-    // 가격 및 토큰 계산
+    // 가격 및 크레딧 계산
     const priceKey = `${userType}_${level}_price`;
     const tokenKey = `${userType}_${level}_limit`;
     
+    // 포함된 크레딧 키 (작업 크레딧 시스템)
+    const includedCreditsKey = `${userType}_${level}_included_credits`;
+    
     const monthlyPrice = customPricing?.custom_price || pricingConfig?.[priceKey] || 0;
-    const monthlyTokens = customTokenLimit?.custom_limit || tokenConfig?.[tokenKey] || 100;
+    
+    // 포함된 크레딧 우선 사용 (pricing_config의 included_credits)
+    // 없으면 token_config의 limit 사용 (하위 호환성)
+    const monthlyCredits = customTokenLimit?.custom_limit || 
+                          pricingConfig?.[includedCreditsKey] || 
+                          tokenConfig?.[tokenKey] || 
+                          100;
 
     // 주기 날짜 계산
     const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 30);
 
-    // 새 사이클 생성
+    // 새 사이클 생성 (작업 크레딧 시스템)
     const { data: newCycle, error: createError } = await supabase
       .from('subscription_cycle')
       .insert({
@@ -87,9 +96,12 @@ async function createNewCycle(userId, membershipLevel = null) {
         cycle_start_date: startDate.toISOString().split('T')[0],
         cycle_end_date: endDate.toISOString().split('T')[0],
         days_in_cycle: 30,
-        monthly_token_limit: monthlyTokens,
+        monthly_token_limit: monthlyCredits, // 하위 호환성
         tokens_used: 0,
-        tokens_remaining: monthlyTokens,
+        tokens_remaining: monthlyCredits,
+        included_credits: monthlyCredits, // 작업 크레딧 시스템
+        credits_used: 0,
+        credits_remaining: monthlyCredits,
         status: 'active',
         billing_amount: monthlyPrice,
         payment_status: monthlyPrice === 0 ? 'completed' : 'pending'
@@ -98,6 +110,41 @@ async function createNewCycle(userId, membershipLevel = null) {
       .single();
 
     if (createError) throw createError;
+
+    // user_subscription 테이블에 구독 정보 저장/업데이트
+    const { data: existingSubscription } = await supabase
+      .from('user_subscription')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .single();
+
+    const subscriptionData = {
+      user_id: userId,
+      plan_type: level,
+      monthly_fee: monthlyPrice,
+      included_credits: monthlyCredits,
+      excess_credit_rate: pricingConfig?.[`${userType}_${level}_excess_rate`] || 1.2,
+      subscription_start_date: startDate.toISOString().split('T')[0],
+      subscription_end_date: endDate.toISOString().split('T')[0],
+      is_active: true,
+      auto_renew: true,
+      updated_at: new Date().toISOString()
+    };
+
+    if (existingSubscription) {
+      // 기존 구독 정보 업데이트
+      await supabase
+        .from('user_subscription')
+        .update(subscriptionData)
+        .eq('id', existingSubscription.id);
+    } else {
+      // 새 구독 정보 생성
+      subscriptionData.created_at = new Date().toISOString();
+      await supabase
+        .from('user_subscription')
+        .insert(subscriptionData);
+    }
 
     // 청구 내역 생성
     if (monthlyPrice > 0) {
@@ -109,8 +156,10 @@ async function createNewCycle(userId, membershipLevel = null) {
           membership_level: level,
           billing_period_start: startDate.toISOString().split('T')[0],
           billing_period_end: endDate.toISOString().split('T')[0],
-          monthly_limit: monthlyTokens,
+          monthly_limit: monthlyCredits, // 하위 호환성
           tokens_used: 0,
+          included_credits: monthlyCredits, // 작업 크레딧 시스템
+          credits_used: 0,
           base_price: monthlyPrice,
           total_price: monthlyPrice,
           payment_status: 'pending'
