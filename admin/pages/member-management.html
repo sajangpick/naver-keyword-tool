@@ -1095,64 +1095,83 @@
         try {
           console.log('🔄 등급 옵션 로드 시작...');
           
-          // 토큰 설정과 가격 설정 동시 로드
-          const [tokenRes, pricingRes] = await Promise.all([
-            fetch('/api/subscription/token-config'),
-            fetch('/api/subscription/pricing-config')
-          ]);
-
-          const tokenResult = await tokenRes.json();
+          // 가격 설정 로드 (작업 크레딧 시스템: pricing_config의 included_credits 사용)
+          const pricingRes = await fetch('/api/subscription/pricing-config');
           const pricingResult = await pricingRes.json();
 
-          if (!tokenResult.success || !pricingResult.success) {
+          if (!pricingResult.success) {
             throw new Error('등급 설정을 불러올 수 없습니다');
           }
 
-          const tokenData = tokenResult.tokens || {};
           const pricingData = pricingResult.pricing || {};
 
           // 등급 드롭다운 생성
           const select = document.getElementById('modal-new-level');
           select.innerHTML = '';
 
-          // 식당 대표 등급
+          // 식당 대표 등급 (작업 크레딧 시스템: included_credits 사용)
           const ownerGroup = document.createElement('optgroup');
           ownerGroup.label = '식당 대표 (owner)';
           
           const ownerLevels = [
-            { key: 'seed', label: '🌱 라이트', tokenKey: 'owner_seed_limit', priceKey: 'owner_seed_price' },
-            { key: 'power', label: '⚡ 스탠다드', tokenKey: 'owner_power_limit', priceKey: 'owner_power_price' },
-            { key: 'bigpower', label: '💪 프로', tokenKey: 'owner_bigpower_limit', priceKey: 'owner_bigpower_price' },
-            { key: 'premium', label: '⭐ 프리미엄', tokenKey: 'owner_premium_limit', priceKey: 'owner_premium_price' }
+            { key: 'seed', label: '🌱 라이트', creditsKey: 'owner_seed_included_credits', priceKey: 'owner_seed_price' },
+            { key: 'power', label: '⚡ 스탠다드', creditsKey: 'owner_power_included_credits', priceKey: 'owner_power_price' },
+            { key: 'bigpower', label: '💪 프로', creditsKey: 'owner_bigpower_included_credits', priceKey: 'owner_bigpower_price' },
+            { key: 'premium', label: '⭐ 프리미엄', creditsKey: 'owner_premium_included_credits', priceKey: 'owner_premium_price' }
           ];
 
           ownerLevels.forEach(level => {
-            const tokenLimit = tokenData[level.tokenKey] || 0;
+            // pricing_config의 included_credits 사용 (작업 크레딧 시스템)
+            let creditsLimit = pricingData[level.creditsKey] || 0;
             const price = pricingData[level.priceKey] || 0;
+            
+            // 0이면 기본값 사용 (등급별 기본 크레딧)
+            if (creditsLimit === 0) {
+              const defaultCredits = {
+                'seed': 0,
+                'power': 37500,
+                'bigpower': 83333,
+                'premium': 200000
+              };
+              creditsLimit = defaultCredits[level.key] || 0;
+            }
+            
             const option = document.createElement('option');
             option.value = `owner:member:${level.key}`;
-            option.textContent = `${level.label} (${tokenLimit.toLocaleString()} 토큰/월, ${price.toLocaleString()}원/월)`;
+            option.textContent = `${level.label} (${creditsLimit.toLocaleString()} 크레딧/월, ${price.toLocaleString()}원/월)`;
             ownerGroup.appendChild(option);
           });
 
           select.appendChild(ownerGroup);
 
-          // 대행사 등급
+          // 대행사 등급 (작업 크레딧 시스템: included_credits 사용, 등급명 매핑 필요)
           const agencyGroup = document.createElement('optgroup');
           agencyGroup.label = '대행사/블로거 (agency)';
           
           const agencyLevels = [
-            { key: 'elite', label: '🏆 스타터', tokenKey: 'agency_elite_limit', priceKey: 'agency_elite_price' },
-            { key: 'expert', label: '🎯 프로', tokenKey: 'agency_expert_limit', priceKey: 'agency_expert_price' },
-            { key: 'master', label: '👑 엔터프라이즈', tokenKey: 'agency_master_limit', priceKey: 'agency_master_price' }
+            { key: 'elite', label: '🏆 스타터', creditsKey: 'agency_starter_included_credits', priceKey: 'agency_elite_price' },
+            { key: 'expert', label: '🎯 프로', creditsKey: 'agency_pro_included_credits', priceKey: 'agency_expert_price' },
+            { key: 'master', label: '👑 엔터프라이즈', creditsKey: 'agency_enterprise_included_credits', priceKey: 'agency_master_price' }
           ];
 
           agencyLevels.forEach(level => {
-            const tokenLimit = tokenData[level.tokenKey] || 0;
+            // pricing_config의 included_credits 사용 (작업 크레딧 시스템)
+            let creditsLimit = pricingData[level.creditsKey] || 0;
             const price = pricingData[level.priceKey] || 0;
+            
+            // 0이면 기본값 사용 (등급별 기본 크레딧)
+            if (creditsLimit === 0) {
+              const defaultCredits = {
+                'elite': 100000,
+                'expert': 600000,
+                'master': 1666666
+              };
+              creditsLimit = defaultCredits[level.key] || 0;
+            }
+            
             const option = document.createElement('option');
             option.value = `agency:member:${level.key}`;
-            option.textContent = `${level.label} (${tokenLimit.toLocaleString()} 토큰/월, ${price.toLocaleString()}원/월)`;
+            option.textContent = `${level.label} (${creditsLimit.toLocaleString()} 크레딧/월, ${price.toLocaleString()}원/월)`;
             agencyGroup.appendChild(option);
           });
 

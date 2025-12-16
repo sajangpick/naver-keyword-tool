@@ -2383,27 +2383,104 @@
               const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
               
               // 크레딧 사용량 계산 (작업 크레딧 시스템 사용)
-              // credits_remaining, credits_used, included_credits 우선 사용
+              // 작업 크레딧 API를 직접 호출하여 정확한 정보 가져오기
+              const userId = session.user.id;
+              
+              try {
+                const workCreditResponse = await fetch(`/api/subscription/work-credit-billing?action=get-current-usage&userId=${userId}`, {
+                  method: 'GET',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                  }
+                });
+                
+                if (workCreditResponse.ok) {
+                  const workCreditResult = await workCreditResponse.json();
+                  if (workCreditResult.success && workCreditResult.usage) {
+                    const usage = workCreditResult.usage;
+                    const creditsUsed = usage.totalCreditsUsed || 0;
+                    const includedCredits = usage.includedCredits || 0;
+                    // 남은 크레딧 직접 계산 (API 응답값이 없을 수 있음)
+                    const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+                    
+                    // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리
+                    if (isAdmin || (includedCredits && includedCredits >= 999999)) {
+                      return {
+                        remaining: 999999,
+                        used: creditsUsed,
+                        limit: null,
+                        isUnlimited: true
+                      };
+                    }
+                    
+                    return {
+                      remaining: creditsRemaining,
+                      used: creditsUsed,
+                      limit: includedCredits,
+                      isUnlimited: false
+                    };
+                  }
+                }
+              } catch (workCreditError) {
+                console.warn('⚠️ [토큰 조회] 작업 크레딧 API 호출 실패, fallback 사용:', workCreditError);
+              }
+              
+              // Fallback: cycle 데이터 사용
               const creditsUsed = cycle.credits_used || 0;
               let creditsLimit = cycle.included_credits || cycle.monthly_token_limit || 100;
-              let creditsRemaining = cycle.credits_remaining !== null && cycle.credits_remaining !== undefined 
-                  ? cycle.credits_remaining 
-                  : (creditsLimit - creditsUsed);
+              // 남은 크레딧 직접 계산
+              const creditsRemaining = Math.max(0, creditsLimit - creditsUsed);
               
               // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리
               if (isAdmin || (creditsLimit && creditsLimit >= 999999)) {
-                creditsLimit = null;
-                creditsRemaining = null;
+                return {
+                  remaining: 999999,
+                  used: creditsUsed,
+                  limit: null,
+                  isUnlimited: true
+                };
               }
               
               return {
                 remaining: creditsRemaining,
                 used: creditsUsed,
                 limit: creditsLimit,
-                isUnlimited: creditsRemaining === null || creditsLimit === null
+                isUnlimited: false
               };
             } else {
-              // cycle이 없을 때 기본값 반환
+              // cycle이 없을 때 작업 크레딧 API 호출 시도
+              try {
+                const userId = session.user.id;
+                const workCreditResponse = await fetch(`/api/subscription/work-credit-billing?action=get-current-usage&userId=${userId}`, {
+                  method: 'GET',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                  }
+                });
+                
+                if (workCreditResponse.ok) {
+                  const workCreditResult = await workCreditResponse.json();
+                  if (workCreditResult.success && workCreditResult.usage) {
+                    const usage = workCreditResult.usage;
+                    const creditsUsed = usage.totalCreditsUsed || 0;
+                    const includedCredits = usage.includedCredits || 0;
+                    const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+                    
+                    return {
+                      remaining: creditsRemaining,
+                      used: creditsUsed,
+                      limit: includedCredits,
+                      isUnlimited: false
+                    };
+                  }
+                }
+              } catch (workCreditError) {
+                console.warn('⚠️ [토큰 조회] 작업 크레딧 API 호출 실패:', workCreditError);
+              }
+              
+              // 최종 fallback: 기본값 반환
               return {
                 remaining: 100,
                 used: 0,
