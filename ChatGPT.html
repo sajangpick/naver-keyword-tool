@@ -1913,7 +1913,9 @@
 
           if (data.success && data.reply) {
             hideLoading(loadingId);
-            addMessage(data.reply, "bot");
+            // 모델 정보 포함하여 메시지 추가
+            const modelInfo = data.metadata?.model || 'gpt-5.2';
+            addMessage(data.reply, "bot", modelInfo);
 
             // 메시지 전송 성공 시 연결 상태 업데이트
             isConnected = true;
@@ -2067,7 +2069,7 @@
       }
 
       // 메시지 추가 함수
-      function addMessage(text, sender) {
+      function addMessage(text, sender, modelInfo = null) {
         // 웰컴 메시지 제거
         const welcomeMessage = document.querySelector(".welcome-message");
         if (welcomeMessage) {
@@ -2086,9 +2088,18 @@
         // 마크다운을 HTML로 변환
         const htmlContent = sender === 'bot' ? markdownToHtml(text) : text.replace(/\n/g, '<br>');
 
+        // 모델 정보 표시 (봇 메시지에만)
+        const modelBadge = modelInfo && sender === 'bot' 
+          ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); font-size: 11px; color: #999; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-robot" style="font-size: 10px;"></i>
+              <span>모델: <strong style="color: var(--accent-color);">${modelInfo}</strong></span>
+            </div>`
+          : '';
+
         messageDiv.innerHTML = `
                 <div>${htmlContent}</div>
                 <div class="message-time">${timeStr}</div>
+                ${modelBadge}
             `;
 
         chatMessages.appendChild(messageDiv);

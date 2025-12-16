@@ -3164,6 +3164,112 @@ ${placeInfoText}${ownerTipsInstruction}
 
       devLog("답글 생성 완료");
 
+      // ==================== 사용자 ID 가져오기 (크레딧 차감을 위해 먼저) ====================
+      let userId = req.body?.userId || req.headers?.["user-id"] || null;
+      
+      if (supabase && !userId) {
+        // userId가 없으면 테스트 회원 ID 조회 (김사장)
+        devLog("⚠️ userId가 없어 테스트 회원(김사장)을 찾습니다.");
+        const { data: testUser, error: userError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("name", "김사장")
+          .single();
+
+        userId = testUser?.id;
+        
+        if (userError || !testUser) {
+          devLog("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
+          // 첫 번째 회원 가져오기
+          const { data: firstUser, error: firstUserError } = await supabase
+            .from("profiles")
+            .select("id")
+            .limit(1)
+            .single();
+          
+          if (firstUserError || !firstUser) {
+            devLog("⚠️ profiles 테이블에 회원이 없습니다. 크레딧 차감을 건너뜁니다.");
+            userId = null;
+          } else {
+            userId = firstUser.id;
+          }
+        }
+      }
+
+      // ==================== 크레딧 차감 로직 ====================
+      let creditDeducted = false;
+      let creditError = null;
+      let workCreditsUsed = 1; // 기본값: 1 크레딧
+
+      if (supabase && userId && userId !== 'demo_user_12345') {
+        try {
+          devLog("💳 크레딧 차감 시작...");
+
+          // 1. work_credit_config에서 리뷰 답글 크레딧 가중치 가져오기
+          const { data: creditConfig, error: configError } = await supabase
+            .from('work_credit_config')
+            .select('review_reply_credit')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!configError && creditConfig && creditConfig.review_reply_credit) {
+            workCreditsUsed = creditConfig.review_reply_credit;
+            devLog(`✅ 리뷰 답글 크레딧 가중치: ${workCreditsUsed} 크레딧`);
+          } else {
+            devLog(`⚠️ work_credit_config 조회 실패, 기본값 사용: ${workCreditsUsed} 크레딧`);
+          }
+
+          // 2. 크레딧 한도 체크 및 차감
+          const { checkAndUpdateCreditLimit } = require('./api/subscription/token-usage');
+          const creditCheck = await checkAndUpdateCreditLimit(userId, workCreditsUsed);
+
+          if (!creditCheck.success) {
+            creditError = creditCheck.error;
+            devError(`❌ 크레딧 한도 초과: ${creditError}`);
+            // 한도 초과해도 답글은 반환하되, 에러 메시지 포함
+          } else {
+            creditDeducted = true;
+            devLog(`✅ 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditCheck.creditsRemaining})`);
+
+            // 3. work_credit_usage 테이블에 사용 기록 저장
+            const { data: usageRecord, error: usageError } = await supabase
+              .from('work_credit_usage')
+              .insert({
+                user_id: userId,
+                store_id: null, // 리뷰 답글은 store_id 없음
+                service_type: 'review_reply',
+                work_credits_used: workCreditsUsed,
+                input_tokens: null, // 선택적
+                output_tokens: null, // 선택적
+                ai_model: 'claude',
+                usage_date: new Date().toISOString().split('T')[0],
+                used_at: new Date().toISOString()
+              })
+              .select()
+              .single();
+
+            if (usageError) {
+              devError("⚠️ work_credit_usage 저장 실패:", usageError);
+              // 크레딧은 차감되었지만 기록 저장 실패 (로그만 남김)
+            } else {
+              devLog(`✅ 크레딧 사용 기록 저장 완료: ${usageRecord.id}`);
+            }
+          }
+        } catch (creditErr) {
+          devError("❌ 크레딧 차감 중 오류:", creditErr);
+          creditError = creditErr.message;
+          // 크레딧 차감 실패해도 답글 생성은 성공으로 처리
+        }
+      } else {
+        if (!userId || userId === 'demo_user_12345') {
+          devLog("⚠️ 데모 모드 또는 userId 없음: 크레딧 차감 건너뜀");
+        } else {
+          devLog("⚠️ Supabase 클라이언트가 없어 크레딧 차감을 건너뜁니다.");
+        }
+      }
+      // ==================== 크레딧 차감 로직 끝 ====================
+
       // ==================== DB 저장 로직 ====================
       let savedReviewId = null;
       let dbSaveStatus = "not_attempted"; // "not_attempted", "success", "failed"
@@ -3213,69 +3319,43 @@ ${placeInfoText}${ownerTipsInstruction}
           }
 
           // 2. review_responses 테이블에 리뷰 & 답글 저장
-          // 사용자 ID 가져오기 (요청에서 먼저 확인)
-          let userId = req.body?.userId || req.headers?.["user-id"] || null;
-          
-          // userId가 없으면 테스트 회원 ID 조회 (김사장)
+          // userId는 위에서 이미 가져옴
           if (!userId) {
-            devLog("⚠️ userId가 없어 테스트 회원(김사장)을 찾습니다.");
-            const { data: testUser, error: userError } = await supabase
-              .from("profiles")
-              .select("id")
-              .eq("name", "김사장")
-              .single();
-
-            userId = testUser?.id;
-            
-            if (userError || !testUser) {
-              devLog("⚠️ 테스트 회원(김사장)을 찾을 수 없습니다. 첫 번째 회원 사용.");
-              // 첫 번째 회원 가져오기
-              const { data: firstUser, error: firstUserError } = await supabase
-                .from("profiles")
-                .select("id")
-                .limit(1)
-                .single();
-              
-              if (firstUserError || !firstUser) {
-                throw new Error("profiles 테이블에 회원이 없습니다.");
-              }
-              
-              userId = firstUser.id;
-            }
+            devLog("⚠️ userId가 없어 review_responses 저장을 건너뜁니다.");
           } else {
             devLog(`✅ 사용자 ID 확인: ${userId}`);
           }
 
-          const reviewData = {
-            user_id: userId,
-            place_id: savedPlaceId || null, // place_id가 없으면 NULL
-            naver_place_url: req.body?.placeUrl || null,
-            customer_review: reviewText,
-            owner_tips: ownerTips || null,
-            place_info_json: placeInfo || null,
-            ai_response: cleanReply,
-            ai_model: "claude",
-            generation_time_ms: null, // 필요시 계산
-            is_used: false,
-            status: "draft",
-          };
+          if (userId) {
+            const reviewData = {
+              user_id: userId,
+              place_id: savedPlaceId || null, // place_id가 없으면 NULL
+              naver_place_url: req.body?.placeUrl || null,
+              customer_review: reviewText,
+              owner_tips: ownerTips || null,
+              place_info_json: placeInfo || null,
+              ai_response: cleanReply,
+              ai_model: "claude",
+              generation_time_ms: null, // 필요시 계산
+              is_used: false,
+              status: "draft",
+            };
 
-          const { data: reviewResult, error: reviewError } = await supabase
-            .from("review_responses")
-            .insert(reviewData)
-            .select();
+            const { data: reviewResult, error: reviewError } = await supabase
+              .from("review_responses")
+              .insert(reviewData)
+              .select();
 
-          if (reviewError) {
-            devError("❌ review_responses 저장 실패:", reviewError);
-            dbSaveStatus = "failed";
-            dbError = reviewError.message;
-          } else {
-            savedReviewId = reviewResult[0]?.id;
-            devLog("✅ review_responses 저장 성공:", savedReviewId);
-            dbSaveStatus = "success";
-            
-            // 리뷰 사용량 증가
-            if (userId) {
+            if (reviewError) {
+              devError("❌ review_responses 저장 실패:", reviewError);
+              dbSaveStatus = "failed";
+              dbError = reviewError.message;
+            } else {
+              savedReviewId = reviewResult[0]?.id;
+              devLog("✅ review_responses 저장 성공:", savedReviewId);
+              dbSaveStatus = "success";
+              
+              // 리뷰 사용량 증가
               try {
                 const { incrementReviewUsage } = require('./api/utils/usage-tracker');
                 devLog(`📊 리뷰 사용량 증가 시도: userId=${userId}`);
@@ -3289,8 +3369,6 @@ ${placeInfoText}${ownerTipsInstruction}
                 devError("⚠️ 리뷰 사용량 증가 중 오류:", usageErr);
                 // 사용량 증가 실패해도 답글 생성은 성공으로 처리
               }
-            } else {
-              devLog("⚠️ userId가 없어 리뷰 사용량을 증가시키지 않습니다.");
             }
           }
         } catch (dbErr) {
@@ -3317,6 +3395,9 @@ ${placeInfoText}${ownerTipsInstruction}
           server: "Integrated Server",
           dbSaveStatus: dbSaveStatus, // "not_attempted", "success", "failed"
           dbError: dbError, // 에러 메시지 (있을 경우)
+          creditDeducted: creditDeducted, // 크레딧 차감 여부
+          creditsUsed: creditDeducted ? workCreditsUsed : 0, // 사용한 크레딧
+          creditError: creditError, // 크레딧 관련 에러 (있을 경우)
         },
       });
     } catch (error) {

@@ -313,9 +313,23 @@ async function activateSubscription(userId, orderId) {
       .single();
 
     const userType = profile?.user_type || 'owner';
+    
+    // 대행사 등급 매핑 (elite/expert/master → starter/pro/enterprise)
+    const levelMapping = {
+      'elite': 'starter',
+      'expert': 'pro',
+      'master': 'enterprise'
+    };
+    const mappedPlanType = levelMapping[planType] || planType;
+    
     const priceKey = `${userType}_${planType}_price`;
     const tokenKey = `${userType}_${planType}_limit`;
-    const includedCreditsKey = `${userType}_${planType}_included_credits`;
+    
+    // 포함된 크레딧 키 (작업 크레딧 시스템)
+    // 대행사는 매핑된 등급명 사용, 식당 대표는 원래 등급명 사용
+    const includedCreditsKey = userType === 'agency' 
+      ? `${userType}_${mappedPlanType}_included_credits`
+      : `${userType}_${planType}_included_credits`;
 
     // 가격 및 포함된 크레딧 계산
     const monthlyFee = pricingConfig?.[priceKey] || payment.amount || 0;

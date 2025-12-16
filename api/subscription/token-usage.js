@@ -14,6 +14,7 @@ const supabase = createClient(
 
 /**
  * 크레딧 한도 체크 및 차감
+ * 다른 모듈에서도 사용 가능하도록 export
  */
 async function checkAndUpdateCreditLimit(userId, creditsToUse) {
   // 데모 모드일 때는 크레딧 체크 우회
@@ -185,7 +186,9 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
   }
 }
 
-module.exports = async (req, res) => {
+// 함수를 export하여 다른 모듈에서 사용 가능하도록
+// 기본 export는 API 핸들러, named export는 함수
+const apiHandler = async (req, res) => {
   // CORS 설정
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -485,3 +488,8 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+// 기본 export는 API 핸들러
+module.exports = apiHandler;
+// named export는 함수
+module.exports.checkAndUpdateCreditLimit = checkAndUpdateCreditLimit;

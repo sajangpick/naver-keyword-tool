@@ -2268,31 +2268,31 @@
                 <div class="token-modal-icon">
                     <i class="fa-solid fa-coins"></i>
                 </div>
-                <h2 class="token-modal-title">토큰 사용 확인</h2>
-                <p class="token-modal-subtitle">영상 생성에 필요한 토큰을 확인해주세요</p>
+                <h2 class="token-modal-title">크레딧 사용 확인</h2>
+                <p class="token-modal-subtitle">영상 생성에 필요한 크레딧을 확인해주세요</p>
             </div>
-            <!-- 토큰 부족 경고 메시지 (토큰 부족 시에만 표시) -->
+            <!-- 크레딧 부족 경고 메시지 (크레딧 부족 시에만 표시) -->
             <div class="token-warning-box hidden" id="tokenWarningBox">
                 <div class="token-warning-icon">
                     <i class="fa-solid fa-exclamation-triangle"></i>
                 </div>
-                <div class="token-warning-title">토큰이 부족합니다</div>
+                <div class="token-warning-title">크레딧이 부족합니다</div>
                 <div class="token-warning-message">
-                    영상 생성에 필요한 토큰이 부족합니다.<br>
-                    토큰을 충전하거나 구독을 업그레이드해주세요.
+                    영상 생성에 필요한 크레딧이 부족합니다.<br>
+                    크레딧을 충전하거나 구독을 업그레이드해주세요.
                 </div>
             </div>
             <div class="token-info-box">
                 <div class="token-info-item">
-                    <span class="token-info-label">예상 사용 토큰</span>
-                    <span class="token-info-value" id="estimatedTokens">1,500 토큰</span>
+                    <span class="token-info-label">예상 사용 크레딧</span>
+                    <span class="token-info-value" id="estimatedTokens">1,500 크레딧</span>
                 </div>
                 <div class="token-info-item">
-                    <span class="token-info-label">현재 남은 토큰</span>
+                    <span class="token-info-label">현재 남은 크레딧</span>
                     <span class="token-info-value" id="remainingTokens">-</span>
                 </div>
                 <div class="token-info-item">
-                    <span class="token-info-label">사용 후 남은 토큰</span>
+                    <span class="token-info-label">사용 후 남은 크레딧</span>
                     <span class="token-info-value" id="afterTokens">-</span>
                 </div>
             </div>
@@ -3309,14 +3309,14 @@
                         modalIcon.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
                     }
                     
-                    // 현재 남은 토큰 표시
+                    // 현재 남은 크레딧 표시
                     const remainingEl = document.getElementById('remainingTokens');
-                    remainingEl.textContent = remaining.toLocaleString() + ' 토큰';
+                    remainingEl.textContent = remaining.toLocaleString() + ' 크레딧';
                     remainingEl.className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
                     
-                    // 사용 후 남은 토큰 표시
+                    // 사용 후 남은 크레딧 표시
                     const afterEl = document.getElementById('afterTokens');
-                    afterEl.textContent = afterTokens.toLocaleString() + ' 토큰';
+                    afterEl.textContent = afterTokens.toLocaleString() + ' 크레딧';
                     afterEl.className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
                     
                     console.log('✅ [토큰 모달] 토큰 정보 표시 완료:', {
@@ -3356,9 +3356,9 @@
                         const remaining = Number(retryTokenInfo.remaining) || 0;
                         const afterTokens = remaining - estimatedTokens;
                         
-                        document.getElementById('remainingTokens').textContent = remaining.toLocaleString() + ' 토큰';
+                        document.getElementById('remainingTokens').textContent = remaining.toLocaleString() + ' 크레딧';
                         document.getElementById('remainingTokens').className = 'token-info-value ' + (remaining < estimatedTokens ? 'warning' : 'success');
-                        document.getElementById('afterTokens').textContent = afterTokens.toLocaleString() + ' 토큰';
+                        document.getElementById('afterTokens').textContent = afterTokens.toLocaleString() + ' 크레딧';
                         document.getElementById('afterTokens').className = 'token-info-value ' + (afterTokens < 0 ? 'warning' : 'success');
                     }
                     console.log('✅ [토큰 모달] 재시도 성공, 토큰 정보 업데이트 완료');
@@ -3373,7 +3373,7 @@
                     // 사용자에게 안내
                     const remainingEl = document.getElementById('remainingTokens');
                     if (remainingEl) {
-                        remainingEl.title = '토큰 정보를 불러올 수 없습니다. 페이지를 새로고침하거나 마이페이지에서 확인하세요.';
+                        remainingEl.title = '크레딧 정보를 불러올 수 없습니다. 페이지를 새로고침하거나 마이페이지에서 확인하세요.';
                     }
                 }
             }
@@ -3416,15 +3416,15 @@
             const tokenInfo = await fetchTokenInfo();
             
             if (!tokenInfo) {
-                alert('토큰 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                alert('크레딧 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
                 return;
             }
             
-            // 무제한이 아닌 경우 토큰 부족 체크
+            // 무제한이 아닌 경우 크레딧 부족 체크
             if (!tokenInfo.isUnlimited) {
                 const remaining = Number(tokenInfo.remaining) || 0;
                 if (remaining < estimatedTokens) {
-                    // 토큰 부족 시 모달을 닫지 않고 경고 표시
+                    // 크레딧 부족 시 모달을 닫지 않고 경고 표시
                     const warningBox = document.getElementById('tokenWarningBox');
                     const modalIcon = document.querySelector('.token-modal-icon');
                     
@@ -3436,7 +3436,7 @@
                         modalIcon.innerHTML = '<i class="fa-solid fa-exclamation-triangle"></i>';
                     }
                     
-                    // 토큰 정보 강조 표시
+                    // 크레딧 정보 강조 표시
                     const remainingEl = document.getElementById('remainingTokens');
                     const afterEl = document.getElementById('afterTokens');
                     if (remainingEl) {
@@ -3446,12 +3446,12 @@
                         afterEl.className = 'token-info-value warning';
                     }
                     
-                    alert(`토큰이 부족합니다.\n\n현재 남은 토큰: ${remaining.toLocaleString()} 토큰\n필요한 토큰: ${estimatedTokens.toLocaleString()} 토큰\n\n토큰을 충전하거나 구독을 업그레이드해주세요.`);
+                    alert(`크레딧이 부족합니다.\n\n현재 남은 크레딧: ${remaining.toLocaleString()} 크레딧\n필요한 크레딧: ${estimatedTokens.toLocaleString()} 크레딧\n\n크레딧을 충전하거나 구독을 업그레이드해주세요.`);
                     return;
                 }
             }
             
-            // 토큰이 충분한 경우에만 진행
+            // 크레딧이 충분한 경우에만 진행
             closeTokenModal();
             pendingVideoGeneration = true;
             await executeVideoGeneration();

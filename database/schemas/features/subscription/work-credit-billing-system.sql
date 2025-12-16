@@ -4,6 +4,59 @@
 -- 버전: 3.0
 -- ============================================
 
+-- ==================== 0. 크레딧 한도 설정 테이블 (관리자 설정용) ====================
+
+CREATE TABLE IF NOT EXISTS public.credit_config (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- 식당 대표 등급별 크레딧 한도
+  owner_seed_limit integer DEFAULT 30000,        -- 라이트: 30,000 크레딧/월
+  owner_power_limit integer DEFAULT 37500,       -- 스탠다드: 37,500 크레딧/월
+  owner_bigpower_limit integer DEFAULT 83333,    -- 프로: 83,333 크레딧/월
+  owner_premium_limit integer DEFAULT 200000,    -- 프리미엄: 200,000 크레딧/월
+  
+  -- 대행사 등급별 크레딧 한도
+  agency_elite_limit integer DEFAULT 100000,    -- 스타터: 100,000 크레딧/월
+  agency_expert_limit integer DEFAULT 600000,   -- 프로: 600,000 크레딧/월
+  agency_master_limit integer DEFAULT 1666666,  -- 엔터프라이즈: 1,666,666 크레딧/월
+  agency_premium_limit integer DEFAULT 10000000, -- 프리미엄: 10,000,000 크레딧/월
+  
+  -- 메타데이터
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.credit_config IS '구독 등급별 크레딧 한도 설정 (관리자 설정 페이지용)';
+COMMENT ON COLUMN public.credit_config.owner_seed_limit IS '라이트 등급 월 크레딧 한도';
+COMMENT ON COLUMN public.credit_config.owner_power_limit IS '스탠다드 등급 월 크레딧 한도';
+COMMENT ON COLUMN public.credit_config.owner_bigpower_limit IS '프로 등급 월 크레딧 한도';
+COMMENT ON COLUMN public.credit_config.owner_premium_limit IS '프리미엄 등급 월 크레딧 한도';
+COMMENT ON COLUMN public.credit_config.agency_elite_limit IS '스타터 등급 월 크레딧 한도';
+COMMENT ON COLUMN public.credit_config.agency_expert_limit IS '프로 등급 월 크레딧 한도';
+COMMENT ON COLUMN public.credit_config.agency_master_limit IS '엔터프라이즈 등급 월 크레딧 한도';
+
+-- 기본값 삽입 (데이터가 없을 경우만)
+INSERT INTO public.credit_config (
+  owner_seed_limit,
+  owner_power_limit,
+  owner_bigpower_limit,
+  owner_premium_limit,
+  agency_elite_limit,
+  agency_expert_limit,
+  agency_master_limit,
+  agency_premium_limit
+)
+SELECT 
+  30000,      -- 라이트
+  37500,      -- 스탠다드
+  83333,      -- 프로
+  200000,     -- 프리미엄
+  100000,     -- 스타터
+  600000,     -- 프로
+  1666666,    -- 엔터프라이즈
+  10000000    -- 프리미엄
+WHERE NOT EXISTS (SELECT 1 FROM public.credit_config);
+
 -- ==================== 1. 작업 크레딧 설정 테이블 ====================
 
 CREATE TABLE IF NOT EXISTS public.work_credit_config (
