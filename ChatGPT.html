@@ -1914,7 +1914,7 @@
           if (data.success && data.reply) {
             hideLoading(loadingId);
             // 모델 정보 포함하여 메시지 추가
-            const modelInfo = data.metadata?.model || 'gpt-4o';
+            const modelInfo = data.metadata?.model || 'gpt-5.2';
             addMessage(data.reply, "bot", modelInfo);
 
             // 메시지 전송 성공 시 연결 상태 업데이트

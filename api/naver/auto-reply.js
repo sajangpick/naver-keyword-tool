@@ -102,7 +102,7 @@ ${reviewText}
 위 리뷰에 대한 ${replyTone === 'friendly' ? '친근한' : replyTone === 'professional' ? '전문적인' : '캐주얼'} 톤의 답글을 작성해주세요.`;
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-5.2',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }

@@ -1856,7 +1856,10 @@
       document.getElementById('paymentPlanName').textContent = planInfo.name;
       document.getElementById('paymentPlanBadge').textContent = planInfo.badge;
       document.getElementById('paymentPlanPrice').textContent = planPrice === 0 ? '무료' : `${planPrice.toLocaleString()}원`;
-      document.getElementById('paymentPlanTokens').textContent = planCredits !== null ? `${planCredits.toLocaleString()} 크레딧` : '무제한';
+      
+      // 실제 사이클의 included_credits 우선 사용 (작업 크레딧 시스템)
+      const actualCredits = cycle?.included_credits !== undefined ? cycle.included_credits : (planCredits !== null ? planCredits : 0);
+      document.getElementById('paymentPlanTokens').textContent = actualCredits > 0 ? `${actualCredits.toLocaleString()} 크레딧` : (planCredits === null ? '무제한' : '0 크레딧');
       
       if (cycle && cycle.days_remaining !== undefined) {
         document.getElementById('paymentPlanDays').textContent = `${cycle.days_remaining}일`;
@@ -2373,49 +2376,60 @@
           displayRealTimeUsage(usage);
         }
 
-        // 최근 사용 내역 표시 (work_credit_usage 테이블에서 조회)
+        // 최근 사용 내역 표시 (API를 통해 조회)
         try {
-          const { data: recentUsage } = await supabase
-            .from('work_credit_usage')
-            .select('*')
-            .eq('user_id', userId)
-            .order('used_at', { ascending: false })
-            .limit(5);
-          
-          const usageList = document.getElementById('recentUsageList');
-          if (usageList) {
-            if (recentUsage && recentUsage.length > 0) {
-              usageList.innerHTML = recentUsage.map(usage => {
-                // 서비스 타입을 한국어로 변환
-                const serviceLabels = {
-                  'blog_writing': '블로그 작성',
-                  'review_reply': '리뷰 답글',
-                  'video_generation': '영상 생성',
-                  'news': '뉴스 추천'
-                };
-                
-                const serviceType = usage.service_type || '';
-                const serviceLabel = serviceLabels[serviceType] || serviceType;
-                const creditsUsed = usage.work_credits_used || 0;
-                const timeAgo = getTimeAgo(new Date(usage.used_at));
-                
-                return `
-                  <div class="usage-item">
-                    <div>
-                      <span class="usage-api">${serviceLabel}</span>
-                      <span class="usage-time">${timeAgo}</span>
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const usageRes = await fetch(`/api/subscription/token-usage?user_id=${userId}&limit=5`, {
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`
+              }
+            });
+            
+            if (usageRes.ok) {
+              const usageResult = await usageRes.json();
+              const recentUsage = usageResult.usage || [];
+              
+              const usageList = document.getElementById('recentUsageList');
+              if (usageList) {
+                if (recentUsage && recentUsage.length > 0) {
+                  usageList.innerHTML = recentUsage.map(usage => {
+                    // 서비스 타입을 한국어로 변환
+                    const serviceLabels = {
+                      'blog_writing': '블로그 작성',
+                      'review_reply': '리뷰 답글',
+                      'video_generation': '영상 생성',
+                      'news': '뉴스 추천'
+                    };
+                    
+                    const serviceType = usage.service_type || '';
+                    const serviceLabel = serviceLabels[serviceType] || serviceType;
+                    const creditsUsed = usage.work_credits_used || 0;
+                    const timeAgo = getTimeAgo(new Date(usage.used_at));
+                    
+                    return `
+                      <div class="usage-item">
+                        <div>
+                          <span class="usage-api">${serviceLabel}</span>
+                          <span class="usage-time">${timeAgo}</span>
+                        </div>
+                        <span class="usage-tokens">-${creditsUsed.toLocaleString()} 작업 크레딧</span>
+                      </div>
+                    `;
+                  }).join('');
+                } else {
+                  usageList.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                      <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
                     </div>
-                    <span class="usage-tokens">-${creditsUsed.toLocaleString()} 작업 크레딧</span>
-                  </div>
-                `;
-              }).join('');
+                  `;
+                }
+              }
             } else {
-              usageList.innerHTML = `
-                <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                  <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
-                </div>
-              `;
+              throw new Error('API 호출 실패');
             }
+          } else {
+            throw new Error('세션이 없습니다');
           }
         } catch (usageError) {
           console.error('❌ 최근 사용 내역 조회 실패:', usageError);

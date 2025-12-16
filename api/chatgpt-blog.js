@@ -557,7 +557,7 @@ JSON 형식으로 답변해주세요:
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: "당신은 맛집 마케팅 전문가입니다. JSON 형식으로만 답변하세요." },
                         { role: "user", content: prompt }
@@ -640,7 +640,7 @@ JSON 형식으로 답변해주세요:
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: "당신은 음식 메뉴 분석 전문가입니다. 매번 신선하고 다양한 관점으로 분석하세요. JSON 형식으로만 답변하세요." },
                         { role: "user", content: prompt }
@@ -735,7 +735,7 @@ JSON 형식으로 답변해주세요:
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",  // ⚡ 최신 모델로 업그레이드
+                    model: "gpt-5.2",  // ⚡ 최신 모델로 업그레이드
                     messages: [
                         { role: "system", content: "당신은 맛집 마케팅 전문가입니다. 매번 다르고 신선한 주제를 추천하세요. JSON 형식으로만 답변하세요." },
                         { role: "user", content: prompt }
@@ -927,7 +927,7 @@ ${previousAnalysis.commonExpressions.join('\n')}
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: `당신은 ${placeInfo.name}의 사장님입니다. 처음부터 끝까지 일관되게 사장님의 입장에서만 작성하세요. "저희 가게", "우리 가게"처럼 사장님 표현을 사용하고, 손님을 초대하는 따뜻한 글을 쓰세요. 절대 손님/방문객 시점으로 작성하지 마세요. AI 티 나는 표현("특별한 점", "공간철학", "프리미엄 경험" 등)은 절대 사용하지 말고, 평범한 사장님이 쓰는 진솔하고 소박한 표현만 사용하세요. 마크다운 형식(**볼드**, *이탤릭*, #헤더 등)은 절대 사용하지 말고 순수한 일반 텍스트로만 작성하세요.` },
                         { role: "user", content: prompt }
@@ -1157,7 +1157,7 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: `당신은 ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)입니다. 실제로 방문해서 먹어보고 쓴 솔직한 후기를 작성합니다. 절대 사장님 시점("저희 가게", "우리 매장")으로 작성하지 마세요. 손님 시점("다녀왔어요", "먹어봤어요")으로만 작성하세요. AI 티 나는 표현("특별한 점", "공간철학" 등)은 사용하지 말고, 평범한 일반인이 쓰는 자연스러운 표현만 사용하세요. 마크다운 형식(**볼드**, *이탤릭*, #헤더 등)은 절대 사용하지 말고 순수한 일반 텍스트로만 작성하세요.` },
                         { role: "user", content: prompt }
@@ -1254,7 +1254,7 @@ ${landmarks ? `- 주변 랜드마크: ${landmarks}` : ''}
             userId || null, // userId가 있으면 토큰 추적
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: "당신은 네이버 블로그 SEO 전문가입니다. 검색 상위 노출에 최적화된 키워드를 추천합니다." },
                         { role: "user", content: prompt }
@@ -1430,7 +1430,7 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: `당신은 일반 손님으로 방문 경험을 자연스럽게 기록하는 블로거입니다. ${writingAngle.name}의 관점에서 작성하되, 매번 다른 스타일로 시작하세요. 마크다운 형식(**볼드**, *이탤릭*, #헤더 등)은 절대 사용하지 말고 순수한 일반 텍스트로만 작성하세요.` },
                         { role: "user", content: prompt }
@@ -1512,7 +1512,7 @@ async function suggestDishesWithAI(ingredients, userId) {
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userPrompt }
@@ -1644,7 +1644,7 @@ ${style ? `원하는 스타일: ${style}` : ''}
             userId,
             async () => {
                 return await openai.chat.completions.create({
-                    model: "gpt-4o",
+                    model: "gpt-5.2",
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userPrompt }
@@ -1845,7 +1845,7 @@ module.exports = async function handler(req, res) {
                                     blog_content: reviewResult.content,
                                     writing_angle: reviewResult.writingAngle,
                                     diversity_keywords: reviewResult.diversityKeywords,
-                                    ai_model: 'gpt-4o',
+                                    ai_model: 'gpt-5.2',
                                     generation_time_ms: generationTime,
                                     status: 'draft',
                                     is_used: false
@@ -1949,7 +1949,7 @@ module.exports = async function handler(req, res) {
                                     blog_content: reviewResult.content,
                                     writing_angle: reviewResult.writingAngle,
                                     diversity_keywords: reviewResult.diversityKeywords,
-                                    ai_model: 'gpt-4o',
+                                    ai_model: 'gpt-5.2',
                                     generation_time_ms: generationTime,
                                     status: 'draft',
                                     is_used: false
@@ -2044,7 +2044,7 @@ module.exports = async function handler(req, res) {
                                 menu_analysis: data.menuAnalysis || null,
                                 writing_angle: blogResult.writingAngle,
                                 diversity_keywords: blogResult.diversityKeywords,
-                                ai_model: 'gpt-4o',
+                                ai_model: 'gpt-5.2',
                                 generation_time_ms: generationTime,
                                 status: 'draft',
                                 is_used: false

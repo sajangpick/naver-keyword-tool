@@ -504,9 +504,12 @@ const apiHandler = async (req, res) => {
         .select('*')
         .eq('user_id', user_id)
         .order('used_at', { ascending: false })
-        .limit(parseInt(limit));
+        .limit(parseInt(limit) || 10);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('❌ [credit-usage] work_credit_usage 조회 실패:', fetchError);
+        // 에러가 발생해도 빈 배열 반환 (테이블이 없을 수도 있음)
+      }
 
       // 작업 크레딧 사용량 계산 (작업 크레딧 시스템)
       const creditsUsed = cycle?.credits_used || cycle?.tokens_used || 0;

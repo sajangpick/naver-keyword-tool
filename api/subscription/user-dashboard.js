@@ -350,30 +350,54 @@ async function getDashboardData(user, res) {
         // 관리자 등급 체크
         const isAdmin = level === 'admin' || userType === 'admin';
         
-        // 토큰 설정 조회 (관리자 설정 우선)
-        let monthlyTokens = 100;
+        // 크레딧 설정 조회 (작업 크레딧 시스템 - pricing_config 우선)
+        let monthlyCredits = 100;
         if (isAdmin) {
           // 관리자는 무제한 (null 또는 매우 큰 값)
-          monthlyTokens = null; // null = 무제한
-          console.log(`📊 [user-dashboard] 관리자 등급 - 토큰 무제한`);
+          monthlyCredits = null; // null = 무제한
+          console.log(`📊 [user-dashboard] 관리자 등급 - 크레딧 무제한`);
         } else if (supabase) {
           try {
-            const { data: tokenConfigs, error: tokenConfigError } = await supabase
-              .from('token_config')
+            // pricing_config에서 included_credits 우선 조회
+            const { data: pricingConfig } = await supabase
+              .from('pricing_config')
               .select('*')
-              .order('updated_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
+              .single();
             
-            if (!tokenConfigError && tokenConfigs) {
-              const tokenKey = `${userType}_${level}_limit`;
-              monthlyTokens = tokenConfigs[tokenKey] || 100;
-              console.log(`📊 [user-dashboard] 새 사이클 생성 - 토큰 한도: ${monthlyTokens} (${tokenKey})`);
+            // 대행사 등급 매핑 (elite/expert/master → starter/pro/enterprise)
+            const levelMapping = {
+              'elite': 'starter',
+              'expert': 'pro',
+              'master': 'enterprise'
+            };
+            const mappedLevel = levelMapping[level] || level;
+            
+            const includedCreditsKey = userType === 'agency' 
+              ? `${userType}_${mappedLevel}_included_credits`
+              : `${userType}_${level}_included_credits`;
+            
+            if (pricingConfig?.[includedCreditsKey] !== undefined) {
+              monthlyCredits = Number(pricingConfig[includedCreditsKey]) || 100;
+              console.log(`📊 [user-dashboard] 새 사이클 생성 - 포함 크레딧: ${monthlyCredits} (${includedCreditsKey})`);
             } else {
-              console.warn('⚠️ 토큰 설정 조회 실패, 기본값 100 사용:', tokenConfigError?.message || '설정 없음');
+              // pricing_config에 없으면 token_config에서 조회 (하위 호환성)
+              const { data: tokenConfigs, error: tokenConfigError } = await supabase
+                .from('token_config')
+                .select('*')
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              
+              if (!tokenConfigError && tokenConfigs) {
+                const tokenKey = `${userType}_${level}_limit`;
+                monthlyCredits = tokenConfigs[tokenKey] || 100;
+                console.log(`📊 [user-dashboard] 새 사이클 생성 - 토큰 한도 사용: ${monthlyCredits} (${tokenKey})`);
+              } else {
+                console.warn('⚠️ 크레딧 설정 조회 실패, 기본값 100 사용:', tokenConfigError?.message || '설정 없음');
+              }
             }
           } catch (err) {
-            console.warn('⚠️ 토큰 설정 조회 실패, 기본값 사용:', err.message);
+            console.warn('⚠️ 크레딧 설정 조회 실패, 기본값 사용:', err.message);
           }
         }
         
@@ -383,9 +407,9 @@ async function getDashboardData(user, res) {
         endDate.setDate(endDate.getDate() + 30);
         
         if (supabase) {
-          // 관리자는 무제한이므로 매우 큰 값으로 설정 (또는 null 허용 시 null)
-          const cycleTokenLimit = isAdmin ? 999999 : monthlyTokens;
-          const cycleTokensRemaining = isAdmin ? 999999 : monthlyTokens;
+          // 관리자는 무제한이므로 매우 큰 값으로 설정
+          const cycleCreditLimit = isAdmin ? 999999 : monthlyCredits;
+          const cycleCreditsRemaining = isAdmin ? 999999 : monthlyCredits;
           
           const { data: newCycle, error: createError } = await supabase
             .from('subscription_cycle')
@@ -395,9 +419,12 @@ async function getDashboardData(user, res) {
               cycle_start_date: startDate.toISOString().split('T')[0],
               cycle_end_date: endDate.toISOString().split('T')[0],
               days_in_cycle: 30,
-              monthly_token_limit: cycleTokenLimit,
+              included_credits: cycleCreditLimit, // 작업 크레딧 시스템
+              credits_used: 0,
+              credits_remaining: cycleCreditsRemaining,
+              monthly_token_limit: cycleCreditLimit, // 하위 호환성
               tokens_used: 0,
-              tokens_remaining: cycleTokensRemaining,
+              tokens_remaining: cycleCreditsRemaining,
               status: 'active',
               billing_amount: 0,
               payment_status: 'completed'
@@ -407,7 +434,7 @@ async function getDashboardData(user, res) {
           
           if (!createError && newCycle) {
             currentCycle = newCycle;
-            console.log(`✅ 새 사이클 생성 완료 (관리자: ${isAdmin ? '무제한' : monthlyTokens + ' 토큰'})`);
+            console.log(`✅ 새 사이클 생성 완료 (관리자: ${isAdmin ? '무제한' : monthlyCredits + ' 크레딧'})`);
           }
         }
       } catch (err) {
@@ -415,7 +442,7 @@ async function getDashboardData(user, res) {
       }
     }
     
-    // 사이클이 여전히 없으면 기본값 사용
+    // 사이클이 여전히 없으면 기본값 사용 (크레딧 필드 포함)
     if (!currentCycle) {
       const startDate = new Date();
       const endDate = new Date(startDate);
@@ -425,7 +452,10 @@ async function getDashboardData(user, res) {
         ...defaultCycle,
         user_id: user.id,
         cycle_start_date: startDate.toISOString().split('T')[0],
-        cycle_end_date: endDate.toISOString().split('T')[0]
+        cycle_end_date: endDate.toISOString().split('T')[0],
+        included_credits: 100, // 작업 크레딧 시스템
+        credits_used: 0,
+        credits_remaining: 100
       };
     }
     
@@ -504,16 +534,30 @@ async function getDashboardData(user, res) {
             }
           }
           
-          // 사이클 업데이트 (포함 크레딧과 다를 경우)
-          if (currentCycle.id && currentCycle.included_credits !== currentCreditLimit) {
-            console.log(`🔄 [user-dashboard] 사이클 포함 크레딧 업데이트: ${currentCycle.included_credits || 0} → ${currentCreditLimit}`);
+          // 사이클 업데이트 (포함 크레딧과 다를 경우 또는 credits_used가 실제 사용량과 다를 경우)
+          const needsUpdate = currentCycle.id && (
+            currentCycle.included_credits !== currentCreditLimit ||
+            currentCycle.credits_used !== totalUsed ||
+            currentCycle.credits_remaining !== Math.max(0, currentCreditLimit - totalUsed)
+          );
+          
+          if (needsUpdate) {
+            const calculatedCreditsRemaining = Math.max(0, currentCreditLimit - totalUsed);
+            console.log(`🔄 [user-dashboard] 사이클 크레딧 업데이트:`, {
+              included_credits: `${currentCycle.included_credits || 0} → ${currentCreditLimit}`,
+              credits_used: `${currentCycle.credits_used || 0} → ${totalUsed}`,
+              credits_remaining: `${currentCycle.credits_remaining || 0} → ${calculatedCreditsRemaining}`
+            });
+            
             const { error: updateError } = await supabase
               .from('subscription_cycle')
               .update({
                 included_credits: currentCreditLimit,
-                credits_remaining: Math.max(0, currentCreditLimit - totalUsed),
+                credits_used: totalUsed,
+                credits_remaining: calculatedCreditsRemaining,
                 monthly_token_limit: currentCreditLimit, // 하위 호환성
-                tokens_remaining: Math.max(0, currentCreditLimit - totalUsed),
+                tokens_used: totalUsed, // 하위 호환성
+                tokens_remaining: calculatedCreditsRemaining,
                 updated_at: new Date().toISOString()
               })
               .eq('id', currentCycle.id);
@@ -521,8 +565,10 @@ async function getDashboardData(user, res) {
             if (updateError) {
               console.error('❌ 사이클 업데이트 실패:', updateError);
             } else {
-              console.log('✅ 사이클 포함 크레딧 업데이트 완료');
+              console.log('✅ 사이클 크레딧 업데이트 완료');
               currentCycle.included_credits = currentCreditLimit;
+              currentCycle.credits_used = totalUsed;
+              currentCycle.credits_remaining = calculatedCreditsRemaining;
             }
           }
         }

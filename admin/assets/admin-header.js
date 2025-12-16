@@ -188,8 +188,15 @@
   // 권한 라벨 생성 함수
   function getRoleLabel(profile) {
     if (!profile) {
-      return '회원';
+      console.warn('[Header] getRoleLabel: 프로필이 없음, 기본값 반환');
+      return '라이트'; // 프로필이 없어도 기본 등급 표시
     }
+
+    console.log('[Header] getRoleLabel 입력:', {
+      user_type: profile.user_type,
+      membership_level: profile.membership_level,
+      role: profile.role
+    });
 
     // 관리자 권한 확인 (user_type, membership_level, role 중 하나라도 'admin')
     const isAdmin = profile.user_type === 'admin' || 
@@ -197,6 +204,7 @@
                    (profile.role && profile.role === 'admin');
     
     if (isAdmin) {
+      console.log('[Header] 관리자로 판단');
       return '관리자';
     }
 
@@ -204,21 +212,30 @@
     if (profile.user_type === 'owner') {
       // 식당 대표: 등급 한글명 표시
       const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
-      return LEVEL_NAMES[normalizedLevel] || normalizedLevel || '라이트';
+      const label = LEVEL_NAMES[normalizedLevel] || normalizedLevel || '라이트';
+      console.log('[Header] 식당 대표 등급:', normalizedLevel, '→', label);
+      return label;
     } else if (profile.user_type === 'agency') {
       // 대행사/블로거: 등급 한글명 표시
       const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
-      return LEVEL_NAMES[normalizedLevel] || normalizedLevel || '스타터';
+      const label = LEVEL_NAMES[normalizedLevel] || normalizedLevel || '스타터';
+      console.log('[Header] 대행사 등급:', normalizedLevel, '→', label);
+      return label;
     } else if (profile.user_type === 'manager') {
       // 매니저: 유형명 표시
+      console.log('[Header] 매니저로 판단');
       return USER_TYPE_NAMES.manager || '매니저';
     } else {
       // 기타: 등급이 있으면 등급명, 없으면 user_type명
       if (profile.membership_level) {
         const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
-        return LEVEL_NAMES[normalizedLevel] || normalizedLevel;
+        const label = LEVEL_NAMES[normalizedLevel] || normalizedLevel;
+        console.log('[Header] 기타 등급:', normalizedLevel, '→', label);
+        return label;
       }
-      return USER_TYPE_NAMES[profile.user_type] || '회원';
+      const label = USER_TYPE_NAMES[profile.user_type] || '라이트'; // 기본값도 라이트로 변경
+      console.log('[Header] user_type만 있음:', profile.user_type, '→', label);
+      return label;
     }
   }
 
@@ -255,18 +272,36 @@
         let roleLabel = '회원'; // 기본값
         
         try {
+          console.log('[Header] 프로필 조회 시작, userId:', user.id);
+          
           const { data: profile, error: profileError } = await supabaseClient
             .from('profiles')
             .select('user_type, membership_level, role')
             .eq('id', user.id)
             .single();
 
-          if (!profileError && profile) {
+          console.log('[Header] 프로필 조회 결과:', { profile, profileError });
+
+          if (profileError) {
+            console.error('[Header] 프로필 조회 에러:', profileError);
+            // 에러가 있어도 프로필이 있으면 사용
+            if (profile) {
+              roleLabel = getRoleLabel(profile);
+              console.log('[Header] 프로필 있음, 라벨:', roleLabel);
+            }
+          } else if (profile) {
             // member-management.html의 등급 시스템 사용
             roleLabel = getRoleLabel(profile);
+            console.log('[Header] 등급 라벨 생성:', roleLabel, '프로필:', {
+              user_type: profile.user_type,
+              membership_level: profile.membership_level,
+              role: profile.role
+            });
+          } else {
+            console.warn('[Header] 프로필 데이터가 없음');
           }
         } catch (profileError) {
-          console.warn('프로필 조회 실패 (기본값 사용):', profileError);
+          console.error('[Header] 프로필 조회 예외 발생:', profileError);
           // 프로필 조회 실패 시 기본값 '회원' 사용
         }
 
