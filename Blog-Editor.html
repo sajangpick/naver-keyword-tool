@@ -2147,6 +2147,230 @@
           font-size: 8px;
         }
       }
+    /* 크레딧 확인 팝업 스타일 */
+    .credit-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .credit-modal.active {
+      display: flex;
+    }
+
+    .credit-modal-content {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: modalSlideIn 0.3s ease-out;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .credit-modal-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .credit-modal-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 123, 84, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+      color: var(--accent-color);
+    }
+
+    .credit-modal-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .credit-modal-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    .credit-info-box {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .credit-info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .credit-info-item:last-child {
+      border-bottom: none;
+    }
+
+    .credit-info-label {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .credit-info-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .credit-info-value.warning {
+      color: #ef4444;
+    }
+
+    .credit-info-value.success {
+      color: #22c55e;
+    }
+
+    .credit-modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .credit-modal-actions .btn {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .credit-warning-box {
+      background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 123, 84, 0.1) 100%);
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .credit-warning-box.hidden {
+      display: none;
+    }
+
+    .credit-warning-icon {
+      width: 48px;
+      height: 48px;
+      background: #f59e0b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 24px;
+      color: white;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .credit-warning-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f59e0b;
+      margin-bottom: 8px;
+    }
+
+    .credit-warning-message {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .credit-modal-icon.warning {
+      background: rgba(255, 152, 0, 0.15);
+      color: #f59e0b;
+    }
+
+    @media (max-width: 768px) {
+      .credit-modal {
+        padding: 16px;
+        align-items: flex-end;
+      }
+
+      .credit-modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 24px 24px 0 0;
+        padding: 24px 20px;
+        max-height: 85vh;
+        margin-bottom: 0;
+      }
+
+      .credit-modal-header {
+        margin-bottom: 24px;
+      }
+
+      .credit-modal-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 28px;
+        margin-bottom: 16px;
+      }
+
+      .credit-modal-title {
+        font-size: 20px;
+      }
+
+      .credit-modal-subtitle {
+        font-size: 14px;
+      }
+
+      .credit-info-box {
+        padding: 20px;
+      }
+
+      .credit-info-item {
+        padding: 10px 0;
+      }
+
+      .credit-info-label {
+        font-size: 14px;
+      }
+
+      .credit-info-value {
+        font-size: 16px;
+      }
+    }
     </style>
     <!-- 인증 가드: 로그인 필수 기능 보호 -->
     <script src="./assets/auth-guard.js" defer></script>
@@ -2381,7 +2605,7 @@
                         🤖 AI 키워드 추천받기
                     </button>
                     <small style="color: #ff6b35; font-size: 11px; font-weight: 600; display: block; margin-top: 4px;">
-                        ⚠️ 약 400~600 토큰 소비
+                        ⚠️ 1크레딧 소비
                     </small>
                     <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
                     
@@ -2499,7 +2723,7 @@
                             🤖 AI 키워드 추천받기
                         </button>
                         <small style="color: #ff6b35; font-size: 11px; font-weight: 600; display: block; margin-top: 4px;">
-                            ⚠️ 약 400~600 토큰 소비
+                            ⚠️ 1크레딧 소비
                         </small>
                         <small style="color: #666; font-size: 12px;">가게의 특징이나 키워드를 입력해주세요 (쉼표로 구분)</small>
                         
@@ -3402,11 +3626,25 @@
 
         // AI 키워드 추천 버튼 이벤트 (우리매장 탭)
         document.getElementById('aiKeywordBtn').addEventListener('click', async function() {
+            // 크레딧 팝업 먼저 표시
+            if (window.showCreditModal) {
+                await window.showCreditModal();
+                // 팝업이 닫힐 때까지 대기하지 않고 바로 진행
+                // 사용자가 팝업을 확인한 후 키워드 추천 진행
+            }
+            // 크레딧 팝업 확인 후 키워드 추천 진행
             await recommendKeywords('');
         });
 
         // AI 키워드 추천 버튼 이벤트 (체험단 블로그 탭)
         document.getElementById('aiKeywordBtn2').addEventListener('click', async function() {
+            // 크레딧 팝업 먼저 표시
+            if (window.showCreditModal) {
+                await window.showCreditModal();
+                // 팝업이 닫힐 때까지 대기하지 않고 바로 진행
+                // 사용자가 팝업을 확인한 후 키워드 추천 진행
+            }
+            // 크레딧 팝업 확인 후 키워드 추천 진행
             await recommendKeywords('2');
         });
 
@@ -3681,6 +3919,11 @@
       blogForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
+        // 크레딧 팝업 먼저 표시
+        if (window.showCreditModal) {
+            await window.showCreditModal();
+        }
+
         const formData = new FormData(this);
             const companyName = formData.get("companyName");
             const companyAddress = formData.get("companyAddress");
@@ -3835,6 +4078,11 @@
         // 체험단 블로그 폼 제출
         reviewTeamForm.addEventListener("submit", async function (e) {
             e.preventDefault();
+
+            // 크레딧 팝업 먼저 표시
+            if (window.showCreditModal) {
+                await window.showCreditModal();
+            }
 
             const formData = new FormData(this);
             const companyName = formData.get("companyName");
@@ -4247,5 +4495,188 @@
         </div>
       </div>
     </footer>
+
+    <!-- 크레딧 확인 팝업 -->
+    <div class="credit-modal" id="creditModal">
+      <div class="credit-modal-content">
+        <div class="credit-modal-header">
+          <div class="credit-modal-icon" id="creditModalIcon">
+            <i class="fas fa-coins"></i>
+          </div>
+          <h2 class="credit-modal-title">크레딧 사용 확인</h2>
+          <p class="credit-modal-subtitle">작업 크레딧 사용 현황을 확인해주세요</p>
+        </div>
+        <!-- 크레딧 부족 경고 메시지 (크레딧 부족 시에만 표시) -->
+        <div class="credit-warning-box hidden" id="creditWarningBox">
+          <div class="credit-warning-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="credit-warning-title">크레딧이 부족합니다</div>
+          <div class="credit-warning-message">
+            작업 크레딧이 부족합니다.<br>
+            크레딧을 충전하거나 구독을 업그레이드해주세요.
+          </div>
+        </div>
+        <div class="credit-info-box">
+          <div class="credit-info-item">
+            <span class="credit-info-label">이번 달 사용 크레딧</span>
+            <span class="credit-info-value" id="modalTokensUsed">0 크레딧</span>
+          </div>
+          <div class="credit-info-item">
+            <span class="credit-info-label">포함된 기본 크레딧</span>
+            <span class="credit-info-value" id="modalTokensLimit">0 크레딧</span>
+          </div>
+          <div class="credit-info-item">
+            <span class="credit-info-label">현재 남은 크레딧</span>
+            <span class="credit-info-value" id="modalTokensRemaining">0 크레딧</span>
+          </div>
+          <div class="credit-info-item">
+            <span class="credit-info-label">사용률</span>
+            <span class="credit-info-value" id="modalUsagePercent">0%</span>
+          </div>
+          <div class="credit-info-item">
+            <span class="credit-info-label">이번 달 예상 청구 금액</span>
+            <span class="credit-info-value" id="modalEstimatedBilling">0원</span>
+          </div>
+        </div>
+        <div class="credit-modal-actions">
+          <button class="btn btn-secondary" onclick="closeCreditModal()">
+            닫기
+          </button>
+          <button class="btn btn-primary" onclick="goToPaymentPage()">
+            <i class="fas fa-arrow-right"></i>
+            플랜 변경하기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 크레딧 팝업 관련 함수들
+      async function showCreditModal() {
+        const modal = document.getElementById('creditModal');
+        if (!modal) {
+          console.error('❌ 크레딧 모달 요소를 찾을 수 없습니다');
+          return;
+        }
+
+        // 로딩 상태 표시
+        document.getElementById('modalTokensUsed').textContent = '조회 중...';
+        document.getElementById('modalTokensLimit').textContent = '조회 중...';
+        document.getElementById('modalTokensRemaining').textContent = '조회 중...';
+        document.getElementById('modalUsagePercent').textContent = '조회 중...';
+        document.getElementById('modalEstimatedBilling').textContent = '조회 중...';
+
+        const warningBox = document.getElementById('creditWarningBox');
+        const modalIcon = document.getElementById('creditModalIcon');
+        
+        // 경고 메시지 초기화
+        if (warningBox) {
+          warningBox.classList.add('hidden');
+        }
+        if (modalIcon) {
+          modalIcon.classList.remove('warning');
+          modalIcon.innerHTML = '<i class="fas fa-coins"></i>';
+        }
+
+        modal.classList.add('active');
+
+        // 현재 크레딧 정보 가져오기
+        try {
+          if (!window.authState?.supabase) {
+            throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
+          }
+
+          const { data: { session } } = await window.authState.supabase.auth.getSession();
+          if (!session?.user) {
+            throw new Error('로그인이 필요합니다');
+          }
+
+          const userId = session.user.id;
+          
+          // 작업 크레딧 사용 현황 조회
+          const usageResponse = await fetch(`/api/subscription/work-credit-billing?action=get-current-usage&userId=${userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+
+          if (!usageResponse.ok) {
+            throw new Error('크레딧 정보를 불러올 수 없습니다');
+          }
+
+          const usageResult = await usageResponse.json();
+          
+          if (usageResult.success && usageResult.usage) {
+            const usage = usageResult.usage;
+            const creditsUsed = usage.totalCreditsUsed || 0;
+            const includedCredits = usage.includedCredits || 0;
+            // 남은 크레딧 직접 계산 (API 응답값이 없을 수 있음)
+            const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+            const usagePercent = includedCredits > 0 ? Math.round((creditsUsed / includedCredits) * 100) : 0;
+            const estimatedBilling = usage.estimatedTotalAmount || 0;
+            const isInsufficient = creditsRemaining <= 0 && includedCredits > 0;
+
+            // 크레딧 부족 시 경고 표시
+            if (isInsufficient && warningBox) {
+              warningBox.classList.remove('hidden');
+            }
+            if (isInsufficient && modalIcon) {
+              modalIcon.classList.add('warning');
+              modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            }
+
+            // 값 업데이트
+            document.getElementById('modalTokensUsed').textContent = creditsUsed.toLocaleString() + ' 크레딧';
+            document.getElementById('modalTokensLimit').textContent = includedCredits > 0 ? includedCredits.toLocaleString() + ' 크레딧' : '무제한';
+            document.getElementById('modalTokensRemaining').textContent = creditsRemaining.toLocaleString() + ' 크레딧';
+            document.getElementById('modalTokensRemaining').className = 'credit-info-value ' + (isInsufficient ? 'warning' : 'success');
+            document.getElementById('modalUsagePercent').textContent = usagePercent.toFixed(1) + '%';
+            document.getElementById('modalUsagePercent').className = 'credit-info-value ' + (usagePercent >= 90 ? 'warning' : usagePercent >= 70 ? 'warning' : 'success');
+            document.getElementById('modalEstimatedBilling').textContent = estimatedBilling.toLocaleString() + '원';
+          } else {
+            throw new Error('크레딧 정보를 불러올 수 없습니다');
+          }
+        } catch (error) {
+          console.error('❌ 크레딧 정보 조회 실패:', error);
+          document.getElementById('modalTokensUsed').textContent = '조회 실패';
+          document.getElementById('modalTokensUsed').className = 'credit-info-value warning';
+          document.getElementById('modalTokensLimit').textContent = '확인 불가';
+          document.getElementById('modalTokensRemaining').textContent = '확인 불가';
+          document.getElementById('modalUsagePercent').textContent = '확인 불가';
+          document.getElementById('modalEstimatedBilling').textContent = '확인 불가';
+        }
+      }
+
+      function closeCreditModal() {
+        const modal = document.getElementById('creditModal');
+        if (modal) {
+          modal.classList.remove('active');
+        }
+      }
+
+      function goToPaymentPage() {
+        window.location.href = '/payment.html';
+      }
+
+      // 모달 외부 클릭 시 닫기
+      document.addEventListener('DOMContentLoaded', function() {
+        const creditModal = document.getElementById('creditModal');
+        if (creditModal) {
+          creditModal.addEventListener('click', function(e) {
+            if (e.target === creditModal) {
+              closeCreditModal();
+            }
+          });
+        }
+      });
+
+      // 전역 함수로 등록
+      window.showCreditModal = showCreditModal;
+      window.closeCreditModal = closeCreditModal;
+      window.goToPaymentPage = goToPaymentPage;
+    </script>
   </body>
 </html>
