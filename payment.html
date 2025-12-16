@@ -518,7 +518,7 @@
                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'"
                 onclick="showExcessInfo(event, 'payment')">?</span>
         </div>
-        <strong style="color: var(--accent-color);">0.8원/크레딧</strong>
+        <strong style="color: var(--accent-color);" id="excessRateDisplay">0.8원/크레딧</strong>
       </div>
       <div style="margin-top: 12px; padding: 10px; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; border-radius: 4px; font-size: 13px; color: var(--text-secondary);">
         <strong style="color: #856404;">💡 안내:</strong> 월 최소 이용료와 실제 사용 금액 중 더 큰 금액이 청구됩니다. 실제 사용 금액 = (총 사용 크레딧) × (초과 작업 크레딧당 단가)
@@ -833,8 +833,7 @@
     let plan = urlParams.get('plan');
     const isDemoMode = urlParams.get('demo') === 'true'; // 데모 모드 확인
     
-    let pricingData = null;
-    let tokenData = null;
+    let pricingData = null; // subscription-settings.html에서 설정한 가격 및 크레딧 정보
     let currentUserPlan = null; // 현재 사용 중인 플랜
     
     // 데모 모드 배너 추가
@@ -899,7 +898,6 @@
             owner_premium_included_credits: 200000,
             owner_premium_excess_rate: 0.5
           };
-          tokenData = {}; // 더 이상 사용하지 않음
         } else {
         await loadPlanSettings();
         }
@@ -933,7 +931,6 @@
             owner_premium_included_credits: 200000,
             owner_premium_excess_rate: 0.5
           };
-          tokenData = {}; // 더 이상 사용하지 않음
         } else {
         await loadPlanSettings();
         }
@@ -971,22 +968,17 @@
       }
     });
 
-    // 플랜 설정 로드 (가격 및 토큰)
+    // 플랜 설정 로드 (가격 및 크레딧 - subscription-settings.html에서 설정한 값 사용)
     async function loadPlanSettings() {
       try {
-        const [pricingRes, tokenRes] = await Promise.all([
-          fetch('/api/subscription/pricing-config'),
-          fetch('/api/subscription/token-config')
-        ]);
-
+        const pricingRes = await fetch('/api/subscription/pricing-config');
         const pricingResult = await pricingRes.json();
-        const tokenResult = await tokenRes.json();
 
         if (pricingResult.success) {
           pricingData = pricingResult.pricing;
-        }
-        if (tokenResult.success) {
-          tokenData = tokenResult.tokens;
+          console.log('✅ 플랜 설정 로드 완료:', pricingData);
+        } else {
+          console.error('플랜 설정 로드 실패:', pricingResult.error);
         }
       } catch (error) {
         console.error('플랜 설정 로드 실패:', error);
@@ -1051,13 +1043,27 @@
         document.getElementById('priceAmount').textContent = planInfo.price === 0 ? '무료' : planInfo.price.toLocaleString() + '원';
         document.getElementById('priceAmountDisplay').textContent = planInfo.price === 0 ? '무료' : planInfo.price.toLocaleString();
         document.getElementById('creditAmount').textContent = planInfo.credits.toLocaleString() + ' 크레딧';
+        
+        // 초과 단가 표시 (subscription-settings.html에서 설정한 값)
+        const excessRateElement = document.getElementById('excessRateDisplay');
+        if (excessRateElement) {
+          excessRateElement.textContent = planInfo.excessRate + '원/크레딧';
+        }
       }
     }
 
-    // 플랜 정보 가져오기 (작업 크레딧 기반)
+    // 플랜 정보 가져오기 (subscription-settings.html에서 설정한 값 사용)
     function getPlanInfo(planKey) {
-      if (!pricingData || !tokenData) {
-        // 작업 크레딧 기반 기본값 (2025-11-25 업데이트)
+      // 플랜 이름 매핑
+      const planNames = {
+        seed: '라이트 플랜',
+        power: '스탠다드 플랜',
+        bigpower: '프로 플랜',
+        premium: '프리미엄 플랜'
+      };
+
+      // pricingData가 없으면 기본값 사용
+      if (!pricingData) {
         const defaults = {
           seed: { name: '라이트 플랜', price: 0, credits: 0, excessRate: 1.2 },
           power: { name: '스탠다드 플랜', price: 30000, credits: 37500, excessRate: 0.8 },
@@ -1067,28 +1073,27 @@
         return defaults[planKey] || null;
       }
 
+      // subscription-settings.html에서 설정한 필드명
       const priceKey = `owner_${planKey}_price`;
       const minimumFeeKey = `owner_${planKey}_minimum_fee`;
       const includedCreditsKey = `owner_${planKey}_included_credits`;
       const excessRateKey = `owner_${planKey}_excess_rate`;
       
-      const planNames = {
-        seed: '라이트 플랜',
-        power: '스탠다드 플랜',
-        bigpower: '프로 플랜',
-        premium: '프리미엄 플랜'
-      };
-
-      // 최소 이용료가 있으면 사용, 없으면 기존 가격 사용
-      const minimumFee = pricingData[minimumFeeKey] !== undefined ? pricingData[minimumFeeKey] : (pricingData[priceKey] || 0);
+      // 가격: minimum_fee가 있으면 사용, 없으면 price 사용
+      const price = pricingData[priceKey] !== undefined ? pricingData[priceKey] : 0;
+      const minimumFee = pricingData[minimumFeeKey] !== undefined ? pricingData[minimumFeeKey] : price;
+      
+      // 포함 크레딧: subscription-settings.html에서 설정한 값 사용
       const includedCredits = pricingData[includedCreditsKey] !== undefined ? pricingData[includedCreditsKey] : 0;
+      
+      // 초과 단가: subscription-settings.html에서 설정한 값 사용 (기본값 1.2)
       const excessRate = pricingData[excessRateKey] !== undefined ? pricingData[excessRateKey] : 1.2;
 
       return {
         name: planNames[planKey] || planKey,
-        price: minimumFee,
-        credits: includedCredits,
-        excessRate: excessRate
+        price: minimumFee, // 최소 이용료
+        credits: includedCredits, // 포함 크레딧
+        excessRate: excessRate // 초과 단가 (원/크레딧)
       };
     }
 
