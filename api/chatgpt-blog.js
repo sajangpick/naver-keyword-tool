@@ -740,7 +740,6 @@ JSON 형식으로 답변해주세요:
                     ],
                     temperature: 0.9,  // ⚡ 속도 개선: 0.9로 조정 (품질 유지, 속도 향상)
                     frequency_penalty: 0.5,
-                    presence_penalty: 0.5,
                     response_format: { type: "json_object" }
                 });
             },
