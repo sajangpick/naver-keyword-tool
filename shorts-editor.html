@@ -2285,7 +2285,7 @@
             <div class="token-info-box">
                 <div class="token-info-item">
                     <span class="token-info-label">예상 사용 크레딧</span>
-                    <span class="token-info-value" id="estimatedTokens">1,500 크레딧</span>
+                    <span class="token-info-value" id="estimatedTokens">20 크레딧</span>
                 </div>
                 <div class="token-info-item">
                     <span class="token-info-label">현재 남은 크레딧</span>
@@ -3250,7 +3250,7 @@
                 return;
             }
 
-            const estimatedTokens = 1500;
+            const estimatedTokens = 20; // 영상 생성: 20 크레딧
             const warningBox = document.getElementById('tokenWarningBox');
             const modalIcon = document.querySelector('.token-modal-icon');
             
@@ -3414,7 +3414,7 @@
             }
             
             // 토큰 부족 여부 확인 (실제 토큰 정보로 재확인)
-            const estimatedTokens = 1500;
+            const estimatedTokens = 20; // 영상 생성: 20 크레딧
             const tokenInfo = await fetchTokenInfo();
             
             if (!tokenInfo) {
