@@ -631,11 +631,23 @@ module.exports = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ ChatGPT API 오류:', error.response?.data || error.message);
+    
+    // 모델 관련 에러인지 확인
+    const errorMessage = error.response?.data?.error?.message || error.message || '';
+    const isModelError = errorMessage.includes('model') || errorMessage.includes('gpt-5.2') || errorMessage.includes('not found');
+    
+    // 상세 에러 정보 로깅
+    if (error.response?.data) {
+      console.error('OpenAI API 응답:', JSON.stringify(error.response.data, null, 2));
+    }
 
     return res.status(500).json({
       success: false,
-      error: 'ChatGPT API 호출 중 오류가 발생했습니다.',
-      details: error.response?.data?.error?.message || error.message,
+      error: isModelError 
+        ? `모델 오류: gpt-5.2가 지원되지 않을 수 있습니다. ${errorMessage}`
+        : 'ChatGPT API 호출 중 오류가 발생했습니다.',
+      details: errorMessage,
+      model: 'gpt-5.2',
       timestamp: new Date().toISOString(),
     });
   }
