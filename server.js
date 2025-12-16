@@ -69,7 +69,7 @@ const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const OPENAI_SHORTS_MODEL =
   process.env.OPENAI_SHORTS_MODEL ||
   process.env.OPENAI_CHAT_MODEL ||
-  "gpt-5.2";
+  "gpt-5.1";
 
 // Supabase 설정
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -1779,7 +1779,7 @@ async function callChatGPTForBlog(prompt) {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-5.2",
+        model: "gpt-5.1",
         messages: [
           {
             role: "system",
@@ -1820,7 +1820,7 @@ async function callChatGPTForReview(prompt) {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-5.2",
+        model: "gpt-5.1",
         messages: [
           {
             role: "system",
@@ -2223,7 +2223,7 @@ app.post("/api/chat", async (req, res) => {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-5.2",
+        model: "gpt-5.1",
         messages: [
           {
             role: "system",
@@ -2260,7 +2260,7 @@ app.post("/api/chat", async (req, res) => {
       reply: response.data.choices[0].message.content,
       usage: response.data.usage,
       metadata: {
-        model: "gpt-5.2",
+        model: "gpt-5.1",
         timestamp: new Date().toISOString(),
         server: "Integrated Server",
       },

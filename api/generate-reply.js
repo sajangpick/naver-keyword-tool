@@ -165,7 +165,7 @@ ${promotionPrompt}
   }
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-5.2',
+    model: 'gpt-5.1',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -323,7 +323,7 @@ ${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
   }
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-5.2',
+    model: 'gpt-5.1',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }

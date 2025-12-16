@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
 
     // ChatGPT에게 뉴스 추천 요청
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-5.1',
       messages: [
         {
           role: 'system',

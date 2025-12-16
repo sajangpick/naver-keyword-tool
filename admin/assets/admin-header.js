@@ -269,7 +269,7 @@
 
       if (user) {
         // 프로필 정보 가져오기 (권한 확인용)
-        let roleLabel = '회원'; // 기본값
+        let roleLabel = '라이트'; // 기본값: 프로필 조회 실패 시에도 기본 등급 표시
         
         try {
           console.log('[Header] 프로필 조회 시작, userId:', user.id);
@@ -284,10 +284,15 @@
 
           if (profileError) {
             console.error('[Header] 프로필 조회 에러:', profileError);
+            console.error('[Header] 에러 상세:', JSON.stringify(profileError, null, 2));
             // 에러가 있어도 프로필이 있으면 사용
             if (profile) {
               roleLabel = getRoleLabel(profile);
               console.log('[Header] 프로필 있음, 라벨:', roleLabel);
+            } else {
+              // 프로필 조회 실패 시 기본 등급 표시
+              console.warn('[Header] 프로필 조회 실패, 기본 등급 "라이트" 사용');
+              roleLabel = '라이트';
             }
           } else if (profile) {
             // member-management.html의 등급 시스템 사용
@@ -298,11 +303,13 @@
               role: profile.role
             });
           } else {
-            console.warn('[Header] 프로필 데이터가 없음');
+            console.warn('[Header] 프로필 데이터가 없음, 기본 등급 "라이트" 사용');
+            roleLabel = '라이트';
           }
         } catch (profileError) {
           console.error('[Header] 프로필 조회 예외 발생:', profileError);
-          // 프로필 조회 실패 시 기본값 '회원' 사용
+          // 프로필 조회 실패 시 기본 등급 '라이트' 사용
+          roleLabel = '라이트';
         }
 
         // 사용자 이름 업데이트

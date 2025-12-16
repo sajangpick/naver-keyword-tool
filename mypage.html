@@ -971,11 +971,23 @@
           </div>
           
           <!-- 최근 사용 내역 -->
-          <div class="token-usage-history">
+          <div class="token-usage-history" style="margin-bottom: 20px;">
             <h4 style="margin-bottom: 10px; color: var(--text-primary); font-size: 16px; font-weight: 600;">
               <i class="fas fa-history"></i> 최근 사용 내역
             </h4>
             <div id="recentUsageList" class="usage-list">
+              <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+              </div>
+            </div>
+          </div>
+          
+          <!-- 크레딧 소진 내역 (기능별 집계) -->
+          <div class="token-usage-history">
+            <h4 style="margin-bottom: 10px; color: var(--text-primary); font-size: 16px; font-weight: 600;">
+              <i class="fas fa-chart-pie"></i> 크레딧 소진 내역
+            </h4>
+            <div id="creditConsumptionList" class="usage-list">
               <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
                 <i class="fas fa-spinner fa-spin"></i> 로딩 중...
               </div>
@@ -1020,8 +1032,8 @@
             </div>
             <div style="background: rgba(255,255,255,0.6); border-radius: 8px; padding: 12px; margin-top: 10px;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: var(--text-secondary); font-size: 13px;">월간 토큰</span>
-                <strong style="color: var(--text-primary); font-size: 14px;" id="paymentPlanTokens">100 토큰</strong>
+                <span style="color: var(--text-secondary); font-size: 13px;">월간 크레딧</span>
+                <strong style="color: var(--text-primary); font-size: 14px;" id="paymentPlanTokens">0 크레딧</strong>
               </div>
               <div style="display: flex; justify-content: space-between;">
                 <span style="color: var(--text-secondary); font-size: 13px;">갱신일까지</span>
@@ -1762,7 +1774,7 @@
           await loadPaymentHistory(userId);
           
           // 작업 크레딧 정보와 결제 섹션 동기화
-          syncCreditInfoWithPayment(cycle, profile);
+          syncCreditInfoWithPayment(cycle, profile, pricing);
           
           // 실시간 사용량 표시
           if (usage) {
@@ -2299,6 +2311,8 @@
           document.getElementById('usageBasedAmount').textContent = '0';
           
           const usageList = document.getElementById('recentUsageList');
+          const consumptionList = document.getElementById('creditConsumptionList');
+          
           if (usageList) {
             usageList.innerHTML = `
               <div style="text-align: center; color: #ef4444; padding: 20px;">
@@ -2307,6 +2321,15 @@
                 <button onclick="refreshTokenInfo()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                   <i class="fas fa-sync-alt"></i> 다시 시도
                 </button>
+              </div>
+            `;
+          }
+          
+          if (consumptionList) {
+            consumptionList.innerHTML = `
+              <div style="text-align: center; color: #ef4444; padding: 20px;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <div style="margin-top: 8px; font-size: 14px;">크레딧 소진 내역을 불러올 수 없습니다</div>
               </div>
             `;
           }
@@ -2376,11 +2399,12 @@
           displayRealTimeUsage(usage);
         }
 
-        // 최근 사용 내역 표시 (API를 통해 조회)
+        // 최근 사용 내역 및 크레딧 소진 내역 표시 (API를 통해 조회)
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.access_token) {
-            const usageRes = await fetch(`/api/subscription/token-usage?user_id=${userId}&limit=5`, {
+            // 크레딧 소진 내역 집계를 위해 더 많은 데이터 가져오기 (이번 달 전체)
+            const usageRes = await fetch(`/api/subscription/token-usage?user_id=${userId}&limit=100`, {
               headers: {
                 'Authorization': `Bearer ${session.access_token}`
               }
@@ -2388,8 +2412,10 @@
             
             if (usageRes.ok) {
               const usageResult = await usageRes.json();
-              const recentUsage = usageResult.usage || [];
+              const allUsage = usageResult.usage || [];
               
+              // 최근 사용 내역 (최근 5개만 표시)
+              const recentUsage = allUsage.slice(0, 5);
               const usageList = document.getElementById('recentUsageList');
               if (usageList) {
                 if (recentUsage && recentUsage.length > 0) {
@@ -2425,6 +2451,96 @@
                   `;
                 }
               }
+              
+              // 크레딧 소진 내역 (기능별 집계) - 이번 달 전체 데이터
+              const consumptionList = document.getElementById('creditConsumptionList');
+              if (consumptionList) {
+                if (allUsage && allUsage.length > 0) {
+                  // 기능별로 집계
+                  const consumptionByService = {};
+                  allUsage.forEach(usage => {
+                    const serviceType = usage.service_type || 'unknown';
+                    if (!consumptionByService[serviceType]) {
+                      consumptionByService[serviceType] = {
+                        count: 0,
+                        credits: 0
+                      };
+                    }
+                    consumptionByService[serviceType].count += 1;
+                    consumptionByService[serviceType].credits += (usage.work_credits_used || 0);
+                  });
+                  
+                  // 서비스 타입을 한국어로 변환
+                  const serviceLabels = {
+                    'blog_writing': '블로그 작성',
+                    'review_reply': '리뷰 답글',
+                    'video_generation': '영상 생성',
+                    'news': '뉴스 추천',
+                    'unknown': '기타'
+                  };
+                  
+                  // 아이콘 매핑
+                  const serviceIcons = {
+                    'blog_writing': '📝',
+                    'review_reply': '💬',
+                    'video_generation': '🎬',
+                    'news': '📰',
+                    'unknown': '❓'
+                  };
+                  
+                  // 총 크레딧 계산
+                  const totalCredits = Object.values(consumptionByService).reduce((sum, item) => sum + item.credits, 0);
+                  
+                  // 집계된 데이터를 표시
+                  const consumptionHTML = Object.entries(consumptionByService)
+                    .sort((a, b) => b[1].credits - a[1].credits) // 크레딧 사용량 순으로 정렬
+                    .map(([serviceType, data]) => {
+                      const serviceLabel = serviceLabels[serviceType] || serviceType;
+                      const icon = serviceIcons[serviceType] || '📊';
+                      const percentage = totalCredits > 0 ? Math.round((data.credits / totalCredits) * 100) : 0;
+                      
+                      return `
+                        <div class="usage-item" style="padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                              <span style="font-size: 18px;">${icon}</span>
+                              <span style="font-weight: 600; color: var(--text-primary);">${serviceLabel}</span>
+                            </div>
+                            <div style="text-align: right;">
+                              <div style="font-weight: 700; color: var(--accent-color); font-size: 16px;">
+                                ${data.credits.toLocaleString()} 크레딧
+                              </div>
+                              <div style="font-size: 12px; color: var(--text-secondary);">
+                                ${percentage}% · ${data.count}회
+                              </div>
+                            </div>
+                          </div>
+                          <div style="background: rgba(0,0,0,0.05); border-radius: 4px; height: 6px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, var(--accent-color), #10b981); height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
+                          </div>
+                        </div>
+                      `;
+                    }).join('');
+                  
+                  consumptionList.innerHTML = `
+                    <div style="background: rgba(255,255,255,0.6); border-radius: 8px; padding: 16px;">
+                      <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--accent-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <span style="font-weight: 600; color: var(--text-primary);">이번 달 총 사용</span>
+                          <span style="font-weight: 700; color: var(--accent-color); font-size: 18px;">${totalCredits.toLocaleString()} 크레딧</span>
+                        </div>
+                      </div>
+                      ${consumptionHTML}
+                    </div>
+                  `;
+                } else {
+                  consumptionList.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                      <i class="fas fa-info-circle"></i> 아직 소진 내역이 없습니다.
+                    </div>
+                  `;
+                }
+              }
             } else {
               throw new Error('API 호출 실패');
             }
@@ -2434,10 +2550,20 @@
         } catch (usageError) {
           console.error('❌ 최근 사용 내역 조회 실패:', usageError);
           const usageList = document.getElementById('recentUsageList');
+          const consumptionList = document.getElementById('creditConsumptionList');
+          
           if (usageList) {
             usageList.innerHTML = `
               <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
                 <i class="fas fa-info-circle"></i> 사용 내역을 불러올 수 없습니다.
+              </div>
+            `;
+          }
+          
+          if (consumptionList) {
+            consumptionList.innerHTML = `
+              <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                <i class="fas fa-info-circle"></i> 소진 내역을 불러올 수 없습니다.
               </div>
             `;
           }
@@ -2452,8 +2578,10 @@
         
         // 에러 메시지 표시
         const usageList = document.getElementById('recentUsageList');
+        const consumptionList = document.getElementById('creditConsumptionList');
+        const errorMessage = error.message || '알 수 없는 오류가 발생했습니다';
+        
         if (usageList) {
-          const errorMessage = error.message || '알 수 없는 오류가 발생했습니다';
           usageList.innerHTML = `
             <div style="text-align: center; color: #ef4444; padding: 20px;">
               <i class="fas fa-exclamation-triangle"></i> 
@@ -2462,6 +2590,15 @@
               <button onclick="refreshTokenInfo()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                 <i class="fas fa-sync-alt"></i> 다시 시도
               </button>
+            </div>
+          `;
+        }
+        
+        if (consumptionList) {
+          consumptionList.innerHTML = `
+            <div style="text-align: center; color: #ef4444; padding: 20px;">
+              <i class="fas fa-exclamation-triangle"></i> 
+              <div style="margin-top: 8px; font-size: 14px;">크레딧 소진 내역을 불러올 수 없습니다</div>
             </div>
           `;
         }
@@ -2595,17 +2732,40 @@
     }
     
     // 작업 크레딧 정보와 결제 섹션 동기화
-    function syncCreditInfoWithPayment(cycle, profile) {
+    function syncCreditInfoWithPayment(cycle, profile, pricing) {
       if (!cycle || !profile) return;
       
       try {
         // 등급 정규화
         const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
         const isAdmin = normalizedLevel === 'admin' || profile.user_type === 'admin';
+        const membershipLevel = normalizedLevel;
+        const userType = profile.user_type || 'owner';
         
         // 작업 크레딧 정보 (credits_used, included_credits 사용)
         const creditsUsed = cycle.credits_used || 0;
-        let creditsLimit = cycle.included_credits || 0;
+        let creditsLimit = cycle.included_credits;
+        
+        // 사이클의 included_credits가 없거나 0이면 pricing_config에서 가져오기
+        if (!creditsLimit || creditsLimit === 0) {
+          if (pricing) {
+            // pricing_config에서 등급별 포함 크레딧 조회
+            const includedCreditsKey = `${userType}_${membershipLevel}_included_credits`;
+            creditsLimit = pricing[includedCreditsKey] !== undefined ? pricing[includedCreditsKey] : 0;
+          }
+          
+          // 여전히 없으면 기본값 사용
+          if (!creditsLimit || creditsLimit === 0) {
+            const defaults = {
+              seed: 0,
+              power: 37500,
+              bigpower: 83333,
+              premium: 200000
+            };
+            creditsLimit = defaults[membershipLevel] || 0;
+          }
+        }
+        
         let creditsRemaining = cycle.credits_remaining !== undefined ? cycle.credits_remaining : (creditsLimit - creditsUsed);
         
         if (isAdmin || (creditsLimit && creditsLimit >= 999999)) {
@@ -2616,7 +2776,13 @@
         // 결제 섹션의 작업 크레딧 정보 업데이트 (있는 경우)
         const paymentPlanTokensEl = document.getElementById('paymentPlanTokens');
         if (paymentPlanTokensEl) {
-          paymentPlanTokensEl.textContent = creditsLimit !== null ? `${creditsLimit.toLocaleString()} 크레딧` : '무제한';
+          if (creditsLimit === null) {
+            paymentPlanTokensEl.textContent = '무제한';
+          } else if (creditsLimit > 0) {
+            paymentPlanTokensEl.textContent = `${creditsLimit.toLocaleString()} 크레딧`;
+          } else {
+            paymentPlanTokensEl.textContent = '0 크레딧';
+          }
         }
         
         // 결제 섹션의 갱신일 업데이트
@@ -2625,7 +2791,12 @@
           paymentPlanDaysEl.textContent = `${cycle.days_remaining}일`;
         }
         
-        console.log('✅ 작업 크레딧 정보와 결제 섹션 동기화 완료');
+        console.log('✅ 작업 크레딧 정보와 결제 섹션 동기화 완료', { 
+          creditsLimit, 
+          creditsUsed, 
+          membershipLevel,
+          included_credits: cycle.included_credits 
+        });
       } catch (error) {
         console.error('❌ 작업 크레딧 정보 동기화 실패:', error);
       }

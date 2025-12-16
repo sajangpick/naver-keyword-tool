@@ -520,7 +520,7 @@ module.exports = async (req, res) => {
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: 'gpt-5.2',
+          model: 'gpt-5.1',
           messages: messages,
           tools: availableTools,
           tool_choice: iteration === 0 ? 'auto' : 'auto', // 첫 번째는 자동, 이후에도 자동
@@ -623,7 +623,7 @@ module.exports = async (req, res) => {
       usage: totalUsage,
       tokenTracking,
       metadata: {
-        model: 'gpt-5.2',
+        model: 'gpt-5.1',
         timestamp: new Date().toISOString(),
         server: 'Vercel Serverless',
         function_calls_used: messages.filter(m => m.role === 'tool').length,
@@ -647,7 +647,7 @@ module.exports = async (req, res) => {
         ? `모델 오류: ${errorMessage}`
         : 'ChatGPT API 호출 중 오류가 발생했습니다.',
       details: errorMessage,
-      model: 'gpt-5.2',
+      model: 'gpt-5.1',
       timestamp: new Date().toISOString(),
     });
   }

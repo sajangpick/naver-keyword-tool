@@ -492,8 +492,9 @@ async function getDashboardData(user, res) {
     }
     
     // 5. 관리자 설정에서 최신 작업 크레딧 한도 확인 (작업 크레딧 시스템)
+    // subscription-settings.html에서 설정한 값(pricing_config의 included_credits)을 항상 우선 사용
     const isAdmin = profile.membership_level === 'admin' || profile.user_type === 'admin';
-    let currentCreditLimit = currentCycle.included_credits || currentCycle.monthly_token_limit || 100;
+    let currentCreditLimit = 100; // 기본값
     
     // 관리자는 무제한
     if (isAdmin) {
@@ -502,7 +503,7 @@ async function getDashboardData(user, res) {
     } else {
       try {
         if (supabase) {
-          // pricing_config에서 포함된 크레딧 조회 (최우선)
+          // pricing_config에서 포함된 크레딧 조회 (최우선 - subscription-settings.html에서 설정한 값)
           const { data: pricingConfig } = await supabase
             .from('pricing_config')
             .select('*')
@@ -510,13 +511,33 @@ async function getDashboardData(user, res) {
           
           const userType = profile.user_type || 'owner';
           const membershipLevel = profile.membership_level || 'seed';
-          const includedCreditsKey = `${userType}_${membershipLevel}_included_credits`;
           
-          if (pricingConfig?.[includedCreditsKey] !== undefined) {
+          // 대행사 등급 매핑 (elite/expert/master → starter/pro/enterprise)
+          const levelMapping = {
+            'elite': 'starter',
+            'expert': 'pro',
+            'master': 'enterprise'
+          };
+          const mappedLevel = levelMapping[membershipLevel] || membershipLevel;
+          
+          // pricing_config의 included_credits 키 생성
+          const includedCreditsKey = userType === 'agency' 
+            ? `${userType}_${mappedLevel}_included_credits`
+            : `${userType}_${membershipLevel}_included_credits`;
+          
+          console.log(`🔍 [user-dashboard] 크레딧 한도 조회:`, {
+            userType,
+            membershipLevel,
+            mappedLevel,
+            includedCreditsKey,
+            pricingConfigValue: pricingConfig?.[includedCreditsKey]
+          });
+          
+          if (pricingConfig && pricingConfig[includedCreditsKey] !== undefined && pricingConfig[includedCreditsKey] !== null) {
             currentCreditLimit = Number(pricingConfig[includedCreditsKey]);
-            console.log(`✅ [user-dashboard] pricing_config 포함 크레딧 사용: ${currentCreditLimit}`);
+            console.log(`✅ [user-dashboard] pricing_config 포함 크레딧 사용: ${currentCreditLimit} (${includedCreditsKey})`);
           } else {
-            // credit_config에서 한도 조회
+            // pricing_config에 없으면 credit_config에서 한도 조회 (하위 호환성)
             const { data: creditConfigs, error: creditConfigError } = await supabase
               .from('credit_config')
               .select('*')
@@ -529,46 +550,55 @@ async function getDashboardData(user, res) {
               
               if (creditConfigs[creditLimitKey] !== undefined && creditConfigs[creditLimitKey] !== null) {
                 currentCreditLimit = Number(creditConfigs[creditLimitKey]);
-                console.log(`✅ [user-dashboard] 관리자 설정 한도 사용: ${currentCreditLimit}`);
+                console.log(`✅ [user-dashboard] credit_config 한도 사용: ${currentCreditLimit} (${creditLimitKey})`);
+              } else {
+                console.warn(`⚠️ [user-dashboard] 크레딧 한도를 찾을 수 없음. 기본값 100 사용. (${includedCreditsKey}, ${creditLimitKey})`);
               }
+            } else {
+              console.warn(`⚠️ [user-dashboard] credit_config 조회 실패. 기본값 100 사용.`);
             }
           }
           
-          // 사이클 업데이트 (포함 크레딧과 다를 경우 또는 credits_used가 실제 사용량과 다를 경우)
-          const needsUpdate = currentCycle.id && (
-            currentCycle.included_credits !== currentCreditLimit ||
-            currentCycle.credits_used !== totalUsed ||
-            currentCycle.credits_remaining !== Math.max(0, currentCreditLimit - totalUsed)
-          );
-          
-          if (needsUpdate) {
+          // 사이클 업데이트 (항상 pricing_config의 값으로 업데이트)
+          // subscription-settings.html에서 설정한 값이 항상 우선 적용되도록
+          if (currentCycle.id) {
             const calculatedCreditsRemaining = Math.max(0, currentCreditLimit - totalUsed);
-            console.log(`🔄 [user-dashboard] 사이클 크레딧 업데이트:`, {
-              included_credits: `${currentCycle.included_credits || 0} → ${currentCreditLimit}`,
-              credits_used: `${currentCycle.credits_used || 0} → ${totalUsed}`,
-              credits_remaining: `${currentCycle.credits_remaining || 0} → ${calculatedCreditsRemaining}`
-            });
+            const needsUpdate = (
+              currentCycle.included_credits !== currentCreditLimit ||
+              currentCycle.credits_used !== totalUsed ||
+              currentCycle.credits_remaining !== calculatedCreditsRemaining
+            );
             
-            const { error: updateError } = await supabase
-              .from('subscription_cycle')
-              .update({
-                included_credits: currentCreditLimit,
-                credits_used: totalUsed,
-                credits_remaining: calculatedCreditsRemaining,
-                monthly_token_limit: currentCreditLimit, // 하위 호환성
-                tokens_used: totalUsed, // 하위 호환성
-                tokens_remaining: calculatedCreditsRemaining,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', currentCycle.id);
-            
-            if (updateError) {
-              console.error('❌ 사이클 업데이트 실패:', updateError);
+            if (needsUpdate) {
+              console.log(`🔄 [user-dashboard] 사이클 크레딧 업데이트 (subscription-settings.html 설정 반영):`, {
+                included_credits: `${currentCycle.included_credits || 0} → ${currentCreditLimit}`,
+                credits_used: `${currentCycle.credits_used || 0} → ${totalUsed}`,
+                credits_remaining: `${currentCycle.credits_remaining || 0} → ${calculatedCreditsRemaining}`
+              });
+              
+              const { error: updateError } = await supabase
+                .from('subscription_cycle')
+                .update({
+                  included_credits: currentCreditLimit, // subscription-settings.html에서 설정한 값
+                  credits_used: totalUsed,
+                  credits_remaining: calculatedCreditsRemaining,
+                  monthly_token_limit: currentCreditLimit, // 하위 호환성
+                  tokens_used: totalUsed, // 하위 호환성
+                  tokens_remaining: calculatedCreditsRemaining,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', currentCycle.id);
+              
+              if (updateError) {
+                console.error('❌ 사이클 업데이트 실패:', updateError);
+              } else {
+                console.log('✅ 사이클 크레딧 업데이트 완료 (subscription-settings.html 설정 반영)');
+                currentCycle.included_credits = currentCreditLimit;
+                currentCycle.credits_used = totalUsed;
+                currentCycle.credits_remaining = calculatedCreditsRemaining;
+              }
             } else {
-              console.log('✅ 사이클 크레딧 업데이트 완료');
-              currentCycle.included_credits = currentCreditLimit;
-              currentCycle.credits_used = totalUsed;
-              currentCycle.credits_remaining = calculatedCreditsRemaining;
+              console.log('✅ 사이클 크레딧 값이 이미 최신 상태입니다.');
             }
           }
         }
@@ -618,9 +648,21 @@ async function getDashboardData(user, res) {
     const daysRemaining = Math.ceil((cycleEndDate - today) / (1000 * 60 * 60 * 24));
     
     // 최종 응답 (작업 크레딧 시스템)
-    const includedCredits = currentCycle.included_credits || currentCreditLimit;
-    const creditsUsed = currentCycle.credits_used || totalUsed;
+    // currentCreditLimit이 계산되었으면 그것을 우선 사용 (pricing_config 기반)
+    // currentCycle.included_credits가 있더라도 currentCreditLimit과 다르면 currentCreditLimit 사용
+    const includedCredits = currentCreditLimit || currentCycle.included_credits || 100;
+    const creditsUsed = totalUsed || currentCycle.credits_used || 0;
     const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+    
+    console.log('🔍 [user-dashboard] 크레딧 계산:', {
+      currentCreditLimit,
+      currentCycle_included_credits: currentCycle.included_credits,
+      final_includedCredits: includedCredits,
+      totalUsed,
+      currentCycle_credits_used: currentCycle.credits_used,
+      final_creditsUsed: creditsUsed,
+      final_creditsRemaining: creditsRemaining
+    });
     
     const finalCycle = {
       ...currentCycle,
