@@ -255,7 +255,7 @@ const apiHandler = async (req, res) => {
         });
       }
 
-      // 작업 크레딧 가중치 조회
+      // 작업 크레딧 가중치 조회 (작업당 고정 크레딧)
       const { data: workCreditConfig } = await supabase
         .from('work_credit_config')
         .select('*')
@@ -263,15 +263,15 @@ const apiHandler = async (req, res) => {
         .limit(1)
         .single();
       
-      const weightMapping = {
+      // 작업당 고정 크레딧 (토큰 수와 무관하게 작업 1회당 차감)
+      // 리뷰 답글: 1 크레딧, 블로그 작성: 5 크레딧, 영상 생성: 10 크레딧
+      const creditMapping = {
         'review_reply': workCreditConfig?.review_reply_credit || 1,
         'blog_writing': workCreditConfig?.blog_writing_credit || 5,
-        'video_generation': workCreditConfig?.video_generation_credit || 20
+        'video_generation': workCreditConfig?.video_generation_credit || 10
       };
       
-      const weight = weightMapping[service_type] || 1;
-      const tokenCount = total_tokens || (input_tokens + output_tokens);
-      const workCreditsUsed = tokenCount * weight; // 작업 크레딧 = 토큰 수 × 가중치
+      const workCreditsUsed = creditMapping[service_type] || 1; // 작업당 고정 크레딧 (토큰 수와 무관)
 
       // 크레딧 한도 체크 및 차감 (작업 크레딧 기준)
       const limitCheck = await checkAndUpdateCreditLimit(user_id, workCreditsUsed);
@@ -299,7 +299,8 @@ const apiHandler = async (req, res) => {
 
       if (insertError) throw insertError;
 
-      console.log(`✅ 작업 크레딧 사용 기록: ${user_id} - ${workCreditsUsed} 크레딧 (${service_type}, 토큰: ${tokenCount}, 가중치: ${weight})`);
+      const tokenCount = total_tokens || (input_tokens + output_tokens);
+      console.log(`✅ 작업 크레딧 사용 기록: ${user_id} - ${workCreditsUsed} 크레딧 (${service_type}, 작업당 고정 크레딧)`);
 
       return res.json({
         success: true,
@@ -308,8 +309,7 @@ const apiHandler = async (req, res) => {
         limit: limitCheck.monthlyLimit,
         workCreditsUsed,
         tokenCount,
-        weight,
-        message: `${workCreditsUsed} 작업 크레딧이 사용되었습니다 (토큰: ${tokenCount}, 가중치: ${weight}). 남은 크레딧: ${limitCheck.creditsRemaining}`
+        message: `${workCreditsUsed} 작업 크레딧이 사용되었습니다 (${service_type} 1회 작업). 남은 크레딧: ${limitCheck.creditsRemaining}`
       });
     }
 

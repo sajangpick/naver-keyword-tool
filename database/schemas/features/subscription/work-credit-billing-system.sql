@@ -43,10 +43,10 @@ COMMENT ON COLUMN public.credit_config.agency_master_limit IS '엔터프라이�
 CREATE TABLE IF NOT EXISTS public.work_credit_config (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
-  -- 기능별 작업 크레딧 가중치 (2025-11-25 업데이트)
+  -- 기능별 작업 크레딧 가중치
   review_reply_credit integer DEFAULT 1,        -- 리뷰 답글: 1 크레딧
-  blog_writing_credit integer DEFAULT 2,        -- 블로그 작성: 2 크레딧
-  video_generation_credit integer DEFAULT 3,    -- 영상 생성: 3 크레딧
+  blog_writing_credit integer DEFAULT 5,        -- 블로그 작성: 5 크레딧
+  video_generation_credit integer DEFAULT 10,   -- 영상 생성: 10 크레딧
   
   -- 메타데이터
   created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -54,22 +54,14 @@ CREATE TABLE IF NOT EXISTS public.work_credit_config (
 );
 
 COMMENT ON TABLE public.work_credit_config IS '기능별 작업 크레딧 가중치 설정';
-COMMENT ON COLUMN public.work_credit_config.review_reply_credit IS '리뷰 답글 작업 크레딧 (1 크레딧)';
-COMMENT ON COLUMN public.work_credit_config.blog_writing_credit IS '블로그 작성 작업 크레딧 (2 크레딧)';
-COMMENT ON COLUMN public.work_credit_config.video_generation_credit IS '영상 생성 작업 크레딧 (3 크레딧)';
+COMMENT ON COLUMN public.work_credit_config.review_reply_credit IS '리뷰 답글 작업당 고정 크레딧 (1 크레딧)';
+COMMENT ON COLUMN public.work_credit_config.blog_writing_credit IS '블로그 작성 작업당 고정 크레딧 (5 크레딧)';
+COMMENT ON COLUMN public.work_credit_config.video_generation_credit IS '영상 생성 작업당 고정 크레딧 (10 크레딧)';
 
--- 기본값 삽입 (2025-11-25 업데이트: 블로그 2크레딧, 영상 3크레딧)
+-- 기본값 삽입
 INSERT INTO public.work_credit_config (review_reply_credit, blog_writing_credit, video_generation_credit)
-VALUES (1, 2, 3)
+VALUES (1, 5, 10)
 ON CONFLICT DO NOTHING;
-
--- 기존 데이터가 있으면 업데이트
-UPDATE public.work_credit_config
-SET 
-  blog_writing_credit = 2,
-  video_generation_credit = 3,
-  updated_at = now()
-WHERE blog_writing_credit != 2 OR video_generation_credit != 3;
 
 -- ==================== 2. 등급별 가격 및 크레딧 설정 ====================
 
@@ -450,6 +442,27 @@ COMMENT ON COLUMN public.subscription_cycle.credits_remaining IS '남은 작업 
 -- token_usage 테이블은 내부 추적용으로 유지하되, work_credit_usage가 메인 테이블
 -- 기존 데이터 마이그레이션은 별도 스크립트로 처리
 
+-- ==================== 8. 기존 work_credit_config 데이터 업데이트 ====================
+
+-- 영상 생성 크레딧을 20에서 10으로 변경 (기존 데이터 업데이트)
+UPDATE public.work_credit_config
+SET video_generation_credit = 10,
+    updated_at = now()
+WHERE video_generation_credit = 20 OR video_generation_credit IS NULL;
+
+-- 리뷰 답글 크레딧이 1이 아닌 경우 업데이트
+UPDATE public.work_credit_config
+SET review_reply_credit = 1,
+    updated_at = now()
+WHERE review_reply_credit != 1 OR review_reply_credit IS NULL;
+
+-- 블로그 작성 크레딧이 5가 아닌 경우 업데이트
+UPDATE public.work_credit_config
+SET blog_writing_credit = 5,
+    updated_at = now()
+WHERE blog_writing_credit != 5 OR blog_writing_credit IS NULL;
+
 -- ==================== 완료 ====================
 SELECT '✅ 작업 크레딧 기반 빌링 시스템 스키마 생성 완료!' as result;
+SELECT '✅ 작업 크레딧 기본값: 리뷰 답글 1, 블로그 작성 5, 영상 생성 10' as credit_info;
 

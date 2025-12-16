@@ -165,15 +165,16 @@
     if (!level) {
       return 'seed';
     }
-    const normalized = level.toLowerCase();
+    const normalized = level.toLowerCase().trim();
     // FREE 또는 free를 seed로 변환
     if (normalized === 'free') {
       return 'seed';
     }
     // big_power를 bigpower로 변환
-    if (normalized === 'big_power') {
+    if (normalized === 'big_power' || normalized === 'bigpower') {
       return 'bigpower';
     }
+    // power는 그대로 유지 (스탠다드로 매핑됨)
     return normalized;
   }
 
@@ -274,13 +275,38 @@
         try {
           console.log('[Header] 프로필 조회 시작, userId:', user.id);
           
-          const { data: profile, error: profileError } = await supabaseClient
-            .from('profiles')
-            .select('user_type, membership_level, role')
-            .eq('id', user.id)
-            .single();
+          // 프로필 조회 (재시도 로직 포함)
+          let profile = null;
+          let profileError = null;
+          
+          // 최대 2번 재시도
+          for (let attempt = 0; attempt < 2; attempt++) {
+            const result = await supabaseClient
+              .from('profiles')
+              .select('user_type, membership_level, role')
+              .eq('id', user.id)
+              .single();
+            
+            profile = result.data;
+            profileError = result.error;
+            
+            if (!profileError && profile) {
+              break; // 성공하면 루프 종료
+            }
+            
+            if (attempt < 1) {
+              console.log(`[Header] 프로필 조회 재시도 ${attempt + 1}/2`);
+              await new Promise(resolve => setTimeout(resolve, 500)); // 0.5초 대기
+            }
+          }
 
-          console.log('[Header] 프로필 조회 결과:', { profile, profileError });
+          console.log('[Header] 프로필 조회 결과:', { 
+            profile, 
+            profileError,
+            user_type: profile?.user_type,
+            membership_level: profile?.membership_level,
+            role: profile?.role
+          });
 
           if (profileError) {
             console.error('[Header] 프로필 조회 에러:', profileError);
@@ -473,9 +499,17 @@
 
     // 사용자 정보 로드 (비동기)
     setTimeout(loadUserInfo, 100);
+    
+    // 5초마다 프로필 정보 갱신 (등급 변경 시 즉시 반영)
+    setInterval(() => {
+      loadUserInfo();
+    }, 5000);
 
     console.log('✅ Admin Header loaded');
   }
+  
+  // 전역 함수로 등록 (다른 페이지에서 등급 변경 후 호출 가능)
+  window.refreshHeaderUserInfo = loadUserInfo;
 
 })();
 

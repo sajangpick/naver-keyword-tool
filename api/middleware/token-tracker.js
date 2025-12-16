@@ -325,15 +325,15 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
 
     // 작업 크레딧 변환 및 기록
     try {
-      // apiType을 기반으로 서비스 타입 및 작업 크레딧 가중치 결정
+      // apiType을 기반으로 서비스 타입 및 작업 크레딧 결정 (작업당 고정 크레딧)
       const serviceTypeMapping = {
         'chatgpt-blog': { serviceType: 'blog_writing', creditWeight: 5 },
         'blog': { serviceType: 'blog_writing', creditWeight: 5 },
         'review-reply': { serviceType: 'review_reply', creditWeight: 1 },
         'naver-auto-reply': { serviceType: 'review_reply', creditWeight: 1 },
         'reply': { serviceType: 'review_reply', creditWeight: 1 },
-        'video': { serviceType: 'video_generation', creditWeight: 20 },
-        'video-generation': { serviceType: 'video_generation', creditWeight: 20 },
+        'video': { serviceType: 'video_generation', creditWeight: 10 },
+        'video-generation': { serviceType: 'video_generation', creditWeight: 10 },
         'ai-news-recommend': { serviceType: 'review_reply', creditWeight: 1 }, // 뉴스는 리뷰 답글과 동일
         'news-ai-summary': { serviceType: 'review_reply', creditWeight: 1 },
         'chat': { serviceType: 'review_reply', creditWeight: 1 }, // 채팅은 리뷰 답글과 동일

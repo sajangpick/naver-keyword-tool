@@ -533,9 +533,33 @@ async function getDashboardData(user, res) {
             pricingConfigValue: pricingConfig?.[includedCreditsKey]
           });
           
+          // 등급별 기본 크레딧 한도 (관리자가 설정하지 않았을 때 사용)
+          const defaultCreditsByLevel = {
+            'owner': {
+              'seed': 0,
+              'power': 37500,      // 스탠다드: 기본 37,500 크레딧
+              'bigpower': 83333,   // 프로: 기본 83,333 크레딧
+              'premium': 200000    // 프리미엄: 기본 200,000 크레딧
+            },
+            'agency': {
+              'starter': 100000,
+              'pro': 600000,
+              'enterprise': 1666666
+            }
+          };
+          
           if (pricingConfig && pricingConfig[includedCreditsKey] !== undefined && pricingConfig[includedCreditsKey] !== null) {
-            currentCreditLimit = Number(pricingConfig[includedCreditsKey]);
-            console.log(`✅ [user-dashboard] pricing_config 포함 크레딧 사용: ${currentCreditLimit} (${includedCreditsKey})`);
+            const configValue = Number(pricingConfig[includedCreditsKey]);
+            // 0이 아닌 값만 사용 (관리자가 설정한 값)
+            if (configValue > 0) {
+              currentCreditLimit = configValue;
+              console.log(`✅ [user-dashboard] pricing_config 포함 크레딧 사용: ${currentCreditLimit} (${includedCreditsKey})`);
+            } else {
+              // 0이면 기본값 사용
+              const defaultCredits = defaultCreditsByLevel[userType]?.[membershipLevel] || defaultCreditsByLevel[userType]?.[mappedLevel] || 100;
+              currentCreditLimit = defaultCredits;
+              console.warn(`⚠️ [user-dashboard] pricing_config 값이 0입니다. 기본값 사용: ${currentCreditLimit} (${includedCreditsKey})`);
+            }
           } else {
             // pricing_config에 없으면 credit_config에서 한도 조회 (하위 호환성)
             const { data: creditConfigs, error: creditConfigError } = await supabase
@@ -549,13 +573,28 @@ async function getDashboardData(user, res) {
               const creditLimitKey = `${userType}_${membershipLevel}_limit`;
               
               if (creditConfigs[creditLimitKey] !== undefined && creditConfigs[creditLimitKey] !== null) {
-                currentCreditLimit = Number(creditConfigs[creditLimitKey]);
-                console.log(`✅ [user-dashboard] credit_config 한도 사용: ${currentCreditLimit} (${creditLimitKey})`);
+                const configValue = Number(creditConfigs[creditLimitKey]);
+                // 0이 아닌 값만 사용
+                if (configValue > 0) {
+                  currentCreditLimit = configValue;
+                  console.log(`✅ [user-dashboard] credit_config 한도 사용: ${currentCreditLimit} (${creditLimitKey})`);
+                } else {
+                  // 0이면 기본값 사용
+                  const defaultCredits = defaultCreditsByLevel[userType]?.[membershipLevel] || defaultCreditsByLevel[userType]?.[mappedLevel] || 100;
+                  currentCreditLimit = defaultCredits;
+                  console.warn(`⚠️ [user-dashboard] credit_config 값이 0입니다. 기본값 사용: ${currentCreditLimit} (${creditLimitKey})`);
+                }
               } else {
-                console.warn(`⚠️ [user-dashboard] 크레딧 한도를 찾을 수 없음. 기본값 100 사용. (${includedCreditsKey}, ${creditLimitKey})`);
+                // 키가 없으면 기본값 사용
+                const defaultCredits = defaultCreditsByLevel[userType]?.[membershipLevel] || defaultCreditsByLevel[userType]?.[mappedLevel] || 100;
+                currentCreditLimit = defaultCredits;
+                console.warn(`⚠️ [user-dashboard] 크레딧 한도를 찾을 수 없음. 기본값 사용: ${currentCreditLimit} (${includedCreditsKey}, ${creditLimitKey})`);
               }
             } else {
-              console.warn(`⚠️ [user-dashboard] credit_config 조회 실패. 기본값 100 사용.`);
+              // credit_config 조회 실패 시 기본값 사용
+              const defaultCredits = defaultCreditsByLevel[userType]?.[membershipLevel] || defaultCreditsByLevel[userType]?.[mappedLevel] || 100;
+              currentCreditLimit = defaultCredits;
+              console.warn(`⚠️ [user-dashboard] credit_config 조회 실패. 기본값 사용: ${currentCreditLimit}`);
             }
           }
           
