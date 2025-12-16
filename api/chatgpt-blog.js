@@ -5,7 +5,7 @@
  * - 랜덤 앵글 시스템 (8가지 글쓰기 시점)
  * - 이전 블로그 분석 및 회피
  * - 사용자 블로그 스타일 설정 반영
- * - 향상된 AI 파라미터 (temperature, frequency_penalty 등)
+ * - 향상된 AI 파라미터 (temperature 등)
  * - 시간/계절/날씨 정보 활용
  */
 
@@ -563,7 +563,6 @@ JSON 형식으로 답변해주세요:
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.9,  // 다양성 증가
-                    frequency_penalty: 0.3,  // 반복 표현 감소
                     response_format: { type: "json_object" }
                 });
             },
@@ -645,7 +644,6 @@ JSON 형식으로 답변해주세요:
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.9,
-                    frequency_penalty: 0.4,
                     response_format: { type: "json_object" }
                 });
             },
@@ -739,7 +737,6 @@ JSON 형식으로 답변해주세요:
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.9,  // ⚡ 속도 개선: 0.9로 조정 (품질 유지, 속도 향상)
-                    frequency_penalty: 0.5,
                     response_format: { type: "json_object" }
                 });
             },
@@ -930,7 +927,6 @@ ${previousAnalysis.commonExpressions.join('\n')}
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.85,  // 다양성과 자연스러움 균형
-                    frequency_penalty: 0.7,  // 반복 표현 강력 감소
                     max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
@@ -1159,7 +1155,6 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.85,
-                    frequency_penalty: 0.7,
                     max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
@@ -1431,7 +1426,6 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.95,
-                    frequency_penalty: 0.6,
                     max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },

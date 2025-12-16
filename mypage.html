@@ -1822,13 +1822,13 @@
         if (isDemoMode) {
           console.log('🔍 [데모 모드] 기본 프로필로 초기화');
           
-          // 기본 프로필 데이터 설정
+          // 기본 프로필 데이터 설정 (스탠다드 플랜으로 설정)
           currentUser = {
             id: 'demo_user_12345',
             email: 'demo@sajangpick.co.kr',
             name: '데모 사용자',
             user_type: 'owner',
-            membership_level: 'seed',
+            membership_level: 'power', // 스탠다드 플랜
             business_name: '',
             phone: ''
           };
@@ -1846,8 +1846,8 @@
           
           const levelBadge = document.getElementById('levelBadge');
           if (levelBadge) {
-            levelBadge.textContent = '라이트';
-            levelBadge.className = 'badge seed';
+            levelBadge.textContent = '스탠다드';
+            levelBadge.className = 'badge power';
           }
           
           // 사용량 표시
@@ -1872,6 +1872,9 @@
           
           // 결제 정보 UI 업데이트 (기본값)
           updatePaymentUI(null);
+          
+          // 데모 모드: 스탠다드 플랜 샘플 크레딧 정보 표시
+          loadDemoCreditInfo();
           
           return; // 데모 모드에서는 여기서 종료
         }
@@ -2598,6 +2601,100 @@
         console.error('❌ 가게 정보 저장 실패:', error);
         alert('가게 정보 저장 실패: ' + error.message);
       }
+    }
+
+    // 데모 모드: 스탠다드 플랜 샘플 크레딧 정보 표시
+    function loadDemoCreditInfo() {
+      console.log('🔍 [데모 모드] 스탠다드 플랜 샘플 크레딧 정보 표시');
+      
+      // 스탠다드 플랜 샘플 데이터
+      const demoData = {
+        planType: 'power', // 스탠다드
+        totalCreditsUsed: 12500, // 사용한 크레딧 (약 33%)
+        includedCredits: 37500, // 포함된 기본 크레딧
+        creditsRemaining: 25000, // 남은 크레딧
+        minimumFee: 30000, // 월 최소 이용료
+        actualUsageAmount: 30000, // 사용량 기반 청구 금액 (월 최소 이용료와 동일)
+        estimatedTotalAmount: 30000 // 예상 총 청구 금액
+      };
+      
+      // 등급 정보 표시
+      document.getElementById('currentPlan').textContent = '스탠다드';
+      document.getElementById('planBadge').textContent = '등급';
+      
+      // 작업 크레딧 사용량 표시
+      const creditsUsed = demoData.totalCreditsUsed;
+      const includedCredits = demoData.includedCredits;
+      const creditsRemaining = demoData.creditsRemaining;
+      
+      // 사용률 계산 (약 33%)
+      const usagePercent = Math.round((creditsUsed / includedCredits) * 100);
+      
+      document.getElementById('tokensUsed').textContent = creditsUsed.toLocaleString();
+      document.getElementById('tokensLimit').textContent = includedCredits.toLocaleString();
+      document.getElementById('tokensRemaining').textContent = creditsRemaining.toLocaleString();
+      document.getElementById('usagePercent').textContent = usagePercent + '%';
+      
+      // 다음 결제 예정일
+      document.getElementById('daysLeft').textContent = '15일';
+      
+      // 예상 청구 금액 표시
+      document.getElementById('estimatedBillingAmount').textContent = demoData.estimatedTotalAmount.toLocaleString() + '원';
+      document.getElementById('minimumFee').textContent = demoData.minimumFee.toLocaleString();
+      document.getElementById('usageBasedAmount').textContent = demoData.actualUsageAmount.toLocaleString();
+      
+      // 미터 바 업데이트
+      const meterFill = document.getElementById('tokenMeterFill');
+      if (meterFill) {
+        meterFill.style.width = usagePercent + '%';
+        meterFill.style.background = 'linear-gradient(90deg, #10b981, #059669)'; // 초록색 (33% 사용)
+      }
+      
+      // 최근 사용 내역 샘플 데이터
+      const usageList = document.getElementById('recentUsageList');
+      if (usageList) {
+        const sampleUsage = [
+          { service: '블로그 작성', time: '2시간 전', credits: 2000 },
+          { service: '리뷰 답글', time: '5시간 전', credits: 500 },
+          { service: '영상 생성', time: '1일 전', credits: 5000 },
+          { service: '블로그 작성', time: '2일 전', credits: 2000 },
+          { service: '리뷰 답글', time: '3일 전', credits: 500 }
+        ];
+        
+        usageList.innerHTML = sampleUsage.map(item => `
+          <div class="usage-item">
+            <div>
+              <span class="usage-api">${item.service}</span>
+              <span class="usage-time">${item.time}</span>
+            </div>
+            <span class="usage-tokens">-${item.credits.toLocaleString()} 작업 크레딧</span>
+          </div>
+        `).join('');
+      }
+      
+      // 크레딧 소진 내역 샘플 데이터
+      const consumptionList = document.getElementById('creditConsumptionList');
+      if (consumptionList) {
+        const sampleConsumption = [
+          { date: '2025-11-25', service: '블로그 작성', credits: 2000 },
+          { date: '2025-11-25', service: '리뷰 답글', credits: 500 },
+          { date: '2025-11-24', service: '영상 생성', credits: 5000 },
+          { date: '2025-11-23', service: '블로그 작성', credits: 2000 },
+          { date: '2025-11-22', service: '리뷰 답글', credits: 500 }
+        ];
+        
+        consumptionList.innerHTML = sampleConsumption.map(item => `
+          <div class="usage-item">
+            <div>
+              <span class="usage-api">${item.service}</span>
+              <span class="usage-time">${item.date}</span>
+            </div>
+            <span class="usage-tokens">-${item.credits.toLocaleString()} 작업 크레딧</span>
+          </div>
+        `).join('');
+      }
+      
+      console.log('✅ [데모 모드] 샘플 크레딧 정보 표시 완료');
     }
 
     // 작업 크레딧 사용 현황 로드

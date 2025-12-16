@@ -780,8 +780,6 @@
                   <th>이메일</th>
                   <th>회원 유형</th>
                   <th>등급</th>
-                  <th>사용량 (리뷰)</th>
-                  <th>사용량 (블로그)</th>
                   <th>가입일</th>
                   <th>관리</th>
                 </tr>
@@ -1700,7 +1698,7 @@
           console.log('ℹ️ 회원이 없음, 빈 테이블 표시');
           tbody.innerHTML = `
             <tr>
-              <td colspan="8" style="text-align: center; padding: 60px; color: #6b7280;">
+              <td colspan="6" style="text-align: center; padding: 60px; color: #6b7280;">
                 <i class="fas fa-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px;"></i>
                 회원이 없습니다
               </td>
@@ -1713,17 +1711,6 @@
           tbody.innerHTML = members.map((member, index) => {
           // 등급 정규화
           const normalizedLevel = normalizeMembershipLevel(member.membership_level);
-          const reviewLimit = LIMITS[member.user_type]?.[normalizedLevel]?.review;
-          const blogLimit = LIMITS[member.user_type]?.[normalizedLevel]?.blog;
-
-          const reviewUsage = member.monthly_review_count || 0;
-          const blogUsage = member.monthly_blog_count || 0;
-
-          const reviewPercent = reviewLimit ? (reviewUsage / reviewLimit * 100) : 0;
-          const blogPercent = blogLimit ? (blogUsage / blogLimit * 100) : 0;
-
-          const reviewBarClass = reviewPercent >= 90 ? 'danger' : reviewPercent >= 70 ? 'warning' : '';
-          const blogBarClass = blogPercent >= 90 ? 'danger' : blogPercent >= 70 ? 'warning' : '';
 
           // 표시용 등급명 (한글)
           const levelDisplayName = LEVEL_NAMES[normalizedLevel] || normalizedLevel;
@@ -1749,22 +1736,6 @@
                 <span class="badge ${levelCssClass}">
                   ${levelDisplayName}
                 </span>
-              </td>
-              <td>
-                <div>${reviewUsage} / ${reviewLimit || '무제한'}</div>
-                ${reviewLimit ? `
-                  <div class="usage-bar">
-                    <div class="usage-bar-fill ${reviewBarClass}" style="width: ${reviewPercent}%"></div>
-                  </div>
-                ` : ''}
-              </td>
-              <td>
-                <div>${blogUsage} / ${blogLimit || '무제한'}</div>
-                ${blogLimit ? `
-                  <div class="usage-bar">
-                    <div class="usage-bar-fill ${blogBarClass}" style="width: ${blogPercent}%"></div>
-                  </div>
-                ` : ''}
               </td>
               <td>${member.created_at ? new Date(member.created_at).toLocaleString('ko-KR', { 
                 year: 'numeric', 
@@ -1793,7 +1764,7 @@
           console.error('❌ 렌더링 중 오류 발생:', error);
           tbody.innerHTML = `
             <tr>
-              <td colspan="8" style="text-align: center; padding: 60px; color: #dc2626;">
+              <td colspan="6" style="text-align: center; padding: 60px; color: #dc2626;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
                 렌더링 오류가 발생했습니다: ${error.message}
               </td>
