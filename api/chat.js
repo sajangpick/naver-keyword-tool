@@ -520,7 +520,7 @@ module.exports = async (req, res) => {
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: 'gpt-5.2',
+          model: 'gpt-4o',
           messages: messages,
           tools: availableTools,
           tool_choice: iteration === 0 ? 'auto' : 'auto', // 첫 번째는 자동, 이후에도 자동
@@ -623,7 +623,7 @@ module.exports = async (req, res) => {
       usage: totalUsage,
       tokenTracking,
       metadata: {
-        model: 'gpt-5.2',
+        model: 'gpt-4o',
         timestamp: new Date().toISOString(),
         server: 'Vercel Serverless',
         function_calls_used: messages.filter(m => m.role === 'tool').length,
@@ -634,7 +634,7 @@ module.exports = async (req, res) => {
     
     // 모델 관련 에러인지 확인
     const errorMessage = error.response?.data?.error?.message || error.message || '';
-    const isModelError = errorMessage.includes('model') || errorMessage.includes('gpt-5.2') || errorMessage.includes('not found');
+    const isModelError = errorMessage.includes('model') || errorMessage.includes('not found');
     
     // 상세 에러 정보 로깅
     if (error.response?.data) {
@@ -644,10 +644,10 @@ module.exports = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: isModelError 
-        ? `모델 오류: gpt-5.2가 지원되지 않을 수 있습니다. ${errorMessage}`
+        ? `모델 오류: ${errorMessage}`
         : 'ChatGPT API 호출 중 오류가 발생했습니다.',
       details: errorMessage,
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       timestamp: new Date().toISOString(),
     });
   }

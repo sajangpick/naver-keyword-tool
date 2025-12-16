@@ -2378,26 +2378,29 @@
             const { profile, cycle } = result.data;
             
             if (cycle) {
-              // 등급 정규화 (mypage.html과 동일)
+              // 등급 정규화
               const normalizedLevel = normalizeMembershipLevel(profile?.membership_level);
               const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
               
-              // 토큰 사용량 계산
-              const tokensUsed = cycle.tokens_used || 0;
-              let tokensLimit = cycle.monthly_token_limit || 100;
-              let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+              // 크레딧 사용량 계산 (작업 크레딧 시스템 사용)
+              // credits_remaining, credits_used, included_credits 우선 사용
+              const creditsUsed = cycle.credits_used || 0;
+              let creditsLimit = cycle.included_credits || cycle.monthly_token_limit || 100;
+              let creditsRemaining = cycle.credits_remaining !== null && cycle.credits_remaining !== undefined 
+                  ? cycle.credits_remaining 
+                  : (creditsLimit - creditsUsed);
               
               // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리
-              if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
-                tokensLimit = null;
-                tokensRemaining = null;
+              if (isAdmin || (creditsLimit && creditsLimit >= 999999)) {
+                creditsLimit = null;
+                creditsRemaining = null;
               }
               
               return {
-                remaining: tokensRemaining,
-                used: tokensUsed,
-                limit: tokensLimit,
-                isUnlimited: tokensRemaining === null || tokensLimit === null
+                remaining: creditsRemaining,
+                used: creditsUsed,
+                limit: creditsLimit,
+                isUnlimited: creditsRemaining === null || creditsLimit === null
               };
             } else {
               // cycle이 없을 때 기본값 반환
@@ -2438,7 +2441,7 @@
           // 로딩 상태 표시
           document.getElementById('remainingTokens').textContent = '조회 중...';
           document.getElementById('afterTokens').textContent = '조회 중...';
-          document.getElementById('estimatedTokens').textContent = estimatedTokens.toLocaleString() + ' 토큰';
+          document.getElementById('estimatedTokens').textContent = estimatedTokens.toLocaleString() + ' 크레딧';
           
           modal.classList.add('active');
           

@@ -3164,61 +3164,63 @@
                     });
                     
                     if (cycle) {
-                        // mypage.html의 loadTokenInfo와 완전히 동일한 로직 사용
-                        // 등급 정규화 (mypage.html과 동일)
+                        // 등급 정규화
                         const normalizedLevel = normalizeMembershipLevel(profile?.membership_level);
                         
-                        // 관리자 등급 체크 (mypage.html과 완전히 동일)
+                        // 관리자 등급 체크
                         const isAdmin = normalizedLevel === 'admin' || profile?.user_type === 'admin';
                         
-                        // 토큰 사용량 계산 (mypage.html과 완전히 동일 - 한 글자도 다르지 않게)
-                        const tokensUsed = cycle.tokens_used || 0;
-                        let tokensLimit = cycle.monthly_token_limit || 100;
-                        let tokensRemaining = cycle.tokens_remaining || tokensLimit;
+                        // 크레딧 사용량 계산 (작업 크레딧 시스템 사용)
+                        // credits_remaining, credits_used, included_credits 우선 사용
+                        const creditsUsed = cycle.credits_used || 0;
+                        let creditsLimit = cycle.included_credits || cycle.monthly_token_limit || 100;
+                        let creditsRemaining = cycle.credits_remaining !== null && cycle.credits_remaining !== undefined 
+                            ? cycle.credits_remaining 
+                            : (creditsLimit - creditsUsed);
                         
-                        // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리 (mypage.html과 완전히 동일)
-                        if (isAdmin || (tokensLimit && tokensLimit >= 999999)) {
-                            tokensLimit = null; // null = 무제한
-                            tokensRemaining = null; // null = 무제한
+                        // 관리자 등급 또는 매우 큰 값(999999 이상)은 무제한으로 처리
+                        if (isAdmin || (creditsLimit && creditsLimit >= 999999)) {
+                            creditsLimit = null; // null = 무제한
+                            creditsRemaining = null; // null = 무제한
                         }
                         
-                        // 실제 토큰 값 확인 (디버깅용)
-                        console.log('🔍 [토큰 조회] 실제 토큰 값 확인:', {
+                        // 실제 크레딧 값 확인 (디버깅용)
+                        console.log('🔍 [크레딧 조회] 실제 크레딧 값 확인:', {
                             normalizedLevel,
                             isAdmin,
-                            cycle_monthly_token_limit: cycle.monthly_token_limit,
-                            cycle_tokens_used: cycle.tokens_used,
-                            cycle_tokens_remaining: cycle.tokens_remaining,
-                            tokensLimit,
-                            tokensRemaining,
-                            willBeUnlimited: tokensRemaining === null || tokensLimit === null
+                            cycle_included_credits: cycle.included_credits,
+                            cycle_credits_used: cycle.credits_used,
+                            cycle_credits_remaining: cycle.credits_remaining,
+                            creditsLimit,
+                            creditsRemaining,
+                            willBeUnlimited: creditsRemaining === null || creditsLimit === null
                         });
                         
-                        const tokenInfo = {
-                            remaining: tokensRemaining,
-                            used: tokensUsed,
-                            limit: tokensLimit,
-                            isUnlimited: tokensRemaining === null || tokensLimit === null
+                        const creditInfo = {
+                            remaining: creditsRemaining,
+                            used: creditsUsed,
+                            limit: creditsLimit,
+                            isUnlimited: creditsRemaining === null || creditsLimit === null
                         };
                         
-                        console.log('✅ [토큰 조회] 최종 토큰 정보 (mypage.html 내 토큰 정보와 동일):', {
+                        console.log('✅ [크레딧 조회] 최종 크레딧 정보:', {
                             normalizedLevel,
                             original_membership_level: profile?.membership_level,
                             user_type: profile?.user_type,
                             isAdmin,
-                            tokensUsed,
-                            tokensLimit: tokensLimit || '무제한',
-                            tokensRemaining: tokensRemaining || '무제한',
-                            isUnlimited: tokenInfo.isUnlimited,
-                            cycle_monthly_token_limit: cycle.monthly_token_limit,
-                            cycle_tokens_used: cycle.tokens_used,
-                            cycle_tokens_remaining: cycle.tokens_remaining
+                            creditsUsed,
+                            creditsLimit: creditsLimit || '무제한',
+                            creditsRemaining: creditsRemaining || '무제한',
+                            isUnlimited: creditInfo.isUnlimited,
+                            cycle_included_credits: cycle.included_credits,
+                            cycle_credits_used: cycle.credits_used,
+                            cycle_credits_remaining: cycle.credits_remaining
                         });
                         
-                        return tokenInfo;
+                        return creditInfo;
                     } else {
-                        // cycle이 없을 때 기본값 반환 (mypage.html과 동일)
-                        console.warn('⚠️ [토큰 조회] 구독 사이클이 없습니다. 기본값을 표시합니다.');
+                        // cycle이 없을 때 기본값 반환
+                        console.warn('⚠️ [크레딧 조회] 구독 사이클이 없습니다. 기본값을 표시합니다.');
                         return {
                             remaining: 100,
                             used: 0,
@@ -3264,7 +3266,7 @@
             // 로딩 상태 표시
             document.getElementById('remainingTokens').textContent = '조회 중...';
             document.getElementById('afterTokens').textContent = '조회 중...';
-            document.getElementById('estimatedTokens').textContent = estimatedTokens.toLocaleString() + ' 토큰';
+            document.getElementById('estimatedTokens').textContent = estimatedTokens.toLocaleString() + ' 크레딧';
             
             modal.classList.add('active');
             

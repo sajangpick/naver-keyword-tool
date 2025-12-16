@@ -1,6 +1,7 @@
 /**
- * 크레딧 사용량 관리 API
- * 크레딧 사용을 기록하고 한도를 체크합니다
+ * 작업 크레딧 사용량 관리 API
+ * 작업 크레딧 사용을 기록하고 한도를 체크합니다
+ * 작업 크레딧 = 토큰 수 × 가중치 (기능별로 다름)
  */
 
 const { createClient } = require('@supabase/supabase-js');
@@ -64,7 +65,16 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
       
       console.log(`✅ [credit-usage] 새 사이클 생성 - 관리자 설정 한도: ${monthlyLimit} (${creditLimitKey})`);
 
-      // 새 사이클 생성
+      // pricing_config에서 포함된 크레딧 조회 (우선순위)
+      const { data: pricingConfig } = await supabase
+        .from('pricing_config')
+        .select('*')
+        .single();
+      
+      const includedCreditsKey = `${userType}_${membershipLevel}_included_credits`;
+      const actualIncludedCredits = pricingConfig?.[includedCreditsKey] || monthlyLimit;
+
+      // 새 사이클 생성 (작업 크레딧 시스템)
       const today = new Date();
       const cycleEnd = new Date(today);
       cycleEnd.setDate(cycleEnd.getDate() + 30);
@@ -77,9 +87,12 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
           cycle_start_date: today.toISOString().split('T')[0],
           cycle_end_date: cycleEnd.toISOString().split('T')[0],
           days_in_cycle: 30,
-          monthly_credit_limit: monthlyLimit,
+          monthly_token_limit: actualIncludedCredits, // 하위 호환성
+          tokens_used: 0,
+          tokens_remaining: actualIncludedCredits,
+          included_credits: actualIncludedCredits, // 작업 크레딧 시스템
           credits_used: 0,
-          credits_remaining: monthlyLimit,
+          credits_remaining: actualIncludedCredits,
           status: 'active',
           billing_amount: 0, // 씨앗 등급은 무료
           payment_status: 'completed'
@@ -103,40 +116,57 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
     const membershipLevel = profile?.membership_level || 'seed';
     const creditLimitKey = `${userType}_${membershipLevel}_limit`;
     
-    // 관리자 설정에서 최신 한도 조회
-    let currentCreditLimit = cycle.monthly_credit_limit; // 기본값: 사이클 값
+    // 작업 크레딧 시스템: included_credits 우선 사용
+    let currentCreditLimit = cycle.included_credits || cycle.monthly_token_limit || 0;
+    
     try {
-      const { data: creditConfigs } = await supabase
-        .from('credit_config')
+      // pricing_config에서 포함된 크레딧 조회 (최우선)
+      const { data: pricingConfig } = await supabase
+        .from('pricing_config')
         .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
         .single();
       
-      if (creditConfigs && creditConfigs[creditLimitKey] !== undefined && creditConfigs[creditLimitKey] !== null) {
-        currentCreditLimit = Number(creditConfigs[creditLimitKey]);
-        console.log(`✅ [credit-usage] 관리자 설정 한도 사용: ${currentCreditLimit} (${creditLimitKey})`);
+      const includedCreditsKey = `${userType}_${membershipLevel}_included_credits`;
+      if (pricingConfig?.[includedCreditsKey] !== undefined) {
+        currentCreditLimit = Number(pricingConfig[includedCreditsKey]);
+        console.log(`✅ [credit-usage] pricing_config 포함 크레딧 사용: ${currentCreditLimit}`);
+      } else {
+        // credit_config에서 한도 조회
+        const { data: creditConfigs } = await supabase
+          .from('credit_config')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
         
-        // 사이클의 한도와 다르면 사이클 업데이트
-        if (cycle.monthly_credit_limit !== currentCreditLimit) {
-          console.log(`🔄 [credit-usage] 사이클 한도 업데이트: ${cycle.monthly_credit_limit} → ${currentCreditLimit}`);
-          await supabase
-            .from('subscription_cycle')
-            .update({
-              monthly_credit_limit: currentCreditLimit,
-              credits_remaining: currentCreditLimit - (cycle.credits_used || 0),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', cycle.id);
-          console.log('✅ [credit-usage] 사이클 한도 업데이트 완료');
+        if (creditConfigs && creditConfigs[creditLimitKey] !== undefined && creditConfigs[creditLimitKey] !== null) {
+          currentCreditLimit = Number(creditConfigs[creditLimitKey]);
+          console.log(`✅ [credit-usage] 관리자 설정 한도 사용: ${currentCreditLimit}`);
         }
+      }
+      
+      // 사이클 업데이트 (포함 크레딧 값과 다를 경우)
+      if (cycle.included_credits !== currentCreditLimit) {
+        console.log(`🔄 [credit-usage] 사이클 포함 크레딧 업데이트: ${cycle.included_credits || 0} → ${currentCreditLimit}`);
+        await supabase
+          .from('subscription_cycle')
+          .update({
+            included_credits: currentCreditLimit,
+            credits_remaining: currentCreditLimit - (cycle.credits_used || 0),
+            monthly_token_limit: currentCreditLimit, // 하위 호환성
+            tokens_remaining: currentCreditLimit - (cycle.credits_used || 0),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', cycle.id);
+        console.log('✅ [credit-usage] 사이클 포함 크레딧 업데이트 완료');
       }
     } catch (error) {
       console.log('⚠️ [credit-usage] 관리자 설정 조회 실패, 사이클 값 사용:', error.message);
     }
 
-    // 크레딧 한도 체크 (관리자 설정 기준)
-    const newCreditsUsed = (cycle.credits_used || 0) + creditsToUse;
+    // 크레딧 한도 체크 (작업 크레딧 기준)
+    const currentCreditsUsed = cycle.credits_used || cycle.tokens_used || 0;
+    const newCreditsUsed = currentCreditsUsed + creditsToUse;
     const creditsRemaining = currentCreditLimit - newCreditsUsed;
 
     if (creditsRemaining < 0) {
@@ -148,25 +178,29 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
           is_exceeded: true,
           exceeded_at: new Date().toISOString(),
           credits_used: newCreditsUsed,
-          credits_remaining: 0
+          credits_remaining: 0,
+          tokens_used: newCreditsUsed, // 하위 호환성
+          tokens_remaining: 0
         })
         .eq('id', cycle.id);
 
       return {
         success: false,
-        error: '크레딧 한도를 초과했습니다',
-        creditsUsed: cycle.credits_used,
-        monthlyLimit: currentCreditLimit, // 관리자 설정 값 반환
+        error: '작업 크레딧 한도를 초과했습니다',
+        creditsUsed: cycle.credits_used || cycle.tokens_used || 0,
+        monthlyLimit: currentCreditLimit,
         creditsRemaining: 0
       };
     }
 
-    // 크레딧 사용량 업데이트
+    // 크레딧 사용량 업데이트 (작업 크레딧 시스템)
     const { error: updateError } = await supabase
       .from('subscription_cycle')
       .update({
         credits_used: newCreditsUsed,
         credits_remaining: creditsRemaining,
+        tokens_used: newCreditsUsed, // 하위 호환성
+        tokens_remaining: creditsRemaining,
         updated_at: new Date().toISOString()
       })
       .eq('id', cycle.id);
@@ -206,10 +240,12 @@ const apiHandler = async (req, res) => {
       const { 
         user_id,
         store_id,
+        service_type = 'review_reply', // 'review_reply', 'blog_writing', 'video_generation'
         input_tokens = 0,
         output_tokens = 0,
         api_type = 'chatgpt',
-        total_tokens
+        total_tokens,
+        ai_model
       } = req.body;
 
       if (!user_id) {
@@ -219,25 +255,43 @@ const apiHandler = async (req, res) => {
         });
       }
 
-      const creditsUsed = total_tokens || (input_tokens + output_tokens);
+      // 작업 크레딧 가중치 조회
+      const { data: workCreditConfig } = await supabase
+        .from('work_credit_config')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      const weightMapping = {
+        'review_reply': workCreditConfig?.review_reply_credit || 1,
+        'blog_writing': workCreditConfig?.blog_writing_credit || 5,
+        'video_generation': workCreditConfig?.video_generation_credit || 20
+      };
+      
+      const weight = weightMapping[service_type] || 1;
+      const tokenCount = total_tokens || (input_tokens + output_tokens);
+      const workCreditsUsed = tokenCount * weight; // 작업 크레딧 = 토큰 수 × 가중치
 
-      // 크레딧 한도 체크 및 차감
-      const limitCheck = await checkAndUpdateCreditLimit(user_id, creditsUsed);
+      // 크레딧 한도 체크 및 차감 (작업 크레딧 기준)
+      const limitCheck = await checkAndUpdateCreditLimit(user_id, workCreditsUsed);
       
       if (!limitCheck.success) {
         return res.status(403).json(limitCheck);
       }
 
-      // 크레딧 사용 기록 저장
+      // 작업 크레딧 사용 기록 저장 (work_credit_usage 테이블)
       const { data: usageRecord, error: insertError } = await supabase
-        .from('credit_usage')
+        .from('work_credit_usage')
         .insert({
           user_id,
           store_id,
-          credits_used: creditsUsed,
-          api_type,
+          service_type,
+          work_credits_used: workCreditsUsed,
           input_tokens,
           output_tokens,
+          ai_model: ai_model || api_type,
+          usage_date: new Date().toISOString().split('T')[0],
           used_at: new Date().toISOString()
         })
         .select()
@@ -245,14 +299,17 @@ const apiHandler = async (req, res) => {
 
       if (insertError) throw insertError;
 
-      console.log(`✅ 크레딧 사용 기록: ${user_id} - ${creditsUsed} 크레딧`);
+      console.log(`✅ 작업 크레딧 사용 기록: ${user_id} - ${workCreditsUsed} 크레딧 (${service_type}, 토큰: ${tokenCount}, 가중치: ${weight})`);
 
       return res.json({
         success: true,
         usage: usageRecord,
         remaining: limitCheck.creditsRemaining,
         limit: limitCheck.monthlyLimit,
-        message: `${creditsUsed} 크레딧이 사용되었습니다. 남은 크레딧: ${limitCheck.creditsRemaining}`
+        workCreditsUsed,
+        tokenCount,
+        weight,
+        message: `${workCreditsUsed} 작업 크레딧이 사용되었습니다 (토큰: ${tokenCount}, 가중치: ${weight}). 남은 크레딧: ${limitCheck.creditsRemaining}`
       });
     }
 
@@ -301,10 +358,11 @@ const apiHandler = async (req, res) => {
         .limit(1)
         .single();
 
-      // 크레딧 한도 조회 우선순위 (관리자 설정 우선):
+      // 작업 크레딧 한도 조회 우선순위:
       // 1. member_custom_credit_limit (개인 맞춤 한도) - 최우선
-      // 2. credit_config (관리자 설정) - 관리자에서 설정한 값 사용
-      // 3. subscription_cycle.monthly_credit_limit (사이클 한도) - 참고용
+      // 2. pricing_config.included_credits (포함된 크레딧) - 작업 크레딧 시스템
+      // 3. credit_config (관리자 설정) - 관리자에서 설정한 값 사용
+      // 4. subscription_cycle.included_credits (사이클 포함 크레딧) - 작업 크레딧 시스템
       let currentCreditLimit = 0;
       const userType = profile?.user_type || 'owner';
       const membershipLevel = profile?.membership_level || 'seed';
@@ -440,9 +498,9 @@ const apiHandler = async (req, res) => {
       
       console.log(`✅ 최종 크레딧 한도: ${currentCreditLimit} (사용자: ${userType}_${membershipLevel})`);
 
-      // 크레딧 사용 내역 조회
+      // 작업 크레딧 사용 내역 조회 (work_credit_usage 테이블)
       const { data: usage, error: fetchError } = await supabase
-        .from('credit_usage')
+        .from('work_credit_usage')
         .select('*')
         .eq('user_id', user_id)
         .order('used_at', { ascending: false })
@@ -450,13 +508,14 @@ const apiHandler = async (req, res) => {
 
       if (fetchError) throw fetchError;
 
-      // 크레딧 사용량 계산
-      const creditsUsed = cycle?.credits_used || 0;
+      // 작업 크레딧 사용량 계산 (작업 크레딧 시스템)
+      const creditsUsed = cycle?.credits_used || cycle?.tokens_used || 0;
+      const includedCredits = cycle?.included_credits || cycle?.monthly_token_limit || currentCreditLimit;
       let creditsRemaining = 0;
       
       if (cycle) {
-        // 사이클이 있으면 사이클의 남은 크레딧 사용
-        creditsRemaining = cycle.credits_remaining || 0;
+        // 사이클이 있으면 사이클의 남은 작업 크레딧 사용
+        creditsRemaining = cycle.credits_remaining !== undefined ? cycle.credits_remaining : (includedCredits - creditsUsed);
       } else {
         // 사이클이 없으면 최신 한도가 남은 크레딧
         creditsRemaining = currentCreditLimit;
@@ -467,7 +526,8 @@ const apiHandler = async (req, res) => {
         usage: usage || [],
         cycle: cycle || null,
         summary: {
-          monthlyLimit: currentCreditLimit, // 최신 크레딧 한도 사용 (관리자 설정 반영)
+          monthlyLimit: includedCredits || currentCreditLimit, // 포함된 작업 크레딧 (관리자 설정 반영)
+          includedCredits: includedCredits,
           creditsUsed: creditsUsed,
           creditsRemaining: creditsRemaining,
           isExceeded: cycle?.is_exceeded || false

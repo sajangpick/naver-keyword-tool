@@ -77,15 +77,25 @@ async function renewExpiredSubscriptions() {
           .select('*')
           .single();
 
-        // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선)
-        const { data: tokenConfigs } = await supabase
-          .from('token_config')
+        // 관리자 설정에서 최신 크레딧 한도 조회 (credit_config 우선)
+        const { data: creditConfigs } = await supabase
+          .from('credit_config')
           .select('*')
           .order('updated_at', { ascending: false })
           .limit(1)
           .single();
         
-        const tokenConfig = tokenConfigs || {};
+        // 하위 호환성: credit_config가 없으면 token_config 사용
+        let tokenConfig = {};
+        if (!creditConfigs) {
+          const { data: tokenConfigs } = await supabase
+            .from('token_config')
+            .select('*')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single();
+          tokenConfig = tokenConfigs || {};
+        }
 
         // 개인 맞춤 설정 확인
         const { data: customPricing } = await supabase
@@ -121,9 +131,10 @@ async function renewExpiredSubscriptions() {
         const monthlyPrice = customPricing?.custom_price || pricingConfig?.[priceKey] || 0;
         
         // 포함된 크레딧 우선 사용 (pricing_config의 included_credits)
-        // 없으면 token_config의 limit 사용 (하위 호환성)
+        // 없으면 credit_config의 limit 사용 (하위 호환성: token_config)
         const monthlyCredits = customTokenLimit?.custom_limit || 
                               pricingConfig?.[includedCreditsKey] || 
+                              creditConfigs?.[tokenKey] ||
                               tokenConfig?.[tokenKey] || 
                               100;
 
@@ -202,9 +213,9 @@ async function renewExpiredSubscriptions() {
             billing_period_start: newStartDate.toISOString().split('T')[0],
             billing_period_end: newEndDate.toISOString().split('T')[0],
             monthly_limit: monthlyCredits, // 하위 호환성
-            tokens_used: cycle.tokens_used || 0, // 이전 사이클 사용량
+            tokens_used: cycle.credits_used || cycle.tokens_used || 0, // 이전 사이클 사용량 (하위 호환성)
             included_credits: monthlyCredits, // 작업 크레딧 시스템
-            credits_used: 0,
+            credits_used: cycle.credits_used || 0, // 이전 사이클 작업 크레딧 사용량
             base_price: monthlyPrice,
             total_price: monthlyPrice,
             payment_status: monthlyPrice === 0 ? 'completed' : 'pending',
@@ -266,14 +277,18 @@ async function notifyTokenExceeded() {
     const warningUsers = [];
     
     for (const cycle of cycles || []) {
-      const usageRate = (cycle.tokens_used || 0) / cycle.monthly_token_limit;
+      const creditsUsed = cycle.credits_used || cycle.tokens_used || 0;
+      const includedCredits = cycle.included_credits || cycle.monthly_token_limit || 1;
+      const usageRate = creditsUsed / includedCredits;
       
       if (usageRate >= 0.9 && !cycle.is_exceeded) {
         warningUsers.push({
           user_id: cycle.user_id,
           usage_rate: Math.round(usageRate * 100),
-          tokens_used: cycle.tokens_used,
-          tokens_limit: cycle.monthly_token_limit
+          credits_used: creditsUsed,
+          credits_limit: includedCredits,
+          tokens_used: creditsUsed, // 하위 호환성
+          tokens_limit: includedCredits // 하위 호환성
         });
         
         // 알림 플래그 업데이트 (중복 알림 방지)
@@ -319,14 +334,15 @@ async function recordDailyStats() {
   try {
     const today = new Date().toISOString().split('T')[0];
     
-    // 오늘의 토큰 사용량 집계
+    // 오늘의 작업 크레딧 사용량 집계 (work_credit_usage 테이블)
     const { data: todayUsage } = await supabase
-      .from('token_usage')
-      .select('tokens_used')
+      .from('work_credit_usage')
+      .select('work_credits_used')
       .gte('used_at', `${today}T00:00:00`)
       .lt('used_at', `${today}T23:59:59`);
 
-    const totalTokensToday = todayUsage?.reduce((sum, u) => sum + u.tokens_used, 0) || 0;
+    const totalCreditsToday = todayUsage?.reduce((sum, u) => sum + (u.work_credits_used || 0), 0) || 0;
+    const totalTokensToday = totalCreditsToday; // 하위 호환성
 
     // 활성 사용자 수
     const { data: activeUsers } = await supabase
@@ -337,9 +353,11 @@ async function recordDailyStats() {
     // 통계 저장 (나중에 대시보드용)
     console.log(`📊 일일 통계:`, {
       날짜: today,
-      총_토큰_사용량: totalTokensToday,
+      총_작업크레딧_사용량: totalCreditsToday,
+      총_토큰_사용량: totalTokensToday, // 하위 호환성
       활성_사용자: activeUsers?.length || 0,
-      평균_토큰_사용: activeUsers?.length ? Math.round(totalTokensToday / activeUsers.length) : 0
+      평균_작업크레딧_사용: activeUsers?.length ? Math.round(totalCreditsToday / activeUsers.length) : 0,
+      평균_토큰_사용: activeUsers?.length ? Math.round(totalTokensToday / activeUsers.length) : 0 // 하위 호환성
     });
 
   } catch (error) {

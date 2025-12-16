@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3003 http://127.0.0.1:3003 https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com wss://*.supabase.co; img-src 'self' data: https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3003 http://127.0.0.1:3003 https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com https://api.openai.com wss://*.supabase.co; img-src 'self' data: https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <!-- 사이트 설명 (SEO) -->
@@ -1914,7 +1914,7 @@
           if (data.success && data.reply) {
             hideLoading(loadingId);
             // 모델 정보 포함하여 메시지 추가
-            const modelInfo = data.metadata?.model || 'gpt-5.2';
+            const modelInfo = data.metadata?.model || 'gpt-4o';
             addMessage(data.reply, "bot", modelInfo);
 
             // 메시지 전송 성공 시 연결 상태 업데이트
@@ -1944,8 +1944,8 @@
             showError("서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.");
           } else if (error.message.includes('JSON')) {
             showError("서버 응답을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.");
-          } else if (error.message.includes('모델 오류') || error.message.includes('gpt-5.2')) {
-            showError(`⚠️ ${error.message}\n\n💡 참고: gpt-5.2 모델이 지원되지 않을 수 있습니다. 관리자에게 문의하세요.`);
+          } else if (error.message.includes('모델 오류')) {
+            showError(`⚠️ ${error.message}\n\n💡 참고: 모델 오류가 발생했습니다. 관리자에게 문의하세요.`);
           } else {
             showError(error.message || "메시지 전송 중 오류가 발생했습니다.");
           }

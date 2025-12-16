@@ -434,20 +434,20 @@ async function getDashboardData(user, res) {
     let recentUsage = [];
     try {
       if (supabase && currentCycle.cycle_start_date) {
-        // 토큰 사용 통계 (여러 행 반환 가능)
-        const { data: tokenStats } = await supabase
-          .from('token_usage')
-          .select('tokens_used, used_at')
+        // 작업 크레딧 사용 통계 (work_credit_usage 테이블)
+        const { data: creditStats } = await supabase
+          .from('work_credit_usage')
+          .select('work_credits_used, used_at')
           .eq('user_id', user.id)
           .gte('used_at', currentCycle.cycle_start_date);
         
-        if (tokenStats && Array.isArray(tokenStats)) {
-          totalUsed = tokenStats.reduce((sum, t) => sum + (t.tokens_used || 0), 0);
+        if (creditStats && Array.isArray(creditStats)) {
+          totalUsed = creditStats.reduce((sum, t) => sum + (t.work_credits_used || 0), 0);
         }
         
-        // 최근 사용 내역
+        // 최근 사용 내역 (작업 크레딧)
         const { data: usageData } = await supabase
-          .from('token_usage')
+          .from('work_credit_usage')
           .select('*')
           .eq('user_id', user.id)
           .order('used_at', { ascending: false })
@@ -461,66 +461,73 @@ async function getDashboardData(user, res) {
       console.warn('⚠️ 토큰 사용 통계 조회 실패:', err.message);
     }
     
-    // 5. 관리자 설정에서 최신 토큰 한도 확인 (우선 사용)
+    // 5. 관리자 설정에서 최신 작업 크레딧 한도 확인 (작업 크레딧 시스템)
     const isAdmin = profile.membership_level === 'admin' || profile.user_type === 'admin';
-    let currentTokenLimit = currentCycle.monthly_token_limit || 100;
+    let currentCreditLimit = currentCycle.included_credits || currentCycle.monthly_token_limit || 100;
     
     // 관리자는 무제한
     if (isAdmin) {
-      currentTokenLimit = 999999; // 무제한을 나타내는 매우 큰 값
-      console.log(`📊 [user-dashboard] 관리자 등급 - 토큰 무제한`);
+      currentCreditLimit = 999999; // 무제한을 나타내는 매우 큰 값
+      console.log(`📊 [user-dashboard] 관리자 등급 - 작업 크레딧 무제한`);
     } else {
       try {
         if (supabase) {
-          const { data: tokenConfigs, error: tokenConfigError } = await supabase
-            .from('token_config')
+          // pricing_config에서 포함된 크레딧 조회 (최우선)
+          const { data: pricingConfig } = await supabase
+            .from('pricing_config')
             .select('*')
-            .order('updated_at', { ascending: false })
-            .limit(1)
             .maybeSingle();
           
-          if (!tokenConfigError && tokenConfigs) {
-            const userType = profile.user_type || 'owner';
-            const membershipLevel = profile.membership_level || 'seed';
-            const tokenLimitKey = `${userType}_${membershipLevel}_limit`;
+          const userType = profile.user_type || 'owner';
+          const membershipLevel = profile.membership_level || 'seed';
+          const includedCreditsKey = `${userType}_${membershipLevel}_included_credits`;
+          
+          if (pricingConfig?.[includedCreditsKey] !== undefined) {
+            currentCreditLimit = Number(pricingConfig[includedCreditsKey]);
+            console.log(`✅ [user-dashboard] pricing_config 포함 크레딧 사용: ${currentCreditLimit}`);
+          } else {
+            // credit_config에서 한도 조회
+            const { data: creditConfigs, error: creditConfigError } = await supabase
+              .from('credit_config')
+              .select('*')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
             
-            console.log(`📊 [user-dashboard] 토큰 설정 조회: ${tokenLimitKey}`, {
-              configValue: tokenConfigs[tokenLimitKey],
-              currentCycleLimit: currentCycle.monthly_token_limit
-            });
-            
-            if (tokenConfigs[tokenLimitKey] !== undefined && tokenConfigs[tokenLimitKey] !== null) {
-              currentTokenLimit = Number(tokenConfigs[tokenLimitKey]);
-              console.log(`✅ [user-dashboard] 관리자 설정 한도 사용: ${currentTokenLimit} (기존: ${currentCycle.monthly_token_limit})`);
+            if (!creditConfigError && creditConfigs) {
+              const creditLimitKey = `${userType}_${membershipLevel}_limit`;
               
-              // 사이클 업데이트 (사이클이 실제로 존재할 때만)
-              if (currentCycle.id && currentCycle.monthly_token_limit !== currentTokenLimit) {
-                console.log(`🔄 [user-dashboard] 사이클 한도 업데이트: ${currentCycle.monthly_token_limit} → ${currentTokenLimit}`);
-                const { error: updateError } = await supabase
-                  .from('subscription_cycle')
-                  .update({
-                    monthly_token_limit: currentTokenLimit,
-                    tokens_remaining: Math.max(0, currentTokenLimit - totalUsed),
-                    updated_at: new Date().toISOString()
-                  })
-                  .eq('id', currentCycle.id);
-                
-                if (updateError) {
-                  console.error('❌ 사이클 업데이트 실패:', updateError);
-                } else {
-                  console.log('✅ 사이클 한도 업데이트 완료');
-                  currentCycle.monthly_token_limit = currentTokenLimit;
-                }
+              if (creditConfigs[creditLimitKey] !== undefined && creditConfigs[creditLimitKey] !== null) {
+                currentCreditLimit = Number(creditConfigs[creditLimitKey]);
+                console.log(`✅ [user-dashboard] 관리자 설정 한도 사용: ${currentCreditLimit}`);
               }
-            } else {
-              console.log(`⚠️ [user-dashboard] 토큰 설정에 ${tokenLimitKey}가 없습니다. 사이클 값 사용: ${currentTokenLimit}`);
             }
-          } else if (tokenConfigError) {
-            console.warn('⚠️ 토큰 설정 조회 실패:', tokenConfigError.message);
+          }
+          
+          // 사이클 업데이트 (포함 크레딧과 다를 경우)
+          if (currentCycle.id && currentCycle.included_credits !== currentCreditLimit) {
+            console.log(`🔄 [user-dashboard] 사이클 포함 크레딧 업데이트: ${currentCycle.included_credits || 0} → ${currentCreditLimit}`);
+            const { error: updateError } = await supabase
+              .from('subscription_cycle')
+              .update({
+                included_credits: currentCreditLimit,
+                credits_remaining: Math.max(0, currentCreditLimit - totalUsed),
+                monthly_token_limit: currentCreditLimit, // 하위 호환성
+                tokens_remaining: Math.max(0, currentCreditLimit - totalUsed),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', currentCycle.id);
+            
+            if (updateError) {
+              console.error('❌ 사이클 업데이트 실패:', updateError);
+            } else {
+              console.log('✅ 사이클 포함 크레딧 업데이트 완료');
+              currentCycle.included_credits = currentCreditLimit;
+            }
           }
         }
       } catch (err) {
-        console.warn('⚠️ 토큰 한도 업데이트 실패:', err.message);
+        console.warn('⚠️ 작업 크레딧 한도 업데이트 실패:', err.message);
       }
     }
     
@@ -564,14 +571,21 @@ async function getDashboardData(user, res) {
     const today = new Date();
     const daysRemaining = Math.ceil((cycleEndDate - today) / (1000 * 60 * 60 * 24));
     
-    // 최종 응답 (디버깅을 위한 로그 추가)
+    // 최종 응답 (작업 크레딧 시스템)
+    const includedCredits = currentCycle.included_credits || currentCreditLimit;
+    const creditsUsed = currentCycle.credits_used || totalUsed;
+    const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+    
     const finalCycle = {
       ...currentCycle,
-      monthly_token_limit: currentTokenLimit,
-      tokens_used: totalUsed,
-      tokens_remaining: Math.max(0, currentTokenLimit - totalUsed),
+      included_credits: includedCredits,
+      credits_used: creditsUsed,
+      credits_remaining: creditsRemaining,
+      monthly_token_limit: includedCredits, // 하위 호환성
+      tokens_used: creditsUsed, // 하위 호환성
+      tokens_remaining: creditsRemaining, // 하위 호환성
       days_remaining: daysRemaining,
-      usage_rate: currentTokenLimit > 0 ? Math.round((totalUsed / currentTokenLimit) * 100) : 0
+      usage_rate: includedCredits > 0 ? Math.round((creditsUsed / includedCredits) * 100) : 0
     };
     
     // membership_level 확인 및 로깅
@@ -588,9 +602,12 @@ async function getDashboardData(user, res) {
         membership_level: profile.membership_level
       },
       cycleId: currentCycle.id,
-      tokenLimit: currentTokenLimit,
-      tokensUsed: totalUsed,
-      tokensRemaining: finalCycle.tokens_remaining,
+      includedCredits: includedCredits,
+      creditsUsed: creditsUsed,
+      creditsRemaining: creditsRemaining,
+      tokenLimit: includedCredits, // 하위 호환성
+      tokensUsed: creditsUsed, // 하위 호환성
+      tokensRemaining: creditsRemaining, // 하위 호환성
       daysRemaining: daysRemaining
     });
     
@@ -618,8 +635,9 @@ async function getDashboardData(user, res) {
         recentUsage: recentUsage || [],
         plans: plans || [],
         stats: {
-          total_tokens_used: totalUsed,
-          daily_average: recentUsage?.length > 0 ? Math.round(totalUsed / Math.max(1, Math.ceil((today - new Date(currentCycle.cycle_start_date)) / (1000 * 60 * 60 * 24)))) : 0
+          total_credits_used: creditsUsed,
+          total_tokens_used: creditsUsed, // 하위 호환성
+          daily_average: recentUsage?.length > 0 ? Math.round(creditsUsed / Math.max(1, Math.ceil((today - new Date(currentCycle.cycle_start_date)) / (1000 * 60 * 60 * 24)))) : 0
         }
       }
     });

@@ -43,15 +43,25 @@ async function createNewCycle(userId, membershipLevel = null) {
       .select('*')
       .single();
 
-    // 관리자 설정에서 최신 토큰 한도 조회 (최신 설정 우선)
-    const { data: tokenConfigs } = await supabase
-      .from('token_config')
+    // 관리자 설정에서 최신 크레딧 한도 조회 (credit_config 우선)
+    const { data: creditConfigs } = await supabase
+      .from('credit_config')
       .select('*')
       .order('updated_at', { ascending: false })
       .limit(1)
       .single();
     
-    const tokenConfig = tokenConfigs || {};
+    // 하위 호환성: credit_config가 없으면 token_config 사용
+    let tokenConfig = {};
+    if (!creditConfigs) {
+      const { data: tokenConfigs } = await supabase
+        .from('token_config')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      tokenConfig = tokenConfigs || {};
+    }
 
     // 개인 맞춤 설정 확인
     const { data: customPricing } = await supabase
@@ -87,9 +97,10 @@ async function createNewCycle(userId, membershipLevel = null) {
     const monthlyPrice = customPricing?.custom_price || pricingConfig?.[priceKey] || 0;
     
     // 포함된 크레딧 우선 사용 (pricing_config의 included_credits)
-    // 없으면 token_config의 limit 사용 (하위 호환성)
+    // 없으면 credit_config의 limit 사용 (하위 호환성: token_config)
     const monthlyCredits = customTokenLimit?.custom_limit || 
                           pricingConfig?.[includedCreditsKey] || 
+                          creditConfigs?.[tokenKey] ||
                           tokenConfig?.[tokenKey] || 
                           100;
 
@@ -275,12 +286,18 @@ module.exports = async (req, res) => {
         throw fetchError;
       }
       
-      // tokens_remaining 자동 계산 (최신 정보 반영)
+      // credits_remaining 자동 계산 (최신 정보 반영, 작업 크레딧 시스템 우선)
       if (cycle) {
-        const calculatedRemaining = (cycle.monthly_token_limit || 0) - (cycle.tokens_used || 0);
-        if (cycle.tokens_remaining !== calculatedRemaining) {
-          console.log(`🔄 [cycle] 토큰 잔액 재계산: ${cycle.tokens_remaining} → ${calculatedRemaining}`);
-          cycle.tokens_remaining = Math.max(0, calculatedRemaining);
+        const includedCredits = cycle.included_credits || cycle.monthly_token_limit || 0;
+        const creditsUsed = cycle.credits_used || cycle.tokens_used || 0;
+        const calculatedRemaining = includedCredits - creditsUsed;
+        const currentRemaining = cycle.credits_remaining || cycle.tokens_remaining || 0;
+        
+        if (currentRemaining !== calculatedRemaining) {
+          console.log(`🔄 [cycle] 작업 크레딧 잔액 재계산: ${currentRemaining} → ${calculatedRemaining}`);
+          cycle.credits_remaining = Math.max(0, calculatedRemaining);
+          // 하위 호환성
+          cycle.tokens_remaining = cycle.credits_remaining;
         }
       }
 

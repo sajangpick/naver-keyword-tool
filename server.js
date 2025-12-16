@@ -69,7 +69,7 @@ const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const OPENAI_SHORTS_MODEL =
   process.env.OPENAI_SHORTS_MODEL ||
   process.env.OPENAI_CHAT_MODEL ||
-  "gpt-5.2";
+  "gpt-4o";
 
 // Supabase 설정
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -999,6 +999,21 @@ app.get("/health", (req, res) => {
   });
 });
 
+// /api/health 엔드포인트 추가 (ChatGPT.html에서 사용)
+app.get("/api/health", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  res.json({
+    status: "OK",
+    message: "통합 API 서버가 정상 작동 중입니다.",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    version: "2.2.0",
+  });
+});
+
 // 루트 경로: 홈페이지 제공
 app.get("/", (req, res) => sendHtml(res, "index.html"));
 
@@ -1764,7 +1779,7 @@ async function callChatGPTForBlog(prompt) {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-5.2",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -1805,7 +1820,7 @@ async function callChatGPTForReview(prompt) {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-5.2",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -2208,7 +2223,7 @@ app.post("/api/chat", async (req, res) => {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-5.2",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -2245,7 +2260,7 @@ app.post("/api/chat", async (req, res) => {
       reply: response.data.choices[0].message.content,
       usage: response.data.usage,
       metadata: {
-        model: "gpt-5.2",
+        model: "gpt-4o",
         timestamp: new Date().toISOString(),
         server: "Integrated Server",
       },

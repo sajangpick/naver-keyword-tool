@@ -129,7 +129,7 @@
           <div class="user-details">
             <div class="user-name" id="userName">로딩 중...</div>
             <div class="user-role">
-              <span class="role-badge">관리자</span>
+              <span class="role-badge">로딩 중...</span>
             </div>
           </div>
         </div>
@@ -141,6 +141,85 @@
     `;
 
     return header;
+  }
+
+  // ==================== 등급 시스템 (member-management.html과 동일) ====================
+  
+  // 등급 한글명 매핑 (member-management.html과 동일)
+  const LEVEL_NAMES = {
+    free: '라이트',      // FREE 등급도 라이트로 표시
+    seed: '라이트',
+    power: '스탠다드',
+    big_power: '프로',
+    bigpower: '프로',   // 정규화된 형태도 지원
+    premium: '프리미엄',
+    elite: '스타터',
+    expert: '프로',
+    master: '엔터프라이즈',
+    platinum: '플래티넘',
+    admin: '관리자'
+  };
+
+  // 등급 정규화 함수 (member-management.html과 동일)
+  function normalizeMembershipLevel(level) {
+    if (!level) {
+      return 'seed';
+    }
+    const normalized = level.toLowerCase();
+    // FREE 또는 free를 seed로 변환
+    if (normalized === 'free') {
+      return 'seed';
+    }
+    // big_power를 bigpower로 변환
+    if (normalized === 'big_power') {
+      return 'bigpower';
+    }
+    return normalized;
+  }
+
+  // 사용자 유형 한글명 매핑
+  const USER_TYPE_NAMES = {
+    owner: '식당 대표',
+    agency: '대행사/블로거',
+    manager: '매니저',
+    admin: '관리자'
+  };
+
+  // 권한 라벨 생성 함수
+  function getRoleLabel(profile) {
+    if (!profile) {
+      return '회원';
+    }
+
+    // 관리자 권한 확인 (user_type, membership_level, role 중 하나라도 'admin')
+    const isAdmin = profile.user_type === 'admin' || 
+                   profile.membership_level === 'admin' || 
+                   (profile.role && profile.role === 'admin');
+    
+    if (isAdmin) {
+      return '관리자';
+    }
+
+    // user_type에 따른 분류
+    if (profile.user_type === 'owner') {
+      // 식당 대표: 등급 한글명 표시
+      const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
+      return LEVEL_NAMES[normalizedLevel] || normalizedLevel || '라이트';
+    } else if (profile.user_type === 'agency') {
+      // 대행사/블로거: 등급 한글명 표시
+      const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
+      return LEVEL_NAMES[normalizedLevel] || normalizedLevel || '스타터';
+    } else if (profile.user_type === 'manager') {
+      // 매니저: 유형명 표시
+      return USER_TYPE_NAMES.manager || '매니저';
+    } else {
+      // 기타: 등급이 있으면 등급명, 없으면 user_type명
+      if (profile.membership_level) {
+        const normalizedLevel = normalizeMembershipLevel(profile.membership_level);
+        return LEVEL_NAMES[normalizedLevel] || normalizedLevel;
+      }
+      return USER_TYPE_NAMES[profile.user_type] || '회원';
+    }
   }
 
   // 사용자 정보 로드
@@ -172,10 +251,35 @@
       const { data: { user } = { user: null } } = await supabaseClient.auth.getUser();
 
       if (user) {
+        // 프로필 정보 가져오기 (권한 확인용)
+        let roleLabel = '회원'; // 기본값
+        
+        try {
+          const { data: profile, error: profileError } = await supabaseClient
+            .from('profiles')
+            .select('user_type, membership_level, role')
+            .eq('id', user.id)
+            .single();
+
+          if (!profileError && profile) {
+            // member-management.html의 등급 시스템 사용
+            roleLabel = getRoleLabel(profile);
+          }
+        } catch (profileError) {
+          console.warn('프로필 조회 실패 (기본값 사용):', profileError);
+          // 프로필 조회 실패 시 기본값 '회원' 사용
+        }
+
         // 사용자 이름 업데이트
         const userNameEl = document.getElementById('userName');
         if (userNameEl) {
-          userNameEl.textContent = user.email || '관리자';
+          userNameEl.textContent = user.email || '사용자';
+        }
+        
+        // 권한 라벨 업데이트
+        const roleBadgeEl = document.querySelector('.role-badge');
+        if (roleBadgeEl) {
+          roleBadgeEl.textContent = roleLabel;
         }
         
         // 아바타에 이니셜 표시
