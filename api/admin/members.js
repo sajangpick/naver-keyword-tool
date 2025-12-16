@@ -91,26 +91,39 @@ module.exports = async (req, res) => {
                     const userId = member.id;
 
                     // 이번 달 리뷰 답글 수 계산
-                    const { count: reviewCount } = await supabase
+                    const { count: reviewCount, error: reviewError } = await supabase
                         .from('user_events')
                         .select('*', { count: 'exact', head: true })
                         .eq('user_id', userId)
                         .eq('event_name', 'review_replied')
                         .gte('created_at', firstDayOfMonth.toISOString());
 
+                    if (reviewError) {
+                        console.error(`[Admin Members API] 회원 ${userId} 리뷰 사용량 조회 실패:`, reviewError);
+                    }
+
                     // 이번 달 블로그 생성 수 계산
-                    const { count: blogCount } = await supabase
+                    const { count: blogCount, error: blogError } = await supabase
                         .from('user_events')
                         .select('*', { count: 'exact', head: true })
                         .eq('user_id', userId)
                         .eq('event_name', 'blog_created')
                         .gte('created_at', firstDayOfMonth.toISOString());
 
-                    // 실제 사용량으로 업데이트
+                    if (blogError) {
+                        console.error(`[Admin Members API] 회원 ${userId} 블로그 사용량 조회 실패:`, blogError);
+                    }
+
+                    // 실제 사용량으로 업데이트 (null 체크 강화)
+                    const finalReviewCount = (reviewCount !== null && reviewCount !== undefined) ? reviewCount : 0;
+                    const finalBlogCount = (blogCount !== null && blogCount !== undefined) ? blogCount : 0;
+
+                    console.log(`[Admin Members API] 회원 ${userId} 사용량: 리뷰=${finalReviewCount}, 블로그=${finalBlogCount}`);
+
                     return {
                         ...member,
-                        monthly_review_count: reviewCount || 0,
-                        monthly_blog_count: blogCount || 0
+                        monthly_review_count: finalReviewCount,
+                        monthly_blog_count: finalBlogCount
                     };
                 } catch (err) {
                     console.error(`[Admin Members API] 회원 ${member.id} 사용량 계산 실패:`, err);

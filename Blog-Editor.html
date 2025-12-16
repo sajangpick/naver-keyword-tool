@@ -3101,25 +3101,63 @@
             const requiredMatch = errorMessage.match(/필요 토큰[:\s]*(\d+)/);
             const requiredTokens = requiredMatch ? parseInt(requiredMatch[1].replace(/,/g, '')) : 7000; // 블로그 생성 실제 필요 토큰
             
-            // 항상 API에서 최신 토큰 정보 가져오기 (관리자 페이지 설정 반영)
+            // 항상 작업 크레딧 API에서 최신 크레딧 정보 가져오기
             let remainingTokens = 0;
             let monthlyLimit = null;
             
             try {
                 const userId = await getProfileId();
                 if (userId) {
-                    const tokenResponse = await fetch(`/api/subscription/token-usage?user_id=${userId}`);
-                    if (tokenResponse.ok) {
-                        const tokenData = await tokenResponse.json();
-                        if (tokenData.success && tokenData.summary) {
-                            // API에서 가져온 값 사용 (관리자 설정 반영)
-                            remainingTokens = tokenData.summary.tokensRemaining || 0;
-                            monthlyLimit = tokenData.summary.monthlyLimit || null;
+                    // Supabase 세션 토큰 가져오기
+                    let sessionToken = null;
+                    if (window.authState?.supabase) {
+                        const { data: { session } } = await window.authState.supabase.auth.getSession();
+                        sessionToken = session?.access_token;
+                    }
+                    
+                    // 작업 크레딧 API 호출
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (sessionToken) {
+                        headers['Authorization'] = `Bearer ${sessionToken}`;
+                    }
+                    
+                    const workCreditResponse = await fetch(`/api/subscription/work-credit-billing?action=get-current-usage&userId=${userId}`, {
+                        method: 'GET',
+                        headers: headers
+                    });
+                    
+                    if (workCreditResponse.ok) {
+                        const workCreditResult = await workCreditResponse.json();
+                        if (workCreditResult.success && workCreditResult.usage) {
+                            const usage = workCreditResult.usage;
+                            const creditsUsed = usage.totalCreditsUsed || 0;
+                            const includedCredits = usage.includedCredits || 0;
+                            // 남은 크레딧 직접 계산
+                            remainingTokens = Math.max(0, includedCredits - creditsUsed);
+                            monthlyLimit = includedCredits;
                             
-                            console.log('✅ API에서 토큰 정보 가져옴:', {
+                            console.log('✅ 작업 크레딧 API에서 정보 가져옴:', {
                                 remaining: remainingTokens,
-                                limit: monthlyLimit
+                                limit: monthlyLimit,
+                                used: creditsUsed
                             });
+                        }
+                    } else {
+                        // Fallback: 기존 token-usage API 사용
+                        const tokenResponse = await fetch(`/api/subscription/token-usage?user_id=${userId}`);
+                        if (tokenResponse.ok) {
+                            const tokenData = await tokenResponse.json();
+                            if (tokenData.success && tokenData.summary) {
+                                remainingTokens = tokenData.summary.tokensRemaining || 0;
+                                monthlyLimit = tokenData.summary.monthlyLimit || null;
+                                
+                                console.log('✅ Fallback API에서 토큰 정보 가져옴:', {
+                                    remaining: remainingTokens,
+                                    limit: monthlyLimit
+                                });
+                            }
                         }
                     }
                 }
