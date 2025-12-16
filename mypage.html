@@ -2660,28 +2660,6 @@
         `).join('');
       }
       
-      // 크레딧 소진 내역 샘플 데이터
-      const consumptionList = document.getElementById('creditConsumptionList');
-      if (consumptionList) {
-        const sampleConsumption = [
-          { date: '2025-11-25', service: '블로그 작성', credits: 2000 },
-          { date: '2025-11-25', service: '리뷰 답글', credits: 500 },
-          { date: '2025-11-24', service: '영상 생성', credits: 5000 },
-          { date: '2025-11-23', service: '블로그 작성', credits: 2000 },
-          { date: '2025-11-22', service: '리뷰 답글', credits: 500 }
-        ];
-        
-        consumptionList.innerHTML = sampleConsumption.map(item => `
-          <div class="usage-item">
-            <div>
-              <span class="usage-api">${item.service}</span>
-              <span class="usage-time">${item.date}</span>
-            </div>
-            <span class="usage-tokens">-${item.credits.toLocaleString()} 작업 크레딧</span>
-          </div>
-        `).join('');
-      }
-      
       console.log('✅ [데모 모드] 샘플 크레딧 정보 표시 완료');
     }
 
@@ -2750,7 +2728,6 @@
           document.getElementById('usageBasedAmount').textContent = '0';
           
           const usageList = document.getElementById('recentUsageList');
-          const consumptionList = document.getElementById('creditConsumptionList');
           
           if (usageList) {
             usageList.innerHTML = `
@@ -2887,95 +2864,6 @@
                 }
               }
               
-              // 크레딧 소진 내역 (기능별 집계) - 이번 달 전체 데이터
-              const consumptionList = document.getElementById('creditConsumptionList');
-              if (consumptionList) {
-                if (allUsage && allUsage.length > 0) {
-                  // 기능별로 집계
-                  const consumptionByService = {};
-                  allUsage.forEach(usage => {
-                    const serviceType = usage.service_type || 'unknown';
-                    if (!consumptionByService[serviceType]) {
-                      consumptionByService[serviceType] = {
-                        count: 0,
-                        credits: 0
-                      };
-                    }
-                    consumptionByService[serviceType].count += 1;
-                    consumptionByService[serviceType].credits += (usage.work_credits_used || 0);
-                  });
-                  
-                  // 서비스 타입을 한국어로 변환
-                  const serviceLabels = {
-                    'blog_writing': '블로그 작성',
-                    'review_reply': '리뷰 답글',
-                    'video_generation': '영상 생성',
-                    'news': '뉴스 추천',
-                    'unknown': '기타'
-                  };
-                  
-                  // 아이콘 매핑
-                  const serviceIcons = {
-                    'blog_writing': '📝',
-                    'review_reply': '💬',
-                    'video_generation': '🎬',
-                    'news': '📰',
-                    'unknown': '❓'
-                  };
-                  
-                  // 총 크레딧 계산
-                  const totalCredits = Object.values(consumptionByService).reduce((sum, item) => sum + item.credits, 0);
-                  
-                  // 집계된 데이터를 표시
-                  const consumptionHTML = Object.entries(consumptionByService)
-                    .sort((a, b) => b[1].credits - a[1].credits) // 크레딧 사용량 순으로 정렬
-                    .map(([serviceType, data]) => {
-                      const serviceLabel = serviceLabels[serviceType] || serviceType;
-                      const icon = serviceIcons[serviceType] || '📊';
-                      const percentage = totalCredits > 0 ? Math.round((data.credits / totalCredits) * 100) : 0;
-                      
-                      return `
-                        <div class="usage-item" style="padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.1);">
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                              <span style="font-size: 18px;">${icon}</span>
-                              <span style="font-weight: 600; color: var(--text-primary);">${serviceLabel}</span>
-                            </div>
-                            <div style="text-align: right;">
-                              <div style="font-weight: 700; color: var(--accent-color); font-size: 16px;">
-                                ${data.credits.toLocaleString()} 크레딧
-                              </div>
-                              <div style="font-size: 12px; color: var(--text-secondary);">
-                                ${percentage}% · ${data.count}회
-                              </div>
-                            </div>
-                          </div>
-                          <div style="background: rgba(0,0,0,0.05); border-radius: 4px; height: 6px; overflow: hidden;">
-                            <div style="background: linear-gradient(90deg, var(--accent-color), #10b981); height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
-                          </div>
-                        </div>
-                      `;
-                    }).join('');
-                  
-                  consumptionList.innerHTML = `
-                    <div style="background: rgba(255,255,255,0.6); border-radius: 8px; padding: 16px;">
-                      <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--accent-color);">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                          <span style="font-weight: 600; color: var(--text-primary);">이번 달 총 사용</span>
-                          <span style="font-weight: 700; color: var(--accent-color); font-size: 18px;">${totalCredits.toLocaleString()} 크레딧</span>
-                        </div>
-                      </div>
-                      ${consumptionHTML}
-                    </div>
-                  `;
-                } else {
-                  consumptionList.innerHTML = `
-                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                      <i class="fas fa-info-circle"></i> 아직 소진 내역이 없습니다.
-                    </div>
-                  `;
-                }
-              }
             } else {
               // API 호출 실패 시 상세 정보 확인
               const errorText = await usageRes.text();
@@ -2991,7 +2879,6 @@
               
               // 에러 메시지 표시
               const usageList = document.getElementById('recentUsageList');
-              const consumptionList = document.getElementById('creditConsumptionList');
               
               if (usageList) {
                 usageList.innerHTML = `
@@ -3048,7 +2935,6 @@
         
         // 에러 메시지 표시
         const usageList = document.getElementById('recentUsageList');
-        const consumptionList = document.getElementById('creditConsumptionList');
         const errorMessage = error.message || '알 수 없는 오류가 발생했습니다';
         
         if (usageList) {
@@ -3060,15 +2946,6 @@
               <button onclick="refreshTokenInfo()" style="margin-top: 12px; padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                 <i class="fas fa-sync-alt"></i> 다시 시도
               </button>
-            </div>
-          `;
-        }
-        
-        if (consumptionList) {
-          consumptionList.innerHTML = `
-            <div style="text-align: center; color: #ef4444; padding: 20px;">
-              <i class="fas fa-exclamation-triangle"></i> 
-              <div style="margin-top: 8px; font-size: 14px;">크레딧 소진 내역을 불러올 수 없습니다</div>
             </div>
           `;
         }
