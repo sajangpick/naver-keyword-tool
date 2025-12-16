@@ -931,7 +931,6 @@ ${previousAnalysis.commonExpressions.join('\n')}
                     ],
                     temperature: 0.85,  // 다양성과 자연스러움 균형
                     frequency_penalty: 0.7,  // 반복 표현 강력 감소
-                    presence_penalty: 0.5,   // 새로운 주제 유도
                     max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
@@ -1161,7 +1160,6 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
                     ],
                     temperature: 0.85,
                     frequency_penalty: 0.7,
-                    presence_penalty: 0.5,
                     max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
@@ -1434,7 +1432,6 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
                     ],
                     temperature: 0.95,
                     frequency_penalty: 0.6,
-                    presence_penalty: 0.6,
                     max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
