@@ -242,7 +242,7 @@
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_type, membership_level, role')
+        .select('user_type, membership_level')
         .eq('id', user.id)
         .single();
 
@@ -253,11 +253,10 @@
 
       console.log('✅ 프로필:', profile);
 
-      // user_type, membership_level, role 중 하나라도 'admin'이면 관리자
+      // user_type, membership_level 중 하나라도 'admin'이면 관리자
       const isAdmin = profile && (
         profile.user_type === 'admin' || 
-        profile.membership_level === 'admin' || 
-        profile.role === 'admin'
+        profile.membership_level === 'admin'
       );
       console.log(`🔐 관리자 권한: ${isAdmin ? 'O' : 'X'}`);
       

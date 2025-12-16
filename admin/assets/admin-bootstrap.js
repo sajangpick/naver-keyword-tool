@@ -158,7 +158,7 @@
 
         if (!profile) return null;
 
-        // 일반 관리자인 경우 권한 조회
+        // 일반 관리자인 경우 권한 조회 (role 컬럼이 있을 때만)
         if (profile.user_type === 'admin' && profile.role === 'general') {
           const permResponse = await fetch(`/api/admin/permissions/${profile.id}`);
           const permData = await permResponse.json();
@@ -166,17 +166,17 @@
           return {
             userId: profile.id,
             userType: profile.user_type,
-            role: profile.role,
+            role: profile.role || null,
             permissions: permData.permissions?.permissions || {}
           };
         }
 
-        // 오너 관리자는 모든 권한 보유
+        // 오너 관리자는 모든 권한 보유 (role 컬럼이 있을 때만)
         if (profile.user_type === 'admin' && profile.role === 'owner') {
           return {
             userId: profile.id,
             userType: profile.user_type,
-            role: profile.role,
+            role: profile.role || null,
             permissions: {} // 모든 권한 허용
           };
         }
@@ -189,7 +189,7 @@
           return {
             userId: profile.id,
             userType: profile.user_type,
-            role: profile.role,
+            role: profile.role || null,
             managerRole: roleData.role?.manager_role || 'general',
             permissions: roleData.role?.permissions || {}
           };
@@ -198,7 +198,7 @@
         return {
           userId: profile.id,
           userType: profile.user_type,
-          role: profile.role || 'member'
+          role: profile.role || null
         };
       } catch (error) {
         console.error('권한 조회 실패:', error);

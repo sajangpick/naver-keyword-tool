@@ -195,14 +195,12 @@
 
     console.log('[Header] getRoleLabel 입력:', {
       user_type: profile.user_type,
-      membership_level: profile.membership_level,
-      role: profile.role
+      membership_level: profile.membership_level
     });
 
-    // 관리자 권한 확인 (user_type, membership_level, role 중 하나라도 'admin')
+    // 관리자 권한 확인 (user_type, membership_level 중 하나라도 'admin')
     const isAdmin = profile.user_type === 'admin' || 
-                   profile.membership_level === 'admin' || 
-                   (profile.role && profile.role === 'admin');
+                   profile.membership_level === 'admin';
     
     if (isAdmin) {
       console.log('[Header] 관리자로 판단');
@@ -283,7 +281,7 @@
           for (let attempt = 0; attempt < 2; attempt++) {
             const result = await supabaseClient
               .from('profiles')
-              .select('user_type, membership_level, role')
+              .select('user_type, membership_level')
               .eq('id', user.id)
               .single();
             
@@ -325,8 +323,7 @@
             roleLabel = getRoleLabel(profile);
             console.log('[Header] 등급 라벨 생성:', roleLabel, '프로필:', {
               user_type: profile.user_type,
-              membership_level: profile.membership_level,
-              role: profile.role
+              membership_level: profile.membership_level
             });
           } else {
             console.warn('[Header] 프로필 데이터가 없음, 기본 등급 "라이트" 사용');
