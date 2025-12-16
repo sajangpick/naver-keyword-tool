@@ -971,17 +971,30 @@
     // 플랜 설정 로드 (가격 및 크레딧 - subscription-settings.html에서 설정한 값 사용)
     async function loadPlanSettings() {
       try {
+        console.log('🔄 플랜 설정 로드 시작...');
         const pricingRes = await fetch('/api/subscription/pricing-config');
         const pricingResult = await pricingRes.json();
 
         if (pricingResult.success) {
           pricingData = pricingResult.pricing;
           console.log('✅ 플랜 설정 로드 완료:', pricingData);
+          
+          // 디버깅: subscription-settings.html에서 설정하는 필드들이 있는지 확인
+          const checkFields = [
+            'owner_seed_price', 'owner_seed_included_credits',
+            'owner_power_price', 'owner_power_included_credits',
+            'owner_bigpower_price', 'owner_bigpower_included_credits',
+            'owner_premium_price', 'owner_premium_included_credits'
+          ];
+          const missingFields = checkFields.filter(field => pricingData[field] === undefined);
+          if (missingFields.length > 0) {
+            console.warn('⚠️ 다음 필드들이 pricingData에 없습니다:', missingFields);
+          }
         } else {
-          console.error('플랜 설정 로드 실패:', pricingResult.error);
+          console.error('❌ 플랜 설정 로드 실패:', pricingResult.error);
         }
       } catch (error) {
-        console.error('플랜 설정 로드 실패:', error);
+        console.error('❌ 플랜 설정 로드 실패:', error);
       }
     }
 
@@ -1062,8 +1075,15 @@
         premium: '프리미엄 플랜'
       };
 
+      // subscription-settings.html에서 설정한 필드명
+      const priceKey = `owner_${planKey}_price`;
+      const minimumFeeKey = `owner_${planKey}_minimum_fee`;
+      const includedCreditsKey = `owner_${planKey}_included_credits`;
+      const excessRateKey = `owner_${planKey}_excess_rate`;
+      
       // pricingData가 없으면 기본값 사용
       if (!pricingData) {
+        console.warn('⚠️ pricingData가 없습니다. 기본값을 사용합니다.');
         const defaults = {
           seed: { name: '라이트 플랜', price: 0, credits: 0, excessRate: 1.2 },
           power: { name: '스탠다드 플랜', price: 30000, credits: 37500, excessRate: 0.8 },
@@ -1073,28 +1093,38 @@
         return defaults[planKey] || null;
       }
 
-      // subscription-settings.html에서 설정한 필드명
-      const priceKey = `owner_${planKey}_price`;
-      const minimumFeeKey = `owner_${planKey}_minimum_fee`;
-      const includedCreditsKey = `owner_${planKey}_included_credits`;
-      const excessRateKey = `owner_${planKey}_excess_rate`;
+      // 디버깅: 실제 데이터 확인
+      console.log(`📊 [${planKey}] 플랜 정보 로드:`, {
+        priceKey,
+        priceValue: pricingData[priceKey],
+        minimumFeeKey,
+        minimumFeeValue: pricingData[minimumFeeKey],
+        includedCreditsKey,
+        includedCreditsValue: pricingData[includedCreditsKey],
+        excessRateKey,
+        excessRateValue: pricingData[excessRateKey]
+      });
       
       // 가격: minimum_fee가 있으면 사용, 없으면 price 사용
       const price = pricingData[priceKey] !== undefined ? pricingData[priceKey] : 0;
-      const minimumFee = pricingData[minimumFeeKey] !== undefined ? pricingData[minimumFeeKey] : price;
+      const minimumFee = pricingData[minimumFeeKey] !== undefined && pricingData[minimumFeeKey] !== null ? pricingData[minimumFeeKey] : price;
       
       // 포함 크레딧: subscription-settings.html에서 설정한 값 사용
-      const includedCredits = pricingData[includedCreditsKey] !== undefined ? pricingData[includedCreditsKey] : 0;
+      const includedCredits = pricingData[includedCreditsKey] !== undefined && pricingData[includedCreditsKey] !== null ? pricingData[includedCreditsKey] : 0;
       
       // 초과 단가: subscription-settings.html에서 설정한 값 사용 (기본값 1.2)
-      const excessRate = pricingData[excessRateKey] !== undefined ? pricingData[excessRateKey] : 1.2;
+      const excessRate = pricingData[excessRateKey] !== undefined && pricingData[excessRateKey] !== null ? pricingData[excessRateKey] : 1.2;
 
-      return {
+      const planInfo = {
         name: planNames[planKey] || planKey,
         price: minimumFee, // 최소 이용료
         credits: includedCredits, // 포함 크레딧
         excessRate: excessRate // 초과 단가 (원/크레딧)
       };
+      
+      console.log(`✅ [${planKey}] 최종 플랜 정보:`, planInfo);
+      
+      return planInfo;
     }
 
     // 플랜 선택 카드 렌더링

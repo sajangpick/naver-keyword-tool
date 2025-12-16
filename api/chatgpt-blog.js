@@ -564,7 +564,6 @@ JSON 형식으로 답변해주세요:
                     ],
                     temperature: 0.9,  // 다양성 증가
                     frequency_penalty: 0.3,  // 반복 표현 감소
-                    presence_penalty: 0.3,   // 새로운 주제 유도
                     response_format: { type: "json_object" }
                 });
             },
@@ -647,7 +646,6 @@ JSON 형식으로 답변해주세요:
                     ],
                     temperature: 0.9,
                     frequency_penalty: 0.4,
-                    presence_penalty: 0.4,
                     response_format: { type: "json_object" }
                 });
             },
