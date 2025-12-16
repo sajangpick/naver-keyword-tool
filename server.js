@@ -517,6 +517,14 @@ const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15분
 const RATE_LIMIT_MAX = 100; // 최대 100 요청
 
 function rateLimiter(req, res, next) {
+  // 관리자 API는 rate limiting 제외 (등급 변경 등 중요 작업)
+  const isAdminAPI = req.path.startsWith('/api/admin/');
+  
+  if (isAdminAPI) {
+    // 관리자 API는 rate limiting 적용 안 함
+    return next();
+  }
+  
   const clientIP = req.ip || req.connection.remoteAddress;
   const now = Date.now();
 

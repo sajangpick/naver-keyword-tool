@@ -1151,9 +1151,6 @@
           <h3 class="section-title">
             <i class="fas fa-coins"></i>
             내 작업 크레딧 사용 현황
-            <span style="font-size: 12px; color: var(--text-secondary); margin-left: 8px; font-weight: 400;">
-              <i class="fas fa-info-circle"></i> 클릭하여 상세 정보 보기
-            </span>
           </h3>
           
           <!-- 작업 크레딧 현황 카드 -->
@@ -1818,6 +1815,67 @@
     // 페이지 초기화
     async function initPage() {
       try {
+        // 데모 모드 확인
+        const isDemoMode = window.isDemoMode && window.isDemoMode();
+        
+        // 데모 모드일 때는 기본값으로 처리
+        if (isDemoMode) {
+          console.log('🔍 [데모 모드] 기본 프로필로 초기화');
+          
+          // 기본 프로필 데이터 설정
+          currentUser = {
+            id: 'demo_user_12345',
+            email: 'demo@sajangpick.co.kr',
+            name: '데모 사용자',
+            user_type: 'owner',
+            membership_level: 'seed',
+            business_name: '',
+            phone: ''
+          };
+          
+          // UI 업데이트
+          document.getElementById('profileAvatar').textContent = '데';
+          document.getElementById('profileName').textContent = '데모 사용자';
+          document.getElementById('profileEmail').textContent = 'demo@sajangpick.co.kr';
+          
+          const userTypeBadge = document.getElementById('userTypeBadge');
+          if (userTypeBadge) {
+            userTypeBadge.textContent = '식당 대표';
+            userTypeBadge.className = 'badge owner';
+          }
+          
+          const levelBadge = document.getElementById('levelBadge');
+          if (levelBadge) {
+            levelBadge.textContent = '라이트';
+            levelBadge.className = 'badge seed';
+          }
+          
+          // 사용량 표시
+          updateUsageStats(currentUser);
+          
+          // 폼 필드 초기화
+          const editNameEl = document.getElementById('editName');
+          if (editNameEl) editNameEl.value = '데모 사용자';
+          const editBusinessNameEl = document.getElementById('editBusinessName');
+          if (editBusinessNameEl) editBusinessNameEl.value = '';
+          const editPhoneEl = document.getElementById('editPhone');
+          if (editPhoneEl) editPhoneEl.value = '';
+          
+          // 메인 컨텐츠 표시
+          const loadingContainer = document.getElementById('loadingContainer');
+          const mainContent = document.getElementById('mainContent');
+          if (loadingContainer) loadingContainer.style.display = 'none';
+          if (mainContent) mainContent.style.display = 'block';
+          
+          // 플랜 버튼 렌더링 (기본값으로)
+          renderPlanButtons(null);
+          
+          // 결제 정보 UI 업데이트 (기본값)
+          updatePaymentUI(null);
+          
+          return; // 데모 모드에서는 여기서 종료
+        }
+        
         await initSupabase();
         
         // 로그인 확인 (Supabase 세션 기반)
@@ -2838,7 +2896,29 @@
                 }
               }
             } else {
-              throw new Error('API 호출 실패');
+              // API 호출 실패 시 상세 정보 확인
+              const errorText = await usageRes.text();
+              console.error('❌ API 호출 실패:', usageRes.status, errorText);
+              
+              // 빈 배열로 처리 (사용 내역이 없는 경우)
+              const usageList = document.getElementById('recentUsageList');
+              const consumptionList = document.getElementById('creditConsumptionList');
+              
+              if (usageList) {
+                usageList.innerHTML = `
+                  <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                    <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
+                  </div>
+                `;
+              }
+              
+              if (consumptionList) {
+                consumptionList.innerHTML = `
+                  <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                    <i class="fas fa-info-circle"></i> 아직 소진 내역이 없습니다.
+                  </div>
+                `;
+              }
             }
           } else {
             throw new Error('세션이 없습니다');
@@ -2851,7 +2931,7 @@
           if (usageList) {
             usageList.innerHTML = `
               <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                <i class="fas fa-info-circle"></i> 사용 내역을 불러올 수 없습니다.
+                <i class="fas fa-info-circle"></i> 아직 사용 내역이 없습니다.
               </div>
             `;
           }
@@ -2859,7 +2939,7 @@
           if (consumptionList) {
             consumptionList.innerHTML = `
               <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
-                <i class="fas fa-info-circle"></i> 소진 내역을 불러올 수 없습니다.
+                <i class="fas fa-info-circle"></i> 아직 소진 내역이 없습니다.
               </div>
             `;
           }
@@ -3319,10 +3399,11 @@
           const usage = usageResult.usage;
           const creditsUsed = usage.totalCreditsUsed || 0;
           const includedCredits = usage.includedCredits || 0;
-          const creditsRemaining = usage.creditsRemaining || 0;
-          const usagePercent = usage.usagePercentage || 0;
+          // 남은 크레딧 직접 계산 (API 응답값이 없을 수 있음)
+          const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+          const usagePercent = includedCredits > 0 ? Math.round((creditsUsed / includedCredits) * 100) : 0;
           const estimatedBilling = usage.estimatedTotalAmount || 0;
-          const isInsufficient = creditsRemaining < 0;
+          const isInsufficient = creditsRemaining <= 0 && includedCredits > 0;
 
           // 크레딧 부족 시 경고 표시
           if (isInsufficient && warningBox) {
