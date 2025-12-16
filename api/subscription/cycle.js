@@ -67,11 +67,22 @@ async function createNewCycle(userId, membershipLevel = null) {
       .single();
 
     // 가격 및 크레딧 계산
+    // 대행사 등급 매핑 (elite/expert/master → starter/pro/enterprise)
+    const levelMapping = {
+      'elite': 'starter',
+      'expert': 'pro',
+      'master': 'enterprise'
+    };
+    const mappedLevel = levelMapping[level] || level;
+    
     const priceKey = `${userType}_${level}_price`;
     const tokenKey = `${userType}_${level}_limit`;
     
     // 포함된 크레딧 키 (작업 크레딧 시스템)
-    const includedCreditsKey = `${userType}_${level}_included_credits`;
+    // 대행사는 매핑된 등급명 사용, 식당 대표는 원래 등급명 사용
+    const includedCreditsKey = userType === 'agency' 
+      ? `${userType}_${mappedLevel}_included_credits`
+      : `${userType}_${level}_included_credits`;
     
     const monthlyPrice = customPricing?.custom_price || pricingConfig?.[priceKey] || 0;
     
