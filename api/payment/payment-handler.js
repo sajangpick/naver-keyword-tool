@@ -290,21 +290,45 @@ async function activateSubscription(userId, orderId) {
 
     if (updateError) throw updateError;
 
-    // 3. 플랜별 기본값 설정 (새로운 요금제 구조)
-    const planDefaults = {
-      seed: { fee: 0, tokens: 30000 },
-      light: { fee: 0, tokens: 30000 },
-      power: { fee: 30000, tokens: 350000 },
-      standard: { fee: 30000, tokens: 350000 },
-      bigpower: { fee: 50000, tokens: 650000 },
-      pro: { fee: 50000, tokens: 650000 },
-      premium: { fee: 100000, tokens: 1500000 }
-    };
+    // 3. 가격 및 크레딧 설정 조회 (작업 크레딧 시스템)
+    const { data: pricingConfig } = await supabase
+      .from('pricing_config')
+      .select('*')
+      .single();
 
-    const defaults = planDefaults[planType] || planDefaults.seed;
-    const monthlyFee = defaults.fee;
-    const baseTokens = defaults.tokens;
-    const excessTokenRate = 1000; // 1,000토큰당 1,000원
+    const { data: tokenConfigs } = await supabase
+      .from('token_config')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    const tokenConfig = tokenConfigs || {};
+
+    // 사용자 타입 확인 (기본값: owner)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', userId)
+      .single();
+
+    const userType = profile?.user_type || 'owner';
+    const priceKey = `${userType}_${planType}_price`;
+    const tokenKey = `${userType}_${planType}_limit`;
+    const includedCreditsKey = `${userType}_${planType}_included_credits`;
+
+    // 가격 및 포함된 크레딧 계산
+    const monthlyFee = pricingConfig?.[priceKey] || payment.amount || 0;
+    
+    // 포함된 크레딧 우선 사용 (pricing_config의 included_credits)
+    // 없으면 token_config의 limit 사용 (하위 호환성)
+    const monthlyCredits = pricingConfig?.[includedCreditsKey] || 
+                          tokenConfig?.[tokenKey] || 
+                          100;
+
+    const excessCreditRate = pricingConfig?.[`${userType}_${planType}_excess_rate`] || 1.2;
+
+    console.log(`✅ [payment] 포함된 크레딧: ${monthlyCredits} (${includedCreditsKey})`);
 
     // 4. user_subscription 테이블에 구독 정보 저장
     // 기존 구독이 있으면 비활성화
@@ -316,15 +340,19 @@ async function activateSubscription(userId, orderId) {
 
     // 새 구독 정보 저장
     const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 30);
+
     const { error: subscriptionError } = await supabase
       .from('user_subscription')
       .insert({
         user_id: userId,
         plan_type: planType,
         monthly_fee: monthlyFee,
-        base_tokens: baseTokens,
-        excess_token_rate: excessTokenRate,
+        included_credits: monthlyCredits,
+        excess_credit_rate: excessCreditRate,
         subscription_start_date: startDate.toISOString().split('T')[0],
+        subscription_end_date: endDate.toISOString().split('T')[0],
         is_active: true,
         auto_renew: true
       });
@@ -336,35 +364,23 @@ async function activateSubscription(userId, orderId) {
       console.log(`✅ user_subscription 저장 완료: ${userId} - ${planType}`);
     }
 
-    // 5. 기존 subscription_cycle 테이블에도 저장 (호환성)
-    const { data: tokenConfigs } = await supabase
-      .from('token_config')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    const tokenConfig = tokenConfigs || {};
-    const tokenKey = `owner_${planType}_limit`;
-    const monthlyTokens = tokenConfig[tokenKey] || baseTokens;
-    
-    console.log(`✅ [payment] 관리자 설정 토큰 한도 사용: ${monthlyTokens} (${tokenKey})`);
-
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 30);
-
+    // 5. subscription_cycle 테이블에도 저장 (작업 크레딧 시스템)
     const { error: cycleError } = await supabase
       .from('subscription_cycle')
       .insert({
         user_id: userId,
-        user_type: 'owner',
+        user_type: userType,
         cycle_start_date: startDate.toISOString().split('T')[0],
         cycle_end_date: endDate.toISOString().split('T')[0],
-        monthly_token_limit: monthlyTokens,
+        days_in_cycle: 30,
+        monthly_token_limit: monthlyCredits, // 하위 호환성
         tokens_used: 0,
-        tokens_remaining: monthlyTokens,
+        tokens_remaining: monthlyCredits,
+        included_credits: monthlyCredits, // 작업 크레딧 시스템
+        credits_used: 0,
+        credits_remaining: monthlyCredits,
         status: 'active',
-        billing_amount: payment.amount,
+        billing_amount: monthlyFee,
         payment_status: 'completed'
       });
 

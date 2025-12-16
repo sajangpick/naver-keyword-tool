@@ -101,13 +101,22 @@ async function renewExpiredSubscriptions() {
           .single();
 
         // 가격 및 크레딧 계산
-        const userType = profile.user_type || 'owner';
-        const level = profile.membership_level || 'seed';
+        // 대행사 등급 매핑 (elite/expert/master → starter/pro/enterprise)
+        const levelMapping = {
+          'elite': 'starter',
+          'expert': 'pro',
+          'master': 'enterprise'
+        };
+        const mappedLevel = levelMapping[level] || level;
+        
         const priceKey = `${userType}_${level}_price`;
         const tokenKey = `${userType}_${level}_limit`;
         
         // 포함된 크레딧 키 (작업 크레딧 시스템)
-        const includedCreditsKey = `${userType}_${level}_included_credits`;
+        // 대행사는 매핑된 등급명 사용, 식당 대표는 원래 등급명 사용
+        const includedCreditsKey = userType === 'agency' 
+          ? `${userType}_${mappedLevel}_included_credits`
+          : `${userType}_${level}_included_credits`;
         
         const monthlyPrice = customPricing?.custom_price || pricingConfig?.[priceKey] || 0;
         
@@ -148,6 +157,41 @@ async function renewExpiredSubscriptions() {
 
         if (createError) throw createError;
 
+        // user_subscription 테이블에 구독 정보 저장/업데이트
+        const { data: existingSubscription } = await supabase
+          .from('user_subscription')
+          .select('*')
+          .eq('user_id', cycle.user_id)
+          .eq('is_active', true)
+          .single();
+
+        const subscriptionData = {
+          user_id: cycle.user_id,
+          plan_type: level,
+          monthly_fee: monthlyPrice,
+          included_credits: monthlyCredits,
+          excess_credit_rate: pricingConfig?.[`${userType}_${level}_excess_rate`] || 1.2,
+          subscription_start_date: newStartDate.toISOString().split('T')[0],
+          subscription_end_date: newEndDate.toISOString().split('T')[0],
+          is_active: true,
+          auto_renew: true,
+          updated_at: new Date().toISOString()
+        };
+
+        if (existingSubscription) {
+          // 기존 구독 정보 업데이트
+          await supabase
+            .from('user_subscription')
+            .update(subscriptionData)
+            .eq('id', existingSubscription.id);
+        } else {
+          // 새 구독 정보 생성
+          subscriptionData.created_at = new Date().toISOString();
+          await supabase
+            .from('user_subscription')
+            .insert(subscriptionData);
+        }
+
         // 청구 내역 생성
         const { error: billingError } = await supabase
           .from('billing_history')
@@ -157,8 +201,10 @@ async function renewExpiredSubscriptions() {
             membership_level: level,
             billing_period_start: newStartDate.toISOString().split('T')[0],
             billing_period_end: newEndDate.toISOString().split('T')[0],
-            monthly_limit: monthlyTokens,
+            monthly_limit: monthlyCredits, // 하위 호환성
             tokens_used: cycle.tokens_used || 0, // 이전 사이클 사용량
+            included_credits: monthlyCredits, // 작업 크레딧 시스템
+            credits_used: 0,
             base_price: monthlyPrice,
             total_price: monthlyPrice,
             payment_status: monthlyPrice === 0 ? 'completed' : 'pending',
@@ -175,7 +221,8 @@ async function renewExpiredSubscriptions() {
           old_cycle_id: cycle.id,
           new_cycle_id: newCycle.id,
           membership_level: level,
-          tokens: monthlyTokens,
+          tokens: monthlyCredits,
+          credits: monthlyCredits,
           price: monthlyPrice
         });
 
