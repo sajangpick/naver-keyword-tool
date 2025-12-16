@@ -927,7 +927,7 @@ ${previousAnalysis.commonExpressions.join('\n')}
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.85,  // 다양성과 자연스러움 균형
-                    max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
+                    max_completion_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
             'chatgpt-blog'
@@ -1155,7 +1155,7 @@ ${storeInfo.companyName}에 체험단으로 방문한 일반 손님(블로거)�
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.85,
-                    max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
+                    max_completion_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
             'review-team-blog'
@@ -1250,7 +1250,7 @@ ${landmarks ? `- 주변 랜드마크: ${landmarks}` : ''}
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.8,
-                    max_tokens: 500
+                    max_completion_tokens: 500
                 });
             },
             'keyword-recommendation'
@@ -1426,7 +1426,7 @@ ${writingAngle.name} 관점에서 ${storeInfo.companyName}의 방문 후기를 �
                         { role: "user", content: prompt }
                     ],
                     temperature: 0.95,
-                    max_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
+                    max_completion_tokens: 4000  // 더 긴 글 생성을 위해 토큰 수 증가
                 });
             },
             'visit-review-blog'
@@ -1506,7 +1506,7 @@ async function suggestDishesWithAI(ingredients, userId) {
                         { role: "user", content: userPrompt }
                     ],
                     temperature: 0.9,  // 창의성 높게
-                    max_tokens: 500
+                    max_completion_tokens: 500
                 });
             },
             'dish-suggestion'
@@ -1638,7 +1638,7 @@ ${style ? `원하는 스타일: ${style}` : ''}
                         { role: "user", content: userPrompt }
                     ],
                     temperature: 0.8,
-                    max_tokens: 2000
+                    max_completion_tokens: 2000
                 });
             },
             'recipe-generation'
