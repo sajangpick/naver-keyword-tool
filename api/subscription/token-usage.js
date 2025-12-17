@@ -8,10 +8,20 @@ const { createClient } = require('@supabase/supabase-js');
 const { isDemoMode } = require('../middleware/credit-tracker');
 
 // Supabase 클라이언트 초기화
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_KEY) {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('✅ [credit-usage] Supabase 클라이언트 초기화 완료');
+  } catch (error) {
+    console.error('❌ [credit-usage] Supabase 클라이언트 초기화 실패:', error.message);
+  }
+} else {
+  console.error('❌ [credit-usage] Supabase 환경 변수가 설정되지 않았습니다');
+}
 
 /**
  * 크레딧 한도 체크 및 차감
@@ -370,6 +380,24 @@ const apiHandler = async (req, res) => {
 
     // GET: 크레딧 사용 내역 조회
     if (req.method === 'GET') {
+      // Supabase 클라이언트 확인
+      if (!supabase) {
+        console.error('❌ [credit-usage] Supabase 클라이언트가 초기화되지 않았습니다');
+        return res.status(503).json({
+          success: false,
+          error: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          usage: [],
+          cycle: null,
+          summary: {
+            monthlyLimit: 0,
+            includedCredits: 0,
+            creditsUsed: 0,
+            creditsRemaining: 0,
+            isExceeded: false
+          }
+        });
+      }
+
       try {
         const { user_id, limit = 10 } = req.query;
 
@@ -451,6 +479,7 @@ const apiHandler = async (req, res) => {
       // 1단계: 개인 맞춤 크레딧 한도 확인 (최우선)
       try {
         const today = new Date().toISOString().split('T')[0];
+        // Supabase 쿼리: applied_until이 null이거나 오늘 이후인 것만
         const { data: customLimit, error: customError } = await supabase
           .from('member_custom_credit_limit')
           .select('custom_limit')
@@ -497,8 +526,8 @@ const apiHandler = async (req, res) => {
               if (configError) {
                 console.error('❌ credit_config 조회 실패:', configError);
                 // 4단계: 사이클 값 사용 (fallback)
-                if (cycle && cycle.monthly_credit_limit) {
-                  currentCreditLimit = Number(cycle.monthly_credit_limit);
+                if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+                  currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
                   console.log(`✅ 사이클 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
                 } else {
                   currentCreditLimit = 100;
@@ -506,8 +535,8 @@ const apiHandler = async (req, res) => {
               } else if (!creditConfigs) {
                 console.warn('⚠️ credit_config 데이터가 없습니다. 사이클 값 또는 기본값 사용');
                 // 4단계: 사이클 값 사용 (fallback)
-                if (cycle && cycle.monthly_credit_limit) {
-                  currentCreditLimit = Number(cycle.monthly_credit_limit);
+                if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+                  currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
                   console.log(`✅ 사이클 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
                 } else {
                   currentCreditLimit = 100;
@@ -525,13 +554,16 @@ const apiHandler = async (req, res) => {
                   console.log(`✅ 관리자 설정 크레딧 한도 사용: ${currentCreditLimit} (${creditLimitKey})`);
                   
                   // 사이클의 한도와 다르면 사이클 업데이트 (관리자 설정 반영)
-                  if (cycle && cycle.monthly_credit_limit !== currentCreditLimit) {
-                    console.log(`🔄 사이클 한도 업데이트: ${cycle.monthly_credit_limit} → ${currentCreditLimit}`);
+                  const cycleLimit = cycle?.included_credits || cycle?.monthly_token_limit;
+                  if (cycle && cycleLimit !== currentCreditLimit) {
+                    console.log(`🔄 사이클 한도 업데이트: ${cycleLimit} → ${currentCreditLimit}`);
                     await supabase
                       .from('subscription_cycle')
                       .update({
-                        monthly_credit_limit: currentCreditLimit,
+                        included_credits: currentCreditLimit,
                         credits_remaining: currentCreditLimit - (cycle.credits_used || 0),
+                        monthly_token_limit: currentCreditLimit, // 하위 호환성
+                        tokens_remaining: currentCreditLimit - (cycle.credits_used || 0),
                         updated_at: new Date().toISOString()
                       })
                       .eq('id', cycle.id);
@@ -540,8 +572,8 @@ const apiHandler = async (req, res) => {
                 } else {
                   console.warn(`⚠️ ${creditLimitKey} 값이 ${limitValue}입니다. 사이클 값 사용`);
                   // 4단계: 사이클 값 사용 (fallback)
-                  if (cycle && cycle.monthly_credit_limit) {
-                    currentCreditLimit = Number(cycle.monthly_credit_limit);
+                  if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+                    currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
                     console.log(`✅ 사이클 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
                   } else {
                     currentCreditLimit = 100;
@@ -551,8 +583,8 @@ const apiHandler = async (req, res) => {
             } catch (error) {
             console.error('❌ credit_config에서 최신 한도 조회 실패:', error.message);
             // 3단계: 사이클 값 사용 (fallback)
-            if (cycle && cycle.monthly_credit_limit) {
-              currentCreditLimit = Number(cycle.monthly_credit_limit);
+            if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+              currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
               console.log(`✅ 사이클 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
             } else {
               currentCreditLimit = 100;
@@ -575,21 +607,21 @@ const apiHandler = async (req, res) => {
             if (limitValue !== undefined && limitValue !== null && limitValue !== 0) {
               currentCreditLimit = Number(limitValue);
               console.log(`✅ 관리자 설정 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
-            } else if (cycle && cycle.monthly_credit_limit) {
-              currentCreditLimit = Number(cycle.monthly_credit_limit);
+            } else if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+              currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
               console.log(`✅ 사이클 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
             } else {
               currentCreditLimit = 100;
             }
-          } else if (cycle && cycle.monthly_credit_limit) {
-            currentCreditLimit = Number(cycle.monthly_credit_limit);
+          } else if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+            currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
             console.log(`✅ 사이클 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
           } else {
             currentCreditLimit = 100;
           }
         } catch (configErr) {
-          if (cycle && cycle.monthly_credit_limit) {
-            currentCreditLimit = Number(cycle.monthly_credit_limit);
+          if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+            currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
             console.log(`✅ 사이클 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
           } else {
             currentCreditLimit = 100;
