@@ -396,7 +396,7 @@ const apiHandler = async (req, res) => {
       // Supabase 클라이언트 확인
       if (!supabase) {
         console.error('❌ [credit-usage] Supabase 클라이언트가 초기화되지 않았습니다');
-        return res.status(503).json({
+        return res.status(200).json({
           success: false,
           error: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
           usage: [],
@@ -412,6 +412,7 @@ const apiHandler = async (req, res) => {
       }
 
       try {
+        console.log('🔍 [credit-usage] GET 요청 시작:', { user_id: req.query?.user_id, limit: req.query?.limit });
         const { user_id, limit = 10 } = req.query;
 
         if (!user_id) {
@@ -459,9 +460,10 @@ const apiHandler = async (req, res) => {
         // 현재 구독 사이클 조회 (먼저 조회하여 실제 한도 확인)
         let cycle = null;
         try {
+          // 안전하게 컬럼만 선택 (존재하지 않는 컬럼 접근 방지)
           const { data: cycleData, error: cycleError } = await supabase
             .from('subscription_cycle')
-            .select('*')
+            .select('id, user_id, user_type, cycle_start_date, cycle_end_date, status, is_exceeded, created_at, updated_at')
             .eq('user_id', user_id)
             .eq('status', 'active')
             .order('created_at', { ascending: false })
@@ -470,11 +472,29 @@ const apiHandler = async (req, res) => {
 
           if (cycleError) {
             console.error('❌ [credit-usage] 구독 사이클 조회 실패:', cycleError);
-          } else {
+            // 에러가 발생해도 계속 진행
+          } else if (cycleData) {
             cycle = cycleData;
+            
+            // credits_used, credits_remaining, included_credits 컬럼이 있는지 확인하고 추가 조회
+            try {
+              const { data: creditData, error: creditError } = await supabase
+                .from('subscription_cycle')
+                .select('credits_used, credits_remaining, included_credits, tokens_used, tokens_remaining, monthly_token_limit')
+                .eq('id', cycle.id)
+                .maybeSingle();
+              
+              if (!creditError && creditData) {
+                // 안전하게 병합
+                cycle = { ...cycle, ...creditData };
+              }
+            } catch (creditErr) {
+              console.warn('⚠️ [credit-usage] 크레딧 컬럼 조회 실패 (무시하고 계속 진행):', creditErr.message);
+            }
           }
         } catch (cycleErr) {
           console.error('❌ [credit-usage] 구독 사이클 조회 중 예외 발생:', cycleErr);
+          // 예외가 발생해도 계속 진행 (cycle은 null로 유지)
         }
 
       // 작업 크레딧 한도 조회 우선순위:
