@@ -330,12 +330,14 @@ async function trackTokenUsage(userId, usage, apiType = 'chatgpt', storeId = nul
         'chatgpt-blog': { serviceType: 'blog_writing', creditWeight: 5 },
         'blog': { serviceType: 'blog_writing', creditWeight: 5 },
         'review-reply': { serviceType: 'review_reply', creditWeight: 1 },
+        'review-reply-promo': { serviceType: 'review_reply', creditWeight: 1 },
         'naver-auto-reply': { serviceType: 'review_reply', creditWeight: 1 },
         'reply': { serviceType: 'review_reply', creditWeight: 1 },
         'video': { serviceType: 'video_generation', creditWeight: 10 },
         'video-generation': { serviceType: 'video_generation', creditWeight: 10 },
-        'ai-news-recommend': { serviceType: 'review_reply', creditWeight: 1 }, // 뉴스는 리뷰 답글과 동일
-        'news-ai-summary': { serviceType: 'review_reply', creditWeight: 1 },
+        'gemini-veo-video': { serviceType: 'video_generation', creditWeight: 10 }, // 영상 생성
+        'ai-news-recommend': { serviceType: 'news', creditWeight: 1 }, // 뉴스 추천
+        'news-ai-summary': { serviceType: 'news', creditWeight: 1 }, // 뉴스 요약
         'chat': { serviceType: 'review_reply', creditWeight: 1 }, // 채팅은 리뷰 답글과 동일
         'keyword': { serviceType: 'review_reply', creditWeight: 1 },
         'recipe': { serviceType: 'review_reply', creditWeight: 1 }

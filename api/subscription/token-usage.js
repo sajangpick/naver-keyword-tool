@@ -297,18 +297,20 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
 // 함수를 export하여 다른 모듈에서 사용 가능하도록
 // 기본 export는 API 핸들러, named export는 함수
 const apiHandler = async (req, res) => {
-  // CORS 설정
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
+  // 최상위 try-catch로 모든 에러 잡기 (Vercel Functions 환경 대응)
   try {
+    // CORS 설정
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    try {
     // POST: 크레딧 사용 기록
     if (req.method === 'POST') {
       const { 
@@ -423,27 +425,58 @@ const apiHandler = async (req, res) => {
         const { user_id, limit = 10 } = req.query;
 
         if (!user_id) {
-          return res.status(400).json({
+          return res.status(200).json({
             success: false,
-            error: '사용자 ID가 필요합니다'
+            error: '사용자 ID가 필요합니다',
+            usage: [],
+            cycle: null,
+            summary: {
+              monthlyLimit: 0,
+              includedCredits: 0,
+              creditsUsed: 0,
+              creditsRemaining: 0,
+              isExceeded: false
+            }
+          });
+        }
+
+        // Supabase 클라이언트 확인
+        if (!supabase) {
+          console.error('❌ [credit-usage] Supabase 클라이언트가 초기화되지 않았습니다');
+          return res.status(200).json({
+            success: false,
+            error: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
+            usage: [],
+            cycle: null,
+            summary: {
+              monthlyLimit: 0,
+              includedCredits: 0,
+              creditsUsed: 0,
+              creditsRemaining: 0,
+              isExceeded: false
+            }
           });
         }
 
         // 데모 모드일 때는 무제한 크레딧 반환
-        const demoMode = isDemoMode(req);
-        if (demoMode || user_id === 'demo_user_12345') {
-          console.log('✅ [credit-usage] 데모 모드 감지: 무제한 크레딧 반환');
-          return res.json({
-            success: true,
-            usage: [],
-            cycle: null,
-            summary: {
-              monthlyLimit: 999999,
-              creditsUsed: 0,
-              creditsRemaining: 999999,
-              isExceeded: false
-            }
-          });
+        try {
+          const demoMode = isDemoMode(req);
+          if (demoMode || user_id === 'demo_user_12345') {
+            console.log('✅ [credit-usage] 데모 모드 감지: 무제한 크레딧 반환');
+            return res.json({
+              success: true,
+              usage: [],
+              cycle: null,
+              summary: {
+                monthlyLimit: 999999,
+                creditsUsed: 0,
+                creditsRemaining: 999999,
+                isExceeded: false
+              }
+            });
+          }
+        } catch (demoErr) {
+          console.warn('⚠️ [credit-usage] 데모 모드 확인 실패, 계속 진행:', demoErr.message);
         }
 
         // 사용자 프로필 조회 (등급 확인) - 먼저 조회

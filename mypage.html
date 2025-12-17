@@ -2663,7 +2663,8 @@
       // 사용률 계산 (약 33%)
       const usagePercent = Math.round((creditsUsed / includedCredits) * 100);
       
-      document.getElementById('tokensUsed').textContent = creditsUsed.toLocaleString();
+      // 표시 형식: "남은 크레딧 / 포함된 크레딧" (예: 5000/5000, 4995/5000, 4985/5000...)
+      document.getElementById('tokensUsed').textContent = creditsRemaining.toLocaleString();
       document.getElementById('tokensLimit').textContent = includedCredits.toLocaleString();
       document.getElementById('tokensRemaining').textContent = creditsRemaining.toLocaleString();
       document.getElementById('usagePercent').textContent = usagePercent + '%';
@@ -2797,18 +2798,25 @@
         document.getElementById('currentPlan').textContent = LEVEL_NAMES[normalizedLevel] || '라이트';
         document.getElementById('planBadge').textContent = '등급';
         
-        // 작업 크레딧 사용량 표시
-        const creditsUsed = usage.totalCreditsUsed || 0;
-        const includedCredits = usage.includedCredits || 0;
-        const creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+        // 작업 크레딧 사용량 표시 (API 응답에서 직접 가져오기)
+        // summary 객체에서 크레딧 정보 가져오기 (우선순위)
+        const summary = usageResult?.summary || {};
+        const creditsUsed = summary.creditsUsed || usage.totalCreditsUsed || 0;
+        const includedCredits = summary.includedCredits || summary.monthlyLimit || usage.includedCredits || 0;
+        const creditsRemaining = summary.creditsRemaining !== undefined ? summary.creditsRemaining : Math.max(0, includedCredits - creditsUsed);
         
         // 사용률 계산 (기본 크레딧 소진율)
         const usagePercent = includedCredits > 0 ? 
           Math.round((creditsUsed / includedCredits) * 100) : 0;
         
-        document.getElementById('tokensUsed').textContent = creditsUsed.toLocaleString();
+        // 표시 형식: "남은 크레딧 / 포함된 크레딧" (예: 5000/5000, 4995/5000, 4985/5000...)
+        // tokensUsed에 남은 크레딧 표시, tokensLimit에 포함된 크레딧 표시
+        document.getElementById('tokensUsed').textContent = creditsRemaining.toLocaleString();
         document.getElementById('tokensLimit').textContent = includedCredits.toLocaleString();
         document.getElementById('tokensRemaining').textContent = creditsRemaining.toLocaleString();
+        
+        // 디버그 로그
+        console.log(`📊 [mypage] 크레딧 표시: ${creditsRemaining}/${includedCredits} (남은/포함), 사용된 크레딧: ${creditsUsed}`);
         document.getElementById('usagePercent').textContent = usagePercent + '%';
         
         // 다음 결제 예정일 (구독 사이클에서 가져오기)
@@ -3319,7 +3327,9 @@
         const usageBasedAmountEl = document.getElementById('usageBasedAmount');
 
         if (tokensUsedEl) {
-          tokensUsedEl.textContent = (usage.totalCreditsUsed || 0).toLocaleString();
+          // 표시 형식: "남은 크레딧 / 포함된 크레딧" (예: 5000/5000, 4995/5000, 4985/5000...)
+          const creditsRemaining = (usage.includedCredits || 0) - (usage.totalCreditsUsed || 0);
+          tokensUsedEl.textContent = Math.max(0, creditsRemaining).toLocaleString();
         }
         if (tokensLimitEl) {
           tokensLimitEl.textContent = (usage.includedCredits || 0).toLocaleString();

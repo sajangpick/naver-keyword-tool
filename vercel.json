@@ -46,6 +46,17 @@
   ],
   "rewrites": [
     {
+      "source": "/api/subscription/token-usage",
+      "destination": "https://naver-keyword-tool.onrender.com/api/subscription/token-usage",
+      "has": [
+        {
+          "type": "header",
+          "key": "x-vercel-rewrite",
+          "value": "true"
+        }
+      ]
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://naver-keyword-tool.onrender.com/api/:path*"
     },

@@ -40,6 +40,12 @@ COMMENT ON COLUMN sales_data.menu_items IS '주문 메뉴 정보 (JSON 배열)';
 -- RLS (Row Level Security) 정책
 ALTER TABLE sales_data ENABLE ROW LEVEL SECURITY;
 
+-- 기존 정책 삭제 (있으면)
+DROP POLICY IF EXISTS "Users can view own sales data" ON sales_data;
+DROP POLICY IF EXISTS "Users can insert own sales data" ON sales_data;
+DROP POLICY IF EXISTS "Users can update own sales data" ON sales_data;
+DROP POLICY IF EXISTS "Users can delete own sales data" ON sales_data;
+
 -- 사용자는 자신의 데이터만 조회/수정 가능
 CREATE POLICY "Users can view own sales data"
     ON sales_data FOR SELECT
