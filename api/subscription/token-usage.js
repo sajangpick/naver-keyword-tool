@@ -476,7 +476,8 @@ const apiHandler = async (req, res) => {
                 .from('credit_config')
                 .select('*')
                 .order('updated_at', { ascending: false })
-                .limit(1);
+                .limit(1)
+                .maybeSingle();
               
               if (configError) {
                 console.error('❌ credit_config 조회 실패:', configError);
@@ -487,7 +488,7 @@ const apiHandler = async (req, res) => {
                 } else {
                   currentCreditLimit = 100;
                 }
-              } else if (!creditConfigs || creditConfigs.length === 0) {
+              } else if (!creditConfigs) {
                 console.warn('⚠️ credit_config 데이터가 없습니다. 사이클 값 또는 기본값 사용');
                 // 4단계: 사이클 값 사용 (fallback)
                 if (cycle && cycle.monthly_credit_limit) {
@@ -497,7 +498,7 @@ const apiHandler = async (req, res) => {
                   currentCreditLimit = 100;
                 }
               } else {
-                const latestCreditConfig = creditConfigs[0];
+                const latestCreditConfig = creditConfigs;
                 console.log('✅ credit_config 조회 성공 (관리자 설정):', JSON.stringify(latestCreditConfig, null, 2));
                 
                 // 관리자 설정에서 한도 가져오기
@@ -551,10 +552,11 @@ const apiHandler = async (req, res) => {
             .from('credit_config')
             .select('*')
             .order('updated_at', { ascending: false })
-            .limit(1);
+            .limit(1)
+            .maybeSingle();
           
-          if (creditConfigs && creditConfigs.length > 0) {
-            const limitValue = creditConfigs[0][creditLimitKey];
+          if (creditConfigs) {
+            const limitValue = creditConfigs[creditLimitKey];
             if (limitValue !== undefined && limitValue !== null && limitValue !== 0) {
               currentCreditLimit = Number(limitValue);
               console.log(`✅ 관리자 설정 크레딧 한도 사용 (fallback): ${currentCreditLimit}`);
