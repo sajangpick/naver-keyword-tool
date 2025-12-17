@@ -1627,7 +1627,7 @@
           <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
             <!-- 네이버 스마트플레이스 -->
             <button class="btn btn-primary" onclick="connectPlatform('naver')" style="
-              background: linear-gradient(135deg, #03c75a, #02b350);
+              background: linear-gradient(135deg, #03C75A, #02A148);
               color: white;
               padding: 16px;
               font-size: 15px;
@@ -1644,7 +1644,7 @@
 
             <!-- 배달의민족 -->
             <button class="btn btn-primary" onclick="connectPlatform('baemin')" style="
-              background: linear-gradient(135deg, #00c73c, #00b336);
+              background: linear-gradient(135deg, #2AC1BC, #1FA8A3);
               color: white;
               padding: 16px;
               font-size: 15px;
@@ -1661,7 +1661,7 @@
 
             <!-- 요기요 -->
             <button class="btn btn-primary" onclick="connectPlatform('yogiyo')" style="
-              background: linear-gradient(135deg, #ff6b35, #ff5722);
+              background: linear-gradient(135deg, #FF2F00, #E02800);
               color: white;
               padding: 16px;
               font-size: 15px;
@@ -1678,7 +1678,7 @@
 
             <!-- 쿠팡이츠 -->
             <button class="btn btn-primary" onclick="connectPlatform('coupangeats')" style="
-              background: linear-gradient(135deg, #fa622f, #e8551f);
+              background: linear-gradient(135deg, #FFA500, #E69400);
               color: white;
               padding: 16px;
               font-size: 15px;
@@ -1698,7 +1698,9 @@
           <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 12px; padding: 16px; margin-top: 20px;">
             <p style="margin: 0; color: #1976d2; font-size: 13px; line-height: 1.6;">
               <i class="fas fa-info-circle"></i> <strong>연동 안내:</strong><br>
-              각 플랫폼의 로그인 페이지로 이동하여 인증을 완료하면 자동으로 연동됩니다.
+              • 각 플랫폼의 로그인 페이지로 이동하여 인증을 완료하면 자동으로 연동됩니다.<br>
+              • 연동 완료 후 매장 프로필 정보(이름, 주소, 전화번호, 프로필 이미지 등)가 자동으로 가져와집니다.<br>
+              • 프로필 정보는 각 플랫폼의 API를 통해 실시간으로 동기화됩니다.
             </p>
           </div>
         </section>
@@ -4431,7 +4433,32 @@
           }
         }
 
-        updatePlatformConnectionsUI(connections);
+        // 각 연동에 대해 프로필 정보 가져오기 (백엔드 API 지원 시)
+        const connectionsWithProfile = await Promise.all(
+          connections.map(async (conn) => {
+            try {
+              const profileRes = await fetch(`/api/${conn.platform}/profile?connectionId=${conn.id}`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'user-id': userId
+                }
+              });
+
+              if (profileRes.ok) {
+                const profileData = await profileRes.json();
+                if (profileData.success && profileData.profile) {
+                  return { ...conn, ...profileData.profile };
+                }
+              }
+            } catch (error) {
+              console.warn(`⚠️ ${conn.platform} 프로필 정보 가져오기 실패:`, error);
+            }
+            return conn;
+          })
+        );
+
+        updatePlatformConnectionsUI(connectionsWithProfile);
       } catch (error) {
         console.error('❌ 플랫폼 연동 정보 로드 실패:', error);
         updatePlatformConnectionsUI([]);
@@ -4451,14 +4478,20 @@
         `;
       } else {
         const platformInfo = {
-          naver: { name: '네이버 스마트플레이스', icon: 'fab fa-neos', color: '#03c75a' },
-          baemin: { name: '배달의민족', icon: 'fas fa-utensils', color: '#00c73c' },
-          yogiyo: { name: '요기요', icon: 'fas fa-motorcycle', color: '#ff6b35' },
-          coupangeats: { name: '쿠팡이츠', icon: 'fas fa-shopping-bag', color: '#fa622f' }
+          naver: { name: '네이버 스마트플레이스', icon: 'fab fa-neos', color: '#03C75A' },
+          baemin: { name: '배달의민족', icon: 'fas fa-utensils', color: '#2AC1BC' },
+          yogiyo: { name: '요기요', icon: 'fas fa-motorcycle', color: '#FF2F00' },
+          coupangeats: { name: '쿠팡이츠', icon: 'fas fa-shopping-bag', color: '#FFA500' }
         };
 
         container.innerHTML = connections.map(conn => {
           const platform = platformInfo[conn.platform] || { name: conn.platform, icon: 'fas fa-link', color: '#666' };
+          
+          // 프로필 이미지가 있으면 표시
+          const profileImage = conn.profile_image || conn.store_image || conn.place_image || null;
+          const storeName = conn.place_name || conn.store_name || conn.business_name || platform.name;
+          const storeAddress = conn.address || conn.store_address || conn.place_address || '';
+          const phoneNumber = conn.phone || conn.store_phone || conn.phone_number || '';
           
           return `
             <div class="platform-card" style="
@@ -4469,27 +4502,66 @@
               margin-bottom: 20px;
               box-shadow: var(--shadow-sm);
             ">
-              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
-                <div>
-                  <h4 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
-                    <i class="${platform.icon}" style="color: ${platform.color}; margin-right: 8px;"></i>
-                    ${conn.place_name || conn.store_name || platform.name}
-                  </h4>
-                  <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">
-                    ${conn.place_id ? `플레이스 ID: ${conn.place_id}` : ''}
-                    ${conn.store_id ? `매장 ID: ${conn.store_id}` : ''}
-                  </p>
+              <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                ${profileImage ? `
+                  <img src="${profileImage}" alt="${storeName}" style="
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 12px;
+                    object-fit: cover;
+                    border: 2px solid ${platform.color};
+                  " onerror="this.style.display='none'">
+                ` : `
+                  <div style="
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 12px;
+                    background: linear-gradient(135deg, ${platform.color}, ${platform.color}dd);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 2px solid ${platform.color};
+                  ">
+                    <i class="${platform.icon}" style="font-size: 32px; color: white;"></i>
+                  </div>
+                `}
+                <div style="flex: 1;">
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                    <div>
+                      <h4 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
+                        <i class="${platform.icon}" style="color: ${platform.color}; margin-right: 8px; font-size: 16px;"></i>
+                        ${storeName}
+                      </h4>
+                      ${storeAddress ? `
+                        <p style="color: var(--text-secondary); font-size: 13px; margin: 4px 0;">
+                          <i class="fas fa-map-marker-alt" style="font-size: 11px; margin-right: 4px;"></i>
+                          ${storeAddress}
+                        </p>
+                      ` : ''}
+                      ${phoneNumber ? `
+                        <p style="color: var(--text-secondary); font-size: 13px; margin: 4px 0;">
+                          <i class="fas fa-phone" style="font-size: 11px; margin-right: 4px;"></i>
+                          ${phoneNumber}
+                        </p>
+                      ` : ''}
+                      <p style="color: var(--text-secondary); font-size: 12px; margin: 4px 0 0 0;">
+                        ${conn.place_id ? `플레이스 ID: ${conn.place_id}` : ''}
+                        ${conn.store_id ? `매장 ID: ${conn.store_id}` : ''}
+                      </p>
+                    </div>
+                    <span style="
+                      padding: 6px 12px;
+                      background: ${conn.is_active ? '#dcfce7' : '#fee2e2'};
+                      color: ${conn.is_active ? '#166534' : '#991b1b'};
+                      border-radius: 999px;
+                      font-size: 12px;
+                      font-weight: 600;
+                      white-space: nowrap;
+                    ">
+                      ${conn.is_active ? '✓ 활성화' : '✗ 비활성화'}
+                    </span>
+                  </div>
                 </div>
-                <span style="
-                  padding: 6px 12px;
-                  background: ${conn.is_active ? '#dcfce7' : '#fee2e2'};
-                  color: ${conn.is_active ? '#166534' : '#991b1b'};
-                  border-radius: 999px;
-                  font-size: 12px;
-                  font-weight: 600;
-                ">
-                  ${conn.is_active ? '✓ 활성화' : '✗ 비활성화'}
-                </span>
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
