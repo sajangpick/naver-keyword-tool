@@ -2807,6 +2807,35 @@
                 });
             }
 
+            // 크레딧 차감 후 마이페이지 크레딧 정보 새로고침 알림
+            try {
+              // localStorage 이벤트를 통해 마이페이지에 크레딧 정보 새로고침 알림
+              const refreshEvent = new CustomEvent('creditUpdated', {
+                detail: {
+                  serviceType: 'review_reply',
+                  creditsUsed: 1,
+                  timestamp: new Date().toISOString()
+                }
+              });
+              window.dispatchEvent(refreshEvent);
+              
+              // localStorage에 변경 사항 저장 (다른 탭에서 감지 가능)
+              localStorage.setItem('creditLastUpdated', new Date().toISOString());
+              localStorage.setItem('creditUpdateType', 'review_reply');
+              
+              // 크레딧 팝업창이 열려있으면 크레딧 정보 업데이트
+              const modal = document.getElementById('tokenModal');
+              if (modal && modal.classList.contains('active')) {
+                console.log('🔄 [크레딧 업데이트] 팝업창이 열려있어 크레딧 정보를 업데이트합니다.');
+                // 팝업창 크레딧 정보 다시 표시
+                await showTokenModal();
+              }
+              
+              console.log('✅ [크레딧 업데이트] 마이페이지 크레딧 정보 새로고침 알림 전송 완료');
+            } catch (refreshError) {
+              console.warn('⚠️ [크레딧 업데이트] 새로고침 알림 전송 실패:', refreshError);
+            }
+
             // 성공 메시지 표시
             const styleNames = {
               promo: "홍보형",

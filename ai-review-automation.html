@@ -603,6 +603,118 @@
       background: #ff6b3d;
     }
 
+    /* 연동 필요 모달 */
+    .connection-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .connection-modal.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .connection-modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease-out;
+      text-align: center;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .connection-modal-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 123, 84, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+      color: var(--accent-color);
+    }
+
+    .connection-modal-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .connection-modal-message {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .connection-modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn--primary {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .modal-btn--primary:hover {
+      background: #ff6b3d;
+      transform: translateY(-1px);
+    }
+
+    .modal-btn--secondary {
+      background: #f0f0f0;
+      color: var(--text-primary);
+    }
+
+    .modal-btn--secondary:hover {
+      background: #e0e0e0;
+    }
+
     /* 푸터 스타일 */
     .site-footer {
       background: rgba(255, 255, 255, 0.95);
@@ -951,13 +1063,6 @@
       </button>
     </div>
 
-    <!-- 연동 상태 -->
-    <div class="section" id="connectionStatus">
-      <div class="loading">
-        <div class="spinner"></div>
-      </div>
-    </div>
-
     <!-- 답글 대기중인 리뷰 -->
     <div class="section" id="pendingSection" style="display: none;">
       <h2 class="section-title">
@@ -1019,6 +1124,28 @@
     </div>
   </footer>
 
+  <!-- 연동 필요 모달 -->
+  <div class="connection-modal" id="connectionModal">
+    <div class="connection-modal-content">
+      <div class="connection-modal-icon">
+        <i class="fas fa-exclamation-triangle" id="connectionModalIcon"></i>
+      </div>
+      <h2 class="connection-modal-title" id="connectionModalTitle">연동이 필요합니다</h2>
+      <p class="connection-modal-message" id="connectionModalMessage">
+        선택하신 플랫폼이 연동되어 있지 않습니다.<br>
+        리뷰를 가져오려면 먼저 연동해주세요.
+      </p>
+      <div class="connection-modal-actions">
+        <button class="modal-btn modal-btn--secondary" onclick="closeConnectionModal()">
+          닫기
+        </button>
+        <button class="modal-btn modal-btn--primary" onclick="goToConnectionPage()">
+          <i class="fas fa-link"></i> 연동하러 가기
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let supabase;
     let currentUser = null;
@@ -1060,6 +1187,49 @@
       refreshInterval = setInterval(loadReviews, 30000);
     }
 
+    // 연동 필요 모달 표시
+    function showConnectionModal(platformName) {
+      const modal = document.getElementById('connectionModal');
+      const icon = document.getElementById('connectionModalIcon');
+      const title = document.getElementById('connectionModalTitle');
+      const message = document.getElementById('connectionModalMessage');
+
+      const platformIcons = {
+        'naver': { icon: 'fab fa-neos', color: '#03c75a' },
+        'baemin': { icon: 'fas fa-utensils', color: '#00d564' },
+        'yogiyo': { icon: 'fas fa-hamburger', color: '#ff6b6b' },
+        'coupang': { icon: 'fas fa-shopping-bag', color: '#ff8c00' }
+      };
+
+      const iconInfo = platformIcons[selectedPlatform] || platformIcons['naver'];
+      
+      if (icon) {
+        icon.className = iconInfo.icon;
+        icon.style.color = iconInfo.color;
+      }
+      
+      if (title) {
+        title.textContent = `${platformName} 연동이 필요합니다`;
+      }
+      
+      if (message) {
+        message.innerHTML = `${platformName}이(가) 연동되어 있지 않습니다.<br>리뷰를 가져오려면 먼저 연동해주세요.`;
+      }
+
+      modal.classList.add('active');
+    }
+
+    // 연동 필요 모달 닫기
+    function closeConnectionModal() {
+      const modal = document.getElementById('connectionModal');
+      modal.classList.remove('active');
+    }
+
+    // 연동 페이지로 이동
+    function goToConnectionPage() {
+      window.location.href = '/mypage.html';
+    }
+
     // 리뷰 로드
     async function loadReviews() {
       if (!currentUser) return;
@@ -1073,54 +1243,54 @@
           'coupang': '쿠팡이츠'
         };
 
-        // 연동 상태 확인 (현재는 네이버 API 사용, 나중에 플랫폼별로 변경 가능)
-        const connResponse = await fetch('/api/naver/connections', {
+        // 플랫폼별 API 엔드포인트 (나중에 확장 가능)
+        const platformApis = {
+          'naver': '/api/naver/connections',
+          'baemin': '/api/baemin/connections',
+          'yogiyo': '/api/yogiyo/connections',
+          'coupang': '/api/coupang/connections'
+        };
+
+        const apiEndpoint = platformApis[selectedPlatform] || platformApis['naver'];
+        const platformName = platformNames[selectedPlatform];
+
+        // 연동 상태 확인
+        const connResponse = await fetch(apiEndpoint, {
           headers: { 'user-id': currentUser.id }
         });
         const connResult = await connResponse.json();
 
+        // 연동이 안 되어 있으면 모달 표시
         if (!connResult.success || connResult.connections.length === 0) {
-          document.getElementById('connectionStatus').innerHTML = `
-            <div class="empty-state">
-              <i class="fas fa-exclamation-circle"></i>
-              <h3>${platformNames[selectedPlatform]} 연동이 필요합니다</h3>
-              <p style="margin-top: 16px;">
-                <a href="/mypage.html" style="color: var(--accent-color); text-decoration: underline;">
-                  마이페이지에서 연동하기
-                </a>
-              </p>
-            </div>
-          `;
+          showConnectionModal(platformName);
           return;
         }
 
-        const platformIcons = {
-          'naver': { icon: 'fab fa-neos', color: '#03c75a' },
-          'baemin': { icon: 'fas fa-utensils', color: '#00d564' },
-          'yogiyo': { icon: 'fas fa-hamburger', color: '#ff6b6b' },
-          'coupang': { icon: 'fas fa-shopping-bag', color: '#ff8c00' }
+        // 플랫폼별 리뷰 테이블 (나중에 확장 가능)
+        const platformTables = {
+          'naver': 'naver_reviews',
+          'baemin': 'baemin_reviews',
+          'yogiyo': 'yogiyo_reviews',
+          'coupang': 'coupang_reviews'
         };
 
-        const iconInfo = platformIcons[selectedPlatform] || platformIcons['naver'];
+        const tableName = platformTables[selectedPlatform] || platformTables['naver'];
 
-        document.getElementById('connectionStatus').innerHTML = `
-          <div style="text-align: center; padding: 20px;">
-            <i class="${iconInfo.icon}" style="font-size: 32px; color: ${iconInfo.color}; margin-bottom: 8px;"></i>
-            <h3>${connResult.connections[0].place_name || '연동된 매장'}</h3>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
-              마지막 동기화: ${new Date(connResult.connections[0].last_sync_at || new Date()).toLocaleString('ko-KR')}
-            </p>
-          </div>
-        `;
-
-        // 리뷰 조회 (플랫폼별 테이블 분리 가능, 현재는 naver_reviews 사용)
+        // 리뷰 조회
         const { data: reviews, error } = await supabase
-          .from('naver_reviews')
+          .from(tableName)
           .select('*')
           .eq('user_id', currentUser.id)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          // 테이블이 없을 수도 있음 (아직 구현 안 된 플랫폼)
+          if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+            showConnectionModal(platformName);
+            return;
+          }
+          throw error;
+        }
 
         const pending = reviews.filter(r => r.reply_status === 'pending');
         const completed = reviews.filter(r => r.reply_status === 'registered');
@@ -1288,6 +1458,14 @@
       });
       observer.observe(sideNav, { childList: true, subtree: true });
     })();
+
+    // 모달 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('connectionModal');
+      if (e.target === modal) {
+        closeConnectionModal();
+      }
+    });
   </script>
 </body>
 </html>

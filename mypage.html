@@ -3335,6 +3335,32 @@
     
     // 전역 함수로 등록 (HTML에서 호출 가능)
     window.refreshTokenInfo = refreshTokenInfo;
+    
+    // 크레딧 업데이트 이벤트 리스너 (다른 페이지에서 크레딧 차감 시 자동 새로고침)
+    window.addEventListener('creditUpdated', async function(event) {
+      console.log('🔄 [크레딧 업데이트 이벤트] 크레딧 정보 자동 새로고침:', event.detail);
+      await refreshTokenInfo();
+    });
+    
+    // localStorage 변경 감지 (다른 탭에서 크레딧 차감 시 자동 새로고침)
+    window.addEventListener('storage', function(event) {
+      if (event.key === 'creditLastUpdated') {
+        console.log('🔄 [크레딧 업데이트 감지] 다른 탭에서 크레딧이 차감되었습니다. 크레딧 정보 새로고침...');
+        refreshTokenInfo();
+      }
+    });
+    
+    // 주기적으로 localStorage 확인 (같은 탭에서도 감지)
+    setInterval(function() {
+      const lastUpdated = localStorage.getItem('creditLastUpdated');
+      const lastChecked = sessionStorage.getItem('creditLastChecked') || '';
+      
+      if (lastUpdated && lastUpdated !== lastChecked) {
+        console.log('🔄 [크레딧 업데이트 감지] 크레딧 정보 새로고침...');
+        sessionStorage.setItem('creditLastChecked', lastUpdated);
+        refreshTokenInfo();
+      }
+    }, 2000); // 2초마다 확인
 
     // 크레딧 팝업 관련 함수들
     async function showCreditModal() {

@@ -3687,6 +3687,27 @@
                             console.log('ℹ️ [크레딧 업데이트] 팝업창이 닫혀있어 업데이트하지 않습니다.');
                         }
                     }
+                    
+                    // 크레딧 차감 후 마이페이지 크레딧 정보 새로고침 알림
+                    try {
+                      // localStorage 이벤트를 통해 마이페이지에 크레딧 정보 새로고침 알림
+                      const refreshEvent = new CustomEvent('creditUpdated', {
+                        detail: {
+                          serviceType: 'video_generation',
+                          creditsUsed: 10,
+                          timestamp: new Date().toISOString()
+                        }
+                      });
+                      window.dispatchEvent(refreshEvent);
+                      
+                      // localStorage에 변경 사항 저장 (다른 탭에서 감지 가능)
+                      localStorage.setItem('creditLastUpdated', new Date().toISOString());
+                      localStorage.setItem('creditUpdateType', 'video_generation');
+                      
+                      console.log('✅ [크레딧 업데이트] 마이페이지 크레딧 정보 새로고침 알림 전송 완료');
+                    } catch (refreshError) {
+                      console.warn('⚠️ [크레딧 업데이트] 새로고침 알림 전송 실패:', refreshError);
+                    }
                 } else {
                     showSuccessBanner();
                     // 결과 섹션은 이미 위에서 표시됨
