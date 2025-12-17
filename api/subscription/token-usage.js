@@ -28,6 +28,8 @@ if (SUPABASE_URL && SUPABASE_KEY) {
  * 다른 모듈에서도 사용 가능하도록 export
  */
 async function checkAndUpdateCreditLimit(userId, creditsToUse) {
+  console.log(`🔍 [credit-usage] checkAndUpdateCreditLimit 호출: userId=${userId}, creditsToUse=${creditsToUse}`);
+  
   // 데모 모드일 때는 크레딧 체크 우회
   if (userId === 'demo_user_12345' || !userId) {
     console.log('✅ [credit-usage] 데모 모드 또는 userId 없음: 크레딧 체크 우회');
@@ -39,7 +41,18 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
     };
   }
 
+  if (!supabase) {
+    console.error('❌ [credit-usage] Supabase 클라이언트가 초기화되지 않았습니다');
+    throw new Error('Supabase 클라이언트 초기화 실패');
+  }
+
   try {
+    // Supabase 클라이언트 확인
+    if (!supabase) {
+      console.error('❌ [credit-usage] Supabase 클라이언트가 초기화되지 않았습니다');
+      throw new Error('Supabase 클라이언트 초기화 실패');
+    }
+    
     // 사용자의 현재 구독 사이클 조회
     const { data: cycle, error: cycleError } = await supabase
       .from('subscription_cycle')

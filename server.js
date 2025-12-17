@@ -3244,8 +3244,15 @@ ${placeInfoText}${ownerTipsInstruction}
           }
 
           // 2. 크레딧 한도 체크 및 차감
+          devLog("💳 [리뷰 답글] checkAndUpdateCreditLimit 호출 시작...");
           const { checkAndUpdateCreditLimit } = require('./api/subscription/token-usage');
+          if (!checkAndUpdateCreditLimit) {
+            devError("❌ [리뷰 답글] checkAndUpdateCreditLimit 함수를 찾을 수 없습니다!");
+            throw new Error("checkAndUpdateCreditLimit 함수를 찾을 수 없습니다");
+          }
+          devLog("💳 [리뷰 답글] checkAndUpdateCreditLimit 함수 확인 완료, 호출 중...");
           const creditCheck = await checkAndUpdateCreditLimit(userId, workCreditsUsed);
+          devLog("💳 [리뷰 답글] checkAndUpdateCreditLimit 결과:", creditCheck);
 
           if (!creditCheck.success) {
             creditError = creditCheck.error;
@@ -3256,27 +3263,38 @@ ${placeInfoText}${ownerTipsInstruction}
             devLog(`✅ 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditCheck.creditsRemaining})`);
 
             // 3. work_credit_usage 테이블에 사용 기록 저장
+            devLog("💳 [리뷰 답글] work_credit_usage 저장 시작...");
+            const usageData = {
+              user_id: userId,
+              store_id: null, // 리뷰 답글은 store_id 없음
+              service_type: 'review_reply',
+              work_credits_used: workCreditsUsed,
+              input_tokens: null, // 선택적
+              output_tokens: null, // 선택적
+              ai_model: 'claude',
+              usage_date: new Date().toISOString().split('T')[0],
+              used_at: new Date().toISOString()
+            };
+            devLog("💳 [리뷰 답글] 저장할 데이터:", JSON.stringify(usageData, null, 2));
+            
             const { data: usageRecord, error: usageError } = await supabase
               .from('work_credit_usage')
-              .insert({
-                user_id: userId,
-                store_id: null, // 리뷰 답글은 store_id 없음
-                service_type: 'review_reply',
-                work_credits_used: workCreditsUsed,
-                input_tokens: null, // 선택적
-                output_tokens: null, // 선택적
-                ai_model: 'claude',
-                usage_date: new Date().toISOString().split('T')[0],
-                used_at: new Date().toISOString()
-              })
+              .insert(usageData)
               .select()
               .single();
 
             if (usageError) {
-              devError("⚠️ work_credit_usage 저장 실패:", usageError);
+              devError("❌ [리뷰 답글] work_credit_usage 저장 실패:", usageError);
+              devError("❌ [리뷰 답글] 저장 실패 상세:", {
+                message: usageError.message,
+                code: usageError.code,
+                details: usageError.details,
+                hint: usageError.hint,
+                usageData: usageData
+              });
               // 크레딧은 차감되었지만 기록 저장 실패 (로그만 남김)
             } else {
-              devLog(`✅ 크레딧 사용 기록 저장 완료: ${usageRecord.id}`);
+              devLog(`✅ [리뷰 답글] 크레딧 사용 기록 저장 완료: ${usageRecord.id}`);
             }
           }
         } catch (creditErr) {
