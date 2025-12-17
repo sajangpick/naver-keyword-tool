@@ -5,6 +5,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const cipher = require('../lib/cipher-service');
 
 // Supabase 클라이언트
 let supabase = null;
@@ -229,7 +230,13 @@ async function sendUrgentReviewAlert(userId, review) {
             .eq('id', userId)
             .single();
 
-        const phoneNumber = profile?.phone_number || profile?.phone;
+        let phoneNumber = profile?.phone_number || profile?.phone;
+        
+        // 전화번호 복호화 (DB에 암호화되어 저장된 경우)
+        if (phoneNumber) {
+            phoneNumber = cipher.decrypt(phoneNumber);
+        }
+        
         if (error || !phoneNumber) {
             console.error('전화번호를 찾을 수 없습니다:', userId);
             return { success: false, error: 'Phone number not found' };
@@ -287,7 +294,13 @@ async function sendHighRatingAlert(userId, review) {
             .eq('id', userId)
             .single();
 
-        const phoneNumber = profile?.phone_number || profile?.phone;
+        let phoneNumber = profile?.phone_number || profile?.phone;
+        
+        // 전화번호 복호화 (DB에 암호화되어 저장된 경우)
+        if (phoneNumber) {
+            phoneNumber = cipher.decrypt(phoneNumber);
+        }
+        
         if (!phoneNumber) {
             console.error('전화번호를 찾을 수 없습니다:', userId);
             return { success: false, error: 'Phone number not found' };

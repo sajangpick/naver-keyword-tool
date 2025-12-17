@@ -12,6 +12,7 @@
 const OpenAI = require('openai');
 const { createClient } = require('@supabase/supabase-js');
 const { trackTokenUsage, checkTokenLimit, extractUserId, isDemoMode } = require('./middleware/token-tracker');
+const cipher = require('../lib/cipher-service');
 
 // Supabase 클라이언트 초기화
 let supabase = null;
@@ -377,7 +378,14 @@ async function getPlaceFromCache(placeUrl) {
         console.log('[캐시] 캐시 적중! (경과:', hoursDiff.toFixed(1), '시간)');
         
         // crawl_data에서 placeInfo 추출
-        return data.crawl_data;
+        const placeInfo = data.crawl_data || {};
+        
+        // phone_number 컬럼이 있으면 복호화해서 placeInfo에 추가
+        if (data.phone_number && !placeInfo.phone) {
+            placeInfo.phone = cipher.decrypt(data.phone_number);
+        }
+        
+        return placeInfo;
 
     } catch (error) {
         console.error('[캐시 조회] 오류:', error);
@@ -400,6 +408,9 @@ async function savePlaceToCache(placeUrl, placeInfo) {
             .single();
 
         if (existing) {
+            // 전화번호 암호화 (캐시에 저장하기 전에 암호화)
+            const encryptedPhone = placeInfo.phone ? cipher.encrypt(placeInfo.phone) : null;
+            
             // 업데이트 (crawl_count 증가)
             const { error } = await supabase
                 .from('place_crawl_cache')
@@ -408,7 +419,7 @@ async function savePlaceToCache(placeUrl, placeInfo) {
                     place_address: placeInfo.address,
                     business_hours: placeInfo.hours,
                     main_menu: placeInfo.mainMenu.join(', '),
-                    phone_number: placeInfo.phone,
+                    phone_number: encryptedPhone,
                     crawl_data: placeInfo,
                     crawl_count: existing.crawl_count + 1,
                     last_crawled_at: new Date().toISOString(),
@@ -419,6 +430,9 @@ async function savePlaceToCache(placeUrl, placeInfo) {
             if (error) throw error;
             console.log('[캐시 저장] 업데이트 완료 (count:', existing.crawl_count + 1, ')');
         } else {
+            // 전화번호 암호화 (캐시에 저장하기 전에 암호화)
+            const encryptedPhone = placeInfo.phone ? cipher.encrypt(placeInfo.phone) : null;
+            
             // 새로 삽입
             const { error } = await supabase
                 .from('place_crawl_cache')
@@ -428,7 +442,7 @@ async function savePlaceToCache(placeUrl, placeInfo) {
                     place_address: placeInfo.address,
                     business_hours: placeInfo.hours,
                     main_menu: placeInfo.mainMenu.join(', '),
-                    phone_number: placeInfo.phone,
+                    phone_number: encryptedPhone,
                     crawl_data: placeInfo,
                     crawl_count: 1,
                     last_crawled_at: new Date().toISOString()

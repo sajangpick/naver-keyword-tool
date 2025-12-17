@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const { JSDOM } = require('jsdom');
+const cipher = require('../lib/cipher-service');
 // 크롤링 제거 - API 키만 사용
 // const puppeteer = require('puppeteer');
 // const chromium = require('@sparticuz/chromium');
@@ -613,8 +614,12 @@ async function fetchRealPolicies() {
                     application_url: item.application_url || item['biz_aply_url'] || item['aply_mthd_onli_rcpt_istc'] || 
                                    item['신청URL'] || item.reqstUrl || item.applicationUrl || item.신청URL || item['rceptUrl'] || null,
                     contact_info: item['pbanc_ntrp_nm'] || item['문의처'] || item.rqutProcCn || item.contact || item.문의처 || item['rqutProcCn'] || '별도 문의',
-                    phone_number: item.phone_number || item['prch_cnpl_no'] || 
-                                item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null,
+                    phone_number: (() => {
+                        const phone = item.phone_number || item['prch_cnpl_no'] || 
+                                    item['전화번호'] || item.phone || item.전화번호 || item['telno'] || null;
+                        // 전화번호 암호화 (DB에 저장하기 전에 암호화)
+                        return phone ? cipher.encrypt(phone) : null;
+                    })(),
                     website_url: item.website_url || item['detl_pg_url'] || item['biz_gdnc_url'] || 
                                item['홈페이지'] || item.website || item.홈페이지 || item['homepage'] || null,
                     status: 'active', // 이미 필터링했으므로 항상 'active'

@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const cipher = require('../lib/cipher-service');
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -347,6 +348,11 @@ module.exports = async (req, res) => {
         .update({ view_count: data.view_count + 1 })
         .eq('id', id);
 
+      // 전화번호 복호화 (사용자에게는 원래 번호를 보여줌)
+      if (data.phone_number) {
+        data.phone_number = cipher.decrypt(data.phone_number);
+      }
+
       return res.json({ success: true, data });
     }
 
@@ -429,7 +435,21 @@ module.exports = async (req, res) => {
 
       data.forEach(policy => {
         policy.user_interest = interestMap[policy.id] || null;
+        
+        // 전화번호 복호화 (사용자에게는 원래 번호를 보여줌)
+        if (policy.phone_number) {
+          policy.phone_number = cipher.decrypt(policy.phone_number);
+        }
       });
+    } else {
+      // user_id가 없어도 전화번호는 복호화
+      if (data && Array.isArray(data)) {
+        data.forEach(policy => {
+          if (policy.phone_number) {
+            policy.phone_number = cipher.decrypt(policy.phone_number);
+          }
+        });
+      }
     }
 
     res.json({
@@ -510,6 +530,11 @@ module.exports = async (req, res) => {
       });
     }
 
+    // 전화번호 암호화 (DB에 저장하기 전에 암호화)
+    const encryptedPhoneNumber = phone_number 
+      ? cipher.encrypt(phone_number) 
+      : null;
+
     // 정책지원금 생성
     const insertData = {
       title,
@@ -528,7 +553,7 @@ module.exports = async (req, res) => {
       application_method,
       application_url,
       contact_info,
-      phone_number,
+      phone_number: encryptedPhoneNumber,
       website_url,
       status: status || 'active',
       is_featured: is_featured || false,
@@ -598,6 +623,11 @@ module.exports = async (req, res) => {
       });
     }
 
+    // 전화번호가 있으면 암호화
+    if (updateData.phone_number) {
+      updateData.phone_number = cipher.encrypt(updateData.phone_number);
+    }
+
     // 정책지원금 업데이트
     const { data, error } = await supabase
       .from('policy_supports')
@@ -607,6 +637,11 @@ module.exports = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // 응답 데이터의 전화번호는 복호화해서 반환
+    if (data.phone_number) {
+      data.phone_number = cipher.decrypt(data.phone_number);
+    }
 
     res.json({
       success: true,

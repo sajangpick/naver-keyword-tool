@@ -6,6 +6,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const cipher = require('../lib/cipher-service');
 
 // Supabase 클라이언트 초기화
 let supabase = null;
@@ -59,6 +60,11 @@ module.exports = async (req, res) => {
                 });
             }
 
+            // 전화번호 복호화 (DB에서 가져온 암호화된 값을 원래 번호로 복원)
+            if (data && data.store_phone_number) {
+                data.store_phone_number = cipher.decrypt(data.store_phone_number);
+            }
+
             return res.status(200).json({
                 success: true,
                 data: data
@@ -83,6 +89,11 @@ module.exports = async (req, res) => {
                 });
             }
 
+            // 전화번호 암호화 (DB에 저장하기 전에 암호화)
+            const encryptedPhoneNumber = storeInfo.phoneNumber 
+                ? cipher.encrypt(storeInfo.phoneNumber) 
+                : null;
+
             // profiles 테이블 업데이트
             const { data, error } = await supabase
                 .from('profiles')
@@ -91,7 +102,7 @@ module.exports = async (req, res) => {
                     store_name: storeInfo.companyName || null,
                     store_address: storeInfo.companyAddress || null,
                     store_business_hours: storeInfo.businessHours || null,
-                    store_phone_number: storeInfo.phoneNumber || null,
+                    store_phone_number: encryptedPhoneNumber,
                     store_main_menu: storeInfo.mainMenu || null,
                     store_landmarks: storeInfo.landmarks || null,
                     store_keywords: storeInfo.keywords || null,
@@ -99,6 +110,13 @@ module.exports = async (req, res) => {
                 })
                 .eq('id', userId)
                 .select();
+
+            // 응답 데이터의 전화번호는 복호화해서 반환 (사용자에게는 원래 번호를 보여줌)
+            if (data && data[0]) {
+                data[0].store_phone_number = encryptedPhoneNumber 
+                    ? cipher.decrypt(encryptedPhoneNumber) 
+                    : null;
+            }
 
             if (error) {
                 console.error('[Store Info POST] Error:', error);
