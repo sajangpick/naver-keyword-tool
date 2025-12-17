@@ -3888,6 +3888,29 @@
                     });
                 }
                 
+                // 크레딧 차감 후 마이페이지 크레딧 정보 새로고침 알림
+                if (metadata.creditDeducted) {
+                    try {
+                        // localStorage 이벤트를 통해 마이페이지에 크레딧 정보 새로고침 알림
+                        const refreshEvent = new CustomEvent('creditUpdated', {
+                            detail: {
+                                serviceType: 'blog_writing',
+                                creditsUsed: metadata.creditsUsed || 5,
+                                timestamp: new Date().toISOString()
+                            }
+                        });
+                        window.dispatchEvent(refreshEvent);
+                        
+                        // localStorage에 변경 사항 저장 (다른 탭에서 감지 가능)
+                        localStorage.setItem('creditLastUpdated', new Date().toISOString());
+                        localStorage.setItem('creditUpdateType', 'blog_writing');
+                        
+                        console.log('✅ [크레딧 업데이트] 마이페이지 크레딧 정보 새로고침 알림 전송 완료');
+                    } catch (refreshError) {
+                        console.warn('⚠️ [크레딧 업데이트] 새로고침 알림 전송 실패:', refreshError);
+                    }
+                }
+                
                 showSuccess();
                 
                 // 앵글 정보 표시
@@ -4156,6 +4179,7 @@
                 }
 
                 const blogContentText = result.data;
+                const metadata = result.metadata || {};
                 console.log('생성된 체험단 블로그:', blogContentText);
                 
                 // 기능 사용 기록 남기기
@@ -4164,6 +4188,29 @@
                         tab: '체험단',
                         hasExistingBlog: !!formData.get('existingBlog')
                     });
+                }
+                
+                // 크레딧 차감 후 마이페이지 크레딧 정보 새로고침 알림
+                if (metadata.creditDeducted) {
+                    try {
+                        // localStorage 이벤트를 통해 마이페이지에 크레딧 정보 새로고침 알림
+                        const refreshEvent = new CustomEvent('creditUpdated', {
+                            detail: {
+                                serviceType: 'blog_writing',
+                                creditsUsed: metadata.creditsUsed || 5,
+                                timestamp: new Date().toISOString()
+                            }
+                        });
+                        window.dispatchEvent(refreshEvent);
+                        
+                        // localStorage에 변경 사항 저장 (다른 탭에서 감지 가능)
+                        localStorage.setItem('creditLastUpdated', new Date().toISOString());
+                        localStorage.setItem('creditUpdateType', 'blog_writing');
+                        
+                        console.log('✅ [크레딧 업데이트] 마이페이지 크레딧 정보 새로고침 알림 전송 완료');
+                    } catch (refreshError) {
+                        console.warn('⚠️ [크레딧 업데이트] 새로고침 알림 전송 실패:', refreshError);
+                    }
                 }
                 
                 showSuccess();

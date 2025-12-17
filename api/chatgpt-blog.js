@@ -1871,6 +1871,75 @@ module.exports = async function handler(req, res) {
                                     } else {
                                         console.warn('⚠️ userId가 없어 블로그 사용량을 증가시키지 않습니다.');
                                     }
+                                    
+                                    // ==================== 크레딧 차감 로직 ====================
+                                    let creditDeducted = false;
+                                    let creditError = null;
+                                    let workCreditsUsed = 5; // 기본값: 5 크레딧 (블로그 작성)
+                                    
+                                    if (supabase && data.userId && data.userId !== 'demo_user_12345' && !demoMode) {
+                                        try {
+                                            console.log('💳 [체험단 블로그] 크레딧 차감 시작...');
+                                            
+                                            // 1. work_credit_config에서 블로그 작성 크레딧 가중치 가져오기
+                                            const { data: creditConfig, error: configError } = await supabase
+                                                .from('work_credit_config')
+                                                .select('blog_writing_credit')
+                                                .order('updated_at', { ascending: false })
+                                                .limit(1)
+                                                .maybeSingle();
+                                            
+                                            if (!configError && creditConfig && creditConfig.blog_writing_credit) {
+                                                workCreditsUsed = Number(creditConfig.blog_writing_credit);
+                                                console.log(`✅ [체험단 블로그] 크레딧 가중치: ${workCreditsUsed} 크레딧`);
+                                            } else {
+                                                console.log(`⚠️ [체험단 블로그] work_credit_config 조회 실패, 기본값 사용: ${workCreditsUsed} 크레딧`);
+                                            }
+                                            
+                                            // 2. 크레딧 한도 체크 및 차감
+                                            const { checkAndUpdateCreditLimit } = require('./subscription/token-usage');
+                                            const creditCheck = await checkAndUpdateCreditLimit(data.userId, workCreditsUsed);
+                                            
+                                            if (!creditCheck.success) {
+                                                creditError = creditCheck.error;
+                                                console.error(`❌ [체험단 블로그] 크레딧 한도 초과: ${creditError}`);
+                                            } else {
+                                                creditDeducted = true;
+                                                console.log(`✅ [체험단 블로그] 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditCheck.creditsRemaining})`);
+                                                
+                                                // 3. work_credit_usage 테이블에 사용 기록 저장
+                                                const { data: usageRecord, error: usageError } = await supabase
+                                                    .from('work_credit_usage')
+                                                    .insert({
+                                                        user_id: data.userId,
+                                                        store_id: null,
+                                                        service_type: 'blog_writing',
+                                                        work_credits_used: workCreditsUsed,
+                                                        input_tokens: null,
+                                                        output_tokens: null,
+                                                        ai_model: 'gpt-5.1',
+                                                        usage_date: new Date().toISOString().split('T')[0],
+                                                        used_at: new Date().toISOString()
+                                                    })
+                                                    .select()
+                                                    .single();
+                                                
+                                                if (usageError) {
+                                                    console.error("⚠️ [체험단 블로그] work_credit_usage 저장 실패:", usageError);
+                                                } else {
+                                                    console.log(`✅ [체험단 블로그] 크레딧 사용 기록 저장 완료: ${usageRecord.id}`);
+                                                }
+                                            }
+                                        } catch (creditErr) {
+                                            console.error("❌ [체험단 블로그] 크레딧 차감 중 오류:", creditErr);
+                                            creditError = creditErr.message;
+                                        }
+                                    } else {
+                                        if (!data.userId || data.userId === 'demo_user_12345' || demoMode) {
+                                            console.log("⚠️ [체험단 블로그] 데모 모드 또는 userId 없음: 크레딧 차감 건너뜀");
+                                        }
+                                    }
+                                    // ==================== 크레딧 차감 로직 끝 ====================
                                 }
                             } catch (dbErr) {
                                 dbStatus = 'failed';
@@ -1887,7 +1956,10 @@ module.exports = async function handler(req, res) {
                                 dbSaveStatus: dbStatus,
                                 dbError,
                                 generationTime,
-                                writingAngle: reviewResult.writingAngle
+                                writingAngle: reviewResult.writingAngle,
+                                creditDeducted: creditDeducted || false,
+                                creditsUsed: creditDeducted ? workCreditsUsed : 0,
+                                creditError: creditError || null
                             }
                         });
                     } catch (error) {
@@ -1975,6 +2047,75 @@ module.exports = async function handler(req, res) {
                                     } else {
                                         console.warn('⚠️ userId가 없어 블로그 사용량을 증가시키지 않습니다.');
                                     }
+                                    
+                                    // ==================== 크레딧 차감 로직 ====================
+                                    let creditDeducted = false;
+                                    let creditError = null;
+                                    let workCreditsUsed = 5; // 기본값: 5 크레딧 (블로그 작성)
+                                    
+                                    if (supabase && data.userId && data.userId !== 'demo_user_12345' && !demoMode) {
+                                        try {
+                                            console.log('💳 [방문 후기] 크레딧 차감 시작...');
+                                            
+                                            // 1. work_credit_config에서 블로그 작성 크레딧 가중치 가져오기
+                                            const { data: creditConfig, error: configError } = await supabase
+                                                .from('work_credit_config')
+                                                .select('blog_writing_credit')
+                                                .order('updated_at', { ascending: false })
+                                                .limit(1)
+                                                .maybeSingle();
+                                            
+                                            if (!configError && creditConfig && creditConfig.blog_writing_credit) {
+                                                workCreditsUsed = Number(creditConfig.blog_writing_credit);
+                                                console.log(`✅ [방문 후기] 크레딧 가중치: ${workCreditsUsed} 크레딧`);
+                                            } else {
+                                                console.log(`⚠️ [방문 후기] work_credit_config 조회 실패, 기본값 사용: ${workCreditsUsed} 크레딧`);
+                                            }
+                                            
+                                            // 2. 크레딧 한도 체크 및 차감
+                                            const { checkAndUpdateCreditLimit } = require('./subscription/token-usage');
+                                            const creditCheck = await checkAndUpdateCreditLimit(data.userId, workCreditsUsed);
+                                            
+                                            if (!creditCheck.success) {
+                                                creditError = creditCheck.error;
+                                                console.error(`❌ [방문 후기] 크레딧 한도 초과: ${creditError}`);
+                                            } else {
+                                                creditDeducted = true;
+                                                console.log(`✅ [방문 후기] 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditCheck.creditsRemaining})`);
+                                                
+                                                // 3. work_credit_usage 테이블에 사용 기록 저장
+                                                const { data: usageRecord, error: usageError } = await supabase
+                                                    .from('work_credit_usage')
+                                                    .insert({
+                                                        user_id: data.userId,
+                                                        store_id: null,
+                                                        service_type: 'blog_writing',
+                                                        work_credits_used: workCreditsUsed,
+                                                        input_tokens: null,
+                                                        output_tokens: null,
+                                                        ai_model: 'gpt-5.1',
+                                                        usage_date: new Date().toISOString().split('T')[0],
+                                                        used_at: new Date().toISOString()
+                                                    })
+                                                    .select()
+                                                    .single();
+                                                
+                                                if (usageError) {
+                                                    console.error("⚠️ [방문 후기] work_credit_usage 저장 실패:", usageError);
+                                                } else {
+                                                    console.log(`✅ [방문 후기] 크레딧 사용 기록 저장 완료: ${usageRecord.id}`);
+                                                }
+                                            }
+                                        } catch (creditErr) {
+                                            console.error("❌ [방문 후기] 크레딧 차감 중 오류:", creditErr);
+                                            creditError = creditErr.message;
+                                        }
+                                    } else {
+                                        if (!data.userId || data.userId === 'demo_user_12345' || demoMode) {
+                                            console.log("⚠️ [방문 후기] 데모 모드 또는 userId 없음: 크레딧 차감 건너뜀");
+                                        }
+                                    }
+                                    // ==================== 크레딧 차감 로직 끝 ====================
                                 }
                             } catch (dbErr) {
                                 dbStatus = 'failed';
@@ -1991,7 +2132,10 @@ module.exports = async function handler(req, res) {
                                 dbSaveStatus: dbStatus,
                                 dbError,
                                 generationTime,
-                                writingAngle: reviewResult.writingAngle
+                                writingAngle: reviewResult.writingAngle,
+                                creditDeducted: creditDeducted || false,
+                                creditsUsed: creditDeducted ? workCreditsUsed : 0,
+                                creditError: creditError || null
                             }
                         });
                     } catch (error) {
@@ -2068,6 +2212,75 @@ module.exports = async function handler(req, res) {
                                 } else {
                                     console.warn('⚠️ userId가 없어 블로그 사용량을 증가시키지 않습니다.');
                                 }
+                                
+                                // ==================== 크레딧 차감 로직 ====================
+                                let creditDeducted = false;
+                                let creditError = null;
+                                let workCreditsUsed = 5; // 기본값: 5 크레딧 (블로그 작성)
+                                
+                                if (supabase && data.userId && data.userId !== 'demo_user_12345' && !demoMode) {
+                                    try {
+                                        console.log('💳 [우리매장 블로그] 크레딧 차감 시작...');
+                                        
+                                        // 1. work_credit_config에서 블로그 작성 크레딧 가중치 가져오기
+                                        const { data: creditConfig, error: configError } = await supabase
+                                            .from('work_credit_config')
+                                            .select('blog_writing_credit')
+                                            .order('updated_at', { ascending: false })
+                                            .limit(1)
+                                            .maybeSingle();
+                                        
+                                        if (!configError && creditConfig && creditConfig.blog_writing_credit) {
+                                            workCreditsUsed = Number(creditConfig.blog_writing_credit);
+                                            console.log(`✅ [우리매장 블로그] 크레딧 가중치: ${workCreditsUsed} 크레딧`);
+                                        } else {
+                                            console.log(`⚠️ [우리매장 블로그] work_credit_config 조회 실패, 기본값 사용: ${workCreditsUsed} 크레딧`);
+                                        }
+                                        
+                                        // 2. 크레딧 한도 체크 및 차감
+                                        const { checkAndUpdateCreditLimit } = require('./subscription/token-usage');
+                                        const creditCheck = await checkAndUpdateCreditLimit(data.userId, workCreditsUsed);
+                                        
+                                        if (!creditCheck.success) {
+                                            creditError = creditCheck.error;
+                                            console.error(`❌ [우리매장 블로그] 크레딧 한도 초과: ${creditError}`);
+                                        } else {
+                                            creditDeducted = true;
+                                            console.log(`✅ [우리매장 블로그] 크레딧 차감 완료: ${workCreditsUsed} 크레딧 (남은 크레딧: ${creditCheck.creditsRemaining})`);
+                                            
+                                            // 3. work_credit_usage 테이블에 사용 기록 저장
+                                            const { data: usageRecord, error: usageError } = await supabase
+                                                .from('work_credit_usage')
+                                                .insert({
+                                                    user_id: data.userId,
+                                                    store_id: null,
+                                                    service_type: 'blog_writing',
+                                                    work_credits_used: workCreditsUsed,
+                                                    input_tokens: null,
+                                                    output_tokens: null,
+                                                    ai_model: 'gpt-5.1',
+                                                    usage_date: new Date().toISOString().split('T')[0],
+                                                    used_at: new Date().toISOString()
+                                                })
+                                                .select()
+                                                .single();
+                                            
+                                            if (usageError) {
+                                                console.error("⚠️ [우리매장 블로그] work_credit_usage 저장 실패:", usageError);
+                                            } else {
+                                                console.log(`✅ [우리매장 블로그] 크레딧 사용 기록 저장 완료: ${usageRecord.id}`);
+                                            }
+                                        }
+                                    } catch (creditErr) {
+                                        console.error("❌ [우리매장 블로그] 크레딧 차감 중 오류:", creditErr);
+                                        creditError = creditErr.message;
+                                    }
+                                } else {
+                                    if (!data.userId || data.userId === 'demo_user_12345' || demoMode) {
+                                        console.log("⚠️ [우리매장 블로그] 데모 모드 또는 userId 없음: 크레딧 차감 건너뜀");
+                                    }
+                                }
+                                // ==================== 크레딧 차감 로직 끝 ====================
                             }
                         } catch (dbErr) {
                             dbStatus = 'failed';
@@ -2083,7 +2296,10 @@ module.exports = async function handler(req, res) {
                             dbSaveStatus: dbStatus,
                             dbError,
                             generationTime,
-                            writingAngle: blogResult.writingAngle
+                            writingAngle: blogResult.writingAngle,
+                            creditDeducted: creditDeducted || false,
+                            creditsUsed: creditDeducted ? workCreditsUsed : 0,
+                            creditError: creditError || null
                         }
                     });
                 }
