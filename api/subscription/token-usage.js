@@ -370,56 +370,71 @@ const apiHandler = async (req, res) => {
 
     // GET: 크레딧 사용 내역 조회
     if (req.method === 'GET') {
-      const { user_id, limit = 10 } = req.query;
+      try {
+        const { user_id, limit = 10 } = req.query;
 
-      if (!user_id) {
-        return res.status(400).json({
-          success: false,
-          error: '사용자 ID가 필요합니다'
-        });
-      }
+        if (!user_id) {
+          return res.status(400).json({
+            success: false,
+            error: '사용자 ID가 필요합니다'
+          });
+        }
 
-      // 데모 모드일 때는 무제한 크레딧 반환
-      const demoMode = isDemoMode(req);
-      if (demoMode || user_id === 'demo_user_12345') {
-        console.log('✅ [credit-usage] 데모 모드 감지: 무제한 크레딧 반환');
-        return res.json({
-          success: true,
-          usage: [],
-          cycle: null,
-          summary: {
-            monthlyLimit: 999999,
-            creditsUsed: 0,
-            creditsRemaining: 999999,
-            isExceeded: false
+        // 데모 모드일 때는 무제한 크레딧 반환
+        const demoMode = isDemoMode(req);
+        if (demoMode || user_id === 'demo_user_12345') {
+          console.log('✅ [credit-usage] 데모 모드 감지: 무제한 크레딧 반환');
+          return res.json({
+            success: true,
+            usage: [],
+            cycle: null,
+            summary: {
+              monthlyLimit: 999999,
+              creditsUsed: 0,
+              creditsRemaining: 999999,
+              isExceeded: false
+            }
+          });
+        }
+
+        // 사용자 프로필 조회 (등급 확인) - 먼저 조회
+        let profile = null;
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('membership_level, user_type')
+            .eq('id', user_id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error('❌ [credit-usage] 프로필 조회 실패:', profileError);
+          } else {
+            profile = profileData;
           }
-        });
-      }
+        } catch (profileErr) {
+          console.error('❌ [credit-usage] 프로필 조회 중 예외 발생:', profileErr);
+        }
 
-      // 사용자 프로필 조회 (등급 확인) - 먼저 조회
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('membership_level, user_type')
-        .eq('id', user_id)
-        .maybeSingle();
+        // 현재 구독 사이클 조회 (먼저 조회하여 실제 한도 확인)
+        let cycle = null;
+        try {
+          const { data: cycleData, error: cycleError } = await supabase
+            .from('subscription_cycle')
+            .select('*')
+            .eq('user_id', user_id)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-      if (profileError) {
-        console.error('❌ [credit-usage] 프로필 조회 실패:', profileError);
-      }
-
-      // 현재 구독 사이클 조회 (먼저 조회하여 실제 한도 확인)
-      const { data: cycle, error: cycleError } = await supabase
-        .from('subscription_cycle')
-        .select('*')
-        .eq('user_id', user_id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (cycleError) {
-        console.error('❌ [credit-usage] 구독 사이클 조회 실패:', cycleError);
-      }
+          if (cycleError) {
+            console.error('❌ [credit-usage] 구독 사이클 조회 실패:', cycleError);
+          } else {
+            cycle = cycleData;
+          }
+        } catch (cycleErr) {
+          console.error('❌ [credit-usage] 구독 사이클 조회 중 예외 발생:', cycleErr);
+        }
 
       // 작업 크레딧 한도 조회 우선순위:
       // 1. member_custom_credit_limit (개인 맞춤 한도) - 최우선
@@ -435,12 +450,12 @@ const apiHandler = async (req, res) => {
       
       // 1단계: 개인 맞춤 크레딧 한도 확인 (최우선)
       try {
+        const today = new Date().toISOString().split('T')[0];
         const { data: customLimit, error: customError } = await supabase
           .from('member_custom_credit_limit')
           .select('custom_limit')
           .eq('member_id', user_id)
-          .is('applied_until', null) // 적용 기간이 만료되지 않은 것만
-          .or('applied_until.gte.' + new Date().toISOString().split('T')[0])
+          .or(`applied_until.is.null,applied_until.gte.${today}`)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -647,9 +662,32 @@ const apiHandler = async (req, res) => {
         console.warn('⚠️ [credit-usage] 사용 내역 조회 실패했지만 계속 진행:', fetchError.message);
       }
       
-      console.log(`✅ [credit-usage] GET 요청 완료: user_id=${user_id}, usage_count=${usage.length}, credits_used=${creditsUsed}, credits_remaining=${creditsRemaining}`);
-      
-      return res.json(response);
+        console.log(`✅ [credit-usage] GET 요청 완료: user_id=${user_id}, usage_count=${usage.length}, credits_used=${creditsUsed}, credits_remaining=${creditsRemaining}`);
+        
+        return res.json(response);
+      } catch (getError) {
+        console.error('❌ [credit-usage] GET 요청 처리 중 오류 발생:', getError);
+        console.error('❌ [credit-usage] 에러 상세:', {
+          message: getError.message,
+          stack: getError.stack?.split('\n').slice(0, 10).join('\n'),
+          user_id: req.query?.user_id
+        });
+        
+        // 에러 발생 시에도 기본값 반환 (500 에러 방지)
+        return res.json({
+          success: false,
+          error: getError.message || '크레딧 사용 내역 조회 중 오류가 발생했습니다',
+          usage: [],
+          cycle: null,
+          summary: {
+            monthlyLimit: 0,
+            includedCredits: 0,
+            creditsUsed: 0,
+            creditsRemaining: 0,
+            isExceeded: false
+          }
+        });
+      }
     }
 
     return res.status(405).json({
