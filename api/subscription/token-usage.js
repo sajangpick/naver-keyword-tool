@@ -490,9 +490,15 @@ const apiHandler = async (req, res) => {
       console.log(`🔍 크레딧 한도 조회 시작: user_id=${user_id}, userType=${userType}, level=${membershipLevel}, key=${creditLimitKey}`);
       
       // 가장 먼저 사이클에서 한도 확인 (가장 빠르고 안전)
-      if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
-        currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
-        console.log(`✅ 사이클에서 크레딧 한도 사용: ${currentCreditLimit}`);
+      if (cycle) {
+        // included_credits 컬럼이 있으면 사용
+        if (cycle.hasOwnProperty('included_credits') && cycle.included_credits !== null && cycle.included_credits !== undefined) {
+          currentCreditLimit = Number(cycle.included_credits) || 0;
+          console.log(`✅ 사이클에서 크레딧 한도 사용 (included_credits): ${currentCreditLimit}`);
+        } else if (cycle.hasOwnProperty('monthly_token_limit') && cycle.monthly_token_limit !== null && cycle.monthly_token_limit !== undefined) {
+          currentCreditLimit = Number(cycle.monthly_token_limit) || 0;
+          console.log(`✅ 사이클에서 크레딧 한도 사용 (monthly_token_limit): ${currentCreditLimit}`);
+        }
       }
       
       // 사이클에 한도가 없으면 다른 소스에서 조회
@@ -590,17 +596,45 @@ const apiHandler = async (req, res) => {
       }
 
       // 작업 크레딧 사용량 계산 (작업 크레딧 시스템)
-      const creditsUsed = cycle?.credits_used || cycle?.tokens_used || 0;
-      const includedCredits = cycle?.included_credits || cycle?.monthly_token_limit || currentCreditLimit;
-      let creditsRemaining = 0;
+      // 안전하게 컬럼 접근 (컬럼이 없을 수도 있음)
+      let creditsUsed = 0;
+      let includedCredits = currentCreditLimit;
+      let creditsRemaining = currentCreditLimit;
       
       if (cycle) {
-        // 사이클이 있으면 사이클의 남은 작업 크레딧 사용
-        creditsRemaining = cycle.credits_remaining !== undefined ? cycle.credits_remaining : (includedCredits - creditsUsed);
+        // credits_used 컬럼이 있으면 사용, 없으면 tokens_used 사용, 둘 다 없으면 0
+        if (cycle.hasOwnProperty('credits_used') && cycle.credits_used !== null && cycle.credits_used !== undefined) {
+          creditsUsed = Number(cycle.credits_used) || 0;
+        } else if (cycle.hasOwnProperty('tokens_used') && cycle.tokens_used !== null && cycle.tokens_used !== undefined) {
+          creditsUsed = Number(cycle.tokens_used) || 0;
+        } else {
+          creditsUsed = 0;
+        }
+        
+        // included_credits 컬럼이 있으면 사용, 없으면 monthly_token_limit 사용, 둘 다 없으면 currentCreditLimit 사용
+        if (cycle.hasOwnProperty('included_credits') && cycle.included_credits !== null && cycle.included_credits !== undefined) {
+          includedCredits = Number(cycle.included_credits) || currentCreditLimit;
+        } else if (cycle.hasOwnProperty('monthly_token_limit') && cycle.monthly_token_limit !== null && cycle.monthly_token_limit !== undefined) {
+          includedCredits = Number(cycle.monthly_token_limit) || currentCreditLimit;
+        } else {
+          includedCredits = currentCreditLimit;
+        }
+        
+        // credits_remaining 컬럼이 있으면 사용, 없으면 계산
+        if (cycle.hasOwnProperty('credits_remaining') && cycle.credits_remaining !== null && cycle.credits_remaining !== undefined) {
+          creditsRemaining = Number(cycle.credits_remaining) || 0;
+        } else if (cycle.hasOwnProperty('tokens_remaining') && cycle.tokens_remaining !== null && cycle.tokens_remaining !== undefined) {
+          creditsRemaining = Number(cycle.tokens_remaining) || 0;
+        } else {
+          // 둘 다 없으면 계산
+          creditsRemaining = Math.max(0, includedCredits - creditsUsed);
+        }
       } else {
         // 사이클이 없으면 최신 한도가 남은 크레딧
         creditsRemaining = currentCreditLimit;
       }
+      
+      console.log(`✅ [credit-usage] 크레딧 계산 완료: creditsUsed=${creditsUsed}, includedCredits=${includedCredits}, creditsRemaining=${creditsRemaining}`);
 
       // fetchError가 있어도 사용 내역은 빈 배열로 반환 (테이블이 없거나 에러가 발생해도 계속 진행)
       const response = {
