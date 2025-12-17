@@ -412,7 +412,14 @@ const apiHandler = async (req, res) => {
       }
 
       try {
-        console.log('🔍 [credit-usage] GET 요청 시작:', { user_id: req.query?.user_id, limit: req.query?.limit });
+        console.log('🔍 [credit-usage] GET 요청 시작:', { 
+          user_id: req.query?.user_id, 
+          limit: req.query?.limit,
+          method: req.method,
+          url: req.url,
+          hasSupabase: !!supabase
+        });
+        
         const { user_id, limit = 10 } = req.query;
 
         if (!user_id) {
