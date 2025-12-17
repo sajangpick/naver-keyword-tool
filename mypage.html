@@ -1606,51 +1606,96 @@
           </button>
         </section>
 
-        <!-- 5. 네이버 스마트플레이스 연동 -->
-        <section class="section" id="naverSmartplaceSection">
+        <!-- 5. 외부 플랫폼 연동 -->
+        <section class="section" id="platformConnectionSection">
           <h3 class="section-title">
-            <i class="fab fa-neos"></i>
-            네이버 스마트플레이스 연동
+            <i class="fas fa-plug"></i>
+            외부 플랫폼 연동
           </h3>
           <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-            네이버 스마트플레이스를 연동하면 리뷰를 자동으로 가져와서 AI 답글을 등록할 수 있습니다.
+            외부 플랫폼을 연동하면 리뷰를 자동으로 가져와서 AI 답글을 등록할 수 있습니다.
           </p>
 
-          <!-- 연동된 플레이스 목록 -->
-          <div id="connectedPlaces" style="margin-bottom: 30px;">
+          <!-- 연동된 플랫폼 목록 -->
+          <div id="connectedPlatforms" style="margin-bottom: 30px;">
             <div class="loading">
               <div class="spinner"></div>
             </div>
           </div>
 
-          <!-- 연동 폼 (연동 안 되어있을 때만 표시) -->
-          <div id="connectForm" style="display: none;">
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-comment-dots"></i> 답글 톤 설정
-              </label>
-              <select id="replyTone" class="form-control">
-                <option value="friendly">친근한 톤 (50자 이내, 이모지 1-2개)</option>
-                <option value="professional">전문적인 톤 (70자 이내, 정중하게)</option>
-                <option value="casual">캐주얼 톤 (40자 이내, 반말 가능)</option>
-              </select>
-            </div>
-
-            <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-              <p style="margin: 0 0 12px 0; color: #1976d2; font-weight: 600;">
-                <i class="fas fa-info-circle"></i> 연동 방법
-              </p>
-              <ol style="margin: 0; padding-left: 20px; color: #424242; font-size: 14px; line-height: 1.8;">
-                <li>아래 버튼을 클릭하면 네이버 로그인 페이지로 이동합니다</li>
-                <li>네이버 계정으로 로그인하세요</li>
-                <li>로그인 후 스마트플레이스 관리 페이지로 이동합니다</li>
-                <li><strong>자동으로 연동이 완료됩니다!</strong></li>
-              </ol>
-            </div>
-
-            <button class="btn btn-primary" onclick="redirectToNaverLogin()" id="connectBtn" style="width: 100%; padding: 16px; font-size: 16px;">
-              <i class="fab fa-neos"></i> 네이버 로그인하고 스마트플레이스 연동하기
+          <!-- 플랫폼 로그인 버튼들 -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+            <!-- 네이버 스마트플레이스 -->
+            <button class="btn btn-primary" onclick="connectPlatform('naver')" style="
+              background: linear-gradient(135deg, #03c75a, #02b350);
+              color: white;
+              padding: 16px;
+              font-size: 15px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            ">
+              <i class="fab fa-neos" style="font-size: 20px;"></i>
+              네이버 스마트플레이스
             </button>
+
+            <!-- 배달의민족 -->
+            <button class="btn btn-primary" onclick="connectPlatform('baemin')" style="
+              background: linear-gradient(135deg, #00c73c, #00b336);
+              color: white;
+              padding: 16px;
+              font-size: 15px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            ">
+              <i class="fas fa-utensils" style="font-size: 20px;"></i>
+              배달의민족
+            </button>
+
+            <!-- 요기요 -->
+            <button class="btn btn-primary" onclick="connectPlatform('yogiyo')" style="
+              background: linear-gradient(135deg, #ff6b35, #ff5722);
+              color: white;
+              padding: 16px;
+              font-size: 15px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            ">
+              <i class="fas fa-motorcycle" style="font-size: 20px;"></i>
+              요기요
+            </button>
+
+            <!-- 쿠팡이츠 -->
+            <button class="btn btn-primary" onclick="connectPlatform('coupangeats')" style="
+              background: linear-gradient(135deg, #fa622f, #e8551f);
+              color: white;
+              padding: 16px;
+              font-size: 15px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            ">
+              <i class="fas fa-shopping-bag" style="font-size: 20px;"></i>
+              쿠팡이츠
+            </button>
+          </div>
+
+          <!-- 안내 메시지 -->
+          <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 12px; padding: 16px; margin-top: 20px;">
+            <p style="margin: 0; color: #1976d2; font-size: 13px; line-height: 1.6;">
+              <i class="fas fa-info-circle"></i> <strong>연동 안내:</strong><br>
+              각 플랫폼의 로그인 페이지로 이동하여 인증을 완료하면 자동으로 연동됩니다.
+            </p>
           </div>
         </section>
       </div>
@@ -1912,7 +1957,7 @@
           loadStoreInfo(),
           loadPromotion(),
           loadBlogStyle(),
-          loadNaverSmartplaceConnections(user.id)  // 네이버 스마트플레이스 연동 정보
+          loadPlatformConnections(user.id)  // 외부 플랫폼 연동 정보
         ]);
 
         // 실시간 작성 현황 리스너 설정
@@ -4298,162 +4343,301 @@
       }
     }
 
-    // ========== 네이버 스마트플레이스 연동 관련 함수 ==========
+    // ========== 외부 플랫폼 연동 관련 함수 ==========
     
-    // 연동된 플레이스 목록 로드
-    async function loadNaverSmartplaceConnections(userId) {
+    // 연동된 플랫폼 목록 로드
+    async function loadPlatformConnections(userId) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const response = await fetch('/api/naver/connections', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'user-id': userId
-          }
-        });
+        // 모든 플랫폼의 연동 정보를 가져오기
+        const [naverRes, baeminRes, yogiyoRes, coupangRes] = await Promise.allSettled([
+          fetch('/api/naver/connections', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'user-id': userId
+            }
+          }),
+          fetch('/api/baemin/connections', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'user-id': userId
+            }
+          }),
+          fetch('/api/yogiyo/connections', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'user-id': userId
+            }
+          }),
+          fetch('/api/coupangeats/connections', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'user-id': userId
+            }
+          })
+        ]);
 
-        if (!response.ok) {
-          throw new Error('연동 정보를 불러올 수 없습니다');
+        const connections = [];
+        
+        // 네이버
+        if (naverRes.status === 'fulfilled' && naverRes.value.ok) {
+          const naverData = await naverRes.value.json();
+          if (naverData.connections) {
+            connections.push(...naverData.connections.map(c => ({ ...c, platform: 'naver' })));
+          }
+        }
+        
+        // 배달의민족
+        if (baeminRes.status === 'fulfilled' && baeminRes.value.ok) {
+          const baeminData = await baeminRes.value.json();
+          if (baeminData.connections) {
+            connections.push(...baeminData.connections.map(c => ({ ...c, platform: 'baemin' })));
+          }
+        }
+        
+        // 요기요
+        if (yogiyoRes.status === 'fulfilled' && yogiyoRes.value.ok) {
+          const yogiyoData = await yogiyoRes.value.json();
+          if (yogiyoData.connections) {
+            connections.push(...yogiyoData.connections.map(c => ({ ...c, platform: 'yogiyo' })));
+          }
+        }
+        
+        // 쿠팡이츠
+        if (coupangRes.status === 'fulfilled' && coupangRes.value.ok) {
+          const coupangData = await coupangRes.value.json();
+          if (coupangData.connections) {
+            connections.push(...coupangData.connections.map(c => ({ ...c, platform: 'coupangeats' })));
+          }
         }
 
-        const result = await response.json();
-        updateNaverSmartplaceUI(result.connections || []);
+        updatePlatformConnectionsUI(connections);
       } catch (error) {
-        console.error('❌ 네이버 스마트플레이스 연동 정보 로드 실패:', error);
-        updateNaverSmartplaceUI([]);
+        console.error('❌ 플랫폼 연동 정보 로드 실패:', error);
+        updatePlatformConnectionsUI([]);
       }
     }
 
     // UI 업데이트
-    function updateNaverSmartplaceUI(connections) {
-      const container = document.getElementById('connectedPlaces');
-      const form = document.getElementById('connectForm');
+    function updatePlatformConnectionsUI(connections) {
+      const container = document.getElementById('connectedPlatforms');
 
-      if (connections.length === 0) {
-        // 연동 안 되어있으면 폼 표시
-        container.innerHTML = '';
-        form.style.display = 'block';
-      } else {
-        // 연동되어있으면 카드 표시
-        form.style.display = 'none';
-        container.innerHTML = connections.map(conn => `
-          <div class="naver-place-card" style="
-            background: var(--white);
-            border: 2px solid var(--accent-color);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow-sm);
-          ">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
-              <div>
-                <h4 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
-                  <i class="fab fa-neos" style="color: #03c75a; margin-right: 8px;"></i>
-                  ${conn.place_name || '업소명 없음'}
-                </h4>
-                <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">
-                  플레이스 ID: ${conn.place_id}
-                </p>
-              </div>
-              <span style="
-                padding: 6px 12px;
-                background: ${conn.is_active ? '#dcfce7' : '#fee2e2'};
-                color: ${conn.is_active ? '#166534' : '#991b1b'};
-                border-radius: 999px;
-                font-size: 12px;
-                font-weight: 600;
-              ">
-                ${conn.is_active ? '✓ 활성화' : '✗ 비활성화'}
-              </span>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-              <div>
-                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">마지막 동기화</div>
-                <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
-                  ${conn.last_sync_at ? new Date(conn.last_sync_at).toLocaleString('ko-KR') : '아직 없음'}
-                </div>
-              </div>
-              <div>
-                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 톤</div>
-                <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
-                  ${conn.reply_tone === 'friendly' ? '친근한' : conn.reply_tone === 'professional' ? '전문적인' : '캐주얼'}
-                </div>
-              </div>
-            </div>
-
-            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-              <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
-                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">총 리뷰</div>
-                <div style="color: var(--accent-color); font-size: 20px; font-weight: 700;">
-                  ${conn.total_reviews || 0}건
-                </div>
-              </div>
-              <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
-                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 대기중</div>
-                <div style="color: var(--warning); font-size: 20px; font-weight: 700;">
-                  ${conn.pending_replies || 0}건
-                </div>
-              </div>
-            </div>
-
-            <div style="display: flex; gap: 8px;">
-              <a href="/app/ai-review-automation.html" class="btn" style="
-                flex: 1;
-                background: var(--accent-color);
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 8px;
-                text-align: center;
-                text-decoration: none;
-                font-weight: 600;
-                cursor: pointer;
-              ">
-                <i class="fas fa-robot"></i> 리뷰 관리하기
-              </a>
-              <button onclick="disconnectNaverPlace('${conn.id}')" class="btn" style="
-                background: var(--error);
-                color: white;
-                border: none;
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-              ">
-                <i class="fas fa-unlink"></i> 연동 해제
-              </button>
-            </div>
+      if (!connections || connections.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+            <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 8px; opacity: 0.5;"></i>
+            <div>연동된 플랫폼이 없습니다. 아래 버튼을 클릭하여 연동하세요.</div>
           </div>
-        `).join('');
+        `;
+      } else {
+        const platformInfo = {
+          naver: { name: '네이버 스마트플레이스', icon: 'fab fa-neos', color: '#03c75a' },
+          baemin: { name: '배달의민족', icon: 'fas fa-utensils', color: '#00c73c' },
+          yogiyo: { name: '요기요', icon: 'fas fa-motorcycle', color: '#ff6b35' },
+          coupangeats: { name: '쿠팡이츠', icon: 'fas fa-shopping-bag', color: '#fa622f' }
+        };
+
+        container.innerHTML = connections.map(conn => {
+          const platform = platformInfo[conn.platform] || { name: conn.platform, icon: 'fas fa-link', color: '#666' };
+          
+          return `
+            <div class="platform-card" style="
+              background: var(--white);
+              border: 2px solid ${platform.color};
+              border-radius: 16px;
+              padding: 24px;
+              margin-bottom: 20px;
+              box-shadow: var(--shadow-sm);
+            ">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                <div>
+                  <h4 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+                    <i class="${platform.icon}" style="color: ${platform.color}; margin-right: 8px;"></i>
+                    ${conn.place_name || conn.store_name || platform.name}
+                  </h4>
+                  <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">
+                    ${conn.place_id ? `플레이스 ID: ${conn.place_id}` : ''}
+                    ${conn.store_id ? `매장 ID: ${conn.store_id}` : ''}
+                  </p>
+                </div>
+                <span style="
+                  padding: 6px 12px;
+                  background: ${conn.is_active ? '#dcfce7' : '#fee2e2'};
+                  color: ${conn.is_active ? '#166534' : '#991b1b'};
+                  border-radius: 999px;
+                  font-size: 12px;
+                  font-weight: 600;
+                ">
+                  ${conn.is_active ? '✓ 활성화' : '✗ 비활성화'}
+                </span>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">마지막 동기화</div>
+                  <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
+                    ${conn.last_sync_at ? new Date(conn.last_sync_at).toLocaleString('ko-KR') : '아직 없음'}
+                  </div>
+                </div>
+                <div>
+                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 톤</div>
+                  <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
+                    ${conn.reply_tone === 'friendly' ? '친근한' : conn.reply_tone === 'professional' ? '전문적인' : '캐주얼'}
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
+                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">총 리뷰</div>
+                  <div style="color: var(--accent-color); font-size: 20px; font-weight: 700;">
+                    ${conn.total_reviews || 0}건
+                  </div>
+                </div>
+                <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
+                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 대기중</div>
+                  <div style="color: var(--warning); font-size: 20px; font-weight: 700;">
+                    ${conn.pending_replies || 0}건
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <a href="/app/ai-review-automation.html" class="btn" style="
+                  flex: 1;
+                  background: var(--accent-color);
+                  color: white;
+                  border: none;
+                  padding: 12px;
+                  border-radius: 8px;
+                  text-align: center;
+                  text-decoration: none;
+                  font-weight: 600;
+                  cursor: pointer;
+                ">
+                  <i class="fas fa-robot"></i> 리뷰 관리하기
+                </a>
+                <button onclick="disconnectPlatform('${conn.platform}', '${conn.id}')" class="btn" style="
+                  background: var(--error);
+                  color: white;
+                  border: none;
+                  padding: 12px 20px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  cursor: pointer;
+                ">
+                  <i class="fas fa-unlink"></i> 연동 해제
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
       }
     }
 
-    // 네이버 로그인 페이지로 리다이렉트
-    async function redirectToNaverLogin() {
-      const replyTone = document.getElementById('replyTone').value;
-      
-      // 현재 사용자 ID 확인
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        alert('로그인이 필요합니다.');
-        window.location.href = '/login.html';
+    // 플랫폼 연동 함수
+    async function connectPlatform(platform) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          alert('로그인이 필요합니다.');
+          window.location.href = '/login.html';
+          return;
+        }
+
+        const userId = session.user.id;
+        const platformUrls = {
+          naver: {
+            url: `https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=${encodeURIComponent(`https://new.smartplace.naver.com/?callback=${encodeURIComponent(`${window.location.origin}/naver-callback.html`)}`)}&area=bbt`,
+            name: '네이버 스마트플레이스'
+          },
+          baemin: {
+            url: `https://ceo.baemin.com/login`,
+            name: '배달의민족'
+          },
+          yogiyo: {
+            url: `https://www.yogiyo.co.kr/mobile/#/login/`,
+            name: '요기요'
+          },
+          coupangeats: {
+            url: `https://partners.coupang.com/login`,
+            name: '쿠팡이츠'
+          }
+        };
+
+        const platformInfo = platformUrls[platform];
+        if (!platformInfo) {
+          alert('지원하지 않는 플랫폼입니다.');
+          return;
+        }
+
+        // 사용자 ID를 세션 스토리지에 저장
+        sessionStorage.setItem(`${platform}_user_id`, userId);
+        sessionStorage.setItem('connecting_platform', platform);
+
+        // 플랫폼 로그인 페이지로 이동
+        window.location.href = platformInfo.url;
+      } catch (error) {
+        console.error(`❌ ${platform} 연동 실패:`, error);
+        alert('연동 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    // 플랫폼 연동 해제 함수
+    async function disconnectPlatform(platform, connectionId) {
+      if (!confirm('정말 연동을 해제하시겠습니까?\n연동 해제 후 리뷰 자동 수집이 중단됩니다.')) {
         return;
       }
 
-      // 답글 톤 설정을 세션 스토리지에 저장
-      sessionStorage.setItem('naver_reply_tone', replyTone);
-      sessionStorage.setItem('naver_user_id', session.user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('로그인이 필요합니다');
+        }
 
-      // 네이버 로그인 페이지로 리다이렉트
-      // 로그인 후 스마트플레이스로 이동
-      // 스마트플레이스 페이지에서 콜백 페이지로 돌아오면 자동으로 플레이스 ID 추출하여 연동
-      const callbackUrl = `${window.location.origin}/naver-callback.html`;
-      const naverLoginUrl = `https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=${encodeURIComponent(`https://new.smartplace.naver.com/?callback=${encodeURIComponent(callbackUrl)}`)}&area=bbt`;
-      
-      window.location.href = naverLoginUrl;
+        const apiEndpoints = {
+          naver: `/api/naver/disconnect/${connectionId}`,
+          baemin: `/api/baemin/disconnect/${connectionId}`,
+          yogiyo: `/api/yogiyo/disconnect/${connectionId}`,
+          coupangeats: `/api/coupangeats/disconnect/${connectionId}`
+        };
+
+        const endpoint = apiEndpoints[platform];
+        if (!endpoint) {
+          throw new Error('지원하지 않는 플랫폼입니다');
+        }
+
+        const response = await fetch(endpoint, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': session.user.id
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '연동 해제 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ 연동이 해제되었습니다.');
+          await loadPlatformConnections(session.user.id);
+        } else {
+          throw new Error(result.error || '연동 해제 실패');
+        }
+      } catch (error) {
+        console.error('❌ 연동 해제 실패:', error);
+        alert('연동 해제 실패: ' + error.message);
+      }
     }
 
     // URL로 연동 완료
@@ -4518,7 +4702,7 @@
           document.getElementById('connectBtn').style.display = 'block';
           
           // 연동 정보 다시 로드
-          await loadNaverSmartplaceConnections(session.user.id);
+          await loadPlatformConnections(session.user.id);
         } else {
           throw new Error(result.error || '연동 실패');
         }
@@ -4650,7 +4834,7 @@
           if (placeSelectGroup) placeSelectGroup.style.display = 'none';
           
           // 연동 정보 다시 로드
-          await loadNaverSmartplaceConnections(session.user.id);
+          await loadPlatformConnections(session.user.id);
         } else {
           throw new Error(result.error || '연동 실패');
         }
@@ -4692,7 +4876,7 @@
         
         if (result.success) {
           alert('✅ 연동이 해제되었습니다.');
-          await loadNaverSmartplaceConnections(session.user.id);
+          await loadPlatformConnections(session.user.id);
         } else {
           throw new Error(result.error || '연동 해제 실패');
         }

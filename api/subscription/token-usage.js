@@ -465,10 +465,10 @@ const apiHandler = async (req, res) => {
         }
 
       // 작업 크레딧 한도 조회 우선순위:
-      // 1. member_custom_credit_limit (개인 맞춤 한도) - 최우선
+      // 1. subscription_cycle.included_credits (사이클 포함 크레딧) - 가장 빠르고 안전
       // 2. pricing_config.included_credits (포함된 크레딧) - 작업 크레딧 시스템
       // 3. credit_config (관리자 설정) - 관리자에서 설정한 값 사용
-      // 4. subscription_cycle.included_credits (사이클 포함 크레딧) - 작업 크레딧 시스템
+      // 4. 기본값: 100
       let currentCreditLimit = 0;
       const userType = profile?.user_type || 'owner';
       const membershipLevel = profile?.membership_level || 'seed';
@@ -476,18 +476,52 @@ const apiHandler = async (req, res) => {
       
       console.log(`🔍 크레딧 한도 조회 시작: user_id=${user_id}, userType=${userType}, level=${membershipLevel}, key=${creditLimitKey}`);
       
+      // 가장 먼저 사이클에서 한도 확인 (가장 빠르고 안전)
+      if (cycle && (cycle.included_credits || cycle.monthly_token_limit)) {
+        currentCreditLimit = Number(cycle.included_credits || cycle.monthly_token_limit);
+        console.log(`✅ 사이클에서 크레딧 한도 사용: ${currentCreditLimit}`);
+      }
+      
       // 1단계: 개인 맞춤 크레딧 한도 확인 (최우선)
       try {
         const today = new Date().toISOString().split('T')[0];
         // Supabase 쿼리: applied_until이 null이거나 오늘 이후인 것만
-        const { data: customLimit, error: customError } = await supabase
-          .from('member_custom_credit_limit')
-          .select('custom_limit')
-          .eq('member_id', user_id)
-          .or(`applied_until.is.null,applied_until.gte.${today}`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        // .or() 구문을 안전하게 처리
+        let customLimit = null;
+        let customError = null;
+        
+        try {
+          const { data, error } = await supabase
+            .from('member_custom_credit_limit')
+            .select('custom_limit')
+            .eq('member_id', user_id)
+            .or(`applied_until.is.null,applied_until.gte.${today}`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          customLimit = data;
+          customError = error;
+        } catch (orError) {
+          // .or() 쿼리가 실패하면 null 체크만 수행
+          console.warn('⚠️ [credit-usage] .or() 쿼리 실패, null 체크만 수행:', orError.message);
+          try {
+            const { data, error } = await supabase
+              .from('member_custom_credit_limit')
+              .select('custom_limit')
+              .eq('member_id', user_id)
+              .is('applied_until', null)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            customLimit = data;
+            customError = error;
+          } catch (nullError) {
+            console.warn('⚠️ [credit-usage] null 체크 쿼리도 실패:', nullError.message);
+            customError = nullError;
+          }
+        }
         
         if (!customError && customLimit && customLimit.custom_limit) {
           currentCreditLimit = Number(customLimit.custom_limit);
@@ -635,30 +669,44 @@ const apiHandler = async (req, res) => {
       let usage = [];
       let fetchError = null;
       
-      try {
-        const { data: usageData, error: usageError } = await supabase
-          .from('work_credit_usage')
-          .select('*')
-          .eq('user_id', user_id)
-          .order('used_at', { ascending: false })
-          .limit(parseInt(limit) || 10);
+      // Supabase가 초기화되어 있는지 확인
+      if (!supabase) {
+        console.error('❌ [credit-usage] Supabase 클라이언트가 없습니다. 사용 내역 조회 건너뜀');
+      } else {
+        try {
+          const { data: usageData, error: usageError } = await supabase
+            .from('work_credit_usage')
+            .select('*')
+            .eq('user_id', user_id)
+            .order('used_at', { ascending: false })
+            .limit(parseInt(limit) || 10);
 
-        if (usageError) {
-          console.error('❌ [credit-usage] work_credit_usage 조회 실패:', usageError);
-          console.error('❌ [credit-usage] 에러 상세:', {
-            message: usageError.message,
-            code: usageError.code,
-            details: usageError.details,
-            hint: usageError.hint
+          if (usageError) {
+            console.error('❌ [credit-usage] work_credit_usage 조회 실패:', usageError);
+            console.error('❌ [credit-usage] 에러 상세:', {
+              message: usageError.message,
+              code: usageError.code,
+              details: usageError.details,
+              hint: usageError.hint
+            });
+            fetchError = usageError;
+            // 에러가 발생해도 빈 배열로 계속 진행
+            usage = [];
+          } else {
+            usage = usageData || [];
+            console.log(`✅ [credit-usage] work_credit_usage 조회 성공: ${usage.length}개 내역`);
+          }
+        } catch (error) {
+          console.error('❌ [credit-usage] work_credit_usage 조회 중 예외 발생:', error);
+          console.error('❌ [credit-usage] 예외 상세:', {
+            message: error.message,
+            stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+            user_id: user_id
           });
-          fetchError = usageError;
-        } else {
-          usage = usageData || [];
-          console.log(`✅ [credit-usage] work_credit_usage 조회 성공: ${usage.length}개 내역`);
+          fetchError = error;
+          // 에러가 발생해도 빈 배열로 계속 진행
+          usage = [];
         }
-      } catch (error) {
-        console.error('❌ [credit-usage] work_credit_usage 조회 중 예외 발생:', error);
-        fetchError = error;
       }
 
       // 작업 크레딧 사용량 계산 (작업 크레딧 시스템)
@@ -702,11 +750,14 @@ const apiHandler = async (req, res) => {
         console.error('❌ [credit-usage] 에러 상세:', {
           message: getError.message,
           stack: getError.stack?.split('\n').slice(0, 10).join('\n'),
-          user_id: req.query?.user_id
+          name: getError.name,
+          user_id: req.query?.user_id,
+          query: req.query
         });
         
         // 에러 발생 시에도 기본값 반환 (500 에러 방지)
-        return res.json({
+        // 200 상태 코드로 반환하여 프론트엔드에서 에러로 처리할 수 있도록
+        return res.status(200).json({
           success: false,
           error: getError.message || '크레딧 사용 내역 조회 중 오류가 발생했습니다',
           usage: [],
@@ -717,7 +768,12 @@ const apiHandler = async (req, res) => {
             creditsUsed: 0,
             creditsRemaining: 0,
             isExceeded: false
-          }
+          },
+          debug: process.env.NODE_ENV === 'development' ? {
+            errorName: getError.name,
+            errorMessage: getError.message,
+            errorStack: getError.stack?.split('\n').slice(0, 5)
+          } : undefined
         });
       }
     }
@@ -734,10 +790,16 @@ const apiHandler = async (req, res) => {
       code: error.code,
       details: error.details,
       hint: error.hint,
-      stack: error.stack?.split('\n').slice(0, 10).join('\n')
+      name: error.name,
+      stack: error.stack?.split('\n').slice(0, 10).join('\n'),
+      method: req.method,
+      url: req.url,
+      query: req.query,
+      body: req.body ? Object.keys(req.body) : null
     });
     
-    // 에러 발생 시에도 기본값 반환 (500 에러 대신)
+    // 에러 발생 시에도 기본값 반환 (500 에러 대신 200으로 반환)
+    // 프론트엔드에서 success: false로 에러 처리
     return res.status(200).json({
       success: false,
       error: error.message || '크레딧 사용량 처리 중 오류가 발생했습니다',
@@ -749,7 +811,12 @@ const apiHandler = async (req, res) => {
         creditsUsed: 0,
         creditsRemaining: 0,
         isExceeded: false
-      }
+      },
+      debug: process.env.NODE_ENV === 'development' ? {
+        errorName: error.name,
+        errorMessage: error.message,
+        errorStack: error.stack?.split('\n').slice(0, 5)
+      } : undefined
     });
   }
 };
