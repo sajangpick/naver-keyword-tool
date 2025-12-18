@@ -1606,11 +1606,22 @@
           </button>
         </section>
 
-        <!-- 5. 외부 플랫폼 연동 -->
+        <!-- 5. 연동하기 -->
         <section class="section" id="platformConnectionSection">
-          <h3 class="section-title">
+          <h3 class="section-title" style="display: flex; align-items: center; gap: 12px;">
             <i class="fas fa-plug"></i>
-            외부 플랫폼 연동
+            연동하기
+            <span style="
+              background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+              color: white;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 11px;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+              box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+            ">개발중</span>
           </h3>
           <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
             외부 플랫폼을 연동하면 리뷰를 자동으로 가져와서 AI 답글을 등록할 수 있습니다.
@@ -1626,7 +1637,7 @@
           <!-- 플랫폼 로그인 버튼들 -->
           <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
             <!-- 네이버 스마트플레이스 -->
-            <button class="btn btn-primary" onclick="connectPlatform('naver')" style="
+            <button class="btn btn-primary" onclick="connectPlatform('naver')" data-platform="naver" id="platform-btn-naver" style="
               background: linear-gradient(135deg, #03C75A, #02A148);
               color: white;
               padding: 16px;
@@ -1639,11 +1650,11 @@
               width: 100%;
             ">
               <i class="fab fa-neos" style="font-size: 20px;"></i>
-              네이버 스마트플레이스
+              <span>네이버 스마트플레이스</span>
             </button>
 
             <!-- 배달의민족 -->
-            <button class="btn btn-primary" onclick="connectPlatform('baemin')" style="
+            <button class="btn btn-primary" onclick="connectPlatform('baemin')" data-platform="baemin" id="platform-btn-baemin" style="
               background: linear-gradient(135deg, #2AC1BC, #1FA8A3);
               color: white;
               padding: 16px;
@@ -1656,11 +1667,11 @@
               width: 100%;
             ">
               <i class="fas fa-utensils" style="font-size: 20px;"></i>
-              배달의민족
+              <span>배달의민족</span>
             </button>
 
             <!-- 요기요 -->
-            <button class="btn btn-primary" onclick="connectPlatform('yogiyo')" style="
+            <button class="btn btn-primary" onclick="connectPlatform('yogiyo')" data-platform="yogiyo" id="platform-btn-yogiyo" style="
               background: linear-gradient(135deg, #FF2F00, #E02800);
               color: white;
               padding: 16px;
@@ -1673,11 +1684,11 @@
               width: 100%;
             ">
               <i class="fas fa-motorcycle" style="font-size: 20px;"></i>
-              요기요
+              <span>요기요</span>
             </button>
 
             <!-- 쿠팡이츠 -->
-            <button class="btn btn-primary" onclick="connectPlatform('coupangeats')" style="
+            <button class="btn btn-primary" onclick="connectPlatform('coupangeats')" data-platform="coupangeats" id="platform-btn-coupangeats" style="
               background: linear-gradient(135deg, #FFA500, #E69400);
               color: white;
               padding: 16px;
@@ -1690,18 +1701,8 @@
               width: 100%;
             ">
               <i class="fas fa-shopping-bag" style="font-size: 20px;"></i>
-              쿠팡이츠
+              <span>쿠팡이츠</span>
             </button>
-          </div>
-
-          <!-- 안내 메시지 -->
-          <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 12px; padding: 16px; margin-top: 20px;">
-            <p style="margin: 0; color: #1976d2; font-size: 13px; line-height: 1.6;">
-              <i class="fas fa-info-circle"></i> <strong>연동 안내:</strong><br>
-              • 각 플랫폼의 로그인 페이지로 이동하여 인증을 완료하면 자동으로 연동됩니다.<br>
-              • 연동 완료 후 매장 프로필 정보(이름, 주소, 전화번호, 프로필 이미지 등)가 자동으로 가져와집니다.<br>
-              • 프로필 정보는 각 플랫폼의 API를 통해 실시간으로 동기화됩니다.
-            </p>
           </div>
         </section>
       </div>
@@ -4469,14 +4470,9 @@
     function updatePlatformConnectionsUI(connections) {
       const container = document.getElementById('connectedPlatforms');
 
-      if (!connections || connections.length === 0) {
-        container.innerHTML = `
-          <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
-            <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 8px; opacity: 0.5;"></i>
-            <div>연동된 플랫폼이 없습니다. 아래 버튼을 클릭하여 연동하세요.</div>
-          </div>
-        `;
-      } else {
+      // 연동된 플랫폼 목록 표시
+      if (connections && connections.length > 0) {
+        // 빈 상태 메시지 제거 (컨테이너를 비우지 않고 바로 카드 표시)
         const platformInfo = {
           naver: { name: '네이버 스마트플레이스', icon: 'fab fa-neos', color: '#03C75A' },
           baemin: { name: '배달의민족', icon: 'fas fa-utensils', color: '#2AC1BC' },
@@ -4618,13 +4614,47 @@
                   font-weight: 600;
                   cursor: pointer;
                 ">
-                  <i class="fas fa-unlink"></i> 연동 해제
+                  <i class="fas fa-unlink"></i> 연동 해체
                 </button>
               </div>
             </div>
           `;
         }).join('');
+      } else {
+        // 연동된 플랫폼이 없을 때는 컨테이너 비우기 (메시지 표시 안 함)
+        container.innerHTML = '';
       }
+      
+      // 버튼에 연동 상태 표시 업데이트 (연동된 플랫폼이 없어도 버튼 상태 업데이트)
+      updatePlatformButtons(connections || []);
+    }
+    
+    // 플랫폼 버튼에 연동 상태 표시
+    function updatePlatformButtons(connections) {
+      const platforms = ['naver', 'baemin', 'yogiyo', 'coupangeats'];
+      
+      platforms.forEach(platform => {
+        const button = document.getElementById(`platform-btn-${platform}`);
+        if (!button) return;
+        
+        // 해당 플랫폼이 연동되어 있는지 확인
+        const isConnected = connections.some(conn => conn.platform === platform && conn.is_active);
+        
+        // 기존 상태 표시 제거
+        const existingStatus = button.querySelector('.connection-status');
+        if (existingStatus) {
+          existingStatus.remove();
+        }
+        
+        if (isConnected) {
+          // 연동됨 상태: 오른쪽에 체크 표시와 "연동됨" 텍스트 추가
+          const statusSpan = document.createElement('span');
+          statusSpan.className = 'connection-status';
+          statusSpan.style.cssText = 'margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; opacity: 0.95;';
+          statusSpan.innerHTML = '<i class="fas fa-check-circle" style="font-size: 16px;"></i> <span>연동됨</span>';
+          button.appendChild(statusSpan);
+        }
+      });
     }
 
     // 플랫폼 연동 함수
@@ -4639,20 +4669,14 @@
 
         const userId = session.user.id;
         
-        // 네이버는 기존 방식 (콜백 URL 포함)
-        if (platform === 'naver') {
-          const callbackUrl = `${window.location.origin}/naver-callback.html`;
-          const naverLoginUrl = `https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=${encodeURIComponent(`https://new.smartplace.naver.com/?callback=${encodeURIComponent(callbackUrl)}`)}&area=bbt`;
-          
-          sessionStorage.setItem('naver_user_id', userId);
-          sessionStorage.setItem('connecting_platform', 'naver');
-          window.location.href = naverLoginUrl;
-          return;
-        }
-        
-        // 배달 플랫폼들은 각각의 로그인 페이지로 이동
-        // 로그인 후 관리자 페이지에서 URL을 복사하여 콜백 페이지에 입력하는 방식
+        // 모든 플랫폼을 동일한 방식으로 처리 (로그인 후 관리자 페이지 URL 입력)
         const platformUrls = {
+          naver: {
+            loginUrl: 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=' + encodeURIComponent('https://new.smartplace.naver.com/'),
+            callbackUrl: `${window.location.origin}/platform-callback.html?platform=naver`,
+            name: '네이버 스마트플레이스',
+            instruction: '로그인 후 스마트플레이스 관리 페이지(대시보드)의 URL을 복사해주세요.'
+          },
           baemin: {
             loginUrl: 'https://ceo.baemin.com/login',
             callbackUrl: `${window.location.origin}/platform-callback.html?platform=baemin`,
@@ -4714,9 +4738,9 @@
       }
     }
 
-    // 플랫폼 연동 해제 함수
+    // 플랫폼 연동 해체 함수
     async function disconnectPlatform(platform, connectionId) {
-      if (!confirm('정말 연동을 해제하시겠습니까?\n연동 해제 후 리뷰 자동 수집이 중단됩니다.')) {
+      if (!confirm('정말 연동을 해체하시겠습니까?\n연동 해체 후 리뷰 자동 수집이 중단됩니다.')) {
         return;
       }
 
@@ -4748,7 +4772,7 @@
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || '연동 해제 실패');
+          throw new Error(error.error || '연동 해체 실패');
         }
 
         const result = await response.json();
@@ -4760,8 +4784,8 @@
           throw new Error(result.error || '연동 해제 실패');
         }
       } catch (error) {
-        console.error('❌ 연동 해제 실패:', error);
-        alert('연동 해제 실패: ' + error.message);
+        console.error('❌ 연동 해체 실패:', error);
+        alert('연동 해체 실패: ' + error.message);
       }
     }
 
@@ -4972,9 +4996,9 @@
       }
     }
 
-    // 네이버 플레이스 연동 해제
+    // 네이버 플레이스 연동 해체
     async function disconnectNaverPlace(connectionId) {
-      if (!confirm('정말 연동을 해제하시겠습니까?\n연동 해제 후 리뷰 자동 수집이 중단됩니다.')) {
+      if (!confirm('정말 연동을 해체하시겠습니까?\n연동 해체 후 리뷰 자동 수집이 중단됩니다.')) {
         return;
       }
 
@@ -4994,7 +5018,7 @@
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || '연동 해제 실패');
+          throw new Error(error.error || '연동 해체 실패');
         }
 
         const result = await response.json();
@@ -5006,8 +5030,8 @@
           throw new Error(result.error || '연동 해제 실패');
         }
       } catch (error) {
-        console.error('❌ 연동 해제 실패:', error);
-        alert('연동 해제 실패: ' + error.message);
+        console.error('❌ 연동 해체 실패:', error);
+        alert('연동 해체 실패: ' + error.message);
       }
     }
 
