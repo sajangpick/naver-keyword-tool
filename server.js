@@ -1217,6 +1217,24 @@ app.post("/api/naver/connect-from-callback", naverConnectFromCallbackHandler);
 const naverProfileHandler = require("./api/naver/profile");
 app.get("/api/naver/profile", naverProfileHandler);
 
+// ==================== 플랫폼 통합 API ====================
+// 리뷰 수집
+const collectReviewsHandler = require('./api/platform/collect-reviews');
+app.post('/api/platform/collect-reviews', collectReviewsHandler);
+
+// 자동 답글 등록
+const autoReplyHandler = require('./api/platform/auto-reply');
+app.post('/api/platform/auto-reply', autoReplyHandler);
+
+// 자동 답글 활성화/비활성화
+const toggleAutoReplyHandler = require('./api/platform/toggle-auto-reply');
+app.post('/api/platform/toggle-auto-reply', toggleAutoReplyHandler);
+
+// 자동화 스케줄러
+const autoReviewReplyHandler = require('./api/cron/auto-review-reply');
+app.post('/api/cron/auto-review-reply', autoReviewReplyHandler);
+app.get('/api/cron/auto-review-reply', autoReviewReplyHandler);
+
 // ==================== 배달 플랫폼 연동 API ====================
 // 배달의민족
 const baeminConnectHandler = require("./api/baemin/connect");

@@ -4590,6 +4590,22 @@
                 </div>
               </div>
 
+              <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-color); border-radius: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" 
+                         id="auto-reply-${conn.id}" 
+                         ${conn.auto_reply_enabled ? 'checked' : ''}
+                         onchange="toggleAutoReply('${conn.platform}', '${conn.id}', this.checked)"
+                         style="width: 18px; height: 18px; cursor: pointer;">
+                  <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-magic" style="color: var(--accent-color);"></i> 자동 답글 활성화
+                  </span>
+                </label>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 8px 0 0 26px;">
+                  활성화 시 새로운 리뷰에 AI 답글이 자동으로 등록됩니다
+                </p>
+              </div>
+
               <div style="display: flex; gap: 8px;">
                 <a href="/app/ai-review-automation.html" class="btn" style="
                   flex: 1;
@@ -4735,6 +4751,50 @@
       } catch (error) {
         console.error(`❌ ${platform} 연동 실패:`, error);
         alert('연동 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    // 자동 답글 활성화/비활성화
+    async function toggleAutoReply(platform, connectionId, enabled) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('로그인이 필요합니다');
+        }
+
+        const response = await fetch(`/api/platform/toggle-auto-reply`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': session.user.id
+          },
+          body: JSON.stringify({
+            connectionId,
+            enabled
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '자동 답글 설정 실패');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // UI 업데이트
+          await loadPlatformConnections(session.user.id);
+        } else {
+          throw new Error(result.error || '자동 답글 설정 실패');
+        }
+      } catch (error) {
+        console.error('❌ 자동 답글 설정 실패:', error);
+        alert('자동 답글 설정 실패: ' + error.message);
+        // 체크박스 상태 되돌리기
+        const checkbox = document.getElementById(`auto-reply-${connectionId}`);
+        if (checkbox) {
+          checkbox.checked = !enabled;
+        }
       }
     }
 
