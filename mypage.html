@@ -4638,22 +4638,38 @@
         }
 
         const userId = session.user.id;
+        
+        // 네이버는 기존 방식 (콜백 URL 포함)
+        if (platform === 'naver') {
+          const callbackUrl = `${window.location.origin}/naver-callback.html`;
+          const naverLoginUrl = `https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=${encodeURIComponent(`https://new.smartplace.naver.com/?callback=${encodeURIComponent(callbackUrl)}`)}&area=bbt`;
+          
+          sessionStorage.setItem('naver_user_id', userId);
+          sessionStorage.setItem('connecting_platform', 'naver');
+          window.location.href = naverLoginUrl;
+          return;
+        }
+        
+        // 배달 플랫폼들은 각각의 로그인 페이지로 이동
+        // 로그인 후 관리자 페이지에서 URL을 복사하여 콜백 페이지에 입력하는 방식
         const platformUrls = {
-          naver: {
-            url: `https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=${encodeURIComponent(`https://new.smartplace.naver.com/?callback=${encodeURIComponent(`${window.location.origin}/naver-callback.html`)}`)}&area=bbt`,
-            name: '네이버 스마트플레이스'
-          },
           baemin: {
-            url: `https://ceo.baemin.com/login`,
-            name: '배달의민족'
+            loginUrl: 'https://ceo.baemin.com/login',
+            callbackUrl: `${window.location.origin}/platform-callback.html?platform=baemin`,
+            name: '배달의민족',
+            instruction: '로그인 후 사장님 광장 메인 페이지의 URL을 복사해주세요.'
           },
           yogiyo: {
-            url: `https://www.yogiyo.co.kr/mobile/#/login/`,
-            name: '요기요'
+            loginUrl: 'https://www.yogiyo.co.kr/mobile/#/login/',
+            callbackUrl: `${window.location.origin}/platform-callback.html?platform=yogiyo`,
+            name: '요기요',
+            instruction: '로그인 후 매장 관리 페이지의 URL을 복사해주세요.'
           },
           coupangeats: {
-            url: `https://partners.coupang.com/login`,
-            name: '쿠팡이츠'
+            loginUrl: 'https://partners.coupang.com/login',
+            callbackUrl: `${window.location.origin}/platform-callback.html?platform=coupangeats`,
+            name: '쿠팡이츠',
+            instruction: '로그인 후 파트너 센터 메인 페이지의 URL을 복사해주세요.'
           }
         };
 
@@ -4663,12 +4679,35 @@
           return;
         }
 
-        // 사용자 ID를 세션 스토리지에 저장
+        // 사용자 ID와 플랫폼 정보를 세션 스토리지에 저장
         sessionStorage.setItem(`${platform}_user_id`, userId);
         sessionStorage.setItem('connecting_platform', platform);
+        sessionStorage.setItem('callback_url', platformInfo.callbackUrl);
+        sessionStorage.setItem('platform_instruction', platformInfo.instruction);
 
-        // 플랫폼 로그인 페이지로 이동
-        window.location.href = platformInfo.url;
+        // 안내 메시지와 함께 콜백 페이지로 이동
+        // 사용자가 로그인 페이지를 새 탭에서 열고, 콜백 페이지에서 URL을 입력하도록 안내
+        const proceed = confirm(
+          `${platformInfo.name} 연동을 시작합니다.\n\n` +
+          `다음 단계:\n` +
+          `1. 로그인 페이지가 새 탭에서 열립니다\n` +
+          `2. 로그인 후 관리자 페이지(대시보드)로 이동하세요\n` +
+          `3. 주소창의 전체 URL을 복사(Ctrl+C)하세요\n` +
+          `4. 이 페이지에 돌아와서 URL을 붙여넣으세요\n\n` +
+          `계속하시겠습니까?`
+        );
+        
+        if (proceed) {
+          // 로그인 페이지를 새 탭에서 열기
+          window.open(
+            platformInfo.loginUrl,
+            '_blank',
+            'width=1200,height=800'
+          );
+          
+          // 콜백 페이지로 이동
+          window.location.href = platformInfo.callbackUrl;
+        }
       } catch (error) {
         console.error(`❌ ${platform} 연동 실패:`, error);
         alert('연동 중 오류가 발생했습니다: ' + error.message);

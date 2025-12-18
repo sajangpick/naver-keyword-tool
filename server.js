@@ -1214,6 +1214,40 @@ app.post("/api/naver/get-places", naverGetPlacesHandler);
 const naverConnectFromCallbackHandler = require("./api/naver/connect-from-callback");
 app.post("/api/naver/connect-from-callback", naverConnectFromCallbackHandler);
 
+const naverProfileHandler = require("./api/naver/profile");
+app.get("/api/naver/profile", naverProfileHandler);
+
+// ==================== 배달 플랫폼 연동 API ====================
+// 배달의민족
+const baeminConnectHandler = require("./api/baemin/connect");
+const baeminConnectionsHandler = require("./api/baemin/connections");
+const baeminDisconnectHandler = require("./api/baemin/disconnect");
+const baeminProfileHandler = require("./api/baemin/profile");
+app.post("/api/baemin/connect", baeminConnectHandler);
+app.get("/api/baemin/connections", baeminConnectionsHandler);
+app.delete("/api/baemin/disconnect/:connectionId", baeminDisconnectHandler);
+app.get("/api/baemin/profile", baeminProfileHandler);
+
+// 요기요
+const yogiyoConnectHandler = require("./api/yogiyo/connect");
+const yogiyoConnectionsHandler = require("./api/yogiyo/connections");
+const yogiyoDisconnectHandler = require("./api/yogiyo/disconnect");
+const yogiyoProfileHandler = require("./api/yogiyo/profile");
+app.post("/api/yogiyo/connect", yogiyoConnectHandler);
+app.get("/api/yogiyo/connections", yogiyoConnectionsHandler);
+app.delete("/api/yogiyo/disconnect/:connectionId", yogiyoDisconnectHandler);
+app.get("/api/yogiyo/profile", yogiyoProfileHandler);
+
+// 쿠팡이츠
+const coupangeatsConnectHandler = require("./api/coupangeats/connect");
+const coupangeatsConnectionsHandler = require("./api/coupangeats/connections");
+const coupangeatsDisconnectHandler = require("./api/coupangeats/disconnect");
+const coupangeatsProfileHandler = require("./api/coupangeats/profile");
+app.post("/api/coupangeats/connect", coupangeatsConnectHandler);
+app.get("/api/coupangeats/connections", coupangeatsConnectionsHandler);
+app.delete("/api/coupangeats/disconnect/:connectionId", coupangeatsDisconnectHandler);
+app.get("/api/coupangeats/profile", coupangeatsProfileHandler);
+
 // ==================== 레시피 관리 시스템 API ====================
 // 레시피 CRUD 및 검색 API
 const recipesRouter = require("./api/recipes");

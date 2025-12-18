@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>플랫폼 연동 - 사장픽</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: linear-gradient(135deg, #fff7f0 0%, #ffe8d9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #ff7b54, #e56548);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: white;
+      font-size: 28px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #201a17;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #7a6a60;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #201a17;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #ff7b54;
+      box-shadow: 0 0 0 3px rgba(255, 123, 84, 0.1);
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .instruction-box {
+      background: #e3f2fd;
+      border: 2px solid #2196f3;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .instruction-box h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1976d2;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .instruction-box ol {
+      margin-left: 20px;
+      color: #424242;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .instruction-box li {
+      margin-bottom: 4px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff7b54, #e56548);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 123, 84, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #ffe8d9;
+      border-top: 4px solid #ff7b54;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .error.active {
+      display: block;
+    }
+
+    .success {
+      background: #dcfce7;
+      color: #166534;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .success.active {
+      display: block;
+    }
+
+    .platform-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .platform-badge.naver {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .platform-badge.baemin {
+      background: #ccfbf1;
+      color: #0f766e;
+    }
+
+    .platform-badge.yogiyo {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .platform-badge.coupangeats {
+      background: #fef3c7;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">
+        <i class="fas fa-plug"></i>
+      </div>
+      <h1>플랫폼 연동</h1>
+      <p id="platformName">연동 중...</p>
+    </div>
+
+    <div id="errorMessage" class="error"></div>
+    <div id="successMessage" class="success"></div>
+
+    <div id="instructionBox" class="instruction-box" style="display: none;">
+      <h3>
+        <i class="fas fa-info-circle"></i>
+        연동 방법
+      </h3>
+      <ol id="instructionList">
+        <!-- 동적으로 채워짐 -->
+      </ol>
+    </div>
+
+    <form id="connectionForm">
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-link"></i> 관리자 페이지 URL
+        </label>
+        <textarea
+          id="adminUrl"
+          class="form-input form-textarea"
+          placeholder="로그인 후 관리자 페이지(대시보드)의 전체 URL을 붙여넣어주세요&#10;예: https://ceo.baemin.com/dashboard 또는 https://www.yogiyo.co.kr/mobile/#/owner/dashboard"
+          required
+        ></textarea>
+        <small style="color: #7a6a60; font-size: 12px; margin-top: 4px; display: block;">
+          💡 주소창의 전체 URL을 복사(Ctrl+C)하여 붙여넣으세요
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-comment-dots"></i> 답글 톤 설정
+        </label>
+        <select id="replyTone" class="form-input">
+          <option value="friendly">친근한 톤 (50자 이내, 이모지 1-2개)</option>
+          <option value="professional">전문적인 톤 (70자 이내, 정중하게)</option>
+          <option value="casual">캐주얼 톤 (40자 이내, 반말 가능)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn">
+        <i class="fas fa-check"></i>
+        연동 완료
+      </button>
+    </form>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p style="margin-top: 16px; color: #7a6a60;">연동 중...</p>
+    </div>
+  </div>
+
+  <script src="/assets/auth-state.js" defer></script>
+  <script>
+    let supabase;
+    let currentPlatform = null;
+    let userId = null;
+
+    // Supabase 초기화
+    async function initSupabase() {
+      try {
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        supabase = window.authState.supabase;
+      } catch (error) {
+        console.error('Supabase 초기화 실패:', error);
+        showError('인증 초기화 실패. 페이지를 새로고침해주세요.');
+      }
+    }
+
+    // 페이지 로드 시 초기화
+    window.addEventListener('load', async () => {
+      await initSupabase();
+
+      // URL 파라미터에서 플랫폼 정보 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      currentPlatform = urlParams.get('platform') || sessionStorage.getItem('connecting_platform');
+      
+      if (!currentPlatform) {
+        showError('플랫폼 정보를 찾을 수 없습니다. 마이페이지에서 다시 시도해주세요.');
+        return;
+      }
+
+      // 세션 스토리지에서 사용자 ID 가져오기
+      userId = sessionStorage.getItem(`${currentPlatform}_user_id`);
+      
+      if (!userId) {
+        // Supabase 세션에서 가져오기
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          userId = session.user.id;
+        } else {
+          showError('로그인이 필요합니다.');
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 2000);
+          return;
+        }
+      }
+
+      // 플랫폼별 안내 메시지 설정
+      setupPlatformInfo(currentPlatform);
+    });
+
+    // 플랫폼별 정보 설정
+    function setupPlatformInfo(platform) {
+      const platformInfo = {
+        naver: {
+          name: '네이버 스마트플레이스',
+          badge: 'naver',
+          instructions: [
+            '새 탭에서 열린 네이버 로그인 페이지에서 로그인하세요',
+            '스마트플레이스 관리 페이지로 자동 이동됩니다',
+            '관리 페이지의 주소창 전체 URL을 복사(Ctrl+C)하세요',
+            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
+          ]
+        },
+        baemin: {
+          name: '배달의민족',
+          badge: 'baemin',
+          instructions: [
+            '새 탭에서 열린 배달의민족 사장님 광장에 로그인하세요',
+            '대시보드(메인 페이지)로 이동하세요',
+            '주소창의 전체 URL을 복사(Ctrl+C)하세요',
+            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
+          ]
+        },
+        yogiyo: {
+          name: '요기요',
+          badge: 'yogiyo',
+          instructions: [
+            '새 탭에서 열린 요기요 사장님 페이지에 로그인하세요',
+            '매장 관리 페이지(대시보드)로 이동하세요',
+            '주소창의 전체 URL을 복사(Ctrl+C)하세요',
+            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
+          ]
+        },
+        coupangeats: {
+          name: '쿠팡이츠',
+          badge: 'coupangeats',
+          instructions: [
+            '새 탭에서 열린 쿠팡 파트너 센터에 로그인하세요',
+            '대시보드(메인 페이지)로 이동하세요',
+            '주소창의 전체 URL을 복사(Ctrl+C)하세요',
+            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
+          ]
+        }
+      };
+
+      const info = platformInfo[platform];
+      if (!info) {
+        showError('지원하지 않는 플랫폼입니다.');
+        return;
+      }
+
+      // 플랫폼 이름 표시
+      document.getElementById('platformName').textContent = info.name;
+      
+      // 플랫폼 뱃지 추가
+      const header = document.querySelector('.header');
+      const badge = document.createElement('span');
+      badge.className = `platform-badge ${info.badge}`;
+      badge.textContent = info.name;
+      header.appendChild(badge);
+
+      // 안내 메시지 설정
+      const instructionList = document.getElementById('instructionList');
+      instructionList.innerHTML = info.instructions.map((text, index) => 
+        `<li>${text}</li>`
+      ).join('');
+      document.getElementById('instructionBox').style.display = 'block';
+    }
+
+    // 에러 메시지 표시
+    function showError(message) {
+      const errorEl = document.getElementById('errorMessage');
+      errorEl.textContent = message;
+      errorEl.classList.add('active');
+    }
+
+    // 성공 메시지 표시
+    function showSuccess(message) {
+      const successEl = document.getElementById('successMessage');
+      successEl.textContent = message;
+      successEl.classList.add('active');
+    }
+
+    // 폼 제출
+    document.getElementById('connectionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const adminUrl = document.getElementById('adminUrl').value.trim();
+      const replyTone = document.getElementById('replyTone').value;
+
+      if (!adminUrl) {
+        showError('관리자 페이지 URL을 입력해주세요.');
+        return;
+      }
+
+      // URL 유효성 검사
+      try {
+        new URL(adminUrl);
+      } catch (error) {
+        showError('올바른 URL 형식이 아닙니다.');
+        return;
+      }
+
+      // 로딩 표시
+      document.getElementById('loading').classList.add('active');
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('errorMessage').classList.remove('active');
+
+      try {
+        // 연동 API 호출
+        const response = await fetch(`/api/${currentPlatform}/connect`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId
+          },
+          body: JSON.stringify({
+            adminUrl: adminUrl,
+            replyTone: replyTone
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '연동 실패');
+        }
+
+        // 성공 메시지
+        showSuccess('✅ 연동이 완료되었습니다! 마이페이지로 이동합니다...');
+        
+        // 세션 스토리지 정리
+        sessionStorage.removeItem(`${currentPlatform}_user_id`);
+        sessionStorage.removeItem('connecting_platform');
+        sessionStorage.removeItem('callback_url');
+        sessionStorage.removeItem('platform_instruction');
+
+        // 마이페이지로 이동
+        setTimeout(() => {
+          window.location.href = '/mypage.html';
+        }, 2000);
+
+      } catch (error) {
+        console.error('연동 실패:', error);
+        showError('연동 실패: ' + error.message);
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('submitBtn').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
+
