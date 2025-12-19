@@ -5222,13 +5222,13 @@
 
         const userId = session.user.id;
         
-        // 모든 플랫폼을 동일한 방식으로 처리 (로그인 후 관리자 페이지 URL 입력)
+        // 네이버는 OAuth 방식, 나머지는 기존 방식
         const platformUrls = {
           naver: {
-            loginUrl: 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=' + encodeURIComponent('https://new.smartplace.naver.com/'),
+            loginUrl: 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=' + encodeURIComponent(`${window.location.origin}/api/naver/oauth-callback?userId=${userId}`),
             callbackUrl: `${window.location.origin}/platform-callback.html?platform=naver`,
             name: '네이버 스마트플레이스',
-            instruction: '로그인 후 스마트플레이스 관리 페이지(대시보드)의 URL을 복사해주세요.'
+            instruction: '네이버 로그인 페이지에서 로그인해주세요.'
           },
           baemin: {
             loginUrl: 'https://ceo.baemin.com/login',
@@ -5256,12 +5256,16 @@
           return;
         }
 
-        // 사용자 ID와 플랫폼 정보를 세션 스토리지에 저장
-        sessionStorage.setItem(`${platform}_user_id`, userId);
-        sessionStorage.setItem('connecting_platform', platform);
-        
-        // 로그인 페이지로 바로 이동
-        window.location.href = platformInfo.callbackUrl;
+        // 네이버는 OAuth 방식으로 처리
+        if (platform === 'naver') {
+          // 네이버 로그인 페이지로 리다이렉트
+          window.location.href = platformInfo.loginUrl;
+        } else {
+          // 다른 플랫폼은 기존 방식 (callback 페이지로)
+          sessionStorage.setItem(`${platform}_user_id`, userId);
+          sessionStorage.setItem('connecting_platform', platform);
+          window.location.href = platformInfo.callbackUrl;
+        }
       } catch (error) {
         console.error(`❌ ${platform} 연동 실패:`, error);
         alert('연동 중 오류가 발생했습니다: ' + error.message);

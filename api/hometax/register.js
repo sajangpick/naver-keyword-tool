@@ -32,7 +32,10 @@ try {
 }
 
 // 바로빌 API 설정
-const BAROBIL_API_BASE = 'https://api.barobill.co.kr';
+// 실제 바로빌 API 엔드포인트는 바로빌 개발자센터(https://dev.barobill.co.kr)에서 확인 가능
+// 테스트 환경: https://testapi.barobill.co.kr
+// 운영 환경: https://api.barobill.co.kr
+const BAROBIL_API_BASE = process.env.BAROBIL_API_BASE || 'https://api.barobill.co.kr';
 const CERTKEY = process.env.BAROBIL_CERTKEY; // 바로빌 연동인증키
 
 // 암호화 서비스는 lib/cipher-service.js에서 직접 사용

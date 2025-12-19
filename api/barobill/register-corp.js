@@ -6,7 +6,8 @@
 const axios = require('axios');
 
 // 바로빌 API 설정
-const BAROBIL_API_BASE = 'https://api.barobill.co.kr';
+// 실제 바로빌 API 엔드포인트는 바로빌 개발자센터(https://dev.barobill.co.kr)에서 확인 가능
+const BAROBIL_API_BASE = process.env.BAROBIL_API_BASE || 'https://api.barobill.co.kr';
 const CERTKEY = process.env.BAROBIL_CERTKEY;
 
 module.exports = async (req, res) => {

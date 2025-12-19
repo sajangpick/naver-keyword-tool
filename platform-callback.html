@@ -497,7 +497,10 @@
       }
 
       // 네이버인 경우: 플레이스 조회 단계로 이동
+      console.log('[연동] 플랫폼 확인:', currentPlatform);
+      
       if (currentPlatform === 'naver') {
+        console.log('[네이버] 플레이스 조회 단계로 이동');
         savedAccountId = accountId;
         savedPassword = password;
         
@@ -545,6 +548,7 @@
       }
 
       // 다른 플랫폼: 기존 방식 (즉시 연동)
+      console.log('[연동] 다른 플랫폼 직접 연동:', currentPlatform);
       await connectPlatformDirectly(accountId, password);
     });
 

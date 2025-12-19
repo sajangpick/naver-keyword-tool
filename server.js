@@ -1214,6 +1214,12 @@ app.post("/api/naver/get-places", naverGetPlacesHandler);
 const naverConnectFromCallbackHandler = require("./api/naver/connect-from-callback");
 app.post("/api/naver/connect-from-callback", naverConnectFromCallbackHandler);
 
+const naverOAuthCallbackHandler = require("./api/naver/oauth-callback");
+app.get("/api/naver/oauth-callback", naverOAuthCallbackHandler);
+
+const naverConnectFromOAuthHandler = require("./api/naver/connect-from-oauth");
+app.post("/api/naver/connect-from-oauth", naverConnectFromOAuthHandler);
+
 const naverProfileHandler = require("./api/naver/profile");
 app.get("/api/naver/profile", naverProfileHandler);
 

@@ -533,27 +533,36 @@
           .select('*')
           .eq('user_id', user.id)
           .eq('platform', 'hometax')
-          .eq('is_active', true)
-          .limit(1);
+          .eq('is_active', true);
 
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
           console.error('홈택스 연동 상태 조회 실패:', error);
           return;
         }
 
         if (connections && connections.length > 0) {
-          const connection = connections[0];
+          // 세금계산서와 현금영수증을 구분하여 표시
+          const taxInvoiceConn = connections.find(c => c.store_id?.endsWith('_taxinvoice'));
+          const cashBillConn = connections.find(c => c.store_id?.endsWith('_cashbill'));
+          
           document.getElementById('hometaxNotConnected').style.display = 'none';
           document.getElementById('hometaxConnected').style.display = 'block';
           
-          // 사업자번호 표시 (store_id에 저장되어 있을 것으로 예상)
-          document.getElementById('hometaxCorpNum').textContent = connection.store_id || '-';
+          // 사업자번호 표시 (store_id에서 추출)
+          const corpNum = taxInvoiceConn?.store_id?.replace('_taxinvoice', '') || 
+                         cashBillConn?.store_id?.replace('_cashbill', '') || 
+                         connections[0].store_id?.split('_')[0] || '-';
+          document.getElementById('hometaxCorpNum').textContent = corpNum;
           
-          // 마지막 수집일 표시
-          if (connection.last_sync_at) {
-            const syncDate = new Date(connection.last_sync_at);
+          // 마지막 수집일 표시 (가장 최근 것)
+          const latestSync = connections
+            .map(c => c.last_sync_at ? new Date(c.last_sync_at) : null)
+            .filter(d => d !== null)
+            .sort((a, b) => b - a)[0];
+          
+          if (latestSync) {
             document.getElementById('hometaxLastSync').textContent = 
-              syncDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+              latestSync.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
           } else {
             document.getElementById('hometaxLastSync').textContent = '아직 수집되지 않음';
           }
