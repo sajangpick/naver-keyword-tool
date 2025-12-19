@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>플랫폼 연동 - 사장픽</title>
+  <title>사장픽</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
@@ -238,8 +238,7 @@
       <div class="header-icon">
         <i class="fas fa-plug"></i>
       </div>
-      <h1>플랫폼 연동</h1>
-      <p id="platformName">연동 중...</p>
+      <h1>사장픽</h1>
       <span id="platformBadge" class="platform-badge"></span>
     </div>
 
@@ -429,9 +428,6 @@
         return;
       }
 
-      // 플랫폼 이름 표시
-      document.getElementById('platformName').textContent = info.name;
-      
       // 플랫폼 뱃지 추가
       const badge = document.getElementById('platformBadge');
       badge.className = `platform-badge ${info.badge}`;
