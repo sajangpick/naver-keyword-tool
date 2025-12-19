@@ -1231,6 +1231,13 @@ app.post('/api/hometax/get-request-url', hometaxRequestUrlHandler);
 
 const hometaxSalesListHandler = require('./api/hometax/sales-list');
 app.get('/api/hometax/sales-list', hometaxSalesListHandler);
+
+// ==================== 바로빌 API ====================
+const barobillCheckMemberHandler = require('./api/barobill/check-member');
+app.post('/api/barobill/check-member', barobillCheckMemberHandler);
+
+const barobillRegisterCorpHandler = require('./api/barobill/register-corp');
+app.post('/api/barobill/register-corp', barobillRegisterCorpHandler);
 app.post('/api/platform/collect-reviews', collectReviewsHandler);
 
 // 자동 답글 등록

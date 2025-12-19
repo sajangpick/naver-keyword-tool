@@ -4938,11 +4938,20 @@
               
               if (result.success) {
                 const serviceName = serviceType === 'cashbill' ? '현금영수증' : '세금계산서';
-                alert(`✅ ${serviceName} 서비스 연동이 완료되었습니다!\n매일 새벽에 전날까지의 매입매출 내역을 자동으로 수집합니다.`);
+                alert(`✅ ${serviceName} 서비스 연동이 완료되었습니다!\n매일 오전 4시~6시에 전날까지의 매입매출 내역을 자동으로 수집합니다.`);
                 modal.remove();
                 await loadPlatformConnections(session.user.id);
               } else {
-                alert('연동 실패: ' + (result.error || '알 수 없는 오류'));
+                // 바로빌 회원가입이 필요한 경우
+                if (result.needRegistration) {
+                  const register = confirm('바로빌 회원가입이 필요합니다.\n바로빌 회원가입을 진행하시겠습니까?');
+                  if (register) {
+                    // 바로빌 회원가입 모달 표시
+                    showBarobillRegistrationModal(corpNum, serviceType, modal);
+                  }
+                } else {
+                  alert('연동 실패: ' + (result.error || '알 수 없는 오류'));
+                }
               }
             }
           } catch (error) {
@@ -4959,6 +4968,244 @@
         });
       } catch (error) {
         console.error('홈택스 연동 모달 오픈 실패:', error);
+        alert('오류가 발생했습니다: ' + error.message);
+      }
+    }
+
+    // 바로빌 회원가입 모달 표시
+    async function showBarobillRegistrationModal(corpNum, serviceType, parentModal) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          alert('로그인이 필요합니다.');
+          return;
+        }
+
+        // 사용자 프로필 정보 가져오기
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        const modal = document.createElement('div');
+        modal.className = 'barobill-registration-modal';
+        modal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: 2001;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+          <div style="
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          ">
+            <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 20px; color: var(--text-primary);">
+              <i class="fas fa-building" style="color: #0066CC; margin-right: 8px;"></i>
+              바로빌 회원가입
+            </h3>
+            <p style="color: #666; font-size: 14px; margin-bottom: 24px;">
+              홈택스 연동을 위해 바로빌 회원가입이 필요합니다.<br>
+              아래 정보를 입력해주세요.
+            </p>
+            <form id="barobillRegistrationForm" style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    사업자번호 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="text" id="barobillCorpNum" value="${corpNum.replace(/-/g, '')}" 
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required maxlength="10" pattern="[0-9]{10}" readonly>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    회사명 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="text" id="barobillCorpName" value="${(profile?.store_name || '').replace(/"/g, '&quot;')}" placeholder="회사명 입력"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    대표자명 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="text" id="barobillCeoName" placeholder="대표자명 입력"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    업태 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="text" id="barobillBizType" placeholder="예: 도매 및 소매업" 
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required>
+                </div>
+              </div>
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                  업종 <span style="color: var(--error);">*</span>
+                </label>
+                <input type="text" id="barobillBizClass" placeholder="예: 음식점업" 
+                  style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                  required>
+              </div>
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                  주소 <span style="color: var(--error);">*</span>
+                </label>
+                <input type="text" id="barobillAddr1" value="${(profile?.store_address || '').replace(/"/g, '&quot;')}" placeholder="주소 입력"
+                  style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                  required>
+              </div>
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                  상세주소
+                </label>
+                <input type="text" id="barobillAddr2" placeholder="상세주소 입력 (선택사항)"
+                  style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    이름 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="text" id="barobillMemberName" value="${(session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '').replace(/"/g, '&quot;')}" placeholder="이름 입력"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    전화번호 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="text" id="barobillTel" value="${(profile?.phone_number || profile?.store_phone_number || '').replace(/"/g, '&quot;')}" placeholder="전화번호 입력"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    바로빌 아이디 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="text" id="barobillId" placeholder="6~20자"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required minlength="6" maxlength="20">
+                  <p style="font-size: 12px; color: #999; margin-top: 4px;">6~20자 영문, 숫자 조합</p>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                    바로빌 비밀번호 <span style="color: var(--error);">*</span>
+                  </label>
+                  <input type="password" id="barobillPwd" placeholder="6~20자"
+                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                    required minlength="6" maxlength="20">
+                  <p style="font-size: 12px; color: #999; margin-top: 4px;">6~20자</p>
+                </div>
+              </div>
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                  이메일 <span style="color: var(--error);">*</span>
+                </label>
+                <input type="email" id="barobillEmail" value="${(session.user.email || '').replace(/"/g, '&quot;')}" placeholder="이메일 입력"
+                  style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                  required>
+              </div>
+              <div style="display: flex; gap: 12px; margin-top: 8px;">
+                <button type="button" onclick="this.closest('.barobill-registration-modal').remove()" 
+                  style="flex: 1; padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: white; color: var(--text-primary); font-weight: 600; cursor: pointer;">
+                  취소
+                </button>
+                <button type="submit" 
+                  style="flex: 1; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, #0066CC, #0052A3); color: white; font-weight: 600; cursor: pointer;">
+                  회원가입
+                </button>
+              </div>
+            </form>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // 폼 제출
+        document.getElementById('barobillRegistrationForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const registrationData = {
+            corpNum: document.getElementById('barobillCorpNum').value,
+            corpName: document.getElementById('barobillCorpName').value,
+            ceoName: document.getElementById('barobillCeoName').value,
+            bizType: document.getElementById('barobillBizType').value,
+            bizClass: document.getElementById('barobillBizClass').value,
+            postNum: '',
+            addr1: document.getElementById('barobillAddr1').value,
+            addr2: document.getElementById('barobillAddr2').value,
+            memberName: document.getElementById('barobillMemberName').value,
+            id: document.getElementById('barobillId').value,
+            pwd: document.getElementById('barobillPwd').value,
+            grade: '',
+            tel: document.getElementById('barobillTel').value,
+            hp: '',
+            email: document.getElementById('barobillEmail').value
+          };
+          
+          try {
+            const response = await fetch('/api/barobill/register-corp', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify(registrationData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              alert('✅ 바로빌 회원가입이 완료되었습니다!\n이제 홈택스 연동을 진행할 수 있습니다.');
+              modal.remove();
+              // 홈택스 연동 다시 시도
+              if (parentModal) {
+                // 홈택스 연동 폼 다시 제출
+                const hometaxForm = parentModal.querySelector('#hometaxForm');
+                if (hometaxForm) {
+                  hometaxForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+              }
+            } else {
+              alert('회원가입 실패: ' + (result.error || '알 수 없는 오류'));
+            }
+          } catch (error) {
+            console.error('바로빌 회원가입 실패:', error);
+            alert('회원가입 중 오류가 발생했습니다: ' + error.message);
+          }
+        });
+        
+        // 모달 외부 클릭 시 닫기
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.remove();
+          }
+        });
+      } catch (error) {
+        console.error('바로빌 회원가입 모달 오픈 실패:', error);
         alert('오류가 발생했습니다: ' + error.message);
       }
     }

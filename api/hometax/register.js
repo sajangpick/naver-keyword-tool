@@ -7,6 +7,17 @@ const { createClient } = require('@supabase/supabase-js');
 const axios = require('axios');
 const cipher = require('../../lib/cipher-service');
 
+// XML 특수문자 이스케이프
+function escapeXml(unsafe) {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 // Supabase 클라이언트 초기화
 let supabase = null;
 try {
@@ -92,77 +103,142 @@ module.exports = async (req, res) => {
       const { serviceType } = req.body; // 'taxinvoice' 또는 'cashbill'
       const serviceTypeName = serviceType === 'cashbill' ? '현금영수증' : '세금계산서';
 
-      // 바로빌 API 호출 - 서비스 신청 URL 반환 (2번 방법: 신청 화면 API)
-      // 이 방법이 더 사용자 친화적이며, 바로빌 사이트에서 직접 신청할 수 있음
+      // 1단계: 바로빌 회원가입 확인
+      console.log('📋 바로빌 회원가입 확인:', corpNum);
+      try {
+        const checkResponse = await axios.post(
+          `${req.protocol}://${req.get('host')}/api/barobill/check-member`,
+          {
+            corpNum: corpNum.replace(/-/g, ''),
+            checkCorpNum: corpNum.replace(/-/g, '')
+          }
+        );
+
+        const checkResult = checkResponse.data;
+        
+        if (!checkResult.success) {
+          return res.status(400).json({
+            success: false,
+            error: `바로빌 회원 확인 실패: ${checkResult.error}`
+          });
+        }
+
+        // 바로빌에 가입되지 않은 경우 회원가입 필요 안내
+        if (!checkResult.data.isMember) {
+          return res.status(400).json({
+            success: false,
+            error: '바로빌에 가입되지 않은 사업자번호입니다.',
+            needRegistration: true,
+            message: '홈택스 연동을 위해서는 먼저 바로빌 회원가입이 필요합니다.'
+          });
+        }
+
+        console.log('✅ 바로빌 회원 확인 완료');
+      } catch (checkError) {
+        console.error('❌ 바로빌 회원 확인 실패:', checkError.message);
+        // 회원 확인 실패해도 계속 진행 (API 오류일 수 있음)
+      }
+
+      // 2단계: 바로빌 API 호출 - 서비스 신청
       const apiParams = {
         CERTKEY: CERTKEY,
         CorpNum: corpNum.replace(/-/g, ''), // 하이픈 제거
-        UserID: '', // 더 이상 사용되지 않음 (빈 문자열)
-        PWD: '' // 더 이상 사용되지 않음 (빈 문자열)
+        HometaxLoginMethod: loginMethod,
+        ...(loginMethod === 'ID' && {
+          HometaxID: hometaxId,
+          HometaxPWD: hometaxPwd,
+          ShortJuminNum: jumin
+        })
       };
 
       console.log('📞 바로빌 API 호출:', {
-        method: serviceType === 'cashbill' ? 'GetCashBillScrapRequestURL' : 'GetTaxInvoiceScrapRequestURL',
+        method: serviceType === 'cashbill' ? 'RegistCashBillScrapEx' : 'RegistTaxInvoiceScrapEx',
         corpNum: apiParams.CorpNum,
+        loginMethod: apiParams.HometaxLoginMethod,
         serviceType: serviceTypeName
       });
 
-      // 바로빌 API 호출 - 신청 URL 반환
-      // 바로빌 API는 SOAP 방식으로 제공되므로, 실제 구현 시 바로빌 SDK 사용 권장
-      // 여기서는 예시로 작성 (실제로는 바로빌 SDK의 GetTaxInvoiceScrapRequestURL 또는 GetCashBillScrapRequestURL 메서드 사용)
-      let requestUrl;
+      // 바로빌 API 호출 - SOAP 방식
+      const apiMethod = serviceType === 'cashbill' 
+        ? 'RegistCashBillScrapEx' 
+        : 'RegistTaxInvoiceScrapEx';
+
+      // SOAP 요청 생성
+      const soapBody = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <${apiMethod} xmlns="http://www.barobill.co.kr/">
+      <CERTKEY>${CERTKEY}</CERTKEY>
+      <CorpNum>${apiParams.CorpNum}</CorpNum>
+      <HometaxLoginMethod>${apiParams.HometaxLoginMethod}</HometaxLoginMethod>
+      ${loginMethod === 'ID' ? `
+      <HometaxID>${escapeXml(apiParams.HometaxID)}</HometaxID>
+      <HometaxPWD>${escapeXml(apiParams.HometaxPWD)}</HometaxPWD>
+      <ShortJuminNum>${apiParams.ShortJuminNum}</ShortJuminNum>
+      ` : ''}
+    </${apiMethod}>
+  </soap:Body>
+</soap:Envelope>`;
+
+      let apiResult;
       try {
-        // 실제 바로빌 API 호출은 바로빌 SDK를 사용해야 함
-        // 여기서는 예시로 작성
-        const apiMethod = serviceType === 'cashbill' 
-          ? 'GetCashBillScrapRequestURL' 
-          : 'GetTaxInvoiceScrapRequestURL';
+        // 바로빌 API 엔드포인트 (실제 엔드포인트는 바로빌 개발자센터 문서 확인 필요)
+        const apiEndpoint = serviceType === 'cashbill'
+          ? `${BAROBIL_API_BASE}/Service/CashBill/${apiMethod}`
+          : `${BAROBIL_API_BASE}/Service/TaxInvoice/${apiMethod}`;
+
+        const response = await axios.post(
+          apiEndpoint,
+          soapBody,
+          {
+            headers: {
+              'Content-Type': 'text/xml; charset=utf-8',
+              'SOAPAction': `http://www.barobill.co.kr/${apiMethod}`
+            },
+            timeout: 30000
+          }
+        );
+
+        // SOAP 응답 파싱
+        const xmlResponse = response.data;
+        const resultMatch = xmlResponse.match(new RegExp(`<${apiMethod}Result>(-?\\d+)</${apiMethod}Result>`));
         
-        // 바로빌 API는 SOAP 방식이므로 실제 구현 시 바로빌 SDK 사용 필요
-        // 예시: const url = barobillSDK[apiMethod](CERTKEY, corpNum, '', '');
-        
-        // 임시로 에러 반환 (실제 구현 필요)
-        return res.status(501).json({
-          success: false,
-          error: '바로빌 API 연동은 바로빌 SDK 설치가 필요합니다. 바로빌 SDK를 설치하고 연동해주세요.',
-          note: '바로빌 홈페이지에서 SDK를 다운로드하여 설치한 후, 해당 API를 구현해주세요.'
-        });
-        
-        // 실제 구현 시 아래와 같이 사용:
-        // requestUrl = barobillSDK[apiMethod](CERTKEY, apiParams.CorpNum, '', '');
-        
+        if (!resultMatch) {
+          console.error('❌ SOAP 응답 파싱 실패:', xmlResponse.substring(0, 500));
+          return res.status(500).json({
+            success: false,
+            error: '바로빌 API 응답 형식이 올바르지 않습니다.',
+            debug: xmlResponse.substring(0, 500)
+          });
+        }
+
+        apiResult = parseInt(resultMatch[1]);
       } catch (apiError) {
         console.error('❌ 바로빌 API 호출 실패:', apiError.response?.data || apiError.message);
         return res.status(500).json({
           success: false,
-          error: `바로빌 API 호출 실패: ${apiError.response?.data?.message || apiError.message}`
+          error: `바로빌 API 호출 실패: ${apiError.response?.data || apiError.message}`,
+          note: '바로빌 API 엔드포인트가 올바른지 확인해주세요. 바로빌 개발자센터 문서를 참고하세요.'
         });
       }
 
-      // URL이 음수로 된 다섯자리 숫자 형식이면 실패
-      if (typeof requestUrl === 'string' && /^-\d{5}$/.test(requestUrl)) {
-        const errorCode = parseInt(requestUrl);
+      // API 결과 확인 (1 = 성공, 음수 = 실패)
+      if (apiResult !== 1) {
         return res.status(400).json({
           success: false,
-          error: `홈택스 연동 실패 (오류코드: ${errorCode})`
+          error: `홈택스 연동 실패 (오류코드: ${apiResult})`,
+          note: '바로빌 오류코드에 대한 자세한 내용은 바로빌 개발자센터를 참고하세요.'
         });
       }
 
-      // 성공 시 URL 반환 (프론트엔드에서 팝업으로 열어야 함)
-      return res.status(200).json({
-        success: true,
-        data: {
-          requestUrl: requestUrl,
-          message: `${serviceTypeName} 서비스 신청 URL이 생성되었습니다. 팝업에서 신청을 완료해주세요.`
-        }
-      });
+      console.log('✅ 바로빌 홈택스 연동 성공');
 
       // platform_connections 테이블에 저장
       const connectionData = {
         user_id: userId,
         platform: 'hometax',
-        store_id: corpNum.replace(/-/g, ''), // 사업자번호를 store_id로 저장
-        store_name: '홈택스 매입매출조회',
+        store_id: `${corpNum.replace(/-/g, '')}_${serviceType}`, // 사업자번호_서비스타입으로 저장
+        store_name: `홈택스 ${serviceTypeName} 매입매출조회`,
         account_id_encrypted: loginMethod === 'ID' && hometaxId ? cipher.encrypt(hometaxId) : null,
         account_password_encrypted: loginMethod === 'ID' && hometaxPwd ? cipher.encrypt(hometaxPwd) : null,
         is_active: true,
@@ -192,7 +268,9 @@ module.exports = async (req, res) => {
         success: true,
         data: {
           connectionId: savedConnection.id,
-          message: '홈택스 연동이 완료되었습니다. 매일 새벽에 전날까지의 매입매출 내역을 자동으로 수집합니다.'
+          serviceType: serviceType,
+          serviceTypeName: serviceTypeName,
+          message: `${serviceTypeName} 서비스 연동이 완료되었습니다. 매일 오전 4시~6시에 전날까지의 매입매출 내역을 자동으로 수집합니다.`
         }
       });
     }

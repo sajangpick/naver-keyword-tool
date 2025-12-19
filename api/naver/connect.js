@@ -567,8 +567,13 @@ module.exports = async (req, res) => {
         return;
       }
       
-      // placeId가 없으면 기존 방식 (동기 처리)
-      return handleAccountLoginConnection(req, res, userId, accountId.trim(), password);
+      // placeId가 없으면 플레이스 조회가 필요함을 알림
+      // (platform-callback.html에서 플레이스 조회 단계를 거쳐야 함)
+      return res.status(400).json({
+        success: false,
+        error: '플레이스를 선택해주세요. 먼저 플레이스 목록을 조회해주세요.',
+        requiresPlaceSelection: true
+      });
     }
     
     // adminUrl 방식
