@@ -5214,7 +5214,7 @@
         // 네이버는 OAuth 방식, 나머지는 기존 방식
         const platformUrls = {
           naver: {
-            loginUrl: 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=' + encodeURIComponent(`https://new.smartplace.naver.com/`),
+            loginUrl: 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=' + encodeURIComponent(`${window.location.origin}/api/naver/oauth-callback?userId=${userId}`),
             callbackUrl: `${window.location.origin}/api/naver/oauth-callback?userId=${userId}`,
             name: '네이버 스마트플레이스',
             instruction: '네이버 로그인 페이지에서 로그인해주세요.'

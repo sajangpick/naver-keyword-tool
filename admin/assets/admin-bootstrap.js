@@ -287,9 +287,30 @@
     }
   };
 
-  initSupabaseClient().catch(error => {
-    console.error('AdminBootstrap 초기화 실패:', error);
-  });
+  // 페이지 로드 후 Supabase 초기화 시도
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initSupabaseClient().catch(error => {
+        console.warn('⚠️ AdminBootstrap 초기화 실패 (재시도 예정):', error.message);
+        // 2초 후 재시도
+        setTimeout(() => {
+          initSupabaseClient().catch(err => {
+            console.error('❌ AdminBootstrap 초기화 재시도 실패:', err);
+          });
+        }, 2000);
+      });
+    });
+  } else {
+    // 이미 로드된 경우 즉시 시도
+    initSupabaseClient().catch(error => {
+      console.warn('⚠️ AdminBootstrap 초기화 실패 (재시도 예정):', error.message);
+      setTimeout(() => {
+        initSupabaseClient().catch(err => {
+          console.error('❌ AdminBootstrap 초기화 재시도 실패:', err);
+        });
+      }, 2000);
+    });
+  }
 
   console.log('✅ Admin Bootstrap loaded');
 })();

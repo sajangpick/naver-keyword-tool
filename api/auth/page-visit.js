@@ -140,6 +140,7 @@ module.exports = async (req, res) => {
   }
 
   if (req.method !== 'POST') {
+    console.log('[page-visit] ❌ 잘못된 HTTP 메서드:', req.method);
     return res.status(405).json({
       success: false,
       error: 'Method not allowed',
@@ -147,7 +148,15 @@ module.exports = async (req, res) => {
   }
 
   try {
+    console.log('[page-visit] 📥 접속 기록 저장 요청 받음:', {
+      method: req.method,
+      path: req.path,
+      hasBody: !!req.body,
+      body: req.body
+    });
+
     if (!supabase) {
+      console.error('[page-visit] ❌ Supabase 클라이언트가 초기화되지 않음');
       return res.status(503).json({
         success: false,
         error: 'Supabase가 설정되지 않았습니다',
@@ -165,11 +174,21 @@ module.exports = async (req, res) => {
 
     // 필수 필드 검증
     if (!pageUrl) {
+      console.error('[page-visit] ❌ 필수 필드 누락: pageUrl');
       return res.status(400).json({
         success: false,
         error: 'pageUrl은 필수입니다',
       });
     }
+
+    console.log('[page-visit] 📝 접속 기록 데이터 준비:', {
+      userId: userId || '익명',
+      pageUrl,
+      pageTitle,
+      referrer,
+      sessionId,
+      durationSeconds
+    });
 
     // 사용자 정보 추출 (Authorization 헤더에서)
     let finalUserId = userId || null;
@@ -248,6 +267,11 @@ module.exports = async (req, res) => {
       duration_seconds: durationSeconds || null,
     };
 
+    console.log('[page-visit] 💾 Supabase에 저장 시도:', {
+      table: 'page_visits',
+      data: visitData
+    });
+
     const { data, error } = await supabase
       .from('page_visits')
       .insert([visitData])
@@ -255,14 +279,28 @@ module.exports = async (req, res) => {
       .single();
 
     if (error) {
-      console.error('[page-visit] 저장 실패:', error);
+      console.error('[page-visit] ❌ 저장 실패:', {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        fullError: error
+      });
       return res.status(500).json({
         success: false,
         error: '접속 기록 저장 중 오류가 발생했습니다: ' + error.message,
+        details: error.details || null,
+        code: error.code || null
       });
     }
 
-    // 조용히 저장 (로그는 최소화)
+    console.log('[page-visit] ✅ 접속 기록 저장 성공:', {
+      id: data.id,
+      createdAt: data.created_at,
+      pageUrl: data.page_url,
+      userId: data.user_id || '익명'
+    });
+
     return res.status(200).json({
       success: true,
       data: {

@@ -55,6 +55,8 @@
   // 접속 기록 저장
   async function savePageVisit() {
     try {
+      console.log('[page-visit-tracker] 🔄 접속 기록 저장 시작');
+      
       const userId = await getUserId();
       const sessionId = getSessionId();
       const pageUrl = window.location.href;
@@ -67,6 +69,14 @@
       const apiBaseUrl = isLocalDev 
         ? 'http://127.0.0.1:3003'
         : window.location.origin;
+
+      console.log('[page-visit-tracker] 📡 API 호출 정보:', {
+        apiBaseUrl,
+        pageUrl,
+        pageTitle,
+        userId: userId || '익명',
+        sessionId
+      });
 
       // 이전 페이지의 체류 시간 계산 (localStorage에 저장된 이전 방문 시간 사용)
       let durationSeconds = null;
@@ -81,38 +91,62 @@
       localStorage.setItem('last_page_visit_time', Date.now().toString());
 
       // 접속 기록 저장
+      const requestBody = {
+        userId: userId,
+        pageUrl: pageUrl,
+        pageTitle: pageTitle,
+        referrer: referrer,
+        sessionId: sessionId,
+        durationSeconds: null, // 현재 페이지는 아직 체류 시간 없음
+      };
+
+      console.log('[page-visit-tracker] 📤 API 요청 전송:', {
+        url: `${apiBaseUrl}/api/auth/page-visit`,
+        method: 'POST',
+        body: requestBody
+      });
+
       const response = await fetch(`${apiBaseUrl}/api/auth/page-visit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: userId,
-          pageUrl: pageUrl,
-          pageTitle: pageTitle,
-          referrer: referrer,
-          sessionId: sessionId,
-          durationSeconds: null, // 현재 페이지는 아직 체류 시간 없음
-        }),
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('[page-visit-tracker] 📥 API 응답 받음:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        console.error('[page-visit-tracker] ❌ API 오류 응답:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
       console.log('[page-visit-tracker] ✅ 접속 기록 저장 완료:', {
         page: pageTitle,
         userId: userId || '익명',
-        id: result.data?.id
+        id: result.data?.id,
+        createdAt: result.data?.createdAt,
+        result: result
       });
     } catch (error) {
       // 접속 기록 저장 실패는 페이지 로딩에 영향을 주지 않음
       console.error('[page-visit-tracker] ❌ 접속 기록 저장 실패:', {
         message: error.message,
+        stack: error.stack,
         page: document.title,
-        url: window.location.href
+        url: window.location.href,
+        error: error
       });
     }
   }

@@ -2011,11 +2011,30 @@
     <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
 
     <script>
-      // 관리자 권한 체크
-      (async function() {
-        const isAdmin = await AdminUtils.requireAdmin();
-        if (!isAdmin) return;
-      })();
+      // 관리자 권한 체크 (AdminUtils 로드 대기)
+      window.addEventListener('DOMContentLoaded', async function() {
+        // AdminUtils가 로드될 때까지 대기
+        let retries = 0;
+        const maxRetries = 50; // 5초 대기
+        
+        while (retries < maxRetries) {
+          if (typeof AdminUtils !== 'undefined' && AdminUtils.requireAdmin) {
+            try {
+              const isAdmin = await AdminUtils.requireAdmin();
+              if (!isAdmin) return;
+            } catch (error) {
+              console.error('관리자 권한 체크 실패:', error);
+            }
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
+        }
+        
+        if (retries >= maxRetries) {
+          console.warn('⚠️ AdminUtils를 로드할 수 없습니다.');
+        }
+      });
     </script>
 
     <!-- 추적 및 모니터링 스크립트 -->

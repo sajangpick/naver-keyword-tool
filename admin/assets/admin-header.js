@@ -503,6 +503,21 @@
     }, 5000);
 
     console.log('✅ Admin Header loaded');
+
+    // 페이지 접속 기록 추적 스크립트 로드
+    if (!document.getElementById('page-visit-tracker-script')) {
+      const script = document.createElement('script');
+      script.id = 'page-visit-tracker-script';
+      script.src = '/assets/page-visit-tracker.js';
+      script.async = true;
+      script.onerror = function() {
+        console.error('[admin-header] page-visit-tracker.js 로드 실패');
+      };
+      script.onload = function() {
+        console.log('[admin-header] ✅ page-visit-tracker.js 로드 완료');
+      };
+      document.head.appendChild(script);
+    }
   }
   
   // 전역 함수로 등록 (다른 페이지에서 등급 변경 후 호출 가능)
