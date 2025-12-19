@@ -515,21 +515,39 @@ module.exports = async (req, res) => {
 
     const { accountId, password, adminUrl, naverId, naverPassword, placeId, smartplaceUrl } = req.body;
 
-    // accountId/password 방식 우선 지원
-    if (accountId && password) {
-      return handleAccountLoginConnection(req, res, userId, accountId, password);
+    // 디버깅: 받은 데이터 확인
+    console.log('[네이버 연동] 받은 데이터:', {
+      accountId: accountId ? `${accountId.substring(0, 3)}***` : '없음',
+      password: password ? '***' : '없음',
+      adminUrl: adminUrl ? '있음' : '없음',
+      naverId: naverId ? '있음' : '없음',
+      naverPassword: naverPassword ? '있음' : '없음',
+      placeId: placeId || '없음',
+      bodyKeys: Object.keys(req.body || {})
+    });
+
+    // accountId/password 방식 우선 지원 (빈 문자열 체크 포함)
+    const hasAccountId = accountId && accountId.trim().length > 0;
+    const hasPassword = password && password.trim().length > 0;
+    
+    if (hasAccountId && hasPassword) {
+      console.log('[네이버 연동] accountId/password 방식으로 처리');
+      return handleAccountLoginConnection(req, res, userId, accountId.trim(), password);
     }
     
     // adminUrl 방식
-    if (adminUrl) {
+    if (adminUrl && adminUrl.trim().length > 0) {
       return handleAdminUrlConnection(req, res, userId, adminUrl, replyTone);
     }
 
-    // 기존 방식 지원 (하위 호환성)
-    if (!placeId) {
+    // 기존 방식 지원 (하위 호환성) - naverId/naverPassword
+    if (naverId && naverPassword) {
+      console.log('[네이버 연동] 기존 방식(naverId/naverPassword)으로 처리');
+      // 기존 로직 계속...
+    } else if (!placeId) {
       return res.status(400).json({
         success: false,
-        error: '관리자 페이지 URL 또는 플레이스 ID가 필요합니다'
+        error: '아이디와 비밀번호를 입력해주세요.'
       });
     }
 

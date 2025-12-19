@@ -265,19 +265,45 @@
         <label class="form-label">
           <i class="fas fa-lock"></i> 비밀번호
         </label>
-        <input
-          type="password"
-          id="password"
-          class="form-input"
-          placeholder="플랫폼 비밀번호를 입력하세요"
-          required
-          autocomplete="current-password"
-        >
+        <div style="position: relative;">
+          <input
+            type="password"
+            id="password"
+            class="form-input"
+            placeholder="플랫폼 비밀번호를 입력하세요"
+            required
+            autocomplete="current-password"
+            style="padding-right: 45px;"
+          >
+          <button
+            type="button"
+            id="togglePassword"
+            style="
+              position: absolute;
+              right: 12px;
+              top: 50%;
+              transform: translateY(-50%);
+              background: none;
+              border: none;
+              color: #7a6a60;
+              cursor: pointer;
+              padding: 4px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: color 0.3s ease;
+            "
+            onmouseover="this.style.color='#ff7b54'"
+            onmouseout="this.style.color='#7a6a60'"
+          >
+            <i class="fas fa-eye" id="passwordIcon"></i>
+          </button>
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary" id="submitBtn">
-        <i class="fas fa-check"></i>
-        연동 완료
+        <i class="fas fa-plug"></i>
+        연동하기
       </button>
     </form>
 
@@ -390,6 +416,22 @@
       successEl.classList.add('active');
     }
 
+    // 비밀번호 표시/숨김 토글
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const passwordInput = document.getElementById('password');
+      const passwordIcon = document.getElementById('passwordIcon');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordIcon.classList.remove('fa-eye');
+        passwordIcon.classList.add('fa-eye-slash');
+      } else {
+        passwordInput.type = 'password';
+        passwordIcon.classList.remove('fa-eye-slash');
+        passwordIcon.classList.add('fa-eye');
+      }
+    });
+
     // 폼 제출
     document.getElementById('connectionForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -409,6 +451,13 @@
 
       try {
         // 연동 API 호출 (아이디/비밀번호 방식)
+        console.log('[연동] API 호출 시작:', {
+          platform: currentPlatform,
+          accountId: accountId ? `${accountId.substring(0, 3)}***` : '없음',
+          password: password ? '***' : '없음',
+          userId: userId
+        });
+
         const response = await fetch(`/api/${currentPlatform}/connect`, {
           method: 'POST',
           headers: {
@@ -421,7 +470,15 @@
           })
         });
 
+        console.log('[연동] API 응답 상태:', response.status);
+
         const result = await response.json();
+
+        console.log('[연동] API 응답 결과:', {
+          success: result.success,
+          error: result.error,
+          status: response.status
+        });
 
         if (!response.ok || !result.success) {
           throw new Error(result.error || '연동 실패');
