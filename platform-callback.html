@@ -23,11 +23,36 @@
       padding: 20px;
     }
 
+    .back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #201a17;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .back-button:hover {
+      background: #f9fafb;
+      border-color: #ff7b54;
+      transform: translateX(-2px);
+    }
+
     .container {
       background: white;
       border-radius: 24px;
       padding: 40px;
-      max-width: 600px;
+      max-width: 500px;
       width: 100%;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     }
@@ -62,6 +87,35 @@
       color: #7a6a60;
     }
 
+    .platform-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .platform-badge.naver {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .platform-badge.baemin {
+      background: #ccfbf1;
+      color: #0f766e;
+    }
+
+    .platform-badge.yogiyo {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .platform-badge.coupangeats {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
     .form-group {
       margin-bottom: 24px;
     }
@@ -87,40 +141,6 @@
       outline: none;
       border-color: #ff7b54;
       box-shadow: 0 0 0 3px rgba(255, 123, 84, 0.1);
-    }
-
-    .form-textarea {
-      min-height: 120px;
-      resize: vertical;
-    }
-
-    .instruction-box {
-      background: #e3f2fd;
-      border: 2px solid #2196f3;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 24px;
-    }
-
-    .instruction-box h3 {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1976d2;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .instruction-box ol {
-      margin-left: 20px;
-      color: #424242;
-      font-size: 13px;
-      line-height: 1.8;
-    }
-
-    .instruction-box li {
-      margin-bottom: 4px;
     }
 
     .btn {
@@ -206,38 +226,13 @@
     .success.active {
       display: block;
     }
-
-    .platform-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 16px;
-    }
-
-    .platform-badge.naver {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-
-    .platform-badge.baemin {
-      background: #ccfbf1;
-      color: #0f766e;
-    }
-
-    .platform-badge.yogiyo {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .platform-badge.coupangeats {
-      background: #fef3c7;
-      color: #92400e;
-    }
   </style>
 </head>
 <body>
+  <button class="back-button" onclick="window.location.href='/mypage.html'">
+    <i class="fas fa-arrow-left"></i> 뒤로가기
+  </button>
+
   <div class="container">
     <div class="header">
       <div class="header-icon">
@@ -245,46 +240,39 @@
       </div>
       <h1>플랫폼 연동</h1>
       <p id="platformName">연동 중...</p>
+      <span id="platformBadge" class="platform-badge"></span>
     </div>
 
     <div id="errorMessage" class="error"></div>
     <div id="successMessage" class="success"></div>
 
-    <div id="instructionBox" class="instruction-box" style="display: none;">
-      <h3>
-        <i class="fas fa-info-circle"></i>
-        연동 방법
-      </h3>
-      <ol id="instructionList">
-        <!-- 동적으로 채워짐 -->
-      </ol>
-    </div>
-
     <form id="connectionForm">
       <div class="form-group">
         <label class="form-label">
-          <i class="fas fa-link"></i> 관리자 페이지 URL
+          <i class="fas fa-user"></i> 아이디
         </label>
-        <textarea
-          id="adminUrl"
-          class="form-input form-textarea"
-          placeholder="로그인 후 관리자 페이지(대시보드)의 전체 URL을 붙여넣어주세요&#10;예: https://ceo.baemin.com/dashboard 또는 https://www.yogiyo.co.kr/mobile/#/owner/dashboard"
+        <input
+          type="text"
+          id="accountId"
+          class="form-input"
+          placeholder="플랫폼 아이디를 입력하세요"
           required
-        ></textarea>
-        <small style="color: #7a6a60; font-size: 12px; margin-top: 4px; display: block;">
-          💡 주소창의 전체 URL을 복사(Ctrl+C)하여 붙여넣으세요
-        </small>
+          autocomplete="username"
+        >
       </div>
 
       <div class="form-group">
         <label class="form-label">
-          <i class="fas fa-comment-dots"></i> 답글 톤 설정
+          <i class="fas fa-lock"></i> 비밀번호
         </label>
-        <select id="replyTone" class="form-input">
-          <option value="friendly">친근한 톤 (50자 이내, 이모지 1-2개)</option>
-          <option value="professional">전문적인 톤 (70자 이내, 정중하게)</option>
-          <option value="casual">캐주얼 톤 (40자 이내, 반말 가능)</option>
-        </select>
+        <input
+          type="password"
+          id="password"
+          class="form-input"
+          placeholder="플랫폼 비밀번호를 입력하세요"
+          required
+          autocomplete="current-password"
+        >
       </div>
 
       <button type="submit" class="btn btn-primary" id="submitBtn">
@@ -348,7 +336,7 @@
         }
       }
 
-      // 플랫폼별 안내 메시지 설정
+      // 플랫폼별 정보 설정
       setupPlatformInfo(currentPlatform);
     });
 
@@ -357,43 +345,19 @@
       const platformInfo = {
         naver: {
           name: '네이버 스마트플레이스',
-          badge: 'naver',
-          instructions: [
-            '새 탭에서 열린 네이버 로그인 페이지에서 로그인하세요',
-            '스마트플레이스 관리 페이지로 자동 이동됩니다',
-            '관리 페이지의 주소창 전체 URL을 복사(Ctrl+C)하세요',
-            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
-          ]
+          badge: 'naver'
         },
         baemin: {
           name: '배달의민족',
-          badge: 'baemin',
-          instructions: [
-            '새 탭에서 열린 배달의민족 사장님 광장에 로그인하세요',
-            '대시보드(메인 페이지)로 이동하세요',
-            '주소창의 전체 URL을 복사(Ctrl+C)하세요',
-            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
-          ]
+          badge: 'baemin'
         },
         yogiyo: {
           name: '요기요',
-          badge: 'yogiyo',
-          instructions: [
-            '새 탭에서 열린 요기요 사장님 페이지에 로그인하세요',
-            '매장 관리 페이지(대시보드)로 이동하세요',
-            '주소창의 전체 URL을 복사(Ctrl+C)하세요',
-            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
-          ]
+          badge: 'yogiyo'
         },
         coupangeats: {
           name: '쿠팡이츠',
-          badge: 'coupangeats',
-          instructions: [
-            '새 탭에서 열린 쿠팡 파트너 센터에 로그인하세요',
-            '대시보드(메인 페이지)로 이동하세요',
-            '주소창의 전체 URL을 복사(Ctrl+C)하세요',
-            '이 페이지로 돌아와서 아래 입력란에 붙여넣으세요'
-          ]
+          badge: 'coupangeats'
         }
       };
 
@@ -407,18 +371,9 @@
       document.getElementById('platformName').textContent = info.name;
       
       // 플랫폼 뱃지 추가
-      const header = document.querySelector('.header');
-      const badge = document.createElement('span');
+      const badge = document.getElementById('platformBadge');
       badge.className = `platform-badge ${info.badge}`;
       badge.textContent = info.name;
-      header.appendChild(badge);
-
-      // 안내 메시지 설정
-      const instructionList = document.getElementById('instructionList');
-      instructionList.innerHTML = info.instructions.map((text, index) => 
-        `<li>${text}</li>`
-      ).join('');
-      document.getElementById('instructionBox').style.display = 'block';
     }
 
     // 에러 메시지 표시
@@ -439,19 +394,11 @@
     document.getElementById('connectionForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const adminUrl = document.getElementById('adminUrl').value.trim();
-      const replyTone = document.getElementById('replyTone').value;
+      const accountId = document.getElementById('accountId').value.trim();
+      const password = document.getElementById('password').value;
 
-      if (!adminUrl) {
-        showError('관리자 페이지 URL을 입력해주세요.');
-        return;
-      }
-
-      // URL 유효성 검사
-      try {
-        new URL(adminUrl);
-      } catch (error) {
-        showError('올바른 URL 형식이 아닙니다.');
+      if (!accountId || !password) {
+        showError('아이디와 비밀번호를 모두 입력해주세요.');
         return;
       }
 
@@ -461,7 +408,7 @@
       document.getElementById('errorMessage').classList.remove('active');
 
       try {
-        // 연동 API 호출
+        // 연동 API 호출 (아이디/비밀번호 방식)
         const response = await fetch(`/api/${currentPlatform}/connect`, {
           method: 'POST',
           headers: {
@@ -469,8 +416,8 @@
             'user-id': userId
           },
           body: JSON.stringify({
-            adminUrl: adminUrl,
-            replyTone: replyTone
+            accountId: accountId,
+            password: password
           })
         });
 
@@ -486,8 +433,6 @@
         // 세션 스토리지 정리
         sessionStorage.removeItem(`${currentPlatform}_user_id`);
         sessionStorage.removeItem('connecting_platform');
-        sessionStorage.removeItem('callback_url');
-        sessionStorage.removeItem('platform_instruction');
 
         // 마이페이지로 이동
         setTimeout(() => {
@@ -504,4 +449,3 @@
   </script>
 </body>
 </html>
-

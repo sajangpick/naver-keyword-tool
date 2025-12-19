@@ -4,8 +4,8 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const { createBrowser, createPage, safeNavigate, getCookies } = require('../rpa/browser-controller');
-const { saveSession } = require('../rpa/session-manager');
+const { createBrowser, createPage, safeNavigate, getCookies, waitAndType, waitAndClick } = require('../rpa/browser-controller');
+const { saveSession, saveAccountCredentials } = require('../rpa/session-manager');
 
 // Supabase 클라이언트 초기화
 let supabase = null;
@@ -58,33 +58,16 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: '사용자 ID가 필요합니다' });
     }
 
-    const { adminUrl, replyTone } = req.body;
+    const { accountId, password } = req.body;
 
-    if (!adminUrl) {
+    if (!accountId || !password) {
       return res.status(400).json({
         success: false,
-        error: '관리자 페이지 URL이 필요합니다'
+        error: '아이디와 비밀번호가 필요합니다'
       });
     }
 
-    // URL 유효성 검사
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(adminUrl);
-      if (!parsedUrl.hostname.includes('coupang.com')) {
-        return res.status(400).json({
-          success: false,
-          error: '쿠팡이츠 관리자 페이지 URL이 아닙니다'
-        });
-      }
-    } catch (error) {
-      return res.status(400).json({
-        success: false,
-        error: '올바른 URL 형식이 아닙니다'
-      });
-    }
-
-    console.log(`[쿠팡이츠 연동] 사용자 ${userId} 연동 시작 - URL: ${adminUrl}`);
+    console.log(`[쿠팡이츠 연동] 사용자 ${userId} 연동 시작`);
 
     // 브라우저 실행
     browser = await createBrowser();
@@ -92,11 +75,21 @@ module.exports = async (req, res) => {
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
 
-    // 관리자 페이지로 이동
-    await safeNavigate(page, adminUrl, {
+    // 쿠팡이츠 로그인 페이지로 이동
+    await safeNavigate(page, 'https://partners.coupang.com/login', {
       waitUntil: 'networkidle2',
       timeout: 30000
     });
+
+    // 로그인 폼 입력
+    await waitAndType(page, 'input[type="text"], input[name="username"], #username', accountId, { delay: 150 });
+    await waitAndType(page, 'input[type="password"], input[name="password"], #password', password, { delay: 150 });
+    
+    // 로그인 버튼 클릭
+    await waitAndClick(page, 'button[type="submit"], button:contains("로그인"), .login-btn', { timeout: 10000 });
+    
+    // 로그인 완료 대기
+    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
 
     // 세션 쿠키 저장
     const cookies = await getCookies(page);
@@ -144,7 +137,7 @@ module.exports = async (req, res) => {
       console.warn('[쿠팡이츠] 매장 정보 추출 실패:', error);
     }
 
-    const storeId = extractStoreIdFromUrl(adminUrl);
+    const storeId = extractStoreIdFromUrl(page.url()) || 'auto';
 
     await browser.close();
     browser = null;
@@ -159,7 +152,7 @@ module.exports = async (req, res) => {
       session_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       address: storeInfo.address,
       phone: storeInfo.phone,
-      reply_tone: replyTone || 'friendly',
+      reply_tone: 'friendly', // 기본값, 나중에 리뷰 자동화 페이지에서 설정
       is_active: true,
       last_sync_at: new Date().toISOString(),
     };
@@ -179,6 +172,9 @@ module.exports = async (req, res) => {
     }
 
     await saveSession(connection.id, cookies, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+
+    // 계정 정보 암호화 저장
+    await saveAccountCredentials(connection.id, accountId, password);
 
     console.log(`[쿠팡이츠 연동] 사용자 ${userId} 연동 완료 - 매장: ${storeName}`);
 

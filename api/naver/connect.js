@@ -54,6 +54,191 @@ function extractPlaceIdFromUrl(url) {
   }
 }
 
+// 아이디/비밀번호 방식으로 연동 처리
+async function handleAccountLoginConnection(req, res, userId, accountId, password) {
+  let browser = null;
+  
+  try {
+    console.log(`[네이버 연동] 사용자 ${userId} 연동 시작 - 아이디/비밀번호 방식`);
+
+    let launchOptions;
+    
+    if (isProduction) {
+      const executablePath = await chromium.executablePath();
+      launchOptions = {
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+        defaultViewport: { width: 1920, height: 1080 },
+        executablePath,
+        headless: chromium.headless,
+      };
+    } else {
+      launchOptions = {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+        headless: true,
+      };
+    }
+    
+    browser = await puppeteer.launch(launchOptions);
+    const page = await browser.newPage();
+    
+    // 네이버 로그인
+    await page.goto('https://nid.naver.com/nidlogin.login', {
+      waitUntil: 'networkidle2',
+      timeout: 30000
+    });
+
+    await page.waitForSelector('#id', { timeout: 10000 });
+    await page.type('#id', accountId, { delay: 100 });
+    await page.waitForSelector('#pw', { timeout: 10000 });
+    await page.type('#pw', password, { delay: 100 });
+    await page.click('#log\\.login');
+    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
+
+    // 스마트플레이스 관리 페이지로 이동
+    await page.goto('https://new.smartplace.naver.com/', {
+      waitUntil: 'networkidle2',
+      timeout: 30000
+    });
+
+    // 플레이스 ID 추출
+    const placeId = await page.evaluate(() => {
+      const urlMatch = window.location.href.match(/\/(?:place|restaurant|my-place)\/(\d+)/);
+      if (urlMatch) return urlMatch[1];
+      
+      const placeLink = document.querySelector('a[href*="/place/"], a[href*="/restaurant/"]');
+      if (placeLink) {
+        const match = placeLink.href.match(/\/(?:place|restaurant)\/(\d+)/);
+        if (match) return match[1];
+      }
+      return null;
+    });
+
+    if (!placeId) {
+      await browser.close();
+      return res.status(400).json({
+        success: false,
+        error: '플레이스 ID를 찾을 수 없습니다. 스마트플레이스 관리 페이지에 접속할 수 있는지 확인해주세요.'
+      });
+    }
+
+    // 세션 쿠키 저장
+    const cookies = await page.cookies();
+    
+    // 매장 정보 가져오기
+    let placeName = '업소명 없음';
+    let storeInfo = {};
+    
+    try {
+      storeInfo = await page.evaluate(() => {
+        const nameSelectors = [
+          'h2._3ocDE',
+          'h2[class*="place"]',
+          '.place_name',
+          'h2',
+          '.name',
+          '[class*="name"]'
+        ];
+        
+        let name = '업소명 없음';
+        for (const selector of nameSelectors) {
+          const element = document.querySelector(selector);
+          if (element && element.textContent.trim()) {
+            name = element.textContent.trim();
+            break;
+          }
+        }
+        
+        return {
+          name: name,
+          address: document.querySelector('.address, [data-address], ._2yqUQ')?.textContent?.trim() || '',
+          phone: document.querySelector('.phone, [data-phone], ._3AP_SU')?.textContent?.trim() || '',
+        };
+      });
+      
+      placeName = storeInfo.name;
+    } catch (error) {
+      console.warn('[네이버] 매장 정보 추출 실패:', error);
+    }
+
+    await browser.close();
+    browser = null;
+
+    // DB에 저장
+    const connectionData = {
+      user_id: userId,
+      platform: 'naver',
+      store_id: placeId,
+      store_name: placeName,
+      session_cookies: JSON.stringify(cookies),
+      session_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      address: storeInfo.address,
+      phone: storeInfo.phone,
+      reply_tone: 'friendly',
+      is_active: true,
+      last_sync_at: new Date().toISOString(),
+    };
+
+    const { data: connection, error: dbError } = await supabase
+      .from('platform_connections')
+      .insert(connectionData)
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('DB 저장 실패:', dbError);
+      return res.status(500).json({
+        success: false,
+        error: '연동 정보 저장 실패: ' + dbError.message
+      });
+    }
+
+    // 세션 및 계정 정보 저장
+    const { saveSession, saveAccountCredentials } = require('../rpa/session-manager');
+    await saveSession(connection.id, cookies, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    await saveAccountCredentials(connection.id, accountId, password);
+
+    console.log(`[네이버 연동] 사용자 ${userId} 연동 완료 - 매장: ${placeName}`);
+
+    res.json({
+      success: true,
+      connection: {
+        id: connection.id,
+        platform: connection.platform,
+        store_id: connection.store_id,
+        store_name: connection.store_name,
+        reply_tone: connection.reply_tone,
+        is_active: connection.is_active
+      },
+      message: '네이버 스마트플레이스 연동이 완료되었습니다. 리뷰는 10분마다 자동으로 수집됩니다.'
+    });
+
+  } catch (error) {
+    console.error('[네이버 연동] 오류:', error);
+    
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (e) {}
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: '연동 중 오류가 발생했습니다: ' + error.message
+    });
+  }
+}
+
 // adminUrl 방식으로 연동 처리
 async function handleAdminUrlConnection(req, res, userId, adminUrl, replyTone) {
   let browser = null;
@@ -328,17 +513,19 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: '사용자 ID가 필요합니다' });
     }
 
-    const { adminUrl, replyTone } = req.body;
+    const { accountId, password, adminUrl, naverId, naverPassword, placeId, smartplaceUrl } = req.body;
 
-    // adminUrl이 있으면 새로운 방식, 없으면 기존 방식 지원
+    // accountId/password 방식 우선 지원
+    if (accountId && password) {
+      return handleAccountLoginConnection(req, res, userId, accountId, password);
+    }
+    
+    // adminUrl 방식
     if (adminUrl) {
-      // 새로운 방식: adminUrl에서 정보 추출
       return handleAdminUrlConnection(req, res, userId, adminUrl, replyTone);
     }
 
     // 기존 방식 지원 (하위 호환성)
-    const { naverId, naverPassword, placeId, smartplaceUrl } = req.body;
-    
     if (!placeId) {
       return res.status(400).json({
         success: false,

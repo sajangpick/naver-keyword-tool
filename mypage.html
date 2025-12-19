@@ -1774,6 +1774,7 @@
   <!-- 공통 인증 스크립트 -->
   <script src="/assets/demo-mode.js?v=20241125"></script>
   <script src="/assets/auth-state.js?v=202410" defer></script>
+  <script src="/assets/back-button.js"></script>
 
   <script>
     // Supabase 클라이언트
@@ -4722,32 +4723,9 @@
         // 사용자 ID와 플랫폼 정보를 세션 스토리지에 저장
         sessionStorage.setItem(`${platform}_user_id`, userId);
         sessionStorage.setItem('connecting_platform', platform);
-        sessionStorage.setItem('callback_url', platformInfo.callbackUrl);
-        sessionStorage.setItem('platform_instruction', platformInfo.instruction);
-
-        // 안내 메시지와 함께 콜백 페이지로 이동
-        // 사용자가 로그인 페이지를 새 탭에서 열고, 콜백 페이지에서 URL을 입력하도록 안내
-        const proceed = confirm(
-          `${platformInfo.name} 연동을 시작합니다.\n\n` +
-          `다음 단계:\n` +
-          `1. 로그인 페이지가 새 탭에서 열립니다\n` +
-          `2. 로그인 후 관리자 페이지(대시보드)로 이동하세요\n` +
-          `3. 주소창의 전체 URL을 복사(Ctrl+C)하세요\n` +
-          `4. 이 페이지에 돌아와서 URL을 붙여넣으세요\n\n` +
-          `계속하시겠습니까?`
-        );
         
-        if (proceed) {
-          // 로그인 페이지를 새 탭에서 열기
-          window.open(
-            platformInfo.loginUrl,
-            '_blank',
-            'width=1200,height=800'
-          );
-          
-          // 콜백 페이지로 이동
-          window.location.href = platformInfo.callbackUrl;
-        }
+        // 로그인 페이지로 바로 이동
+        window.location.href = platformInfo.callbackUrl;
       } catch (error) {
         console.error(`❌ ${platform} 연동 실패:`, error);
         alert('연동 중 오류가 발생했습니다: ' + error.message);
