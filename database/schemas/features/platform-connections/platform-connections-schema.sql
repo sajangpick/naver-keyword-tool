@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS platform_connections (
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     
     -- 플랫폼 정보
-    platform VARCHAR(50) NOT NULL CHECK (platform IN ('naver', 'baemin', 'yogiyo', 'coupangeats')),
+    platform VARCHAR(50) NOT NULL CHECK (platform IN ('naver', 'baemin', 'yogiyo', 'coupangeats', 'hometax')),
     store_id VARCHAR(100),           -- 플랫폼별 매장 ID (네이버: place_id, 배민: store_id 등)
     store_name VARCHAR(200),         -- 매장명
     

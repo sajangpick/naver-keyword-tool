@@ -29,9 +29,13 @@ module.exports = async (req, res) => {
       return res.status(405).json({ success: false, error: 'Method not allowed' });
     }
 
-    const { naverId, naverPassword } = req.body;
+    const { naverId, naverPassword, accountId, password } = req.body;
 
-    if (!naverId || !naverPassword) {
+    // accountId/password도 지원 (platform-callback.html에서 사용)
+    const finalNaverId = naverId || accountId;
+    const finalNaverPassword = naverPassword || password;
+
+    if (!finalNaverId || !finalNaverPassword) {
       return res.status(400).json({
         success: false,
         error: '네이버 아이디와 비밀번호가 필요합니다'
@@ -80,9 +84,9 @@ module.exports = async (req, res) => {
       });
 
       await page.waitForSelector('#id', { timeout: 10000 });
-      await page.type('#id', naverId, { delay: 100 });
+      await page.type('#id', finalNaverId, { delay: 100 });
       await page.waitForSelector('#pw', { timeout: 10000 });
-      await page.type('#pw', naverPassword, { delay: 100 });
+      await page.type('#pw', finalNaverPassword, { delay: 100 });
       await page.click('#log\\.login');
       await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
 

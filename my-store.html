@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co https://naver-keyword-tool.onrender.com https://connect.facebook.net https://www.facebook.com wss://*.supabase.co http://localhost:* http://127.0.0.1:*; img-src 'self' data: https://www.facebook.com https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net data:; base-uri 'self'; form-action 'self'" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <title>내가게 - 사장픽</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ff7b54'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='28' font-family='Arial' fill='white'%3ESP%3C/text%3E%3C/svg%3E" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <script src="./assets/common-header.js?v=20251029" defer></script>
+  <style>
+    :root {
+      --accent-color: #ff7b54;
+      --accent-dark: #e56548;
+      --bg-color: #fff7f0;
+      --text-primary: #201a17;
+      --text-secondary: #7a6a60;
+      --secondary: #ffe8d9;
+      --white: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --success: #4caf50;
+      --warning: #ff9800;
+      --error: #f44336;
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg-color);
+      min-height: 100vh;
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 20px;
+      flex: 1;
+    }
+
+    .page-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      text-align: center;
+      letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-color);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--accent-color);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .stat-change {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-change.positive {
+      color: var(--success);
+    }
+
+    .stat-change.negative {
+      color: var(--error);
+    }
+
+    .info-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: var(--bg-color);
+      border-radius: 12px;
+    }
+
+    .info-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-size: 16px;
+      color: var(--text-primary);
+      font-weight: 600;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state i {
+      font-size: 64px;
+      color: var(--text-secondary);
+      opacity: 0.3;
+      margin-bottom: 20px;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .empty-state .empty-subtitle {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .loading i {
+      font-size: 48px;
+      color: var(--accent-color);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 16px;
+      }
+
+      .page-title {
+        font-size: 28px;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .card {
+        padding: 24px;
+      }
+
+      .stat-value {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="page-title">
+      <i class="fa-solid fa-store"></i> 내가게
+    </h1>
+    <p class="page-subtitle">가게 정보와 매출 현황을 한눈에 확인하세요</p>
+
+    <div id="loadingState" class="loading">
+      <i class="fa-solid fa-spinner"></i>
+      <p style="margin-top: 16px;">데이터를 불러오는 중...</p>
+    </div>
+
+    <div id="contentArea" style="display: none;">
+      <!-- 매출 통계 카드 -->
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fa-solid fa-won-sign"></i>
+            </div>
+            <div class="card-title">오늘 매출</div>
+          </div>
+          <div class="stat-value" id="todaySales">0원</div>
+          <div class="stat-label">오늘의 총 매출액</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fa-solid fa-calendar-week"></i>
+            </div>
+            <div class="card-title">이번 주 매출</div>
+          </div>
+          <div class="stat-value" id="weekSales">0원</div>
+          <div class="stat-label">이번 주 총 매출액</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fa-solid fa-calendar-alt"></i>
+            </div>
+            <div class="card-title">이번 달 매출</div>
+          </div>
+          <div class="stat-value" id="monthSales">0원</div>
+          <div class="stat-label">이번 달 총 매출액</div>
+        </div>
+      </div>
+
+      <!-- 가게 정보 카드 -->
+      <div class="card" style="margin-bottom: 30px;">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <div class="card-title">가게 정보</div>
+        </div>
+        <div class="info-grid" id="storeInfo">
+          <div class="info-item">
+            <span class="info-label">가게 이름</span>
+            <span class="info-value" id="storeName">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">주소</span>
+            <span class="info-value" id="storeAddress">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">전화번호</span>
+            <span class="info-value" id="storePhone">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">영업시간</span>
+            <span class="info-value" id="storeHours">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">대표메뉴</span>
+            <span class="info-value" id="storeMenu">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 홈택스 연동 카드 -->
+      <div class="card" style="margin-bottom: 30px;">
+        <div class="card-header">
+          <div class="card-icon" style="background: linear-gradient(135deg, #0066CC, #0052A3);">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div class="card-title">홈택스 매입매출조회</div>
+        </div>
+        <div id="hometaxStatus" style="padding: 20px;">
+          <div id="hometaxNotConnected" style="text-align: center; padding: 40px 20px;">
+            <i class="fa-solid fa-receipt" style="font-size: 64px; color: var(--text-secondary); opacity: 0.3; margin-bottom: 20px;"></i>
+            <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 8px;">홈택스 연동이 필요합니다</p>
+            <p style="font-size: 14px; color: var(--text-secondary); opacity: 0.7; margin-bottom: 24px;">
+              바로빌 홈택스 API를 연동하면<br>매일 자동으로 매입매출 내역을 수집합니다
+            </p>
+            <button onclick="window.location.href='./mypage.html#platformConnectionSection'" 
+              style="
+                padding: 14px 28px;
+                background: linear-gradient(135deg, #0066CC, #0052A3);
+                color: white;
+                border: none;
+                border-radius: 12px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+              "
+              onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0, 102, 204, 0.3)';"
+              onmouseout="this.style.transform=''; this.style.boxShadow='';">
+              <i class="fa-solid fa-plug" style="margin-right: 8px;"></i>
+              홈택스 연동하기
+            </button>
+          </div>
+          <div id="hometaxConnected" style="display: none;">
+            <div style="background: linear-gradient(135deg, rgba(0, 102, 204, 0.1), rgba(0, 82, 163, 0.1)); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <i class="fa-solid fa-check-circle" style="font-size: 24px; color: var(--success);"></i>
+                <span style="font-size: 18px; font-weight: 700; color: var(--text-primary);">홈택스 연동 완료</span>
+              </div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">사업자번호</span>
+                  <span class="info-value" id="hometaxCorpNum">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">연동 상태</span>
+                  <span class="info-value" style="color: var(--success);">
+                    <i class="fa-solid fa-check-circle" style="margin-right: 4px;"></i>
+                    정상 작동 중
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">마지막 수집일</span>
+                  <span class="info-value" id="hometaxLastSync">-</span>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button onclick="window.location.href='./mypage.html#platformConnectionSection'" 
+                style="
+                  flex: 1;
+                  padding: 12px;
+                  background: white;
+                  border: 1px solid var(--border);
+                  border-radius: 8px;
+                  color: var(--text-primary);
+                  font-weight: 600;
+                  cursor: pointer;
+                  transition: all 0.3s ease;
+                "
+                onmouseover="this.style.borderColor='#0066CC'; this.style.color='#0066CC';"
+                onmouseout="this.style.borderColor=''; this.style.color='';">
+                <i class="fa-solid fa-cog" style="margin-right: 6px;"></i>
+                설정 변경
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 매출 데이터가 없을 때 -->
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <i class="fa-solid fa-chart-line"></i>
+        <p>아직 매출 데이터가 없습니다</p>
+        <p class="empty-subtitle">매출 데이터를 입력하면 여기에 표시됩니다</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="./assets/auth-state.js?v=202410"></script>
+  <script>
+    let supabase = null;
+
+    // Supabase 초기화
+    async function initSupabase() {
+      try {
+        while (!window.authState?.supabase) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        supabase = window.authState.supabase;
+        window.supabaseClient = supabase;
+        console.log('✅ Supabase 초기화 완료');
+      } catch (error) {
+        console.error('❌ Supabase 초기화 실패:', error);
+      }
+    }
+
+    // 숫자 포맷팅 (천 단위 구분)
+    function formatNumber(num) {
+      return new Intl.NumberFormat('ko-KR').format(num);
+    }
+
+    // 매출 데이터 조회
+    async function loadSalesData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          showError('로그인이 필요합니다.');
+          return;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay()); // 이번 주 월요일
+        
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+        // 오늘 매출
+        const { data: todayData } = await supabase
+          .from('sales_data')
+          .select('sale_amount')
+          .eq('user_id', user.id)
+          .gte('sale_date', today.toISOString().split('T')[0])
+          .lt('sale_date', new Date(today.getTime() + 86400000).toISOString().split('T')[0]);
+
+        // 이번 주 매출
+        const { data: weekData } = await supabase
+          .from('sales_data')
+          .select('sale_amount')
+          .eq('user_id', user.id)
+          .gte('sale_date', weekStart.toISOString().split('T')[0]);
+
+        // 이번 달 매출
+        const { data: monthData } = await supabase
+          .from('sales_data')
+          .select('sale_amount')
+          .eq('user_id', user.id)
+          .gte('sale_date', monthStart.toISOString().split('T')[0]);
+
+        const todayTotal = todayData?.reduce((sum, item) => sum + parseFloat(item.sale_amount || 0), 0) || 0;
+        const weekTotal = weekData?.reduce((sum, item) => sum + parseFloat(item.sale_amount || 0), 0) || 0;
+        const monthTotal = monthData?.reduce((sum, item) => sum + parseFloat(item.sale_amount || 0), 0) || 0;
+
+        document.getElementById('todaySales').textContent = formatNumber(todayTotal) + '원';
+        document.getElementById('weekSales').textContent = formatNumber(weekTotal) + '원';
+        document.getElementById('monthSales').textContent = formatNumber(monthTotal) + '원';
+
+        // 매출 데이터가 없으면 empty state 표시
+        if (todayTotal === 0 && weekTotal === 0 && monthTotal === 0) {
+          document.getElementById('emptyState').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('매출 데이터 조회 실패:', error);
+        // 에러가 나도 계속 진행 (매출 데이터가 없을 수 있음)
+      }
+    }
+
+    // 가게 정보 조회
+    async function loadStoreInfo() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          showError('로그인이 필요합니다.');
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('store_name, store_address, store_phone_number, store_business_hours, store_main_menu')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('가게 정보 조회 실패:', error);
+          return;
+        }
+
+        if (data) {
+          document.getElementById('storeName').textContent = data.store_name || '-';
+          document.getElementById('storeAddress').textContent = data.store_address || '-';
+          document.getElementById('storePhone').textContent = data.store_phone_number || '-';
+          document.getElementById('storeHours').textContent = data.store_business_hours || '-';
+          document.getElementById('storeMenu').textContent = data.store_main_menu || '-';
+        }
+      } catch (error) {
+        console.error('가게 정보 조회 실패:', error);
+      }
+    }
+
+    // 홈택스 연동 상태 조회
+    async function loadHometaxStatus() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          return;
+        }
+
+        // 홈택스 연동 정보 조회 (platform_connections 테이블에서 hometax 플랫폼 확인)
+        const { data: connections, error } = await supabase
+          .from('platform_connections')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('platform', 'hometax')
+          .eq('is_active', true)
+          .limit(1);
+
+        if (error) {
+          console.error('홈택스 연동 상태 조회 실패:', error);
+          return;
+        }
+
+        if (connections && connections.length > 0) {
+          const connection = connections[0];
+          document.getElementById('hometaxNotConnected').style.display = 'none';
+          document.getElementById('hometaxConnected').style.display = 'block';
+          
+          // 사업자번호 표시 (store_id에 저장되어 있을 것으로 예상)
+          document.getElementById('hometaxCorpNum').textContent = connection.store_id || '-';
+          
+          // 마지막 수집일 표시
+          if (connection.last_sync_at) {
+            const syncDate = new Date(connection.last_sync_at);
+            document.getElementById('hometaxLastSync').textContent = 
+              syncDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+          } else {
+            document.getElementById('hometaxLastSync').textContent = '아직 수집되지 않음';
+          }
+        } else {
+          document.getElementById('hometaxNotConnected').style.display = 'block';
+          document.getElementById('hometaxConnected').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('홈택스 연동 상태 조회 실패:', error);
+      }
+    }
+
+    // 에러 표시
+    function showError(message) {
+      alert(message);
+    }
+
+    // 페이지 초기화
+    async function initPage() {
+      await initSupabase();
+      
+      if (!supabase) {
+        showError('데이터베이스 연결에 실패했습니다.');
+        return;
+      }
+
+      // 로그인 확인
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = './login.html';
+        return;
+      }
+
+      // 데이터 로드
+      await Promise.all([
+        loadSalesData(),
+        loadStoreInfo(),
+        loadHometaxStatus()
+      ]);
+
+      // 로딩 숨기고 콘텐츠 표시
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('contentArea').style.display = 'block';
+    }
+
+    // 페이지 로드 시 초기화
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPage);
+    } else {
+      initPage();
+    }
+  </script>
+</body>
+</html>
+

@@ -1220,6 +1220,17 @@ app.get("/api/naver/profile", naverProfileHandler);
 // ==================== 플랫폼 통합 API ====================
 // 리뷰 수집
 const collectReviewsHandler = require('./api/platform/collect-reviews');
+
+// ==================== 홈택스 연동 API ====================
+const hometaxRegisterHandler = require('./api/hometax/register');
+app.post('/api/hometax/register', hometaxRegisterHandler);
+app.get('/api/hometax/register', hometaxRegisterHandler);
+
+const hometaxRequestUrlHandler = require('./api/hometax/get-request-url');
+app.post('/api/hometax/get-request-url', hometaxRequestUrlHandler);
+
+const hometaxSalesListHandler = require('./api/hometax/sales-list');
+app.get('/api/hometax/sales-list', hometaxSalesListHandler);
 app.post('/api/platform/collect-reviews', collectReviewsHandler);
 
 // 자동 답글 등록

@@ -55,7 +55,7 @@ function extractPlaceIdFromUrl(url) {
 }
 
 // 아이디/비밀번호 방식으로 연동 처리
-async function handleAccountLoginConnection(req, res, userId, accountId, password) {
+async function handleAccountLoginConnection(req, res, userId, accountId, password, placeId = null) {
   let browser = null;
   
   try {
@@ -111,25 +111,33 @@ async function handleAccountLoginConnection(req, res, userId, accountId, passwor
       timeout: 30000
     });
 
-    // 플레이스 ID 추출
-    const placeId = await page.evaluate(() => {
-      const urlMatch = window.location.href.match(/\/(?:place|restaurant|my-place)\/(\d+)/);
-      if (urlMatch) return urlMatch[1];
-      
-      const placeLink = document.querySelector('a[href*="/place/"], a[href*="/restaurant/"]');
-      if (placeLink) {
-        const match = placeLink.href.match(/\/(?:place|restaurant)\/(\d+)/);
-        if (match) return match[1];
-      }
-      return null;
-    });
-
-    if (!placeId) {
-      await browser.close();
-      return res.status(400).json({
-        success: false,
-        error: '플레이스 ID를 찾을 수 없습니다. 스마트플레이스 관리 페이지에 접속할 수 있는지 확인해주세요.'
+    // 플레이스 ID 추출 (placeId가 이미 있으면 사용)
+    let finalPlaceId = placeId;
+    
+    if (!finalPlaceId) {
+      finalPlaceId = await page.evaluate(() => {
+        const urlMatch = window.location.href.match(/\/(?:place|restaurant|my-place)\/(\d+)/);
+        if (urlMatch) return urlMatch[1];
+        
+        const placeLink = document.querySelector('a[href*="/place/"], a[href*="/restaurant/"]');
+        if (placeLink) {
+          const match = placeLink.href.match(/\/(?:place|restaurant)\/(\d+)/);
+          if (match) return match[1];
+        }
+        return null;
       });
+
+      if (!finalPlaceId) {
+        await browser.close();
+        // res가 있으면 응답, 없으면 에러만 로깅
+        if (res && !res.headersSent) {
+          return res.status(400).json({
+            success: false,
+            error: '플레이스 ID를 찾을 수 없습니다. 스마트플레이스 관리 페이지에 접속할 수 있는지 확인해주세요.'
+          });
+        }
+        throw new Error('플레이스 ID를 찾을 수 없습니다.');
+      }
     }
 
     // 세션 쿠키 저장
@@ -178,7 +186,7 @@ async function handleAccountLoginConnection(req, res, userId, accountId, passwor
     const connectionData = {
       user_id: userId,
       platform: 'naver',
-      store_id: placeId,
+      store_id: finalPlaceId,
       store_name: placeName,
       session_cookies: JSON.stringify(cookies),
       session_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -197,10 +205,14 @@ async function handleAccountLoginConnection(req, res, userId, accountId, passwor
 
     if (dbError) {
       console.error('DB 저장 실패:', dbError);
-      return res.status(500).json({
-        success: false,
-        error: '연동 정보 저장 실패: ' + dbError.message
-      });
+      // res가 있고 아직 응답하지 않았으면 에러 응답
+      if (res && !res.headersSent) {
+        return res.status(500).json({
+          success: false,
+          error: '연동 정보 저장 실패: ' + dbError.message
+        });
+      }
+      throw new Error('연동 정보 저장 실패: ' + dbError.message);
     }
 
     // 세션 및 계정 정보 저장
@@ -210,18 +222,21 @@ async function handleAccountLoginConnection(req, res, userId, accountId, passwor
 
     console.log(`[네이버 연동] 사용자 ${userId} 연동 완료 - 매장: ${placeName}`);
 
-    res.json({
-      success: true,
-      connection: {
-        id: connection.id,
-        platform: connection.platform,
-        store_id: connection.store_id,
-        store_name: connection.store_name,
-        reply_tone: connection.reply_tone,
-        is_active: connection.is_active
-      },
-      message: '네이버 스마트플레이스 연동이 완료되었습니다. 리뷰는 10분마다 자동으로 수집됩니다.'
-    });
+    // res가 있고 아직 응답하지 않았으면 성공 응답
+    if (res && !res.headersSent) {
+      res.json({
+        success: true,
+        connection: {
+          id: connection.id,
+          platform: connection.platform,
+          store_id: connection.store_id,
+          store_name: connection.store_name,
+          reply_tone: connection.reply_tone,
+          is_active: connection.is_active
+        },
+        message: '네이버 스마트플레이스 연동이 완료되었습니다. 리뷰는 10분마다 자동으로 수집됩니다.'
+      });
+    }
 
   } catch (error) {
     console.error('[네이버 연동] 오류:', error);
@@ -532,6 +547,27 @@ module.exports = async (req, res) => {
     
     if (hasAccountId && hasPassword) {
       console.log('[네이버 연동] accountId/password 방식으로 처리');
+      
+      // placeId가 있으면 비동기 처리 (플레이스 선택 후 연동)
+      if (placeId) {
+        // 즉시 응답 반환
+        res.json({
+          success: true,
+          message: '연동이 시작되었습니다. 완료되면 알림을 보내드립니다.',
+          connectionId: null // 백그라운드에서 생성됨
+        });
+
+        // 백그라운드에서 연동 처리 (비동기)
+        handleAccountLoginConnection(req, res, userId, accountId.trim(), password, placeId)
+          .catch(error => {
+            console.error('[네이버 연동] 백그라운드 처리 실패:', error);
+            // 에러는 로그만 남기고 사용자에게는 나중에 알림
+          });
+        
+        return;
+      }
+      
+      // placeId가 없으면 기존 방식 (동기 처리)
       return handleAccountLoginConnection(req, res, userId, accountId.trim(), password);
     }
     
@@ -545,9 +581,19 @@ module.exports = async (req, res) => {
       console.log('[네이버 연동] 기존 방식(naverId/naverPassword)으로 처리');
       // 기존 로직 계속...
     } else if (!placeId) {
+      // accountId/password가 없고, 다른 방식도 없을 때
+      console.error('[네이버 연동] 필수 파라미터 누락:', {
+        hasAccountId: hasAccountId,
+        hasPassword: hasPassword,
+        hasAdminUrl: adminUrl && adminUrl.trim().length > 0,
+        hasNaverId: !!naverId,
+        hasNaverPassword: !!naverPassword,
+        hasPlaceId: !!placeId
+      });
+      
       return res.status(400).json({
         success: false,
-        error: '아이디와 비밀번호를 입력해주세요.'
+        error: '네이버 아이디와 비밀번호를 입력해주세요.'
       });
     }
 
