@@ -10,26 +10,77 @@
   let configCache = null;
   let supabaseLib = null;
 
-  function waitForSupabaseLib(timeout = 10000) {
+  function loadSupabaseLib() {
+    // 이미 로드되어 있으면 반환
     if (window.supabase && typeof window.supabase.createClient === 'function') {
       return Promise.resolve(window.supabase);
     }
 
+    // 동적으로 Supabase 스크립트 로드
     return new Promise((resolve, reject) => {
-      const start = Date.now();
+      // 이미 스크립트가 로드 중이면 기다림
+      const existingScript = document.querySelector('script[src*="supabase-js"]');
+      if (existingScript) {
+        const checkInterval = setInterval(() => {
+          if (window.supabase && typeof window.supabase.createClient === 'function') {
+            clearInterval(checkInterval);
+            resolve(window.supabase);
+          }
+        }, 30);
+        
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          if (window.supabase && typeof window.supabase.createClient === 'function') {
+            resolve(window.supabase);
+          } else {
+            reject(new Error('Supabase 라이브러리 로드 시간 초과'));
+          }
+        }, 10000);
+        return;
+      }
 
-      const timer = setInterval(() => {
+      // 새로 스크립트 로드
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      script.async = true;
+      script.onload = () => {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
-          clearInterval(timer);
           resolve(window.supabase);
-          return;
+        } else {
+          reject(new Error('Supabase 라이브러리 로드 실패'));
         }
+      };
+      script.onerror = () => {
+        reject(new Error('Supabase 라이브러리 스크립트 로드 실패'));
+      };
+      document.head.appendChild(script);
+    });
+  }
 
-        if (Date.now() - start > timeout) {
-          clearInterval(timer);
-          reject(new Error('Supabase 라이브러리를 찾을 수 없습니다. CDN 로딩을 확인하세요.'));
-        }
-      }, 30);
+  function waitForSupabaseLib(timeout = 10000) {
+    // 먼저 로드 시도
+    return loadSupabaseLib().catch(() => {
+      // 로드 실패 시 기존 방식으로 대기
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        return Promise.resolve(window.supabase);
+      }
+
+      return new Promise((resolve, reject) => {
+        const start = Date.now();
+
+        const timer = setInterval(() => {
+          if (window.supabase && typeof window.supabase.createClient === 'function') {
+            clearInterval(timer);
+            resolve(window.supabase);
+            return;
+          }
+
+          if (Date.now() - start > timeout) {
+            clearInterval(timer);
+            reject(new Error('Supabase 라이브러리를 찾을 수 없습니다. CDN 로딩을 확인하세요.'));
+          }
+        }, 30);
+      });
     });
   }
 

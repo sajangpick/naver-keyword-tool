@@ -46,9 +46,6 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: '사용자 ID가 필요합니다' });
     }
 
-    // 쿠키 문자열을 파싱
-    const cookieString = req.body.cookies || '';
-    
     console.log(`[네이버 OAuth 연동] 사용자 ${userId} 연동 시작`);
 
     // Puppeteer로 브라우저 실행
@@ -83,25 +80,24 @@ module.exports = async (req, res) => {
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
 
-    // 쿠키 설정 (쿠키 문자열을 파싱하여 설정)
-    if (cookieString) {
-      try {
-        const cookies = cookieString.split(';').map(cookie => {
-          const [name, value] = cookie.trim().split('=');
-          return { name, value, domain: '.naver.com', path: '/' };
-        }).filter(c => c.name && c.value);
-        
-        await page.setCookie(...cookies);
-      } catch (error) {
-        console.warn('[네이버 OAuth] 쿠키 설정 실패:', error);
-      }
-    }
-
-    // 스마트플레이스 관리 페이지로 이동
+    // 네이버 로그인 페이지로 이동 (사용자가 이미 로그인한 상태라고 가정)
+    // 실제로는 사용자가 브라우저에서 로그인한 세션을 사용할 수 없으므로
+    // 스마트플레이스 관리 페이지로 직접 이동하여 세션 확인
     await safeNavigate(page, 'https://new.smartplace.naver.com/', {
       waitUntil: 'networkidle2',
       timeout: 30000
     });
+
+    // 로그인이 안 되어 있으면 로그인 페이지로 리다이렉트됨
+    // 이 경우 에러 처리
+    const currentUrl = page.url();
+    if (currentUrl.includes('nidlogin.login') || currentUrl.includes('login')) {
+      await browser.close();
+      return res.status(401).json({
+        success: false,
+        error: '네이버 로그인이 필요합니다. 먼저 네이버에 로그인해주세요.'
+      });
+    }
 
     // 플레이스 ID 추출
     const placeId = await page.evaluate(() => {

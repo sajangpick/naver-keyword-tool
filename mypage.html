@@ -4457,12 +4457,12 @@
           connections.map(async (conn) => {
             try {
               const profileRes = await fetch(`/api/${conn.platform}/profile?connectionId=${conn.id}`, {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'user-id': userId
-                }
-              });
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId
+          }
+        });
 
               if (profileRes.ok) {
                 const profileData = await profileRes.json();
@@ -4509,13 +4509,13 @@
           
           return `
             <div class="platform-card" style="
-              background: var(--white);
+            background: var(--white);
               border: 2px solid ${platform.color};
-              border-radius: 16px;
-              padding: 24px;
-              margin-bottom: 20px;
-              box-shadow: var(--shadow-sm);
-            ">
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+          ">
               <div style="display: flex; gap: 16px; margin-bottom: 16px;">
                 ${profileImage ? `
                   <img src="${profileImage}" alt="${storeName}" style="
@@ -4541,11 +4541,11 @@
                 `}
                 <div style="flex: 1;">
                   <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                    <div>
+              <div>
                       <h4 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
                         <i class="${platform.icon}" style="color: ${platform.color}; margin-right: 8px; font-size: 16px;"></i>
                         ${storeName}
-                      </h4>
+                </h4>
                       ${storeAddress ? `
                         <p style="color: var(--text-secondary); font-size: 13px; margin: 4px 0;">
                           <i class="fas fa-map-marker-alt" style="font-size: 11px; margin-right: 4px;"></i>
@@ -4561,52 +4561,52 @@
                       <p style="color: var(--text-secondary); font-size: 12px; margin: 4px 0 0 0;">
                         ${conn.place_id ? `플레이스 ID: ${conn.place_id}` : ''}
                         ${conn.store_id ? `매장 ID: ${conn.store_id}` : ''}
-                      </p>
-                    </div>
-                    <span style="
-                      padding: 6px 12px;
-                      background: ${conn.is_active ? '#dcfce7' : '#fee2e2'};
-                      color: ${conn.is_active ? '#166534' : '#991b1b'};
-                      border-radius: 999px;
-                      font-size: 12px;
-                      font-weight: 600;
+                </p>
+              </div>
+              <span style="
+                padding: 6px 12px;
+                background: ${conn.is_active ? '#dcfce7' : '#fee2e2'};
+                color: ${conn.is_active ? '#166534' : '#991b1b'};
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 600;
                       white-space: nowrap;
-                    ">
-                      ${conn.is_active ? '✓ 활성화' : '✗ 비활성화'}
-                    </span>
+              ">
+                ${conn.is_active ? '✓ 활성화' : '✗ 비활성화'}
+              </span>
                   </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">마지막 동기화</div>
+                <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
+                  ${conn.last_sync_at ? new Date(conn.last_sync_at).toLocaleString('ko-KR') : '아직 없음'}
                 </div>
               </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-                <div>
-                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">마지막 동기화</div>
-                  <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
-                    ${conn.last_sync_at ? new Date(conn.last_sync_at).toLocaleString('ko-KR') : '아직 없음'}
-                  </div>
-                </div>
-                <div>
-                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 톤</div>
-                  <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
-                    ${conn.reply_tone === 'friendly' ? '친근한' : conn.reply_tone === 'professional' ? '전문적인' : '캐주얼'}
-                  </div>
+              <div>
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 톤</div>
+                <div style="color: var(--text-primary); font-size: 14px; font-weight: 600;">
+                  ${conn.reply_tone === 'friendly' ? '친근한' : conn.reply_tone === 'professional' ? '전문적인' : '캐주얼'}
                 </div>
               </div>
+            </div>
 
-              <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
-                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">총 리뷰</div>
-                  <div style="color: var(--accent-color); font-size: 20px; font-weight: 700;">
-                    ${conn.total_reviews || 0}건
-                  </div>
-                </div>
-                <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
-                  <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 대기중</div>
-                  <div style="color: var(--warning); font-size: 20px; font-weight: 700;">
-                    ${conn.pending_replies || 0}건
-                  </div>
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+              <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">총 리뷰</div>
+                <div style="color: var(--accent-color); font-size: 20px; font-weight: 700;">
+                  ${conn.total_reviews || 0}건
                 </div>
               </div>
+              <div style="flex: 1; text-align: center; padding: 12px; background: var(--bg-color); border-radius: 8px;">
+                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">답글 대기중</div>
+                <div style="color: var(--warning); font-size: 20px; font-weight: 700;">
+                  ${conn.pending_replies || 0}건
+                </div>
+              </div>
+            </div>
 
               <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-color); border-radius: 8px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -4624,34 +4624,34 @@
                 </p>
               </div>
 
-              <div style="display: flex; gap: 8px;">
-                <a href="/app/ai-review-automation.html" class="btn" style="
-                  flex: 1;
-                  background: var(--accent-color);
-                  color: white;
-                  border: none;
-                  padding: 12px;
-                  border-radius: 8px;
-                  text-align: center;
-                  text-decoration: none;
-                  font-weight: 600;
-                  cursor: pointer;
-                ">
-                  <i class="fas fa-robot"></i> 리뷰 관리하기
-                </a>
+            <div style="display: flex; gap: 8px;">
+              <a href="/app/ai-review-automation.html" class="btn" style="
+                flex: 1;
+                background: var(--accent-color);
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                text-align: center;
+                text-decoration: none;
+                font-weight: 600;
+                cursor: pointer;
+              ">
+                <i class="fas fa-robot"></i> 리뷰 관리하기
+              </a>
                 <button onclick="disconnectPlatform('${conn.platform}', '${conn.id}')" class="btn" style="
-                  background: var(--error);
-                  color: white;
-                  border: none;
-                  padding: 12px 20px;
-                  border-radius: 8px;
-                  font-weight: 600;
-                  cursor: pointer;
-                ">
+                background: var(--error);
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+              ">
                   <i class="fas fa-unlink"></i> 연동 해체
-                </button>
-              </div>
+              </button>
             </div>
+          </div>
           `;
         }).join('');
       } else {
@@ -4694,12 +4694,12 @@
     // 홈택스 연동 함수
     async function connectHometax() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          alert('로그인이 필요합니다.');
-          window.location.href = '/login.html';
-          return;
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login.html';
+        return;
+      }
 
         // 홈택스 연동 모달 표시
         const modal = document.createElement('div');
@@ -4732,21 +4732,10 @@
             </h3>
             <p style="color: #666; font-size: 14px; margin-bottom: 24px;">
               바로빌 홈택스 매입매출조회 서비스를 연동합니다.<br>
-              세금계산서와 현금영수증은 별개 서비스이므로 각각 신청이 필요합니다.
+              세금계산서 서비스를 연동합니다.
             </p>
             <form id="hometaxForm" style="display: flex; flex-direction: column; gap: 16px;">
-              <div>
-                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
-                  서비스 선택 <span style="color: var(--error);">*</span>
-                </label>
-                <select id="hometaxServiceType" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" required>
-                  <option value="taxinvoice">세금계산서 서비스</option>
-                  <option value="cashbill">현금영수증 서비스</option>
-                </select>
-                <p style="font-size: 12px; color: #999; margin-top: 4px;">
-                  세금계산서와 현금영수증은 별도로 신청해야 합니다.
-                </p>
-              </div>
+              <input type="hidden" id="hometaxServiceType" value="taxinvoice">
               <div>
                 <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
                   사업자번호 <span style="color: var(--error);">*</span>
@@ -4851,7 +4840,7 @@
         document.getElementById('hometaxForm').addEventListener('submit', async (e) => {
           e.preventDefault();
           
-          const serviceType = document.getElementById('hometaxServiceType').value;
+          const serviceType = 'taxinvoice'; // 세금계산서 서비스 고정
           const requestMethod = document.getElementById('hometaxRequestMethod').value;
           const corpNum = document.getElementById('hometaxCorpNum').value.replace(/-/g, '');
           
@@ -5225,8 +5214,8 @@
         // 네이버는 OAuth 방식, 나머지는 기존 방식
         const platformUrls = {
           naver: {
-            loginUrl: 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=' + encodeURIComponent(`${window.location.origin}/api/naver/oauth-callback?userId=${userId}`),
-            callbackUrl: `${window.location.origin}/platform-callback.html?platform=naver`,
+            loginUrl: 'https://nid.naver.com/nidlogin.login?svctype=1&locale=ko_KR&url=' + encodeURIComponent(`https://new.smartplace.naver.com/`),
+            callbackUrl: `${window.location.origin}/api/naver/oauth-callback?userId=${userId}`,
             name: '네이버 스마트플레이스',
             instruction: '네이버 로그인 페이지에서 로그인해주세요.'
           },
@@ -5258,7 +5247,7 @@
 
         // 네이버는 OAuth 방식으로 처리
         if (platform === 'naver') {
-          // 네이버 로그인 페이지로 리다이렉트
+      // 네이버 로그인 페이지로 리다이렉트
           window.location.href = platformInfo.loginUrl;
         } else {
           // 다른 플랫폼은 기존 방식 (callback 페이지로)

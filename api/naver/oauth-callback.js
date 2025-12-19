@@ -42,12 +42,10 @@ module.exports = async (req, res) => {
       `);
     }
 
-    // 네이버 로그인 후 쿠키가 있는지 확인
-    // 실제로는 Puppeteer로 세션을 가져와야 하지만, 
-    // 여기서는 사용자가 이미 로그인한 상태라고 가정하고
-    // 스마트플레이스로 리다이렉트하여 플레이스 정보를 가져옵니다
+    // 네이버 로그인 후 이 페이지로 리다이렉트됨
+    // 스마트플레이스로 이동하여 세션 쿠키를 가져온 후 연동 처리
 
-    // HTML 페이지 반환 (JavaScript로 쿠키 추출 후 서버로 전송)
+    // HTML 페이지 반환 (스마트플레이스로 이동 후 세션 추출)
     res.send(`
       <!DOCTYPE html>
       <html lang="ko">
@@ -105,13 +103,10 @@ module.exports = async (req, res) => {
           <p style="font-size: 12px; color: #9ca3af;">잠시만 기다려주세요.</p>
         </div>
         <script>
-          // 쿠키 추출 및 서버로 전송
+          // 네이버 로그인 후 연동 처리
           async function processConnection() {
             try {
-              // 모든 쿠키 가져오기
-              const cookies = document.cookie;
-              
-              // 서버로 쿠키 전송하여 연동 처리
+              // 서버로 연동 요청 (Puppeteer로 세션 쿠키 추출)
               const response = await fetch('/api/naver/connect-from-oauth', {
                 method: 'POST',
                 headers: {
@@ -119,7 +114,6 @@ module.exports = async (req, res) => {
                   'user-id': '${userId}'
                 },
                 body: JSON.stringify({
-                  cookies: cookies,
                   userId: '${userId}'
                 })
               });
@@ -128,7 +122,18 @@ module.exports = async (req, res) => {
 
               if (result.success) {
                 // 성공 - 마이페이지로 이동
-                window.location.href = '/mypage.html?connected=naver';
+                document.querySelector('.container').innerHTML = \`
+                  <div style="width: 64px; height: 64px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <i class="fas fa-check" style="color: white; font-size: 32px;"></i>
+                  </div>
+                  <h1 style="color: #201a17; margin-bottom: 16px;">연동 완료!</h1>
+                  <p style="color: #7a6a60;">네이버 스마트플레이스 연동이 완료되었습니다.</p>
+                  <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">마이페이지로 이동합니다...</p>
+                \`;
+                
+                setTimeout(() => {
+                  window.location.href = '/mypage.html?connected=naver';
+                }, 2000);
               } else {
                 // 실패 - 에러 메시지 표시
                 document.querySelector('.container').innerHTML = \`
