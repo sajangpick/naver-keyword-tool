@@ -2654,29 +2654,81 @@
         }
 
         function showResultVideo(url) {
+            console.log('🔵 [영상 재생] showResultVideo 호출됨, URL:', url);
+            
+            // URL 유효성 검사
+            if (!url || url.trim() === '') {
+                console.error('❌ [영상 재생] URL이 없습니다:', url);
+                showResultPlaceholder('영상 URL을 찾을 수 없습니다.');
+                return;
+            }
+            
             // 결과 섹션 확실히 표시
             showResultSection();
             
             const placeholder = document.getElementById('resultPlaceholder');
             const videoEl = document.getElementById('resultVideo');
-            if (placeholder) placeholder.classList.add('hidden');
-            if (videoEl) {
-                // Google API URL인 경우 서버 프록시를 통해 재생 (403 오류 방지)
-                let videoSrc = url;
-                if (url && url.includes('generativelanguage.googleapis.com')) {
-                    videoSrc = `${API_BASE}/api/shorts/play?url=${encodeURIComponent(url)}`;
-                    console.log('🔵 [영상 재생] 프록시 URL 사용:', videoSrc);
-                }
-                
-                videoEl.src = videoSrc;
-                videoEl.classList.remove('hidden');
-                videoEl.load();
-                
-                // 비디오 로드 완료 후 재생 준비
-                videoEl.addEventListener('loadeddata', () => {
-                    console.log('✅ [영상 재생] 비디오 로드 완료');
-                }, { once: true });
+            
+            if (!videoEl) {
+                console.error('❌ [영상 재생] 비디오 엘리먼트를 찾을 수 없습니다.');
+                return;
             }
+            
+            if (placeholder) placeholder.classList.add('hidden');
+            
+            // Google API URL인 경우 서버 프록시를 통해 재생 (403 오류 방지)
+            let videoSrc = url;
+            if (url && url.includes('generativelanguage.googleapis.com')) {
+                videoSrc = `${API_BASE}/api/shorts/play?url=${encodeURIComponent(url)}`;
+                console.log('🔵 [영상 재생] 프록시 URL 사용:', videoSrc);
+            } else {
+                console.log('🔵 [영상 재생] 직접 URL 사용:', videoSrc);
+            }
+            
+            // 기존 이벤트 리스너 제거를 위해 비디오 소스 초기화
+            videoEl.pause();
+            videoEl.removeAttribute('src');
+            videoEl.load();
+            
+            // 기존 이벤트 리스너 제거 (새로운 이벤트 리스너를 추가하기 전에)
+            const oldErrorHandler = videoEl.onerror;
+            videoEl.onerror = null;
+            
+            // 비디오 로드 이벤트 핸들러
+            videoEl.addEventListener('loadedmetadata', () => {
+                console.log('✅ [영상 재생] 비디오 메타데이터 로드 완료');
+            }, { once: true });
+            
+            videoEl.addEventListener('loadeddata', () => {
+                console.log('✅ [영상 재생] 비디오 데이터 로드 완료');
+            }, { once: true });
+            
+            videoEl.addEventListener('canplay', () => {
+                console.log('✅ [영상 재생] 비디오 재생 준비 완료');
+            }, { once: true });
+            
+            // 비디오 로드 에러 핸들러
+            videoEl.addEventListener('error', (e) => {
+                console.error('❌ [영상 재생] 비디오 로드 실패:', e);
+                console.error('❌ [영상 재생] 비디오 URL:', videoSrc);
+                console.error('❌ [영상 재생] 비디오 엘리먼트 에러:', videoEl.error);
+                console.error('❌ [영상 재생] 비디오 엘리먼트 네트워크 상태:', videoEl.networkState);
+                console.error('❌ [영상 재생] 비디오 엘리먼트 준비 상태:', videoEl.readyState);
+                
+                // 에러 메시지 표시
+                if (placeholder) {
+                    placeholder.classList.remove('hidden');
+                    placeholder.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>영상을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</span>';
+                }
+                videoEl.classList.add('hidden');
+            }, { once: true });
+            
+            // 비디오 소스 설정
+            videoEl.src = videoSrc;
+            videoEl.classList.remove('hidden');
+            videoEl.load();
+            
+            console.log('✅ [영상 재생] 비디오 소스 설정 완료:', videoSrc);
             
             // 다운로드 및 편집 버튼 활성화
             const downloadBtn = document.getElementById('downloadVideoBtn');
