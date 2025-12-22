@@ -226,13 +226,20 @@
   const tokenLimit = document.getElementById("tokenLimit");
 
   async function updateAuthUI() {
-    // 먼저 localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
+    // 초기 상태: 로그인 버튼들을 일단 숨김 (로그인 상태가 확인될 때까지)
+    // localStorage에서 사용자 정보 확인 (빠른 초기 렌더링)
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const rawUser = localStorage.getItem("userData");
     
     console.log('[Header Auth] 로그인 상태 체크:', { isLoggedIn, hasUserData: !!rawUser });
 
     let currentUser = null;
+    
+    // 초기에는 버튼들을 숨기고 사용자 정보 표시 영역도 숨김
+    // 로그아웃 상태로 확인되면 다시 표시
+    if (loginBtn) loginBtn.style.display = "none";
+    if (signupBtn) signupBtn.style.display = "none";
+    if (authUser) authUser.style.display = "none";
 
     // localStorage에 사용자 정보가 있으면 즉시 표시
     if (isLoggedIn && rawUser) {
@@ -314,16 +321,19 @@
           if (currentUser?.id) {
             updateTokenInfo(currentUser.id);
           }
-        } else if (!isLoggedIn || !rawUser) {
-          // 세션이 없고 localStorage에도 없으면 로그아웃 상태
-          if (authUser) authUser.style.display = "none";
-          if (authTokenInfo) authTokenInfo.style.display = "none";
-          if (loginBtn) loginBtn.style.display = "inline-flex";
-          if (signupBtn) signupBtn.style.display = "inline-flex";
-          if (userEmailSpan) {
-            userEmailSpan.textContent = "";
-            userEmailSpan.title = "";
-            userEmailSpan.onclick = null;
+        } else {
+          // 세션이 없으면 localStorage 확인 후 로그아웃 상태로 처리
+          if (!isLoggedIn || !rawUser) {
+            // 세션이 없고 localStorage에도 없으면 로그아웃 상태
+            if (authUser) authUser.style.display = "none";
+            if (authTokenInfo) authTokenInfo.style.display = "none";
+            if (loginBtn) loginBtn.style.display = "inline-flex";
+            if (signupBtn) signupBtn.style.display = "inline-flex";
+            if (userEmailSpan) {
+              userEmailSpan.textContent = "";
+              userEmailSpan.title = "";
+              userEmailSpan.onclick = null;
+            }
           }
         }
       } catch (error) {
@@ -336,7 +346,10 @@
           if (signupBtn) signupBtn.style.display = "inline-flex";
         }
       }
-    } else if (!currentUser) {
+    }
+    
+    // 최종 확인: currentUser가 없으면 로그아웃 상태로 처리
+    if (!currentUser) {
       // auth-state.js가 없고 localStorage에도 없으면 로그아웃 상태
       if (authUser) authUser.style.display = "none";
       if (authTokenInfo) authTokenInfo.style.display = "none";
