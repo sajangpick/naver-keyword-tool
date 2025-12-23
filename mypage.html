@@ -4785,35 +4785,6 @@
         
         document.body.appendChild(modal);
         
-        // 신청 방법 변경 시 필드 표시/숨김
-        document.getElementById('hometaxRequestMethod').addEventListener('change', (e) => {
-          const apiFields = document.getElementById('hometaxApiFields');
-          if (e.target.value === 'api') {
-            apiFields.style.display = 'flex';
-          } else {
-            apiFields.style.display = 'none';
-          }
-        });
-
-        // 로그인 방법 변경 시 필드 표시/숨김
-        const loginMethodSelect = document.getElementById('hometaxLoginMethod');
-        if (loginMethodSelect) {
-          loginMethodSelect.addEventListener('change', (e) => {
-            const idFields = document.getElementById('hometaxIdFields');
-            if (e.target.value === 'ID') {
-              idFields.style.display = 'flex';
-              document.getElementById('hometaxId').required = true;
-              document.getElementById('hometaxPwd').required = true;
-              document.getElementById('hometaxJumin').required = true;
-            } else {
-              idFields.style.display = 'none';
-              document.getElementById('hometaxId').required = false;
-              document.getElementById('hometaxPwd').required = false;
-              document.getElementById('hometaxJumin').required = false;
-            }
-          });
-        }
-        
         // 폼 제출
         document.getElementById('hometaxForm').addEventListener('submit', async (e) => {
           e.preventDefault();

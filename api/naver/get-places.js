@@ -106,12 +106,28 @@ module.exports = async (req, res) => {
           console.log(`[플레이스 목록] ${myPlaceUrl} 시도 중...`);
           await page.goto(myPlaceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
-          // 페이지가 로드될 때까지 대기
+          // 페이지가 로드될 때까지 대기 (동적 콘텐츠 로딩 대기)
+          await new Promise(resolve => setTimeout(resolve, 5000));
+
+          // 네트워크 요청이 완료될 때까지 대기
+          try {
+            await page.waitForFunction(() => {
+              return document.readyState === 'complete';
+            }, { timeout: 10000 });
+          } catch (e) {
+            console.log('[플레이스 목록] 페이지 로딩 대기 시간 초과');
+          }
+
+          // 추가 대기 (동적 콘텐츠)
           await new Promise(resolve => setTimeout(resolve, 3000));
 
           // 현재 URL 확인
           const currentUrl = page.url();
           console.log(`[플레이스 목록] 현재 URL: ${currentUrl}`);
+          
+          // 페이지 제목 확인
+          const pageTitle = await page.title();
+          console.log(`[플레이스 목록] 페이지 제목: ${pageTitle}`);
 
           // 플레이스 목록 추출 시도
           places = await page.evaluate(() => {
@@ -183,21 +199,62 @@ module.exports = async (req, res) => {
             const scripts = document.querySelectorAll('script');
             scripts.forEach(script => {
               const content = script.textContent || script.innerHTML;
-              const matches = content.match(/placeId["']?\s*[:=]\s*["']?(\d+)/g);
-              if (matches) {
-                matches.forEach(match => {
-                  const placeId = match.match(/(\d+)/)?.[1];
-                  if (placeId && !seenIds.has(placeId)) {
-                    seenIds.add(placeId);
+              // 다양한 패턴으로 placeId 찾기
+              const patterns = [
+                /placeId["']?\s*[:=]\s*["']?(\d+)/g,
+                /place_id["']?\s*[:=]\s*["']?(\d+)/g,
+                /placeId["']?\s*:\s*(\d+)/g,
+                /"placeId":\s*(\d+)/g,
+                /'placeId':\s*(\d+)/g,
+                /placeId=(\d+)/g,
+                /\/place\/(\d+)/g,
+                /\/restaurant\/(\d+)/g
+              ];
+              
+              patterns.forEach(pattern => {
+                const matches = content.match(pattern);
+                if (matches) {
+                  matches.forEach(match => {
+                    const placeId = match.match(/(\d+)/)?.[1];
+                    if (placeId && placeId.length >= 6 && !seenIds.has(placeId)) {
+                      seenIds.add(placeId);
+                      placeLinks.push({
+                        placeId,
+                        placeName: `플레이스 ${placeId}`,
+                        placeUrl: `https://m.place.naver.com/restaurant/${placeId}`
+                      });
+                    }
+                  });
+                }
+              });
+            });
+
+            // body 전체 텍스트에서도 숫자 패턴 찾기 (플레이스 ID는 보통 6자리 이상)
+            const bodyText = document.body.innerText;
+            const longNumberMatches = bodyText.match(/\d{6,}/g);
+            if (longNumberMatches) {
+              longNumberMatches.forEach(num => {
+                // 네이버 플레이스 ID는 보통 6-10자리
+                if (num.length >= 6 && num.length <= 10 && !seenIds.has(num)) {
+                  // 실제 플레이스 링크가 있는지 확인
+                  const hasLink = Array.from(document.querySelectorAll('a[href]')).some(link => {
+                    return link.getAttribute('href')?.includes(num);
+                  });
+                  
+                  if (hasLink) {
+                    seenIds.add(num);
                     placeLinks.push({
-                      placeId,
-                      placeName: `플레이스 ${placeId}`,
-                      placeUrl: `https://m.place.naver.com/restaurant/${placeId}`
+                      placeId: num,
+                      placeName: `플레이스 ${num}`,
+                      placeUrl: `https://m.place.naver.com/restaurant/${num}`
                     });
                   }
-                });
-              }
-            });
+                }
+              });
+            }
+
+            // 디버깅: 찾은 링크 수 로깅
+            console.log(`[플레이스 추출] 총 ${placeLinks.length}개 플레이스 발견`);
 
             return placeLinks;
           });
@@ -216,26 +273,37 @@ module.exports = async (req, res) => {
 
       // 모든 URL 시도 후에도 플레이스를 찾지 못한 경우
       if (places.length === 0) {
-        // 페이지 스크린샷 저장 (디버깅용)
-        try {
-          const screenshot = await page.screenshot({ encoding: 'base64' });
-          console.log('[플레이스 목록] 페이지 스크린샷 저장됨 (디버깅용)');
-        } catch (e) {
-          console.log('[플레이스 목록] 스크린샷 저장 실패:', e.message);
-        }
-
         // 페이지 HTML 일부 로깅 (디버깅용)
         try {
           const pageContent = await page.evaluate(() => {
+            // 모든 링크 수집
+            const allLinks = Array.from(document.querySelectorAll('a[href]')).map(link => ({
+              href: link.getAttribute('href'),
+              text: link.textContent.trim().substring(0, 50)
+            })).slice(0, 20); // 처음 20개만
+
             return {
               title: document.title,
               url: window.location.href,
-              bodyText: document.body.innerText.substring(0, 500)
+              bodyText: document.body.innerText.substring(0, 1000),
+              linkCount: document.querySelectorAll('a[href]').length,
+              sampleLinks: allLinks,
+              hasPlaceKeyword: document.body.innerText.includes('플레이스') || 
+                              document.body.innerText.includes('place') ||
+                              document.body.innerText.includes('업소')
             };
           });
-          console.log('[플레이스 목록] 페이지 정보:', pageContent);
+          console.log('[플레이스 목록] 페이지 정보:', JSON.stringify(pageContent, null, 2));
         } catch (e) {
           console.log('[플레이스 목록] 페이지 정보 추출 실패:', e.message);
+        }
+
+        // 페이지 스크린샷 저장 (디버깅용)
+        try {
+          const screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
+          console.log('[플레이스 목록] 페이지 스크린샷 저장됨 (디버깅용, 길이:', screenshot.length, ')');
+        } catch (e) {
+          console.log('[플레이스 목록] 스크린샷 저장 실패:', e.message);
         }
       }
 
