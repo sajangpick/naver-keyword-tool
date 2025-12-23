@@ -7676,175 +7676,18 @@ if (process.env.VERCEL) {
     devLog('⚠️ 크론 작업 설정 실패 (node-cron 패키지 필요):', error.message);
   }
 
-// ==================== 에러 핸들러 ====================
-
-// 404 에러 핸들러 (모든 라우트 뒤에 위치해야 함)
-app.use("*", (req, res) => {
-  const prod = process.env.NODE_ENV === "production";
-  const payload = {
-    error: "요청한 경로를 찾을 수 없습니다.",
-    path: req.originalUrl,
-    timestamp: new Date().toISOString(),
-  };
-  if (!prod) {
-    payload.availableEndpoints = [
-      "GET /",
-      "GET /health",
-      "GET /auth/me",
-      "POST /auth/logout",
-      "POST /api/keywords",
-      "POST /api/keyword-trend",
-      "GET /api/related-keywords",
-      "POST /api/generate-blog",
-      "POST /api/analyze-review",
-      "POST /api/generate-reply",
-      "GET /api/search/local",
-      "GET /api/test-keys",
-      "GET /auth/kakao/login",
-      "GET /auth/kakao/callback",
-      "GET /api/admin/members",
-      "PUT /api/admin/members/:id",
-      "GET /api/admin/members/:id",
-      "DELETE /api/admin/members/:id",
-      "POST /api/shorts/plan-and-script",
-      "GET /api/shorts/plan-history",
-      "POST /api/shorts/plan-history",
-      "DELETE /api/shorts/plan-history/:id",
-      "POST /api/shorts/generate",
-      "GET /api/shorts/videos",
-    ];
-  }
-  res.status(404).json(payload);
+// ==================== 전역 에러 핸들러 (처리되지 않은 에러 캐치) ====================
+// 전역 에러 핸들러 (처리되지 않은 에러 캐치)
+process.on('uncaughtException', (error) => {
+  devError('❌ [FATAL] 처리되지 않은 예외:', error);
+  devError('스택:', error.stack);
+  // 서버를 종료하지 않고 계속 실행 (502 방지)
 });
 
-// 전역 에러 핸들러
-app.use((error, req, res, next) => {
-  devError("전역 에러:", error);
-  res.status(500).json({
-    error: "서버 내부 오류가 발생했습니다.",
-    details:
-      process.env.NODE_ENV === "development"
-        ? error.message
-        : "서버 관리자에게 문의하세요.",
-    timestamp: new Date().toISOString(),
-  });
+process.on('unhandledRejection', (reason, promise) => {
+  devError('❌ [FATAL] 처리되지 않은 Promise 거부:', reason);
+  // 서버를 종료하지 않고 계속 실행 (502 방지)
 });
-
-  // 전역 에러 핸들러 (처리되지 않은 에러 캐치)
-  process.on('uncaughtException', (error) => {
-    devError('❌ [FATAL] 처리되지 않은 예외:', error);
-    devError('스택:', error.stack);
-    // 서버를 종료하지 않고 계속 실행 (502 방지)
-  });
-
-  process.on('unhandledRejection', (reason, promise) => {
-    devError('❌ [FATAL] 처리되지 않은 Promise 거부:', reason);
-    // 서버를 종료하지 않고 계속 실행 (502 방지)
-  });
-
-  try {
-    app.listen(PORT, "0.0.0.0", () => {
-      devLog("==========================================");
-      devLog("🚀 통합 API 서버가 시작되었습니다!");
-      devLog(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
-      devLog(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
-      devLog(`📊 환경: ${process.env.NODE_ENV || "development"}`);
-      devLog("==========================================");
-    devLog("");
-    devLog("🔧 사용 가능한 서비스:");
-    devLog("");
-    devLog("📊 네이버 키워드 도구:");
-    devLog('- 키워드 검색: POST /api/keywords (Body: {DataQ: "치킨"})');
-    devLog(
-      '- 키워드 트렌드: POST /api/keyword-trend (Body: {keyword: "치킨"})'
-    );
-    devLog("- 연관 키워드: GET /api/related-keywords?seed=맛집");
-    devLog("");
-    devLog("🤖 AI 블로그 생성:");
-    devLog("- 블로그 생성: POST /api/generate-blog");
-    devLog("- API 키 테스트: GET /api/test-keys");
-    devLog("");
-    devLog("🔍 리뷰 분석:");
-    devLog("- 리뷰 분석: POST /api/analyze-review");
-    devLog("- 답글 생성: POST /api/generate-reply");
-    devLog("- 분석 옵션: GET /api/analysis-options");
-    devLog("");
-    devLog("📍 네이버 플레이스 검색:");
-    devLog("- 로컬 검색: GET /api/search/local?query=마포맛집");
-    devLog("");
-    devLog("⚙️ API 설정 확인:");
-    devLog(
-      `- 네이버 Customer ID: ${NAVER_API.customerId ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog(
-      `- 네이버 API Key: ${NAVER_API.apiKey ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog(
-      `- 네이버 Secret Key: ${NAVER_API.secretKey ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog(
-      `- 네이버 검색 Client ID: ${
-        NAVER_SEARCH.clientId ? "✅ 설정됨" : "❌ 미설정"
-      }`
-    );
-    devLog(
-      `- 네이버 검색 Client Secret: ${
-        NAVER_SEARCH.clientSecret ? "✅ 설정됨" : "❌ 미설정"
-      }`
-    );
-    devLog(
-      `- OpenAI API Key: ${OPENAI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog(
-      `- Gemini API Key: ${GEMINI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog(
-      `- Claude API Key: ${CLAUDE_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog("------------------------------------------");
-    devLog("Feature Flags:");
-    devLog(
-      `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
-    );
-    devLog(
-      `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
-    );
-    devLog(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
-    devLog("==========================================");
-    devLog("🔐 Kakao OAuth:");
-    devLog(
-      `- Kakao REST API Key: ${KAKAO_REST_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog(`- Kakao Redirect URI: ${KAKAO_REDIRECT_URI || "❌ 미설정"}`);
-    devLog(
-      `- Kakao Client Secret: ${KAKAO_CLIENT_SECRET ? "✅ 설정됨" : "❌ 미설정"}`
-    );
-    devLog("------------------------------------------");
-    devLog("Feature Flags:");
-    devLog(
-      `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
-    );
-    devLog(
-      `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
-    );
-    devLog(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
-    devLog("==========================================");
-  });
-
-  // 종료 처리 (로컬 환경에서만)
-  process.on("SIGINT", () => {
-    devLog("\n🛑 서버를 종료합니다...");
-    process.exit(0);
-  });
-
-  process.on("SIGTERM", () => {
-    devLog("\n🛑 서버를 종료합니다...");
-    process.exit(0);
-  });
-} catch (serverStartError) {
-  devError("서버 시작 중 오류가 발생했습니다:", serverStartError);
-  process.exit(1);
-}
 
 // ==================== 구독 시스템 API (중복 제거됨) ====================
 // 이미 625-644번 줄에서 api/subscription/ 폴더의 파일들을 require로 처리하고 있음
@@ -8402,4 +8245,161 @@ app.put('/api/subscription/upgrade-request/:requestId/approve', async (req, res)
   }
 });
 
+// ==================== 에러 핸들러 ====================
+
+// 404 에러 핸들러 (모든 라우트 뒤에 위치해야 함)
+app.use("*", (req, res) => {
+  const prod = process.env.NODE_ENV === "production";
+  const payload = {
+    error: "요청한 경로를 찾을 수 없습니다.",
+    path: req.originalUrl,
+    timestamp: new Date().toISOString(),
+  };
+  if (!prod) {
+    payload.availableEndpoints = [
+      "GET /",
+      "GET /health",
+      "GET /auth/me",
+      "POST /auth/logout",
+      "POST /api/keywords",
+      "POST /api/keyword-trend",
+      "GET /api/related-keywords",
+      "POST /api/generate-blog",
+      "POST /api/analyze-review",
+      "POST /api/generate-reply",
+      "GET /api/search/local",
+      "GET /api/test-keys",
+      "GET /auth/kakao/login",
+      "GET /auth/kakao/callback",
+      "GET /api/admin/members",
+      "PUT /api/admin/members/:id",
+      "GET /api/admin/members/:id",
+      "DELETE /api/admin/members/:id",
+      "POST /api/shorts/plan-and-script",
+      "GET /api/shorts/plan-history",
+      "POST /api/shorts/plan-history",
+      "DELETE /api/shorts/plan-history/:id",
+      "POST /api/shorts/generate",
+      "GET /api/shorts/videos",
+    ];
+  }
+  res.status(404).json(payload);
+});
+
+// 전역 에러 핸들러
+app.use((error, req, res, next) => {
+  devError("전역 에러:", error);
+  res.status(500).json({
+    error: "서버 내부 오류가 발생했습니다.",
+    details:
+      process.env.NODE_ENV === "development"
+        ? error.message
+        : "서버 관리자에게 문의하세요.",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ==================== 서버 시작 ====================
+try {
+  app.listen(PORT, "0.0.0.0", () => {
+    devLog("==========================================");
+    devLog("🚀 통합 API 서버가 시작되었습니다!");
+    devLog(`🌐 서버 주소: http://0.0.0.0:${PORT}`);
+    devLog(`🏥 서버 상태: http://0.0.0.0:${PORT}/health`);
+    devLog(`📊 환경: ${process.env.NODE_ENV || "development"}`);
+    devLog("==========================================");
+    devLog("");
+    devLog("🔧 사용 가능한 서비스:");
+    devLog("");
+    devLog("📊 네이버 키워드 도구:");
+    devLog('- 키워드 검색: POST /api/keywords (Body: {DataQ: "치킨"})');
+    devLog(
+      '- 키워드 트렌드: POST /api/keyword-trend (Body: {keyword: "치킨"})'
+    );
+    devLog("- 연관 키워드: GET /api/related-keywords?seed=맛집");
+    devLog("");
+    devLog("🤖 AI 블로그 생성:");
+    devLog("- 블로그 생성: POST /api/generate-blog");
+    devLog("- API 키 테스트: GET /api/test-keys");
+    devLog("");
+    devLog("🔍 리뷰 분석:");
+    devLog("- 리뷰 분석: POST /api/analyze-review");
+    devLog("- 답글 생성: POST /api/generate-reply");
+    devLog("- 분석 옵션: GET /api/analysis-options");
+    devLog("");
+    devLog("📍 네이버 플레이스 검색:");
+    devLog("- 로컬 검색: GET /api/search/local?query=마포맛집");
+    devLog("");
+    devLog("⚙️ API 설정 확인:");
+    devLog(
+      `- 네이버 Customer ID: ${NAVER_API.customerId ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog(
+      `- 네이버 API Key: ${NAVER_API.apiKey ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog(
+      `- 네이버 Secret Key: ${NAVER_API.secretKey ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog(
+      `- 네이버 검색 Client ID: ${
+        NAVER_SEARCH.clientId ? "✅ 설정됨" : "❌ 미설정"
+      }`
+    );
+    devLog(
+      `- 네이버 검색 Client Secret: ${
+        NAVER_SEARCH.clientSecret ? "✅ 설정됨" : "❌ 미설정"
+      }`
+    );
+    devLog(
+      `- OpenAI API Key: ${OPENAI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog(
+      `- Gemini API Key: ${GEMINI_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog(
+      `- Claude API Key: ${CLAUDE_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog("------------------------------------------");
+    devLog("Feature Flags:");
+    devLog(
+      `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
+    );
+    devLog(
+      `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
+    );
+    devLog(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
+    devLog("==========================================");
+    devLog("🔐 Kakao OAuth:");
+    devLog(
+      `- Kakao REST API Key: ${KAKAO_REST_API_KEY ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog(`- Kakao Redirect URI: ${KAKAO_REDIRECT_URI || "❌ 미설정"}`);
+    devLog(
+      `- Kakao Client Secret: ${KAKAO_CLIENT_SECRET ? "✅ 설정됨" : "❌ 미설정"}`
+    );
+    devLog("------------------------------------------");
+    devLog("Feature Flags:");
+    devLog(
+      `- FEATURE_API_READ_NEXT: ${FEATURE_API_READ_NEXT ? "ON" : "OFF"}`
+    );
+    devLog(
+      `- FEATURE_API_CHAT_NEXT: ${FEATURE_API_CHAT_NEXT ? "ON" : "OFF"}`
+    );
+    devLog(`- FEATURE_AUTH_NEXT: ${FEATURE_AUTH_NEXT ? "ON" : "OFF"}`);
+    devLog("==========================================");
+  });
+
+  // 종료 처리 (로컬 환경에서만)
+  process.on("SIGINT", () => {
+    devLog("\n🛑 서버를 종료합니다...");
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", () => {
+    devLog("\n🛑 서버를 종료합니다...");
+    process.exit(0);
+  });
+} catch (serverStartError) {
+  devError("서버 시작 중 오류가 발생했습니다:", serverStartError);
+  process.exit(1);
 }

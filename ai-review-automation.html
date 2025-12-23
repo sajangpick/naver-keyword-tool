@@ -1028,9 +1028,14 @@
         <div class="dev-badge">🚧 개발중</div>
         <h1>🤖 AI 리뷰 자동화</h1>
         <p>다양한 플랫폼의 리뷰를 자동으로 가져와서 AI 답글을 등록하세요</p>
-        <button class="refresh-btn" onclick="loadReviews()">
-          <i class="fas fa-sync-alt"></i> 새로고침
-        </button>
+        <div style="display: flex; gap: 10px;">
+          <button class="refresh-btn" onclick="collectReviews()" id="collectBtn">
+            <i class="fas fa-download"></i> 리뷰 가져오기
+          </button>
+          <button class="refresh-btn" onclick="loadReviews()">
+            <i class="fas fa-sync-alt"></i> 새로고침
+          </button>
+        </div>
       </div>
 
     <!-- 플랫폼 선택 -->
@@ -1155,6 +1160,7 @@
     let currentUser = null;
     let refreshInterval;
     let selectedPlatform = 'naver';
+    let currentConnectionId = null;
 
     // 플랫폼 선택
     function selectPlatform(platform) {
@@ -1234,6 +1240,47 @@
       window.location.href = '/mypage.html';
     }
 
+    // 리뷰 수집 (수동)
+    async function collectReviews() {
+      if (!currentUser) return;
+      
+      if (!currentConnectionId) {
+        showToast('먼저 플랫폼을 연동해주세요', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('collectBtn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 수집 중...';
+
+      try {
+        const response = await fetch('/api/platform/collect-reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': currentUser.id
+          },
+          body: JSON.stringify({ connectionId: currentConnectionId })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast(`${result.collected || 0}개의 리뷰를 가져왔습니다!`, 'success');
+          setTimeout(() => loadReviews(), 1000);
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        console.error('리뷰 수집 실패:', error);
+        showToast('리뷰 수집 실패: ' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
     // 리뷰 로드
     async function loadReviews() {
       if (!currentUser) return;
@@ -1270,22 +1317,15 @@
           return;
         }
 
-        // 플랫폼별 리뷰 테이블 (나중에 확장 가능)
-        const platformTables = {
-          'naver': 'naver_reviews',
-          'baemin': 'baemin_reviews',
-          'yogiyo': 'yogiyo_reviews',
-          'coupang': 'coupang_reviews'
-        };
+        // 통합 platform_reviews 테이블 사용
+        currentConnectionId = connResult.connections[0].id;
 
-        const tableName = platformTables[selectedPlatform] || platformTables['naver'];
-
-        // 리뷰 조회
+        // 리뷰 조회 (platform_reviews 테이블 사용)
         const { data: reviews, error } = await supabase
-          .from(tableName)
+          .from('platform_reviews')
           .select('*')
-          .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
+          .eq('connection_id', currentConnectionId)
+          .order('review_date', { ascending: false });
 
         if (error) {
           // 테이블이 없을 수도 있음 (아직 구현 안 된 플랫폼)
@@ -1297,7 +1337,7 @@
         }
 
         const pending = reviews.filter(r => r.reply_status === 'pending');
-        const completed = reviews.filter(r => r.reply_status === 'registered');
+        const completed = reviews.filter(r => r.reply_status === 'posted');
         const failed = reviews.filter(r => r.reply_status === 'failed');
 
         // UI 업데이트
@@ -1334,18 +1374,18 @@
             </div>
             <div class="review-date">${new Date(review.review_date).toLocaleDateString('ko-KR')}</div>
           </div>
-          <div class="review-text">${review.review_text}</div>
+          <div class="review-text">${review.content || review.review_text || ''}</div>
           ${status === 'pending' ? `
             <button class="reply-btn" onclick="registerReply('${review.id}')" id="btn-${review.id}">
               <i class="fas fa-robot"></i> AI 답글 생성하고 네이버에 등록
             </button>
-          ` : status === 'registered' ? `
+          ` : status === 'posted' ? `
             <div class="reply-preview">
               <strong>등록된 답글:</strong><br>
-              ${review.ai_reply_text || '답글 없음'}
+              ${review.posted_reply || review.ai_reply || '답글 없음'}
             </div>
             <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
-              등록 완료: ${new Date(review.registered_at).toLocaleString('ko-KR')}
+              등록 완료: ${review.posted_at ? new Date(review.posted_at).toLocaleString('ko-KR') : ''}
             </div>
           ` : `
             <div style="color: var(--error); margin-bottom: 8px;">
@@ -1368,19 +1408,25 @@
       }
 
       try {
-        const response = await fetch('/api/naver/auto-reply', {
+        // connectionId 확인
+        if (!currentConnectionId) {
+          throw new Error('연동 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+        }
+
+        // 통합 API 사용
+        const response = await fetch('/api/platform/auto-reply', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'user-id': currentUser.id
           },
-          body: JSON.stringify({ reviewId })
+          body: JSON.stringify({ reviewId, connectionId: currentConnectionId })
         });
 
         const result = await response.json();
 
         if (result.success) {
-          showToast('네이버에 답글이 등록되었습니다!', 'success');
+          showToast('답글이 등록되었습니다!', 'success');
           setTimeout(() => loadReviews(), 1000);
         } else {
           throw new Error(result.error);
@@ -1390,7 +1436,7 @@
         showToast('답글 등록 실패: ' + error.message, 'error');
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-robot"></i> AI 답글 생성하고 네이버에 등록';
+          btn.innerHTML = '<i class="fas fa-robot"></i> AI 답글 생성하고 등록';
         }
       }
     }

@@ -179,6 +179,7 @@ module.exports = async (req, res) => {
     // AI 답글 생성
     const aiReply = await generateAIReply(
       review.content,
+      review.rating || null,
       connection.reply_tone || 'friendly',
       connection.store_name
     );
