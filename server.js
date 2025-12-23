@@ -7153,10 +7153,7 @@ app.get("/api/shorts/download", async (req, res) => {
       'Origin': 'https://generativelanguage.googleapis.com'
     };
     
-    // Google API URL인 경우 Authorization 헤더도 추가
-    if (downloadUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
-      headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
-    }
+    // Google API는 query parameter로만 인증 (Authorization 헤더 사용 안 함)
     
     let response;
     try {
@@ -7560,17 +7557,16 @@ app.get("/api/shorts/play", async (req, res) => {
       headers['Range'] = range;
     }
     
-    // Google API URL인 경우 Authorization 헤더도 추가
-    if (playUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
-      headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
-    }
+    // Google API는 query parameter로만 인증 (Authorization 헤더 사용 안 함)
 
     // 영상 다운로드
+    devLog("🔵 [재생 프록시] 영상 요청 시작:", playUrl.substring(0, 150) + '...');
     const response = await axios.get(playUrl, {
       responseType: 'stream',
       timeout: 120000, // 2분 타임아웃
       headers: headers,
-      maxRedirects: 5
+      maxRedirects: 5,
+      validateStatus: (status) => status >= 200 && status < 400 // 3xx 리다이렉트 허용
     });
 
     // 응답 헤더 설정 (재생용)
@@ -7599,12 +7595,25 @@ app.get("/api/shorts/play", async (req, res) => {
     
   } catch (error) {
     devError("🔴 [재생 프록시] 오류:", error.message);
-    console.error("🔴 [재생 프록시] 오류:", error);
+    console.error("🔴 [재생 프록시] 오류 상세:", error);
+    
+    if (error.response) {
+      // API 응답 에러
+      devError("🔴 [재생 프록시] API 응답 에러:", error.response.status, error.response.statusText);
+      devError("🔴 [재생 프록시] 응답 데이터:", error.response.data);
+    } else if (error.request) {
+      // 요청은 보냈지만 응답이 없음
+      devError("🔴 [재생 프록시] 요청 실패 (응답 없음):", error.request);
+    } else {
+      // 요청 설정 중 에러
+      devError("🔴 [재생 프록시] 요청 설정 에러:", error.message);
+    }
     
     if (!res.headersSent) {
       res.status(500).json({
         success: false,
-        error: `영상 재생 실패: ${error.message || "알 수 없는 오류"}`
+        error: `영상 재생 실패: ${error.message || "알 수 없는 오류"}`,
+        details: error.response?.data || error.message
       });
     }
   }
