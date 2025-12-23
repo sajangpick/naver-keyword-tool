@@ -861,6 +861,13 @@
           <div class="card-title" id="monthlySalesTitle">12월 매출 현황</div>
         </div>
         <div style="padding: 20px;">
+          <!-- 월 누적 총 매출 -->
+          <div style="background: linear-gradient(135deg, rgba(0, 102, 204, 0.1), rgba(0, 82, 163, 0.1)); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center;">
+            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;" id="monthlyTotalLabel">12월 누적 총 매출은</div>
+            <div style="font-size: 32px; font-weight: 800; color: var(--success);" id="monthlyTotalAmount">0원</div>
+            <div style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">입니다.</div>
+          </div>
+          
           <div id="salesCalendar" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px;">
             <!-- 캘린더는 JavaScript로 동적 생성 -->
           </div>
@@ -1177,15 +1184,92 @@
 
     // 매출 데이터 표시
     function displaySalesData(data, year, month, isConnected) {
-      // 실제 데이터로 표시
-      // TODO: 실제 바로빌 API 응답 형식에 맞게 파싱 필요
-      displayExampleData(year, month, isConnected); // 임시로 예시 데이터 표시
+      try {
+        const salesList = data.salesList || [];
+        
+        // 일별 매출 데이터 정리
+        const dailySales = {};
+        let totalSales = 0;
+        let totalOrders = 0;
+        const dailyCounts = {};
+        
+        salesList.forEach(item => {
+          const dateStr = item.date; // YYYYMMDD
+          const date = new Date(
+            parseInt(dateStr.substring(0, 4)),
+            parseInt(dateStr.substring(4, 6)) - 1,
+            parseInt(dateStr.substring(6, 8))
+          );
+          
+          // 해당 월의 데이터만 처리
+          if (date.getFullYear() === year && date.getMonth() + 1 === month) {
+            const day = date.getDate();
+            const amount = item.total || item.supplyCost || 0;
+            
+            if (!dailySales[day]) {
+              dailySales[day] = 0;
+              dailyCounts[day] = 0;
+            }
+            
+            dailySales[day] += amount;
+            dailyCounts[day] += 1;
+            totalSales += amount;
+            totalOrders += 1;
+          }
+        });
+
+        // 매출 건수 분석 업데이트
+        const daysWithData = Object.keys(dailyCounts).length;
+        const dailyAverage = daysWithData > 0 ? Math.round(totalOrders / daysWithData) : 0;
+        
+        const dailyValues = Object.values(dailyCounts);
+        const dailyMax = dailyValues.length > 0 ? Math.max(...dailyValues) : 0;
+        const dailyMin = dailyValues.length > 0 ? Math.min(...dailyValues.filter(v => v > 0)) : 0;
+        
+        const maxDay = Object.keys(dailyCounts).find(day => dailyCounts[day] === dailyMax);
+        const minDay = Object.keys(dailyCounts).find(day => dailyCounts[day] === dailyMin);
+        
+        document.getElementById('totalOrders').textContent = formatNumber(totalOrders);
+        document.getElementById('dailyAverage').textContent = `${dailyAverage}건`;
+        document.getElementById('dailyMax').textContent = `${dailyMax}건`;
+        document.getElementById('dailyMaxDate').textContent = maxDay ? `${month}/${maxDay} 일 최고` : '일 최고';
+        document.getElementById('dailyMin').textContent = `${dailyMin}건`;
+        document.getElementById('dailyMinDate').textContent = minDay ? `${month}/${minDay} 일 최저` : '일 최저';
+
+        // 원형 그래프 업데이트
+        const circumference = 2 * Math.PI * 80;
+        const maxExpected = 2000; // 예상 최대 주문 수
+        const percentage = Math.min(100, (totalOrders / maxExpected) * 100);
+        const offset = circumference - (percentage / 100) * circumference;
+        document.getElementById('salesCountCircle').style.strokeDasharray = `${circumference} ${circumference}`;
+        document.getElementById('salesCountCircle').style.strokeDashoffset = offset;
+
+        // 월 누적 총 매출 표시
+        document.getElementById('monthlyTotalLabel').textContent = `${month}월 누적 총 매출은`;
+        document.getElementById('monthlyTotalAmount').textContent = formatNumber(totalSales) + '원';
+
+        // 캘린더 생성 (실제 데이터 포함)
+        generateSalesCalendar(year, month, isConnected, dailySales, totalSales);
+
+        // 카드 표시
+        document.getElementById('salesCountCard').style.display = 'block';
+        document.getElementById('monthlySalesCard').style.display = 'block';
+      } catch (error) {
+        console.error('매출 데이터 표시 오류:', error);
+        // 에러 발생 시 예시 데이터 표시
+        displayExampleData(year, month, isConnected);
+      }
     }
 
     // 예시 데이터 표시 (연동 전 또는 데이터 없을 때)
     function displayExampleData(year, month, isConnected = false) {
       const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
       document.getElementById('monthlySalesTitle').textContent = `${month}월 매출 현황`;
+      
+      // 예시 월 누적 총 매출
+      const exampleTotal = 6365000;
+      document.getElementById('monthlyTotalLabel').textContent = `${month}월 누적 총 매출은`;
+      document.getElementById('monthlyTotalAmount').textContent = formatNumber(exampleTotal) + '원';
       
       // 매출 건수 분석 표시
       const totalOrders = 1463;
@@ -1218,7 +1302,7 @@
     }
 
     // 매출 캘린더 생성
-    function generateSalesCalendar(year, month, isConnected = false) {
+    function generateSalesCalendar(year, month, isConnected = false, dailySales = {}, totalSales = 0) {
       const calendar = document.getElementById('salesCalendar');
       calendar.innerHTML = '';
 
@@ -1274,18 +1358,32 @@
 
         const amountText = document.createElement('div');
         amountText.style.cssText = 'font-size: 11px; color: var(--text-secondary);';
-        amountText.textContent = isConnected ? '0원' : '?만원'; // 연동되어 있으면 0원, 아니면 ?만원
+        
+        if (dailySales[date]) {
+          // 실제 매출 데이터가 있으면 표시
+          const amount = dailySales[date];
+          if (amount >= 10000) {
+            amountText.textContent = `${Math.round(amount / 10000)}만원`;
+          } else {
+            amountText.textContent = `${formatNumber(amount)}원`;
+          }
+          amountText.style.color = 'var(--accent-color)';
+          amountText.style.fontWeight = '600';
+        } else {
+          // 데이터가 없으면
+          amountText.textContent = isConnected ? '0원' : '?만원';
+        }
         cell.appendChild(amountText);
 
         calendar.appendChild(cell);
       }
 
       // 주별 합계 생성
-      generateWeeklyTotals(year, month);
+      generateWeeklyTotals(year, month, dailySales);
     }
 
     // 주별 합계 생성
-    function generateWeeklyTotals(year, month) {
+    function generateWeeklyTotals(year, month, dailySales = {}) {
       const weeklyTotals = document.getElementById('weeklyTotals');
       weeklyTotals.innerHTML = '';
 
@@ -1313,7 +1411,24 @@
 
         const weekAmount = document.createElement('div');
         weekAmount.style.cssText = 'font-weight: 700; color: var(--accent-color);';
-        weekAmount.textContent = isConnected ? '0원' : '?만원'; // 연동되어 있으면 0원, 아니면 ?만원
+        
+        // 주별 합계 계산
+        let weekTotal = 0;
+        for (let d = weekStart.getDate(); d <= weekEnd.getDate(); d++) {
+          if (dailySales[d]) {
+            weekTotal += dailySales[d];
+          }
+        }
+        
+        if (weekTotal > 0) {
+          if (weekTotal >= 10000) {
+            weekAmount.textContent = `${Math.round(weekTotal / 10000)}만원`;
+          } else {
+            weekAmount.textContent = `${formatNumber(weekTotal)}원`;
+          }
+        } else {
+          weekAmount.textContent = isConnected ? '0원' : '?만원';
+        }
         weekItem.appendChild(weekAmount);
 
         weeklyTotals.appendChild(weekItem);
