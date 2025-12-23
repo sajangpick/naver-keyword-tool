@@ -91,84 +91,152 @@ module.exports = async (req, res) => {
       await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
 
       // 스마트플레이스 관리자 페이지로 이동
-      const myPlaceUrl = 'https://m.place.naver.com/my-place';
-      await page.goto(myPlaceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+      // 여러 URL 시도
+      const possibleUrls = [
+        'https://new.smartplace.naver.com/',
+        'https://m.place.naver.com/my-place',
+        'https://m.place.naver.com/my-place/list'
+      ];
 
-      // 플레이스 목록 추출
       let places = [];
-      try {
-        // 여러 선택자 시도
-        await page.waitForSelector('a[href*="/restaurant/"], a[href*="/place/"], .place-item, [class*="place"], .store-item, [data-place-id]', {
-          timeout: 10000
-        });
+      let lastError = null;
 
-        // 잠시 대기 (동적 콘텐츠 로딩)
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      for (const myPlaceUrl of possibleUrls) {
+        try {
+          console.log(`[플레이스 목록] ${myPlaceUrl} 시도 중...`);
+          await page.goto(myPlaceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        places = await page.evaluate(() => {
-          const placeLinks = [];
-          const seenIds = new Set();
+          // 페이지가 로드될 때까지 대기
+          await new Promise(resolve => setTimeout(resolve, 3000));
 
-          // 여러 선택자 시도
-          const selectors = [
-            'a[href*="/restaurant/"]',
-            'a[href*="/place/"]',
-            '.place-item a',
-            '[class*="place"] a',
-            '.store-item a',
-            '[data-place-id]'
-          ];
+          // 현재 URL 확인
+          const currentUrl = page.url();
+          console.log(`[플레이스 목록] 현재 URL: ${currentUrl}`);
 
-          for (const selector of selectors) {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(element => {
-              let href = element.getAttribute('href');
+          // 플레이스 목록 추출 시도
+          places = await page.evaluate(() => {
+            const placeLinks = [];
+            const seenIds = new Set();
+
+            // 모든 링크에서 플레이스 ID 찾기
+            const allLinks = document.querySelectorAll('a[href]');
+            
+            allLinks.forEach(link => {
+              const href = link.getAttribute('href');
+              if (!href) return;
+
+              // 여러 패턴으로 placeId 추출
+              const patterns = [
+                /\/restaurant\/(\d+)/,
+                /\/place\/(\d+)/,
+                /\/my-place\/(\d+)/,
+                /placeId=(\d+)/,
+                /id=(\d+)/
+              ];
+
               let placeId = null;
-              let placeName = null;
-
-              // href에서 placeId 추출
-              if (href) {
-                const match = href.match(/(?:restaurant|place)\/(\d+)/);
+              for (const pattern of patterns) {
+                const match = href.match(pattern);
                 if (match && match[1]) {
                   placeId = match[1];
+                  break;
                 }
-              }
-
-              // data-place-id 속성 확인
-              if (!placeId) {
-                placeId = element.getAttribute('data-place-id') || 
-                         element.closest('[data-place-id]')?.getAttribute('data-place-id');
               }
 
               // placeId가 있으면 추가
               if (placeId && !seenIds.has(placeId)) {
                 seenIds.add(placeId);
 
-                // 이름 추출
-                placeName = element.textContent.trim() || 
-                           element.querySelector('span, .name, [class*="name"]')?.textContent.trim() ||
-                           element.getAttribute('title') ||
-                           '업소명 없음';
+                // 이름 추출 (여러 방법 시도)
+                let placeName = link.textContent.trim() || 
+                               link.querySelector('span, div, p')?.textContent.trim() ||
+                               link.getAttribute('title') ||
+                               link.getAttribute('aria-label') ||
+                               '업소명 없음';
+
+                // 부모 요소에서 이름 찾기
+                if (placeName === '업소명 없음' || placeName.length < 2) {
+                  const parent = link.closest('li, div, article, section');
+                  if (parent) {
+                    const nameEl = parent.querySelector('h1, h2, h3, h4, .name, [class*="name"], [class*="title"]');
+                    if (nameEl) {
+                      placeName = nameEl.textContent.trim();
+                    }
+                  }
+                }
 
                 // URL 생성
-                const placeUrl = href && href.startsWith('http') 
-                  ? href 
-                  : `https://m.place.naver.com/restaurant/${placeId}`;
+                let placeUrl = href;
+                if (!placeUrl.startsWith('http')) {
+                  placeUrl = `https://m.place.naver.com/restaurant/${placeId}`;
+                }
 
                 placeLinks.push({
                   placeId,
-                  placeName: placeName.substring(0, 50), // 최대 50자
+                  placeName: placeName.substring(0, 100).trim() || `플레이스 ${placeId}`,
                   placeUrl
                 });
               }
             });
-          }
 
-          return placeLinks;
-        });
-      } catch (error) {
-        console.log('[플레이스 목록] 추출 실패:', error.message);
-        // 실패해도 빈 배열 반환
+            // 페이지에서 직접 placeId 찾기 (스크립트 태그나 메타 태그)
+            const scripts = document.querySelectorAll('script');
+            scripts.forEach(script => {
+              const content = script.textContent || script.innerHTML;
+              const matches = content.match(/placeId["']?\s*[:=]\s*["']?(\d+)/g);
+              if (matches) {
+                matches.forEach(match => {
+                  const placeId = match.match(/(\d+)/)?.[1];
+                  if (placeId && !seenIds.has(placeId)) {
+                    seenIds.add(placeId);
+                    placeLinks.push({
+                      placeId,
+                      placeName: `플레이스 ${placeId}`,
+                      placeUrl: `https://m.place.naver.com/restaurant/${placeId}`
+                    });
+                  }
+                });
+              }
+            });
+
+            return placeLinks;
+          });
+
+          // 플레이스를 찾았으면 루프 종료
+          if (places.length > 0) {
+            console.log(`[플레이스 목록] ${places.length}개 플레이스 발견 (${myPlaceUrl})`);
+            break;
+          }
+        } catch (error) {
+          console.log(`[플레이스 목록] ${myPlaceUrl} 실패:`, error.message);
+          lastError = error;
+          continue;
+        }
+      }
+
+      // 모든 URL 시도 후에도 플레이스를 찾지 못한 경우
+      if (places.length === 0) {
+        // 페이지 스크린샷 저장 (디버깅용)
+        try {
+          const screenshot = await page.screenshot({ encoding: 'base64' });
+          console.log('[플레이스 목록] 페이지 스크린샷 저장됨 (디버깅용)');
+        } catch (e) {
+          console.log('[플레이스 목록] 스크린샷 저장 실패:', e.message);
+        }
+
+        // 페이지 HTML 일부 로깅 (디버깅용)
+        try {
+          const pageContent = await page.evaluate(() => {
+            return {
+              title: document.title,
+              url: window.location.href,
+              bodyText: document.body.innerText.substring(0, 500)
+            };
+          });
+          console.log('[플레이스 목록] 페이지 정보:', pageContent);
+        } catch (e) {
+          console.log('[플레이스 목록] 페이지 정보 추출 실패:', e.message);
+        }
       }
 
       await browser.close();

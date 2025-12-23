@@ -1238,6 +1238,13 @@ app.post('/api/hometax/get-request-url', hometaxRequestUrlHandler);
 const hometaxSalesListHandler = require('./api/hometax/sales-list');
 app.get('/api/hometax/sales-list', hometaxSalesListHandler);
 
+// ==================== 매출 데이터 API ====================
+const salesDataHandler = require('./api/sales-data-handler');
+app.post('/api/sales-data', salesDataHandler);
+app.get('/api/sales-data', salesDataHandler);
+app.put('/api/sales-data/:id', salesDataHandler);
+app.delete('/api/sales-data/:id', salesDataHandler);
+
 // ==================== 바로빌 API ====================
 const barobillCheckMemberHandler = require('./api/barobill/check-member');
 app.post('/api/barobill/check-member', barobillCheckMemberHandler);

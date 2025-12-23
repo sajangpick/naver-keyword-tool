@@ -4736,6 +4736,7 @@
             </p>
             <form id="hometaxForm" style="display: flex; flex-direction: column; gap: 16px;">
               <input type="hidden" id="hometaxServiceType" value="taxinvoice">
+              <input type="hidden" id="hometaxLoginMethod" value="ID">
               <div>
                 <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
                   사업자번호 <span style="color: var(--error);">*</span>
@@ -4746,50 +4747,27 @@
               </div>
               <div>
                 <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
-                  신청 방법 <span style="color: var(--error);">*</span>
+                  홈택스 아이디 <span style="color: var(--error);">*</span>
                 </label>
-                <select id="hometaxRequestMethod" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" required>
-                  <option value="url">신청 화면으로 이동 (권장)</option>
-                  <option value="api">API로 직접 신청</option>
-                </select>
-                <p style="font-size: 12px; color: #999; margin-top: 4px;">
-                  신청 화면 방식은 바로빌 사이트에서 직접 신청할 수 있어 더 안전합니다.
-                </p>
+                <input type="text" id="hometaxId" placeholder="홈택스 아이디 입력"
+                  style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                  required>
               </div>
-              <div id="hometaxApiFields" style="display: none; flex-direction: column; gap: 12px;">
-                <div>
-                  <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
-                    홈택스 로그인 방법 <span style="color: var(--error);">*</span>
-                  </label>
-                  <select id="hometaxLoginMethod" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
-                    <option value="ID">홈택스 아이디</option>
-                    <option value="CERT">공동인증서</option>
-                  </select>
-                </div>
-                <div id="hometaxIdFields" style="display: none; flex-direction: column; gap: 12px;">
-                  <div>
-                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
-                      홈택스 아이디 <span style="color: var(--error);">*</span>
-                    </label>
-                    <input type="text" id="hometaxId" placeholder="홈택스 아이디 입력"
-                      style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
-                      홈택스 비밀번호 <span style="color: var(--error);">*</span>
-                    </label>
-                    <input type="password" id="hometaxPwd" placeholder="홈택스 비밀번호 입력"
-                      style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
-                      주민등록번호 앞 7자리 <span style="color: var(--error);">*</span>
-                    </label>
-                    <input type="text" id="hometaxJumin" placeholder="주민등록번호 앞 7자리"
-                      style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
-                      maxlength="7" pattern="[0-9]{7}">
-                  </div>
-                </div>
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                  홈택스 비밀번호 <span style="color: var(--error);">*</span>
+                </label>
+                <input type="password" id="hometaxPwd" placeholder="홈택스 비밀번호 입력"
+                  style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                  required>
+              </div>
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                  주민등록번호 앞 7자리 <span style="color: var(--error);">*</span>
+                </label>
+                <input type="text" id="hometaxJumin" placeholder="주민등록번호 앞 7자리"
+                  style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+                  required maxlength="7" pattern="[0-9]{7}">
               </div>
               <div style="display: flex; gap: 12px; margin-top: 8px;">
                 <button type="button" onclick="this.closest('.hometax-modal').remove()" 
@@ -4841,11 +4819,19 @@
           e.preventDefault();
           
           const serviceType = 'taxinvoice'; // 세금계산서 서비스 고정
-          const requestMethod = document.getElementById('hometaxRequestMethod').value;
+          const loginMethod = 'ID'; // ID 방식 고정
           const corpNum = document.getElementById('hometaxCorpNum').value.replace(/-/g, '');
+          const hometaxId = document.getElementById('hometaxId').value;
+          const hometaxPwd = document.getElementById('hometaxPwd').value;
+          const jumin = document.getElementById('hometaxJumin').value;
           
           if (!corpNum || corpNum.length !== 10) {
             alert('사업자번호를 올바르게 입력해주세요. (10자리 숫자)');
+            return;
+          }
+          
+          if (!hometaxId || !hometaxPwd || !jumin) {
+            alert('홈택스 로그인 정보를 모두 입력해주세요.');
             return;
           }
           
@@ -4856,91 +4842,41 @@
               return;
             }
 
-            // 신청 화면 방식 (권장)
-            if (requestMethod === 'url') {
-              const response = await fetch('/api/hometax/get-request-url', {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                  userId: session.user.id,
-                  corpNum,
-                  serviceType
-                })
-              });
-              
-              const result = await response.json();
-              
-              if (result.success && result.data.requestUrl) {
-                // 팝업으로 신청 화면 열기
-                const popup = window.open(
-                  result.data.requestUrl,
-                  '홈택스연동신청',
-                  'width=800,height=600,scrollbars=yes,resizable=yes'
-                );
-                
-                // 팝업이 닫히면 연동 상태 확인
-                const checkInterval = setInterval(() => {
-                  if (popup.closed) {
-                    clearInterval(checkInterval);
-                    alert('신청이 완료되었습니다. 연동 상태를 확인해주세요.');
-                    modal.remove();
-                    loadPlatformConnections(session.user.id);
-                  }
-                }, 1000);
-              } else {
-                alert('신청 URL 생성 실패: ' + (result.error || '알 수 없는 오류'));
-              }
-            } 
-            // API 직접 신청 방식
-            else {
-              const loginMethod = document.getElementById('hometaxLoginMethod').value;
-              const hometaxId = document.getElementById('hometaxId').value;
-              const hometaxPwd = document.getElementById('hometaxPwd').value;
-              const jumin = document.getElementById('hometaxJumin').value;
-              
-              if (loginMethod === 'ID' && (!hometaxId || !hometaxPwd || !jumin)) {
-                alert('홈택스 로그인 정보를 모두 입력해주세요.');
-                return;
-              }
-
-              const response = await fetch('/api/hometax/register', {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                  userId: session.user.id,
-                  corpNum,
-                  serviceType,
-                  loginMethod,
-                  hometaxId: loginMethod === 'ID' ? hometaxId : null,
-                  hometaxPwd: loginMethod === 'ID' ? hometaxPwd : null,
-                  jumin: loginMethod === 'ID' ? jumin : null
-                })
-              });
-              
-              const result = await response.json();
-              
-              if (result.success) {
-                const serviceName = serviceType === 'cashbill' ? '현금영수증' : '세금계산서';
-                alert(`✅ ${serviceName} 서비스 연동이 완료되었습니다!\n매일 오전 4시~6시에 전날까지의 매입매출 내역을 자동으로 수집합니다.`);
-                modal.remove();
-                await loadPlatformConnections(session.user.id);
-              } else {
-                // 바로빌 회원가입이 필요한 경우
-                if (result.needRegistration) {
-                  const register = confirm('바로빌 회원가입이 필요합니다.\n바로빌 회원가입을 진행하시겠습니까?');
-                  if (register) {
-                    // 바로빌 회원가입 모달 표시
-                    showBarobillRegistrationModal(corpNum, serviceType, modal);
-                  }
-                } else {
-                  alert('연동 실패: ' + (result.error || '알 수 없는 오류'));
+            // 바로빌 API로 직접 신청
+            const response = await fetch('/api/hometax/register', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({
+                userId: session.user.id,
+                corpNum,
+                serviceType,
+                loginMethod,
+                hometaxId,
+                hometaxPwd,
+                jumin
+              })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              const serviceName = serviceType === 'cashbill' ? '현금영수증' : '세금계산서';
+              alert(`✅ ${serviceName} 서비스 연동이 완료되었습니다!\n매일 오전 4시~6시에 전날까지의 매입매출 내역을 자동으로 수집합니다.`);
+              modal.remove();
+              await loadPlatformConnections(session.user.id);
+            } else {
+              // 바로빌 회원가입이 필요한 경우
+              if (result.needRegistration) {
+                const register = confirm('바로빌 회원가입이 필요합니다.\n바로빌 회원가입을 진행하시겠습니까?');
+                if (register) {
+                  // 바로빌 회원가입 모달 표시
+                  showBarobillRegistrationModal(corpNum, serviceType, modal);
                 }
+              } else {
+                alert('연동 실패: ' + (result.error || '알 수 없는 오류'));
               }
             }
           } catch (error) {

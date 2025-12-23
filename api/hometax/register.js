@@ -106,8 +106,10 @@ module.exports = async (req, res) => {
       const { serviceType } = req.body; // 'taxinvoice' 또는 'cashbill'
       const serviceTypeName = serviceType === 'cashbill' ? '현금영수증' : '세금계산서';
 
-      // 1단계: 바로빌 회원가입 확인
+      // 1단계: 바로빌 회원가입 확인 및 자동 가입
       console.log('📋 바로빌 회원가입 확인:', corpNum);
+      let isBarobillMember = false;
+      
       try {
         const checkResponse = await axios.post(
           `${req.protocol}://${req.get('host')}/api/barobill/check-member`,
@@ -119,27 +121,61 @@ module.exports = async (req, res) => {
 
         const checkResult = checkResponse.data;
         
-        if (!checkResult.success) {
-          return res.status(400).json({
-            success: false,
-            error: `바로빌 회원 확인 실패: ${checkResult.error}`
-          });
+        if (checkResult.success && checkResult.data.isMember) {
+          isBarobillMember = true;
+          console.log('✅ 바로빌 회원 확인 완료');
+        } else {
+          console.log('⚠️ 바로빌 미가입 - 자동 회원가입 시도');
         }
-
-        // 바로빌에 가입되지 않은 경우 회원가입 필요 안내
-        if (!checkResult.data.isMember) {
-          return res.status(400).json({
-            success: false,
-            error: '바로빌에 가입되지 않은 사업자번호입니다.',
-            needRegistration: true,
-            message: '홈택스 연동을 위해서는 먼저 바로빌 회원가입이 필요합니다.'
-          });
-        }
-
-        console.log('✅ 바로빌 회원 확인 완료');
       } catch (checkError) {
         console.error('❌ 바로빌 회원 확인 실패:', checkError.message);
-        // 회원 확인 실패해도 계속 진행 (API 오류일 수 있음)
+        // 회원 확인 실패해도 계속 진행
+      }
+
+      // 바로빌 미가입 시 자동 회원가입 시도
+      if (!isBarobillMember) {
+        console.log('📝 바로빌 자동 회원가입 시도');
+        try {
+          // 사용자 프로필 정보 가져오기
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+          // 바로빌 회원가입에 필요한 기본 정보
+          const registerData = {
+            CorpNum: corpNum.replace(/-/g, ''),
+            CorpName: profile?.store_name || '회사명',
+            CEOName: profile?.full_name || '대표자명',
+            BizType: '업태',
+            BizClass: '업종',
+            Addr1: profile?.store_address || '주소',
+            MemberName: profile?.full_name || '담당자명',
+            ID: hometaxId || 'user' + corpNum.substring(0, 6), // 홈택스 아이디 또는 기본값
+            PWD: hometaxPwd || 'temp1234', // 임시 비밀번호
+            TEL: profile?.phone_number || '010-0000-0000',
+            Email: user.email || 'temp@example.com'
+          };
+
+          const registerResponse = await axios.post(
+            `${req.protocol}://${req.get('host')}/api/barobill/register-corp`,
+            registerData
+          );
+
+          const registerResult = registerResponse.data;
+          
+          if (registerResult.success) {
+            console.log('✅ 바로빌 자동 회원가입 완료');
+            isBarobillMember = true;
+          } else {
+            console.error('❌ 바로빌 자동 회원가입 실패:', registerResult.error);
+            // 회원가입 실패해도 홈택스 연동은 시도
+          }
+        } catch (registerError) {
+          console.error('❌ 바로빌 자동 회원가입 오류:', registerError.message);
+          // 회원가입 실패해도 홈택스 연동은 시도
+        }
       }
 
       // 2단계: 바로빌 API 호출 - 서비스 신청
