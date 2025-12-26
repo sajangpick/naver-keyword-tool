@@ -1231,18 +1231,8 @@
           const apiUrl = `/api/admin/members?${params}`;
           console.log('📡 API 호출:', apiUrl);
           
-          const response = await fetch(apiUrl);
-          
-          console.log('📥 API 응답 상태:', response.status, response.statusText);
-          
-          // HTTP 상태 코드 체크
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ API 오류:', response.status, errorText);
-            throw new Error(`서버 오류 (${response.status}): ${errorText || '알 수 없는 오류'}`);
-          }
-
-          const result = await response.json();
+          // AdminUtils.adminFetch 사용 (인증 토큰 자동 포함)
+          const result = await AdminUtils.adminFetch(apiUrl);
           console.log('📊 API 응답 데이터:', result);
 
           if (!result.success) {
