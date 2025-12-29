@@ -6792,19 +6792,13 @@ CREATE INDEX IF NOT EXISTS idx_shorts_videos_created_at ON public.shorts_videos(
               }
               
               // 영상 다운로드
-              const downloadHeaders = {
-                'Accept': 'video/*, */*',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-              };
-
-              if (videoUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
-                downloadHeaders['x-goog-api-key'] = GEMINI_API_KEY;
-              }
-
               const videoResponse = await axios.get(downloadUrl, {
                 responseType: 'arraybuffer',
                 timeout: 120000, // 2분 타임아웃
-                headers: downloadHeaders
+                headers: {
+                  'Accept': 'video/*, */*',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
               });
               
               // Supabase Storage에 업로드
@@ -7624,10 +7618,6 @@ app.get("/api/shorts/play", async (req, res) => {
     }
     
     // Google API는 query parameter로만 인증 (Authorization 헤더 사용 안 함)
-    // 단, x-goog-api-key 헤더를 추가하면 더 안정적일 수 있음
-    if (videoUrl.includes('generativelanguage.googleapis.com') && GEMINI_API_KEY) {
-      headers['x-goog-api-key'] = GEMINI_API_KEY;
-    }
 
     // 영상 다운로드
     devLog("🔵 [재생 프록시] 영상 요청 시작:", playUrl.substring(0, 150) + '...');

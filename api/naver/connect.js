@@ -686,6 +686,11 @@ module.exports = async (req, res) => {
         });
 
         await browser.close();
+      } catch (error) {
+        console.error('네이버 로그인/크롤링 중 오류:', error);
+        await browser.close();
+        throw error;
+      }
 
     } else if (smartplaceUrl) {
       // URL만 제공된 경우 (계정 정보 없음)

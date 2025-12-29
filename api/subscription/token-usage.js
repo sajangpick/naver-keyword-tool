@@ -5,7 +5,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const { isDemoMode } = require('../middleware/credit-tracker');
+const { isDemoMode } = require('../middleware/token-tracker');
 
 // Supabase 클라이언트 초기화
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -310,7 +310,6 @@ const apiHandler = async (req, res) => {
       return;
     }
 
-    try {
     // POST: 크레딧 사용 기록
     if (req.method === 'POST') {
       const { 
@@ -719,6 +718,7 @@ const apiHandler = async (req, res) => {
         console.log(`✅ [credit-usage] GET 요청 완료: user_id=${user_id}, usage_count=${usage.length}, credits_used=${creditsUsed}, credits_remaining=${creditsRemaining}`);
         
         return res.json(response);
+      }
       } catch (getError) {
         console.error('❌ [credit-usage] GET 요청 처리 중 오류 발생:', getError);
         console.error('❌ [credit-usage] 에러 상세:', {

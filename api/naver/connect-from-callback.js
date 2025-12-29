@@ -2,7 +2,6 @@
 // 사용자가 네이버 로그인 후 돌아왔을 때 호출됩니다
 
 const { createClient } = require('@supabase/supabase-js');
-const puppeteer = require('puppeteer');
 const CryptoJS = require('crypto-js');
 
 // Puppeteer 환경 설정 (Render/Vercel 호환)
