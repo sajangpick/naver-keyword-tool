@@ -310,30 +310,28 @@
       };
 
       // API 호출 (리다이렉트 루프 방지)
-      // redirect: 'error'를 사용하여 리다이렉트 시 즉시 에러 발생
+      // redirect: 'follow'를 사용하되, 최대 리다이렉트 횟수 제한
       let response;
       try {
         response = await fetch(endpoint, {
           ...options,
           headers,
-          redirect: 'error' // 리다이렉트 시 에러 발생하여 루프 방지
+          redirect: 'follow', // 리다이렉트를 따라가되, 브라우저가 자동으로 제한함
+          // 참고: redirect: 'error'는 CORS 문제를 일으킬 수 있음
         });
       } catch (fetchError) {
-        // TypeError: Failed to fetch 또는 리다이렉트 에러
-        if (fetchError.name === 'TypeError' && fetchError.message.includes('redirect')) {
-          const error = new Error('서버 리다이렉트가 감지되었습니다. 네트워크 설정을 확인하세요.');
-          error.status = 302;
-          error.redirect = true;
-          error.originalError = fetchError;
-          throw error;
-        }
-        // ERR_TOO_MANY_REDIRECTS 에러
-        if (fetchError.message && fetchError.message.includes('redirect')) {
-          const error = new Error('리다이렉트 루프가 감지되었습니다. 서버 설정을 확인하세요.');
-          error.status = 302;
-          error.redirect = true;
-          error.originalError = fetchError;
-          throw error;
+        // 네트워크 에러 처리
+        if (fetchError.name === 'TypeError') {
+          // ERR_FAILED 또는 ERR_TOO_MANY_REDIRECTS
+          if (fetchError.message.includes('Failed to fetch') || 
+              fetchError.message.includes('redirect') ||
+              fetchError.message.includes('ERR_')) {
+            const error = new Error('네트워크 오류가 발생했습니다. 서버 연결을 확인하세요.');
+            error.status = 0;
+            error.networkError = true;
+            error.originalError = fetchError;
+            throw error;
+          }
         }
         throw fetchError;
       }
