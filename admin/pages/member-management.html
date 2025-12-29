@@ -1101,8 +1101,38 @@
         // AdminUtils가 로드될 때까지 대기
         const utilsReady = await waitForAdminUtils();
         if (!utilsReady) {
-          showError('관리자 유틸리티를 로드할 수 없습니다. 페이지를 새로고침해주세요.');
+          console.error('❌ 관리자 유틸리티를 로드할 수 없습니다.');
           return;
+        }
+        
+        // 권한 체크 (리다이렉트 없이 확인만)
+        try {
+          const isAdmin = await AdminUtils.checkAdminAuth();
+          console.log('🔐 권한 체크 결과:', isAdmin);
+          
+          if (isAdmin === false) {
+            // 관리자가 아닌 경우에만 리다이렉트
+            console.warn('⚠️ 관리자 권한이 없습니다. 로그인 페이지로 이동합니다.');
+            const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.replace(`/login.html?redirect=${currentUrl}`);
+            return;
+          }
+          
+          // isAdmin === null인 경우 (로딩 중)는 계속 진행
+          if (isAdmin === null) {
+            console.warn('⚠️ 세션 확인 중... 잠시 후 다시 시도합니다.');
+            // 잠시 대기 후 다시 확인 (최대 2초)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const retryAdmin = await AdminUtils.checkAdminAuth();
+            if (retryAdmin === false) {
+              const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+              window.location.replace(`/login.html?redirect=${currentUrl}`);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('❌ 권한 체크 실패:', error);
+          // 에러 발생 시에도 리다이렉트하지 않고 계속 진행 (API 호출 시 에러 처리)
         }
         
         console.log('✅ AdminUtils 로드 완료, 회원 목록 로드 시작');
@@ -2028,30 +2058,8 @@
     <script src="/admin/assets/admin-utils.js?v=20251030" defer></script>
 
     <script>
-      // 관리자 권한 체크 (AdminUtils 로드 대기)
-      window.addEventListener('DOMContentLoaded', async function() {
-        // AdminUtils가 로드될 때까지 대기
-        let retries = 0;
-        const maxRetries = 50; // 5초 대기
-        
-        while (retries < maxRetries) {
-          if (typeof AdminUtils !== 'undefined' && AdminUtils.requireAdmin) {
-            try {
-              const isAdmin = await AdminUtils.requireAdmin();
-              if (!isAdmin) return;
-            } catch (error) {
-              console.error('관리자 권한 체크 실패:', error);
-            }
-            break;
-          }
-          await new Promise(resolve => setTimeout(resolve, 100));
-          retries++;
-        }
-        
-        if (retries >= maxRetries) {
-          console.warn('⚠️ AdminUtils를 로드할 수 없습니다.');
-        }
-      });
+      // 권한 체크는 window.addEventListener('load')에서 처리하므로 여기서는 제거
+      // DOMContentLoaded에서 requireAdmin을 호출하면 리다이렉트 루프가 발생할 수 있음
     </script>
 
     <!-- 추적 및 모니터링 스크립트 -->
