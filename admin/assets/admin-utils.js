@@ -200,42 +200,60 @@
       
       // 방법 2: localStorage/sessionStorage에서 토큰 가져오기 (대체)
       if (!accessToken) {
-        // Supabase는 localStorage에 세션을 저장함
-        const loginType = localStorage.getItem('loginType') || 'auto';
-        const storage = loginType === 'manual' ? sessionStorage : localStorage;
+        console.log('🔍 localStorage/sessionStorage에서 토큰 검색 시작...');
         
-        // Supabase 세션 키 확인
-        const supabaseSessionKey = Object.keys(storage).find(key => 
-          key.includes('supabase.auth.token') || key.includes('sb-')
-        );
+        // 모든 storage 확인 (localStorage 우선, 그 다음 sessionStorage)
+        const storages = [localStorage, sessionStorage];
         
-        if (supabaseSessionKey) {
-          try {
-            const sessionData = JSON.parse(storage.getItem(supabaseSessionKey) || '{}');
-            if (sessionData.access_token) {
-              accessToken = sessionData.access_token;
-            } else if (sessionData.currentSession?.access_token) {
-              accessToken = sessionData.currentSession.access_token;
-            }
-          } catch (e) {
-            console.warn('⚠️ 저장된 세션 데이터 파싱 실패:', e);
-          }
-        }
-        
-        // 다른 가능한 키들도 확인
-        if (!accessToken) {
-          for (let i = 0; i < storage.length; i++) {
-            const key = storage.key(i);
-            if (key && (key.includes('supabase') || key.includes('auth'))) {
+        for (const storage of storages) {
+          // Supabase는 보통 'sb-{project-ref}-auth-token' 형식으로 저장
+          // 또는 'supabase.auth.token' 형식
+          const keys = Object.keys(storage);
+          console.log(`📋 ${storage === localStorage ? 'localStorage' : 'sessionStorage'} 키 개수:`, keys.length);
+          
+          for (const key of keys) {
+            // Supabase 관련 키 찾기
+            if (key.includes('sb-') || key.includes('supabase') || key.includes('auth')) {
               try {
                 const value = storage.getItem(key);
-                if (value) {
-                  const parsed = JSON.parse(value);
-                  if (parsed.access_token) {
-                    accessToken = parsed.access_token;
-                    break;
-                  } else if (parsed.currentSession?.access_token) {
-                    accessToken = parsed.currentSession.access_token;
+                if (!value) continue;
+                
+                let parsed;
+                try {
+                  parsed = JSON.parse(value);
+                } catch (e) {
+                  // JSON이 아닐 수도 있음
+                  continue;
+                }
+                
+                // 다양한 형식 확인
+                if (parsed.access_token) {
+                  accessToken = parsed.access_token;
+                  console.log('✅ 토큰 발견:', key, '형식: access_token');
+                  break;
+                } else if (parsed.currentSession?.access_token) {
+                  accessToken = parsed.currentSession.access_token;
+                  console.log('✅ 토큰 발견:', key, '형식: currentSession.access_token');
+                  break;
+                } else if (parsed.session?.access_token) {
+                  accessToken = parsed.session.access_token;
+                  console.log('✅ 토큰 발견:', key, '형식: session.access_token');
+                  break;
+                } else if (typeof parsed === 'object') {
+                  // 중첩된 객체에서 재귀적으로 찾기
+                  const findToken = (obj) => {
+                    if (!obj || typeof obj !== 'object') return null;
+                    if (obj.access_token) return obj.access_token;
+                    for (const val of Object.values(obj)) {
+                      const token = findToken(val);
+                      if (token) return token;
+                    }
+                    return null;
+                  };
+                  const foundToken = findToken(parsed);
+                  if (foundToken) {
+                    accessToken = foundToken;
+                    console.log('✅ 토큰 발견:', key, '형식: 중첩 객체');
                     break;
                   }
                 }
@@ -244,14 +262,29 @@
               }
             }
           }
+          
+          if (accessToken) break;
+        }
+        
+        if (!accessToken) {
+          console.warn('⚠️ localStorage/sessionStorage에서 토큰을 찾을 수 없습니다.');
+          // 디버깅: 모든 키 출력
+          console.log('📋 localStorage 키들:', Object.keys(localStorage));
+          console.log('📋 sessionStorage 키들:', Object.keys(sessionStorage));
         }
       }
       
       if (!accessToken) {
+        console.error('❌ 토큰을 찾을 수 없습니다. 로그인이 필요합니다.');
+        // 토큰이 없어도 API 호출은 시도 (서버에서 401 반환)
+        // 리다이렉트는 하지 않음
         const error = new Error('로그인이 필요합니다. 세션을 찾을 수 없습니다.');
         error.status = 401;
+        error.noRedirect = true; // 리다이렉트 방지 플래그
         throw error;
       }
+      
+      console.log('✅ 토큰 발견, API 호출 진행');
 
       // 기본 헤더 설정
       const headers = {
@@ -260,11 +293,20 @@
         ...options.headers
       };
 
-      // API 호출
+      // API 호출 (리다이렉트 루프 방지)
       const response = await fetch(endpoint, {
         ...options,
-        headers
+        headers,
+        redirect: 'manual' // 리다이렉트를 수동으로 처리하여 루프 방지
       });
+      
+      // 리다이렉트 응답 처리
+      if (response.type === 'opaqueredirect' || response.status === 0) {
+        const error = new Error('리다이렉트 루프가 감지되었습니다. 서버 설정을 확인하세요.');
+        error.status = 302;
+        error.redirect = true;
+        throw error;
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

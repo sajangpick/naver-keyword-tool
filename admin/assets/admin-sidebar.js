@@ -67,6 +67,12 @@
       badge: 'REAL'
     },
     {
+      icon: '🏢',
+      title: '바로빌 회원 관리',
+      path: '/admin/pages/barobill-management.html',
+      badge: null
+    },
+    {
       section: '구독 및 청구'
     },
     {

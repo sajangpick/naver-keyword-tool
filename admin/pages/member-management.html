@@ -1315,11 +1315,19 @@
             return;
           }
           
-          // 401 에러인 경우 (세션 만료)
-          if (error.status === 401 || error.message.includes('401') || error.message.includes('로그인')) {
+          // 401 에러인 경우 (세션 만료) - 단, noRedirect 플래그가 있으면 리다이렉트하지 않음
+          if ((error.status === 401 || error.message.includes('401') || error.message.includes('로그인')) && !error.noRedirect) {
             console.warn('⚠️ 세션이 만료되었습니다. 로그인 페이지로 이동합니다.');
             const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
             window.location.replace(`/login.html?redirect=${currentUrl}`);
+            return;
+          }
+          
+          // noRedirect 플래그가 있으면 에러만 표시
+          if (error.noRedirect) {
+            console.warn('⚠️ 로그인이 필요하지만 리다이렉트하지 않습니다.');
+            showError('로그인이 필요합니다. 브라우저를 새로고침하거나 다시 로그인해주세요.');
+            renderMembers([]);
             return;
           }
           

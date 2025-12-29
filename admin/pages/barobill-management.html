@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>바로빌 회원 관리 - 사장픽 관리자</title>
+    
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+    
+    <!-- 공통 스타일 -->
+    <link rel="stylesheet" href="/admin/assets/admin-common.css" />
+    
+    <style>
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+      }
+
+      .card-header .title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      /* 필터 */
+      .filters {
+        display: grid;
+        grid-template-columns: 1fr 300px auto;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 10px 14px;
+        background: #fff;
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1);
+      }
+
+      /* 테이블 */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 14px 12px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 14px;
+        text-align: left;
+      }
+
+      th {
+        color: #6b7280;
+        font-weight: 700;
+        background: #fafafa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      td {
+        color: #374151;
+      }
+
+      tr:hover td {
+        background: #f9fafb;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .badge.connected {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .badge.not-connected {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .stat-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .stat-card .value {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--accent);
+        margin-bottom: 8px;
+      }
+
+      .stat-card .label {
+        font-size: 14px;
+        color: #6b7280;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--muted);
+      }
+
+      .spinner {
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid var(--accent);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--muted);
+      }
+
+      .empty-state i {
+        font-size: 64px;
+        opacity: 0.3;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-layout">
+      <!-- 사이드바는 admin-sidebar.js가 자동 생성 -->
+      <script src="/admin/assets/admin-sidebar.js"></script>
+
+      <main class="admin-main">
+        <div class="container">
+          <h1>바로빌 회원 관리</h1>
+          <p class="subtitle">홈택스 연동을 위해 바로빌에 가입한 회원 정보를 확인하고 관리합니다.</p>
+
+          <!-- 통계 카드 -->
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+              <div class="value" id="totalMembers">-</div>
+              <div class="label">전체 바로빌 회원</div>
+            </div>
+            <div class="stat-card">
+              <div class="value" id="connectedMembers">-</div>
+              <div class="label">홈택스 연동 완료</div>
+            </div>
+            <div class="stat-card">
+              <div class="value" id="notConnectedMembers">-</div>
+              <div class="label">홈택스 미연동</div>
+            </div>
+          </div>
+
+          <!-- 필터 및 검색 -->
+          <section class="card">
+            <div class="card-header">
+              <div class="title">
+                <i class="fas fa-users"></i>
+                바로빌 회원 목록
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="filters">
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="이름, 이메일, 바로빌 아이디, 사업자번호로 검색..."
+                  onkeyup="handleSearch(event)"
+                />
+                <button class="btn primary" onclick="loadBarobillMembers()">
+                  <i class="fas fa-search"></i> 검색
+                </button>
+              </div>
+
+              <!-- 로딩 -->
+              <div id="loadingContainer" class="loading" style="display: none">
+                <div class="spinner"></div>
+                <p style="margin-top: 16px">로딩 중...</p>
+              </div>
+
+              <!-- 에러 -->
+              <div id="errorContainer" style="display: none"></div>
+
+              <!-- 테이블 -->
+              <div id="tableContainer" style="max-height: 600px; overflow: auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>회원명</th>
+                      <th>이메일</th>
+                      <th>바로빌 아이디</th>
+                      <th>사업자번호</th>
+                      <th>홈택스 연동</th>
+                      <th>연동일</th>
+                      <th>관리</th>
+                    </tr>
+                  </thead>
+                  <tbody id="memberTableBody">
+                    <!-- JavaScript로 채워짐 -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 빈 상태 -->
+              <div id="emptyState" class="empty-state" style="display: none">
+                <i class="fas fa-inbox"></i>
+                <p>바로빌 회원이 없습니다.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- 관리자 유틸리티 -->
+    <script src="/admin/assets/admin-utils.js"></script>
+
+    <script>
+      // 상태 변수
+      let currentSearch = '';
+
+      // ==================== 초기화 ====================
+      window.addEventListener('load', async function() {
+        await waitForAdminUtils();
+        await loadBarobillMembers();
+      });
+
+      // ==================== 데이터 로드 ====================
+      async function loadBarobillMembers(search = currentSearch) {
+        try {
+          showLoading(true);
+          hideError();
+          hideEmptyState();
+
+          const params = new URLSearchParams();
+          if (search) params.append('search', search);
+
+          const result = await AdminUtils.adminFetch(`/api/admin/barobill-members?${params}`);
+
+          if (!result.success) {
+            throw new Error(result.error || '데이터를 불러올 수 없습니다.');
+          }
+
+          const members = result.data || [];
+          
+          // 통계 업데이트
+          updateStats(members);
+          
+          // 테이블 업데이트
+          if (members.length === 0) {
+            showEmptyState();
+            document.getElementById('memberTableBody').innerHTML = '';
+          } else {
+            document.getElementById('memberTableBody').innerHTML = members.map(member => 
+              renderMemberRow(member)
+            ).join('');
+          }
+
+        } catch (error) {
+          console.error('❌ 바로빌 회원 목록 로드 실패:', error);
+          showError(error.message || '데이터를 불러오는 중 오류가 발생했습니다.');
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // ==================== 통계 업데이트 ====================
+      function updateStats(members) {
+        const total = members.length;
+        const connected = members.filter(m => m.hometax_connected).length;
+        const notConnected = total - connected;
+
+        document.getElementById('totalMembers').textContent = total.toLocaleString();
+        document.getElementById('connectedMembers').textContent = connected.toLocaleString();
+        document.getElementById('notConnectedMembers').textContent = notConnected.toLocaleString();
+      }
+
+      // ==================== 테이블 행 렌더링 ====================
+      function renderMemberRow(member) {
+        const connectedBadge = member.hometax_connected 
+          ? '<span class="badge connected">연동완료</span>'
+          : '<span class="badge not-connected">미연동</span>';
+
+        const connectedDate = member.hometax_connected_at 
+          ? new Date(member.hometax_connected_at).toLocaleDateString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            })
+          : '-';
+
+        return `
+          <tr>
+            <td><strong>${member.name || '-'}</strong></td>
+            <td>${member.email || '-'}</td>
+            <td><code>${member.barobill_user_id || '-'}</code></td>
+            <td>${member.corp_num ? formatCorpNum(member.corp_num) : '-'}</td>
+            <td>${connectedBadge}</td>
+            <td>${connectedDate}</td>
+            <td>
+              <button class="btn primary" onclick="viewMemberDetail('${member.id}')" title="회원 상세정보">
+                <i class="fas fa-info-circle"></i> 상세보기
+              </button>
+            </td>
+          </tr>
+        `;
+      }
+
+      // ==================== 사업자번호 포맷팅 ====================
+      function formatCorpNum(corpNum) {
+        if (!corpNum) return '-';
+        const cleaned = corpNum.replace(/-/g, '');
+        if (cleaned.length === 10) {
+          return `${cleaned.substring(0, 3)}-${cleaned.substring(3, 5)}-${cleaned.substring(5)}`;
+        }
+        return corpNum;
+      }
+
+      // ==================== 검색 ====================
+      function handleSearch(event) {
+        if (event.key === 'Enter') {
+          currentSearch = event.target.value;
+          loadBarobillMembers();
+        }
+      }
+
+      // ==================== 회원 상세보기 ====================
+      function viewMemberDetail(memberId) {
+        window.location.href = `/admin/pages/member-management.html?memberId=${memberId}`;
+      }
+
+      // ==================== UI 헬퍼 ====================
+      function showLoading(show) {
+        document.getElementById('loadingContainer').style.display = show ? 'block' : 'none';
+        document.getElementById('tableContainer').style.display = show ? 'none' : 'block';
+      }
+
+      function showError(message) {
+        const container = document.getElementById('errorContainer');
+        container.style.display = 'block';
+        container.innerHTML = `
+          <div style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 16px; border-radius: 8px;">
+            <i class="fas fa-exclamation-circle"></i> ${message}
+          </div>
+        `;
+      }
+
+      function hideError() {
+        document.getElementById('errorContainer').style.display = 'none';
+      }
+
+      function showEmptyState() {
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('tableContainer').style.display = 'none';
+      }
+
+      function hideEmptyState() {
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('tableContainer').style.display = 'block';
+      }
+
+      // ==================== AdminUtils 대기 ====================
+      async function waitForAdminUtils() {
+        let attempts = 0;
+        while (!window.AdminUtils && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        return !!window.AdminUtils;
+      }
+    </script>
+  </body>
+</html>
+

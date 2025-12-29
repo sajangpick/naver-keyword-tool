@@ -4143,6 +4143,10 @@ app.get("/api/regions", (req, res) => {
 // ==================== 회원 관리 API (관리자 전용) ====================
 
 // 회원 목록 조회 (관리자만)
+// 바로빌 회원 목록 조회
+const barobillMembersHandler = require('./api/admin/barobill-members');
+app.get('/api/admin/barobill-members', barobillMembersHandler);
+
 app.get('/api/admin/members', async (req, res) => {
   try {
     // CORS 설정
