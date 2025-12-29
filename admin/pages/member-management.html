@@ -1126,7 +1126,7 @@
           await waitForAdminUtils();
           
           // 가격 설정 로드 (작업 크레딧 시스템: pricing_config의 included_credits 사용)
-          const pricingResult = await AdminUtils.adminFetch('/api/subscription/pricing-config');
+          const pricingResult = await AdminUtils.adminFetch(`${window.location.origin}/api/subscription/pricing-config`);
 
           if (!pricingResult.success) {
             throw new Error('등급 설정을 불러올 수 없습니다');
@@ -1260,7 +1260,8 @@
           if (userType) params.append('user_type', userType);
           if (search) params.append('search', search);
 
-          const apiUrl = `/api/admin/members?${params}`;
+          // 절대 URL 사용 (리다이렉트 방지)
+          const apiUrl = `${window.location.origin}/api/admin/members?${params}`;
           console.log('📡 API 호출:', apiUrl);
           
           // AdminUtils 대기
@@ -1408,7 +1409,7 @@
           await waitForAdminUtils();
           
           // B안: API 호출 (role은 profiles 테이블에 없으므로 전송하지 않음)
-          const result = await AdminUtils.adminFetch(`/api/admin/members/${memberId}`, {
+          const result = await AdminUtils.adminFetch(`${window.location.origin}/api/admin/members/${memberId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -1447,7 +1448,7 @@
           await waitForAdminUtils();
 
           // B안: API 호출
-          const result = await AdminUtils.adminFetch(`/api/admin/members/${memberId}`, {
+          const result = await AdminUtils.adminFetch(`${window.location.origin}/api/admin/members/${memberId}`, {
             method: 'DELETE'
           });
 
@@ -1835,7 +1836,7 @@
         if (!currentFilter && !currentSearch) {
           try {
             await waitForAdminUtils();
-            const statsResult = await AdminUtils.adminFetch('/api/admin/members?limit=1000');
+            const statsResult = await AdminUtils.adminFetch(`${window.location.origin}/api/admin/members?limit=1000`);
             if (statsResult.success && statsResult.members) {
               const allMembers = statsResult.members;
               document.getElementById('stat-total').textContent = statsResult.total || 0;
@@ -1992,7 +1993,7 @@
           `;
 
           await waitForAdminUtils();
-          const result = await AdminUtils.adminFetch('/api/admin/place-cache');
+          const result = await AdminUtils.adminFetch(`${window.location.origin}/api/admin/place-cache`);
           
           if (!result.success || !result.data || result.data.length === 0) {
             tbody.innerHTML = `
