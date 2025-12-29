@@ -183,11 +183,72 @@
    */
   async function adminFetch(endpoint, options = {}) {
     try {
-      const supabase = await getSupabaseClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      let accessToken = null;
       
-      if (!session) {
-        const error = new Error('로그인이 필요합니다.');
+      // 방법 1: Supabase 클라이언트에서 세션 가져오기 (우선)
+      try {
+        const supabase = await getSupabaseClient();
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session && session.access_token) {
+            accessToken = session.access_token;
+          }
+        }
+      } catch (supabaseError) {
+        console.warn('⚠️ Supabase 클라이언트에서 세션을 가져올 수 없습니다:', supabaseError.message);
+      }
+      
+      // 방법 2: localStorage/sessionStorage에서 토큰 가져오기 (대체)
+      if (!accessToken) {
+        // Supabase는 localStorage에 세션을 저장함
+        const loginType = localStorage.getItem('loginType') || 'auto';
+        const storage = loginType === 'manual' ? sessionStorage : localStorage;
+        
+        // Supabase 세션 키 확인
+        const supabaseSessionKey = Object.keys(storage).find(key => 
+          key.includes('supabase.auth.token') || key.includes('sb-')
+        );
+        
+        if (supabaseSessionKey) {
+          try {
+            const sessionData = JSON.parse(storage.getItem(supabaseSessionKey) || '{}');
+            if (sessionData.access_token) {
+              accessToken = sessionData.access_token;
+            } else if (sessionData.currentSession?.access_token) {
+              accessToken = sessionData.currentSession.access_token;
+            }
+          } catch (e) {
+            console.warn('⚠️ 저장된 세션 데이터 파싱 실패:', e);
+          }
+        }
+        
+        // 다른 가능한 키들도 확인
+        if (!accessToken) {
+          for (let i = 0; i < storage.length; i++) {
+            const key = storage.key(i);
+            if (key && (key.includes('supabase') || key.includes('auth'))) {
+              try {
+                const value = storage.getItem(key);
+                if (value) {
+                  const parsed = JSON.parse(value);
+                  if (parsed.access_token) {
+                    accessToken = parsed.access_token;
+                    break;
+                  } else if (parsed.currentSession?.access_token) {
+                    accessToken = parsed.currentSession.access_token;
+                    break;
+                  }
+                }
+              } catch (e) {
+                // 파싱 실패는 무시
+              }
+            }
+          }
+        }
+      }
+      
+      if (!accessToken) {
+        const error = new Error('로그인이 필요합니다. 세션을 찾을 수 없습니다.');
         error.status = 401;
         throw error;
       }
@@ -195,7 +256,7 @@
       // 기본 헤더 설정
       const headers = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${accessToken}`,
         ...options.headers
       };
 

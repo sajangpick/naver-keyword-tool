@@ -3482,6 +3482,38 @@
             }
         }
 
+        // 인증 UI 즉시 업데이트 (페이지 로드 시 바로 실행)
+        (async function initAuthUI() {
+            // 먼저 localStorage에서 즉시 확인 (빠른 초기 렌더링)
+            await updateAuthUI();
+            
+            // auth-state.js가 로드될 때까지 대기
+            let waitCount = 0;
+            const maxWait = 50; // 5초 대기
+            while (!window.authState && waitCount < maxWait) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                waitCount++;
+            }
+            
+            // Supabase 초기화
+            await initSupabase();
+            
+            // 인증 UI 업데이트
+            await updateAuthUI();
+            
+            // auth-state.js의 인증 상태 변경 이벤트 구독
+            if (window.authState) {
+                window.addEventListener('auth:state-changed', async () => {
+                    await updateAuthUI();
+                });
+            }
+            
+            // 페이지 로드 후에도 한 번 더 확인 (auth-state.js가 늦게 로드될 수 있음)
+            setTimeout(async () => {
+                await updateAuthUI();
+            }, 1000);
+        })();
+
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
             selectMusic('auto');
@@ -3514,35 +3546,6 @@
                     handleImageUpload(input);
                 }
             });
-
-            // Supabase 초기화 및 인증 UI 업데이트
-            (async () => {
-                // auth-state.js가 로드될 때까지 대기
-                let waitCount = 0;
-                const maxWait = 50; // 5초 대기
-                while (!window.authState && waitCount < maxWait) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    waitCount++;
-                }
-                
-                // Supabase 초기화
-                await initSupabase();
-                
-                // 인증 UI 업데이트
-                await updateAuthUI();
-                
-                // auth-state.js의 인증 상태 변경 이벤트 구독
-                if (window.authState) {
-                    window.addEventListener('auth:state-changed', async () => {
-                        await updateAuthUI();
-                    });
-                }
-                
-                // 페이지 로드 후에도 한 번 더 확인 (auth-state.js가 늦게 로드될 수 있음)
-                setTimeout(async () => {
-                    await updateAuthUI();
-                }, 1000);
-            })();
         });
     </script>
 

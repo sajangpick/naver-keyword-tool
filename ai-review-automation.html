@@ -1460,8 +1460,116 @@
       if (refreshInterval) clearInterval(refreshInterval);
     });
 
+    // 인증 UI 업데이트 함수
+    async function updateAuthUI() {
+      const authUser = document.getElementById('authUser');
+      const loginBtn = document.getElementById('loginBtn');
+      const signupBtn = document.getElementById('signupBtn');
+      const userEmail = document.getElementById('userEmail');
+      const userAvatar = document.getElementById('userAvatar');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
+      let user = null;
+      
+      // 1. 먼저 localStorage/sessionStorage 확인 (빠른 초기 렌더링)
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
+      if (isLoggedIn) {
+        try {
+          const loginType = localStorage.getItem('loginType') || 'auto';
+          const useSessionStorage = loginType === 'manual';
+          const storage = useSessionStorage ? sessionStorage : localStorage;
+          const raw = storage.getItem('userData');
+          if (raw) {
+            user = JSON.parse(raw);
+            console.log('[ai-review-automation] localStorage에서 사용자 정보 확인:', user?.email);
+          }
+        } catch (error) {
+          console.warn('[ai-review-automation] 사용자 정보 파싱 실패:', error);
+        }
+      }
+      
+      // 2. Supabase 세션 확인 (auth-state.js가 로드된 경우)
+      if (window.authState?.supabase) {
+        try {
+          const { data: { session } } = await window.authState.supabase.auth.getSession();
+          if (session?.user) {
+            user = {
+              id: session.user.id,
+              email: session.user.email,
+              displayName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email
+            };
+            console.log('[ai-review-automation] Supabase 세션에서 사용자 정보 확인:', user.email);
+          }
+        } catch (error) {
+          console.warn('[ai-review-automation] Supabase 세션 확인 실패:', error);
+        }
+      }
+      
+      // 3. UI 업데이트
+      if (user && user.email) {
+        if (authUser) authUser.style.display = 'flex';
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (signupBtn) signupBtn.style.display = 'none';
+        if (userEmail) {
+          userEmail.textContent = user.email;
+          userEmail.href = '/mypage.html';
+        }
+        if (userAvatar) {
+          const initial = (user.email[0] || 'U').toUpperCase();
+          userAvatar.textContent = initial;
+        }
+        if (logoutBtn) {
+          logoutBtn.onclick = async function() {
+            if (!confirm('로그아웃 하시겠습니까?')) return;
+            
+            // auth-state.js의 signOut 사용
+            if (window.authState?.signOut) {
+              await window.authState.signOut();
+            } else {
+              // fallback
+              localStorage.removeItem('isLoggedIn');
+              localStorage.removeItem('userData');
+              sessionStorage.removeItem('isLoggedIn');
+              sessionStorage.removeItem('userData');
+            }
+            
+            location.href = 'login.html';
+          };
+        }
+      } else {
+        if (authUser) authUser.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = 'inline-flex';
+        if (signupBtn) signupBtn.style.display = 'inline-flex';
+      }
+    }
+
     // 초기화
-    window.addEventListener('load', initSupabase);
+    window.addEventListener('load', async () => {
+      await initSupabase();
+      
+      // auth-state.js가 로드될 때까지 대기
+      let waitCount = 0;
+      const maxWait = 50; // 5초 대기
+      while (!window.authState && waitCount < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        waitCount++;
+      }
+      
+      // 인증 UI 업데이트
+      await updateAuthUI();
+      
+      // auth-state.js의 인증 상태 변경 이벤트 구독
+      if (window.authState) {
+        window.addEventListener('auth:state-changed', async () => {
+          await updateAuthUI();
+        });
+      }
+      
+      // 페이지 로드 후에도 한 번 더 확인
+      setTimeout(async () => {
+        await updateAuthUI();
+      }, 1000);
+    });
 
     // 사이드바 스크롤 인디케이터
     (function() {
