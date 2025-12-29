@@ -3624,6 +3624,142 @@
     <script src="/assets/demo-mode.js?v=20241125"></script>
     <script src="/assets/auth-state.js?v=202410"></script>
     <script src="/assets/feature-usage-tracker.js"></script>
+    
+    <!-- 인증 UI 즉시 업데이트 스크립트 (body 끝에서 실행) -->
+    <script>
+        (function() {
+            console.log('[shorts-editor] 인증 UI 즉시 업데이트 스크립트 시작');
+            
+            // 강제로 인증 UI 업데이트 함수 실행
+            function forceUpdateAuthUI() {
+                const authUser = document.getElementById('authUser');
+                const loginBtn = document.getElementById('loginBtn');
+                const signupBtn = document.getElementById('signupBtn');
+                const userEmail = document.getElementById('userEmail');
+                const userAvatar = document.getElementById('userAvatar');
+                const logoutBtn = document.getElementById('logoutBtn');
+                
+                if (!authUser || !loginBtn) {
+                    console.warn('[shorts-editor] 헤더 요소를 찾을 수 없습니다');
+                    return false;
+                }
+                
+                // localStorage/sessionStorage 확인
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
+                let user = null;
+                
+                if (isLoggedIn) {
+                    try {
+                        const loginType = localStorage.getItem('loginType') || 'auto';
+                        const useSessionStorage = loginType === 'manual';
+                        const storage = useSessionStorage ? sessionStorage : localStorage;
+                        const raw = storage.getItem('userData');
+                        if (raw) {
+                            user = JSON.parse(raw);
+                        }
+                    } catch (e) {
+                        console.warn('[shorts-editor] 사용자 정보 파싱 실패:', e);
+                    }
+                }
+                
+                // Supabase 세션 확인
+                if (window.authState?.supabase) {
+                    window.authState.supabase.auth.getSession().then(({ data: { session } }) => {
+                        if (session?.user) {
+                            user = {
+                                id: session.user.id,
+                                email: session.user.email,
+                                displayName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email
+                            };
+                        }
+                        updateUI();
+                    }).catch(() => {
+                        updateUI();
+                    });
+                } else {
+                    updateUI();
+                }
+                
+                function updateUI() {
+                    if (user && user.email) {
+                        console.log('[shorts-editor] 로그인 상태로 UI 업데이트:', user.email);
+                        authUser.style.display = 'flex';
+                        loginBtn.style.display = 'none';
+                        signupBtn.style.display = 'none';
+                        if (userEmail) {
+                            userEmail.textContent = user.email;
+                            userEmail.href = '/mypage.html';
+                        }
+                        if (userAvatar) {
+                            const initial = (user.email[0] || 'U').toUpperCase();
+                            userAvatar.textContent = initial;
+                        }
+                        if (logoutBtn) {
+                            logoutBtn.onclick = async function() {
+                                if (!confirm('로그아웃 하시겠습니까?')) return;
+                                if (window.authState?.signOut) {
+                                    await window.authState.signOut();
+                                } else {
+                                    localStorage.removeItem('isLoggedIn');
+                                    localStorage.removeItem('userData');
+                                    sessionStorage.removeItem('userData');
+                                    sessionStorage.removeItem('isLoggedIn');
+                                }
+                                location.href = 'login.html';
+                            };
+                        }
+                    } else {
+                        console.log('[shorts-editor] 로그아웃 상태로 UI 업데이트');
+                        authUser.style.display = 'none';
+                        loginBtn.style.display = 'inline-flex';
+                        signupBtn.style.display = 'inline-flex';
+                    }
+                }
+                
+                return true;
+            }
+            
+            // 즉시 실행
+            if (forceUpdateAuthUI()) {
+                console.log('[shorts-editor] 인증 UI 업데이트 완료');
+            } else {
+                // 요소가 없으면 재시도
+                let retryCount = 0;
+                const retryInterval = setInterval(() => {
+                    retryCount++;
+                    if (forceUpdateAuthUI() || retryCount >= 20) {
+                        clearInterval(retryInterval);
+                    }
+                }, 100);
+            }
+            
+            // window.load에서도 실행
+            window.addEventListener('load', () => {
+                setTimeout(forceUpdateAuthUI, 100);
+            });
+            
+            // auth-state.js 로드 후에도 실행
+            if (window.authState) {
+                setTimeout(forceUpdateAuthUI, 500);
+            } else {
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    checkCount++;
+                    if (window.authState || checkCount >= 50) {
+                        clearInterval(checkInterval);
+                        if (window.authState) {
+                            setTimeout(forceUpdateAuthUI, 500);
+                        }
+                    }
+                }, 100);
+            }
+            
+            // auth:state-changed 이벤트 구독
+            window.addEventListener('auth:state-changed', () => {
+                setTimeout(forceUpdateAuthUI, 100);
+            });
+        })();
+    </script>
 
     <!-- 푸터 -->
     <footer class="site-footer">

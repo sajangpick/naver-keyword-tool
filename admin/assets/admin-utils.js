@@ -185,20 +185,36 @@
     try {
       let accessToken = null;
       
-      // 방법 1: Supabase 클라이언트에서 세션 가져오기 (우선)
+      // 방법 1: window.authState에서 세션 가져오기 (최우선)
       try {
-        const supabase = await getSupabaseClient();
-        if (supabase) {
-          const { data: { session } } = await supabase.auth.getSession();
+        if (window.authState?.supabase) {
+          const { data: { session } } = await window.authState.supabase.auth.getSession();
           if (session && session.access_token) {
             accessToken = session.access_token;
+            console.log('✅ window.authState에서 토큰 발견');
           }
         }
-      } catch (supabaseError) {
-        console.warn('⚠️ Supabase 클라이언트에서 세션을 가져올 수 없습니다:', supabaseError.message);
+      } catch (authStateError) {
+        console.warn('⚠️ window.authState에서 세션을 가져올 수 없습니다:', authStateError.message);
       }
       
-      // 방법 2: localStorage/sessionStorage에서 토큰 가져오기 (대체)
+      // 방법 2: Supabase 클라이언트에서 세션 가져오기
+      if (!accessToken) {
+        try {
+          const supabase = await getSupabaseClient();
+          if (supabase) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session && session.access_token) {
+              accessToken = session.access_token;
+              console.log('✅ Supabase 클라이언트에서 토큰 발견');
+            }
+          }
+        } catch (supabaseError) {
+          console.warn('⚠️ Supabase 클라이언트에서 세션을 가져올 수 없습니다:', supabaseError.message);
+        }
+      }
+      
+      // 방법 3: localStorage/sessionStorage에서 토큰 가져오기 (대체)
       if (!accessToken) {
         console.log('🔍 localStorage/sessionStorage에서 토큰 검색 시작...');
         
@@ -294,18 +310,32 @@
       };
 
       // API 호출 (리다이렉트 루프 방지)
-      const response = await fetch(endpoint, {
-        ...options,
-        headers,
-        redirect: 'manual' // 리다이렉트를 수동으로 처리하여 루프 방지
-      });
-      
-      // 리다이렉트 응답 처리
-      if (response.type === 'opaqueredirect' || response.status === 0) {
-        const error = new Error('리다이렉트 루프가 감지되었습니다. 서버 설정을 확인하세요.');
-        error.status = 302;
-        error.redirect = true;
-        throw error;
+      // redirect: 'error'를 사용하여 리다이렉트 시 즉시 에러 발생
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          ...options,
+          headers,
+          redirect: 'error' // 리다이렉트 시 에러 발생하여 루프 방지
+        });
+      } catch (fetchError) {
+        // TypeError: Failed to fetch 또는 리다이렉트 에러
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('redirect')) {
+          const error = new Error('서버 리다이렉트가 감지되었습니다. 네트워크 설정을 확인하세요.');
+          error.status = 302;
+          error.redirect = true;
+          error.originalError = fetchError;
+          throw error;
+        }
+        // ERR_TOO_MANY_REDIRECTS 에러
+        if (fetchError.message && fetchError.message.includes('redirect')) {
+          const error = new Error('리다이렉트 루프가 감지되었습니다. 서버 설정을 확인하세요.');
+          error.status = 302;
+          error.redirect = true;
+          error.originalError = fetchError;
+          throw error;
+        }
+        throw fetchError;
       }
 
       if (!response.ok) {
