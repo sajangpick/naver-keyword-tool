@@ -30,6 +30,15 @@ if (SUPABASE_URL && SUPABASE_KEY) {
 async function checkAndUpdateCreditLimit(userId, creditsToUse) {
   console.log(`🔍 [credit-usage] checkAndUpdateCreditLimit 호출: userId=${userId}, creditsToUse=${creditsToUse}`);
   
+  // 모든 사용자 크레딧 체크 우회 (무제한 허용) - 사용자 요청으로 제한 해제
+  console.log('✅ [credit-usage] 모든 사용자 크레딧 무제한 허용 (시스템 제한 해제됨)');
+  return {
+    success: true,
+    creditsUsed: 0,
+    creditsRemaining: 999999,
+    monthlyLimit: 999999
+  };
+
   // 데모 모드일 때는 크레딧 체크 우회
   if (userId === 'demo_user_12345' || !userId) {
     console.log('✅ [credit-usage] 데모 모드 또는 userId 없음: 크레딧 체크 우회');
@@ -44,6 +53,22 @@ async function checkAndUpdateCreditLimit(userId, creditsToUse) {
   if (!supabase) {
     console.error('❌ [credit-usage] Supabase 클라이언트가 초기화되지 않았습니다');
     throw new Error('Supabase 클라이언트 초기화 실패');
+  }
+
+  // 관리자 계정(ohdaejun@naver.com) 체크 - 무제한 크레딧
+  try {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserById(userId);
+    if (!authError && authUser && authUser.email === 'ohdaejun@naver.com') {
+      console.log('✅ [credit-usage] 관리자 계정(ohdaejun@naver.com): 크레딧 무제한');
+      return {
+        success: true,
+        creditsUsed: 0,
+        creditsRemaining: 999999,
+        monthlyLimit: 999999
+      };
+    }
+  } catch (adminCheckError) {
+    console.error('⚠️ [credit-usage] 관리자 체크 중 오류 (무시됨):', adminCheckError.message);
   }
 
   try {

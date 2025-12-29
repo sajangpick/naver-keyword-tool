@@ -1078,8 +1078,34 @@
 
       // ==================== 초기화 ====================
 
+      // AdminUtils가 로드될 때까지 대기하는 함수
+      async function waitForAdminUtils() {
+        let retries = 0;
+        const maxRetries = 50; // 5초 대기
+        
+        while (retries < maxRetries) {
+          if (typeof AdminUtils !== 'undefined' && AdminUtils.adminFetch) {
+            return true;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
+        }
+        
+        console.error('❌ AdminUtils를 로드할 수 없습니다.');
+        return false;
+      }
+
       window.addEventListener('load', async function() {
-        console.log('🚀 페이지 로드 완료, 회원 목록 로드 시작');
+        console.log('🚀 페이지 로드 완료, AdminUtils 대기 중...');
+        
+        // AdminUtils가 로드될 때까지 대기
+        const utilsReady = await waitForAdminUtils();
+        if (!utilsReady) {
+          showError('관리자 유틸리티를 로드할 수 없습니다. 페이지를 새로고침해주세요.');
+          return;
+        }
+        
+        console.log('✅ AdminUtils 로드 완료, 회원 목록 로드 시작');
         // B안 사용 시 Supabase 직접 호출 불필요 (API를 통해 처리)
         // ensureSupabase(); // 상세보기에서만 필요 시 호출
         await loadLevelOptions(); // 등급 옵션 먼저 로드
@@ -1092,9 +1118,11 @@
         try {
           console.log('🔄 등급 옵션 로드 시작...');
           
+          // AdminUtils 대기
+          await waitForAdminUtils();
+          
           // 가격 설정 로드 (작업 크레딧 시스템: pricing_config의 included_credits 사용)
-          const pricingRes = await fetch('/api/subscription/pricing-config');
-          const pricingResult = await pricingRes.json();
+          const pricingResult = await AdminUtils.adminFetch('/api/subscription/pricing-config');
 
           if (!pricingResult.success) {
             throw new Error('등급 설정을 불러올 수 없습니다');
@@ -1231,6 +1259,9 @@
           const apiUrl = `/api/admin/members?${params}`;
           console.log('📡 API 호출:', apiUrl);
           
+          // AdminUtils 대기
+          await waitForAdminUtils();
+          
           // AdminUtils.adminFetch 사용 (인증 토큰 자동 포함)
           const result = await AdminUtils.adminFetch(apiUrl);
           console.log('📊 API 응답 데이터:', result);
@@ -1343,8 +1374,11 @@
           showLoading(true);
           closeLevelModal();
 
+          // AdminUtils 대기
+          await waitForAdminUtils();
+          
           // B안: API 호출 (role은 profiles 테이블에 없으므로 전송하지 않음)
-          const response = await fetch(`/api/admin/members/${memberId}`, {
+          const result = await AdminUtils.adminFetch(`/api/admin/members/${memberId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -1354,8 +1388,6 @@
               reset_usage: resetUsage 
             })
           });
-
-          const result = await response.json();
 
           if (!result.success) throw new Error(result.error);
 
@@ -1381,12 +1413,13 @@
         try {
           showLoading(true);
 
+          // AdminUtils 대기
+          await waitForAdminUtils();
+
           // B안: API 호출
-          const response = await fetch(`/api/admin/members/${memberId}`, {
+          const result = await AdminUtils.adminFetch(`/api/admin/members/${memberId}`, {
             method: 'DELETE'
           });
-
-          const result = await response.json();
 
           if (!result.success) throw new Error(result.error);
 
@@ -1771,17 +1804,15 @@
         // 전체 통계를 가져오기 위해 별도 API 호출 (필터가 없을 때만)
         if (!currentFilter && !currentSearch) {
           try {
-            const statsResponse = await fetch('/api/admin/members?limit=1000');
-            if (statsResponse.ok) {
-              const statsResult = await statsResponse.json();
-              if (statsResult.success && statsResult.members) {
-                const allMembers = statsResult.members;
-                document.getElementById('stat-total').textContent = statsResult.total || 0;
-                document.getElementById('stat-owner').textContent = allMembers.filter(m => m.user_type === 'owner').length;
-                document.getElementById('stat-agency').textContent = allMembers.filter(m => m.user_type === 'agency').length;
-                document.getElementById('stat-admin').textContent = allMembers.filter(m => m.user_type === 'admin').length;
-                return;
-              }
+            await waitForAdminUtils();
+            const statsResult = await AdminUtils.adminFetch('/api/admin/members?limit=1000');
+            if (statsResult.success && statsResult.members) {
+              const allMembers = statsResult.members;
+              document.getElementById('stat-total').textContent = statsResult.total || 0;
+              document.getElementById('stat-owner').textContent = allMembers.filter(m => m.user_type === 'owner').length;
+              document.getElementById('stat-agency').textContent = allMembers.filter(m => m.user_type === 'agency').length;
+              document.getElementById('stat-admin').textContent = allMembers.filter(m => m.user_type === 'admin').length;
+              return;
             }
           } catch (error) {
             console.warn('통계 조회 실패, 현재 페이지 기준으로 표시:', error);
@@ -1930,12 +1961,8 @@
             </tr>
           `;
 
-          const response = await fetch('/api/admin/place-cache');
-          if (!response.ok) {
-            throw new Error('플레이스 캐시 로드 실패');
-          }
-
-          const result = await response.json();
+          await waitForAdminUtils();
+          const result = await AdminUtils.adminFetch('/api/admin/place-cache');
           
           if (!result.success || !result.data || result.data.length === 0) {
             tbody.innerHTML = `

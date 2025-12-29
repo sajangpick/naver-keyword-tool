@@ -92,6 +92,15 @@ async function extractUserId(req) {
  * 토큰 한도 체크 및 차감 (직접 Supabase 접근)
  */
 async function checkAndUpdateTokenLimit(userId, tokensToUse, isDemoMode = false) {
+  // 모든 사용자 토큰 체크 우회 (무제한 허용) - 사용자 요청으로 제한 해제
+  console.log('✅ [token-tracker] 모든 사용자 토큰 무제한 허용 (시스템 제한 해제됨)');
+  return {
+    success: true,
+    tokensUsed: 0,
+    tokensRemaining: 999999,
+    monthlyLimit: 999999
+  };
+
   // 데모 모드일 때는 토큰 체크 우회
   if (isDemoMode || userId === 'demo_user_12345' || !userId) {
     console.log('✅ [token-tracker] 데모 모드 또는 userId 없음: 토큰 체크 우회');

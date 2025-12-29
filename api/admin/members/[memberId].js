@@ -28,9 +28,10 @@ function getSupabaseClient() {
 
 module.exports = async (req, res) => {
     // CORS 헤더 설정
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -47,6 +48,49 @@ module.exports = async (req, res) => {
     }
 
     try {
+        // 인증 확인
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({
+                success: false,
+                error: '인증이 필요합니다.'
+            });
+        }
+
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+        if (authError || !user) {
+            return res.status(401).json({
+                success: false,
+                error: '인증에 실패했습니다.'
+            });
+        }
+
+        // 관리자 권한 확인
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_type, membership_level')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !profile) {
+            return res.status(403).json({
+                success: false,
+                error: '관리자 권한이 필요합니다.',
+                details: profileError?.message || '프로필을 찾을 수 없습니다'
+            });
+        }
+
+        const isAdmin = profile.user_type === 'admin' || profile.membership_level === 'admin';
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                error: '관리자 권한이 필요합니다.',
+                details: `현재 권한: user_type=${profile.user_type}, membership_level=${profile.membership_level}`
+            });
+        }
+
         const { memberId } = req.query;
 
         if (!memberId) {
