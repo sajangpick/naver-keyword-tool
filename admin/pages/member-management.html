@@ -1105,35 +1105,9 @@
           return;
         }
         
-        // 권한 체크 (리다이렉트 없이 확인만)
-        try {
-          const isAdmin = await AdminUtils.checkAdminAuth();
-          console.log('🔐 권한 체크 결과:', isAdmin);
-          
-          if (isAdmin === false) {
-            // 관리자가 아닌 경우에만 리다이렉트
-            console.warn('⚠️ 관리자 권한이 없습니다. 로그인 페이지로 이동합니다.');
-            const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
-            window.location.replace(`/login.html?redirect=${currentUrl}`);
-            return;
-          }
-          
-          // isAdmin === null인 경우 (로딩 중)는 계속 진행
-          if (isAdmin === null) {
-            console.warn('⚠️ 세션 확인 중... 잠시 후 다시 시도합니다.');
-            // 잠시 대기 후 다시 확인 (최대 2초)
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const retryAdmin = await AdminUtils.checkAdminAuth();
-            if (retryAdmin === false) {
-              const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
-              window.location.replace(`/login.html?redirect=${currentUrl}`);
-              return;
-            }
-          }
-        } catch (error) {
-          console.error('❌ 권한 체크 실패:', error);
-          // 에러 발생 시에도 리다이렉트하지 않고 계속 진행 (API 호출 시 에러 처리)
-        }
+        // 권한 체크는 API 호출 시 자동으로 처리되므로 여기서는 제거
+        // API 호출이 403을 반환하면 에러만 표시하고 리다이렉트하지 않음
+        console.log('✅ AdminUtils 로드 완료, 권한 체크는 API 호출 시 수행됩니다');
         
         console.log('✅ AdminUtils 로드 완료, 회원 목록 로드 시작');
         // B안 사용 시 Supabase 직접 호출 불필요 (API를 통해 처리)
@@ -1332,6 +1306,24 @@
         } catch (error) {
           console.error('❌ 회원 로드 실패:', error);
           console.error('❌ 에러 스택:', error.stack);
+          
+          // 403 에러인 경우 특별 처리 (리다이렉트하지 않음)
+          if (error.status === 403 || error.message.includes('403') || error.message.includes('권한')) {
+            console.warn('⚠️ 관리자 권한이 없습니다. 에러만 표시하고 리다이렉트하지 않습니다.');
+            showError('관리자 권한이 필요합니다. 현재 계정에 관리자 권한이 없습니다.');
+            renderMembers([]);
+            return;
+          }
+          
+          // 401 에러인 경우 (세션 만료)
+          if (error.status === 401 || error.message.includes('401') || error.message.includes('로그인')) {
+            console.warn('⚠️ 세션이 만료되었습니다. 로그인 페이지로 이동합니다.');
+            const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.replace(`/login.html?redirect=${currentUrl}`);
+            return;
+          }
+          
+          // 기타 에러
           showError('회원 목록을 불러올 수 없습니다: ' + error.message);
           // 에러 발생 시 빈 테이블 표시
           renderMembers([]);

@@ -187,7 +187,9 @@
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        throw new Error('로그인이 필요합니다.');
+        const error = new Error('로그인이 필요합니다.');
+        error.status = 401;
+        throw error;
       }
 
       // 기본 헤더 설정
@@ -204,13 +206,21 @@
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || `API 오류: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.error || `API 오류: ${response.status}`);
+        error.status = response.status;
+        error.data = errorData;
+        // 403 에러는 리다이렉트하지 않고 에러만 throw
+        if (response.status === 403) {
+          console.warn('⚠️ 관리자 권한이 없습니다:', errorData);
+        }
+        throw error;
       }
 
       return await response.json();
     } catch (error) {
       console.error('API 호출 실패:', error);
+      // 리다이렉트하지 않고 에러만 throw
       throw error;
     }
   }

@@ -1807,7 +1807,7 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button class="btn btn-primary" id="nextToStep2" onclick="goToStep2()" disabled>
+                    <button class="btn btn-primary" id="nextToStep2" onclick="goToStep2()" disabled style="cursor: not-allowed; opacity: 0.5;">
                         다음
                         <i class="fa-solid fa-arrow-right"></i>
                     </button>
@@ -2524,11 +2524,24 @@
                 card.classList.add('selected');
             }
             
-            document.getElementById('nextToStep2').disabled = false;
+            // 다음 버튼 활성화
+            const nextBtn = document.getElementById('nextToStep2');
+            if (nextBtn) {
+                nextBtn.disabled = false;
+                nextBtn.style.cursor = 'pointer';
+                nextBtn.style.opacity = '1';
+            }
         }
 
         // Step 1 → Step 2
         function goToStep2() {
+            // 버튼이 disabled 상태여도 실행 가능하도록 체크
+            const nextBtn = document.getElementById('nextToStep2');
+            if (nextBtn && nextBtn.disabled && !selectedStyle) {
+                alert('플랫폼 스타일을 선택해주세요.');
+                return;
+            }
+            
             if (!selectedStyle) {
                 alert('플랫폼 스타일을 선택해주세요.');
                 return;
@@ -3405,8 +3418,16 @@
             const userAvatar = document.getElementById('userAvatar');
             const logoutBtn = document.getElementById('logoutBtn');
             
-            // 먼저 Supabase 세션 확인
             let user = null;
+            
+            // 1. 먼저 localStorage/sessionStorage 확인 (빠른 초기 렌더링)
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('isLoggedIn') === 'true';
+            if (isLoggedIn) {
+                user = getCurrentUser();
+                console.log('[shorts-editor] localStorage에서 사용자 정보 확인:', user?.email);
+            }
+            
+            // 2. Supabase 세션 확인 (auth-state.js가 로드된 경우)
             if (window.authState?.supabase) {
                 try {
                     const { data: { session } } = await window.authState.supabase.auth.getSession();
@@ -3416,22 +3437,22 @@
                             email: session.user.email,
                             displayName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email
                         };
+                        console.log('[shorts-editor] Supabase 세션에서 사용자 정보 확인:', user.email);
                     }
                 } catch (error) {
                     console.warn('[shorts-editor] Supabase 세션 확인 실패:', error);
                 }
             }
             
-            // Supabase 세션이 없으면 localStorage/sessionStorage 확인
-            if (!user) {
-                user = getCurrentUser();
-            }
-            
+            // 3. UI 업데이트
             if (user && user.email) {
                 if (authUser) authUser.style.display = 'flex';
                 if (loginBtn) loginBtn.style.display = 'none';
                 if (signupBtn) signupBtn.style.display = 'none';
-                if (userEmail) userEmail.textContent = user.email;
+                if (userEmail) {
+                    userEmail.textContent = user.email;
+                    userEmail.href = '/mypage.html';
+                }
                 if (userAvatar) {
                     const initial = (user.email[0] || 'U').toUpperCase();
                     userAvatar.textContent = initial;
@@ -3496,6 +3517,14 @@
 
             // Supabase 초기화 및 인증 UI 업데이트
             (async () => {
+                // auth-state.js가 로드될 때까지 대기
+                let waitCount = 0;
+                const maxWait = 50; // 5초 대기
+                while (!window.authState && waitCount < maxWait) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    waitCount++;
+                }
+                
                 // Supabase 초기화
                 await initSupabase();
                 
@@ -3508,6 +3537,11 @@
                         await updateAuthUI();
                     });
                 }
+                
+                // 페이지 로드 후에도 한 번 더 확인 (auth-state.js가 늦게 로드될 수 있음)
+                setTimeout(async () => {
+                    await updateAuthUI();
+                }, 1000);
             })();
         });
     </script>
