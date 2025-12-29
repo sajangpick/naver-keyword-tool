@@ -103,6 +103,13 @@ module.exports = async (req, res) => {
         });
       }
 
+      // 사용자 정보 가져오기 (이메일 등)
+      const { data: { user } } = await supabase.auth.admin.getUserById(userId).catch(async () => {
+        // admin API 실패 시 일반 API 시도
+        const { data: { session } } = await supabase.auth.getSession();
+        return { data: { user: session?.user || null } };
+      });
+
       const { serviceType } = req.body; // 'taxinvoice' 또는 'cashbill'
       const serviceTypeName = serviceType === 'cashbill' ? '현금영수증' : '세금계산서';
 
@@ -133,6 +140,8 @@ module.exports = async (req, res) => {
       }
 
       // 바로빌 미가입 시 자동 회원가입 시도
+      let barobillUserId = null; // 바로빌 회원 아이디 저장용
+      
       if (!isBarobillMember) {
         console.log('📝 바로빌 자동 회원가입 시도');
         try {
@@ -143,19 +152,33 @@ module.exports = async (req, res) => {
             .eq('id', userId)
             .single();
 
+          // 사용자 정보 가져오기 (이메일 등) - profiles 테이블에서 이메일 확인 또는 userId로 추정
+          let userEmail = null;
+          try {
+            const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+            userEmail = user?.email;
+          } catch (err) {
+            // admin API 실패 시 profiles에서 이메일 확인
+            userEmail = profile?.email || `${userId}@temp.com`;
+          }
+
           // 바로빌 회원가입에 필요한 기본 정보
+          // 아이디는 홈택스 아이디를 우선 사용, 없으면 사업자번호 기반 생성
+          const generatedBarobillId = hometaxId || `user${corpNum.replace(/-/g, '').substring(0, 6)}`;
+          const generatedBarobillPwd = hometaxPwd || `temp${corpNum.replace(/-/g, '').substring(0, 6)}`;
+          
           const registerData = {
             CorpNum: corpNum.replace(/-/g, ''),
             CorpName: profile?.store_name || '회사명',
             CEOName: profile?.full_name || '대표자명',
-            BizType: '업태',
-            BizClass: '업종',
+            BizType: profile?.biz_type || '업태',
+            BizClass: profile?.biz_class || '업종',
             Addr1: profile?.store_address || '주소',
             MemberName: profile?.full_name || '담당자명',
-            ID: hometaxId || 'user' + corpNum.substring(0, 6), // 홈택스 아이디 또는 기본값
-            PWD: hometaxPwd || 'temp1234', // 임시 비밀번호
+            ID: generatedBarobillId,
+            PWD: generatedBarobillPwd,
             TEL: profile?.phone_number || '010-0000-0000',
-            Email: user.email || 'temp@example.com'
+            Email: userEmail || 'temp@example.com'
           };
 
           const registerResponse = await axios.post(
@@ -168,13 +191,94 @@ module.exports = async (req, res) => {
           if (registerResult.success) {
             console.log('✅ 바로빌 자동 회원가입 완료');
             isBarobillMember = true;
+            barobillUserId = registerResult.data.barobillUserId || generatedBarobillId;
+            
+            // 회원가입 성공 시 아이디를 profiles 테이블에 저장
+            try {
+              await supabase
+                .from('profiles')
+                .update({ barobill_user_id: barobillUserId })
+                .eq('id', userId);
+              console.log('✅ 바로빌 아이디 저장 완료:', barobillUserId);
+            } catch (saveError) {
+              console.warn('⚠️ 바로빌 아이디 저장 실패 (계속 진행):', saveError.message);
+            }
+          } else if (registerResult.errorCode === -32000) {
+            // 이미 가입된 사업자번호인 경우
+            console.log('⚠️ 이미 가입된 사업자번호 - 기존 계정 확인 시도');
+            
+            try {
+              // GetCorpMemberContacts로 기존 계정 확인
+              const contactsResponse = await axios.post(
+                `${req.protocol}://${req.get('host')}/api/barobill/get-corp-member-contacts`,
+                { corpNum: corpNum.replace(/-/g, '') }
+              );
+              
+              if (contactsResponse.data.success && contactsResponse.data.data.contacts.length > 0) {
+                // 첫 번째 계정 사용
+                barobillUserId = contactsResponse.data.data.contacts[0].id;
+                console.log('✅ 기존 바로빌 계정 확인:', barobillUserId);
+                isBarobillMember = true;
+                
+                // 기존 계정 아이디 저장
+                try {
+                  await supabase
+                    .from('profiles')
+                    .update({ barobill_user_id: barobillUserId })
+                    .eq('id', userId);
+                  console.log('✅ 기존 바로빌 아이디 저장 완료:', barobillUserId);
+                } catch (saveError) {
+                  console.warn('⚠️ 바로빌 아이디 저장 실패 (계속 진행):', saveError.message);
+                }
+              } else {
+                console.warn('⚠️ 기존 계정을 찾을 수 없습니다. 개발자센터에서 회원사를 연결해주세요.');
+                // 계속 진행 (홈택스 연동은 시도)
+              }
+            } catch (contactsError) {
+              console.error('❌ 기존 계정 확인 실패:', contactsError.message);
+              // 계속 진행 (홈택스 연동은 시도)
+            }
           } else {
+            // 기타 오류 - GetErrString으로 상세 메시지 확인
             console.error('❌ 바로빌 자동 회원가입 실패:', registerResult.error);
-            // 회원가입 실패해도 홈택스 연동은 시도
+            
+            if (registerResult.errorCode) {
+              try {
+                const errStringResponse = await axios.post(
+                  `${req.protocol}://${req.get('host')}/api/barobill/get-err-string`,
+                  { errorCode: registerResult.errorCode }
+                );
+                
+                if (errStringResponse.data.success) {
+                  console.error('📋 오류 상세:', errStringResponse.data.data.errorMessage);
+                }
+              } catch (errStringError) {
+                console.warn('⚠️ 오류 메시지 조회 실패');
+              }
+            }
+            
+            // 회원가입 실패해도 홈택스 연동은 시도 (CERT 방식은 가능할 수 있음)
+            console.log('⚠️ 회원가입 실패했지만 홈택스 연동은 계속 진행합니다.');
           }
         } catch (registerError) {
           console.error('❌ 바로빌 자동 회원가입 오류:', registerError.message);
           // 회원가입 실패해도 홈택스 연동은 시도
+        }
+      } else {
+        // 이미 회원인 경우 기존 아이디 확인
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('barobill_user_id')
+            .eq('id', userId)
+            .single();
+          
+          if (profile?.barobill_user_id) {
+            barobillUserId = profile.barobill_user_id;
+            console.log('✅ 기존 바로빌 아이디 확인:', barobillUserId);
+          }
+        } catch (err) {
+          console.warn('⚠️ 기존 바로빌 아이디 조회 실패');
         }
       }
 

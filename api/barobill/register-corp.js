@@ -135,17 +135,32 @@ module.exports = async (req, res) => {
 
         // 결과 해석
         if (result === 1) {
+          // 성공 - 파트너 프로그램에 아이디 저장 필요
           return res.status(200).json({
             success: true,
             data: {
-              message: '바로빌 회원가입이 완료되었습니다.'
+              message: '바로빌 회원가입이 완료되었습니다.',
+              barobillUserId: id, // 가입한 아이디 반환
+              corpNum: corpNum.replace(/-/g, '')
             }
           });
-        } else {
-          // 음수 = 오류코드
+        } else if (result === -32000) {
+          // 이미 가입된 사업자번호인 경우
+          // 개발자센터 콘솔에서 회원사를 파트너와 연결한 후, GetCorpMemberContacts로 기존 계정 확인 필요
           return res.status(400).json({
             success: false,
-            error: `바로빌 회원가입 실패 (오류코드: ${result})`
+            error: '이미 가입된 연계사업자입니다.',
+            errorCode: result,
+            errorCodeName: 'ALREADY_REGISTERED',
+            note: '개발자센터 콘솔의 회원사 관리 메뉴에서 해당 회원사를 파트너와 연결한 후, GetCorpMemberContacts API로 기존 계정정보를 확인하세요.'
+          });
+        } else {
+          // 기타 오류코드 - GetErrString으로 오류 메시지 확인 가능
+          return res.status(400).json({
+            success: false,
+            error: `바로빌 회원가입 실패 (오류코드: ${result})`,
+            errorCode: result,
+            note: `GetErrString API로 오류코드 ${result}에 대한 상세 메시지를 확인할 수 있습니다.`
           });
         }
       } catch (apiError) {
