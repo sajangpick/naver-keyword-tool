@@ -347,7 +347,7 @@ function parseBarobillPurchaseResponse(xmlResponse, apiMethod) {
     const totalCountMatch = xmlResponse.match(/<TotalCount>(\d+)<\/TotalCount>/);
     const totalCount = totalCountMatch ? parseInt(totalCountMatch[1]) : purchaseList.length;
     
-    const currentPageMatch = xmlResponse.match(/<CurrentPage>(\d+)<\/CurrentPage>/);
+    // currentPageMatch는 이미 295번째 줄에서 선언되었으므로 재사용
     const currentPage = currentPageMatch ? parseInt(currentPageMatch[1]) : 1;
     
     const countPerPageMatch = xmlResponse.match(/<CountPerPage>(\d+)<\/CountPerPage>/);

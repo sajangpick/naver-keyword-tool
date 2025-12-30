@@ -1,0 +1,45 @@
+[1mdiff --git a/api/ai-news-recommend.js b/api/ai-news-recommend.js[m
+[1mindex 635d21e..ccdf542 100644[m
+[1m--- a/api/ai-news-recommend.js[m
+[1m+++ b/api/ai-news-recommend.js[m
+[36m@@ -113,6 +113,7 @@[m [mmodule.exports = async (req, res) => {[m
+         }[m
+       ],[m
+       temperature: 0.8,[m
+[32m+[m[32m      max_completion_tokens: 2000,[m
+       response_format: { type: 'json_object' }[m
+     });[m
+ [m
+[1mdiff --git a/api/generate-reply.js b/api/generate-reply.js[m
+[1mindex 40f1b7a..cf1b536 100644[m
+[1m--- a/api/generate-reply.js[m
+[1m+++ b/api/generate-reply.js[m
+[36m@@ -171,6 +171,7 @@[m [m${promotionPrompt}[m
+       { role: 'user', content: userPrompt }[m
+     ],[m
+     temperature: 0.7,[m
+[32m+[m[32m    max_completion_tokens: 500,[m
+   });[m
+ [m
+   // 토큰 사용량 추적 (데모 모드일 때는 우회)[m
+[36m@@ -329,6 +330,7 @@[m [m${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}[m
+       { role: 'user', content: userPrompt }[m
+     ],[m
+     temperature: 0.7,[m
+[32m+[m[32m    max_completion_tokens: 500,[m
+   });[m
+ [m
+   // 토큰 사용량 추적 (데모 모드일 때는 우회)[m
+[1mdiff --git a/render.yaml b/render.yaml[m
+[1mindex 27aa085..1a76849 100644[m
+[1m--- a/render.yaml[m
+[1m+++ b/render.yaml[m
+[36m@@ -4,7 +4,7 @@[m [mservices:[m
+     name: naver-keyword-tool[m
+     runtime: node[m
+     region: singapore  # 한국과 가까운 싱가포르 리전[m
+[31m-    buildCommand: npm install -g pnpm@9.0.0 && pnpm install[m
+[32m+[m[32m    buildCommand: npm install -g pnpm && pnpm install --no-frozen-lockfile[m
+     startCommand: node server.js[m
+     envVars:[m
+       - key: NODE_ENV[m
