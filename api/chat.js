@@ -524,7 +524,7 @@ module.exports = async (req, res) => {
           messages: messages,
           tools: availableTools,
           tool_choice: iteration === 0 ? 'auto' : 'auto', // 첫 번째는 자동, 이후에도 자동
-          max_tokens: 2000,
+          max_completion_tokens: 2000,
           temperature: 0.7,
         },
         {

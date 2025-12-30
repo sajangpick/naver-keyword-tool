@@ -2916,44 +2916,44 @@
             // 사용자 ID 가져오기
             const userId = await getProfileId();
             
-            // 토큰 체크 (키워드 추천 전에)
-            if (userId) {
-                try {
-                    const tokenResponse = await fetch(`/api/subscription/token-usage?user_id=${userId}`);
-                    if (tokenResponse.ok) {
-                        const tokenData = await tokenResponse.json();
-                        if (tokenData.success && tokenData.summary) {
-                            const remainingTokens = tokenData.summary.tokensRemaining || 0;
-                            const keywordRecommendationTokens = 600; // 키워드 추천에 필요한 토큰 (400~600)
-                            const blogGenerationTokens = 7000; // 블로그 생성에 필요한 토큰 (약 7000~8000)
-                            const monthlyLimit = tokenData.summary.monthlyLimit || null;
-                            
-                            // 1. 키워드 추천 자체에 토큰이 부족한 경우 → "토큰이 부족합니다" 팝업 표시하고 중단
-                            if (remainingTokens < keywordRecommendationTokens) {
-                                showTokenInsufficientModalDirect(
-                                    remainingTokens,
-                                    keywordRecommendationTokens,
-                                    monthlyLimit
-                                );
-                                return; // 키워드 추천 중단
-                            }
-                            
-                            // 2. 키워드 추천은 가능하지만 블로그 생성 토큰이 부족한 경우 → "블로그 생성 토큰 부족" 팝업
-                            if (remainingTokens >= keywordRecommendationTokens && remainingTokens < blogGenerationTokens) {
-                                const shouldProceed = await showBlogTokenWarningModal(remainingTokens, blogGenerationTokens);
-                                if (!shouldProceed) {
-                                    return; // 사용자가 취소하면 중단
-                                }
-                            }
-                            // 3. 둘 다 충분한 경우 → 팝업 없이 바로 진행
-                            // 3. 둘 다 충분한 경우 → 그냥 진행
-                        }
-                    }
-                } catch (tokenError) {
-                    console.warn('토큰 체크 중 오류 (키워드 추천은 계속 진행):', tokenError);
-                    // 토큰 체크 실패해도 키워드 추천은 진행
-                }
-            }
+            // 토큰 체크 비활성화 (팝업 표시하지 않음)
+            // if (userId) {
+            //     try {
+            //         const tokenResponse = await fetch(`/api/subscription/token-usage?user_id=${userId}`);
+            //         if (tokenResponse.ok) {
+            //             const tokenData = await tokenResponse.json();
+            //             if (tokenData.success && tokenData.summary) {
+            //                 const remainingTokens = tokenData.summary.tokensRemaining || 0;
+            //                 const keywordRecommendationTokens = 600; // 키워드 추천에 필요한 토큰 (400~600)
+            //                 const blogGenerationTokens = 7000; // 블로그 생성에 필요한 토큰 (약 7000~8000)
+            //                 const monthlyLimit = tokenData.summary.monthlyLimit || null;
+            //                 
+            //                 // 1. 키워드 추천 자체에 토큰이 부족한 경우 → "토큰이 부족합니다" 팝업 표시하고 중단
+            //                 if (remainingTokens < keywordRecommendationTokens) {
+            //                     showTokenInsufficientModalDirect(
+            //                         remainingTokens,
+            //                         keywordRecommendationTokens,
+            //                         monthlyLimit
+            //                     );
+            //                     return; // 키워드 추천 중단
+            //                 }
+            //                 
+            //                 // 2. 키워드 추천은 가능하지만 블로그 생성 토큰이 부족한 경우 → "블로그 생성 토큰 부족" 팝업
+            //                 if (remainingTokens >= keywordRecommendationTokens && remainingTokens < blogGenerationTokens) {
+            //                     const shouldProceed = await showBlogTokenWarningModal(remainingTokens, blogGenerationTokens);
+            //                     if (!shouldProceed) {
+            //                         return; // 사용자가 취소하면 중단
+            //                     }
+            //                 }
+            //                 // 3. 둘 다 충분한 경우 → 팝업 없이 바로 진행
+            //                 // 3. 둘 다 충분한 경우 → 그냥 진행
+            //             }
+            //         }
+            //     } catch (tokenError) {
+            //         console.warn('토큰 체크 중 오류 (키워드 추천은 계속 진행):', tokenError);
+            //         // 토큰 체크 실패해도 키워드 추천은 진행
+            //     }
+            // }
 
             try {
                 // 버튼 비활성화
@@ -3055,26 +3055,36 @@
                     tagsId
                 });
                 
-                // 토큰 부족 오류 감지 (이미 위에서 체크했으므로, 여기서는 API 호출 중 발생한 예상치 못한 토큰 부족만 처리)
-                if (error.message.includes('토큰') && (error.message.includes('부족') || error.message.includes('insufficient'))) {
-                    // 이미 위에서 토큰 체크를 했으므로, 여기서는 예상치 못한 경우만 처리
-                    // 하지만 중복 팝업 방지를 위해 기존 팝업이 없을 때만 표시
-                    const existingModal = document.getElementById('tokenInsufficientModal');
-                    const existingBlogModal = document.getElementById('blogTokenWarningModal');
-                    if (!existingModal && !existingBlogModal) {
-                        await showTokenInsufficientModal(error.message);
-                    }
-                } else {
-                    // 일반 오류는 기존 방식으로 표시
-                    let errorMsg = '❌ 키워드 추천에 실패했습니다.\n\n';
-                    errorMsg += `오류: ${error.message}\n\n`;
-                    errorMsg += '다음 사항을 확인해주세요:\n';
-                    errorMsg += '1. 업체명이 입력되어 있는지 확인\n';
-                    errorMsg += '2. 인터넷 연결 상태 확인\n';
-                    errorMsg += '3. 잠시 후 다시 시도해주세요';
-                    
-                    alert(errorMsg);
-                }
+                // 토큰 부족 오류도 일반 오류로 처리 (팝업 표시하지 않음)
+                // if (error.message.includes('토큰') && (error.message.includes('부족') || error.message.includes('insufficient'))) {
+                //     // 이미 위에서 토큰 체크를 했으므로, 여기서는 예상치 못한 경우만 처리
+                //     // 하지만 중복 팝업 방지를 위해 기존 팝업이 없을 때만 표시
+                //     const existingModal = document.getElementById('tokenInsufficientModal');
+                //     const existingBlogModal = document.getElementById('blogTokenWarningModal');
+                //     if (!existingModal && !existingBlogModal) {
+                //         await showTokenInsufficientModal(error.message);
+                //     }
+                // } else {
+                //     // 일반 오류는 기존 방식으로 표시
+                //     let errorMsg = '❌ 키워드 추천에 실패했습니다.\n\n';
+                //     errorMsg += `오류: ${error.message}\n\n`;
+                //     errorMsg += '다음 사항을 확인해주세요:\n';
+                //     errorMsg += '1. 업체명이 입력되어 있는지 확인\n';
+                //     errorMsg += '2. 인터넷 연결 상태 확인\n';
+                //     errorMsg += '3. 잠시 후 다시 시도해주세요';
+                //     
+                //     alert(errorMsg);
+                // }
+                
+                // 모든 오류를 일반 오류로 표시 (토큰 팝업 표시하지 않음)
+                let errorMsg = '❌ 키워드 추천에 실패했습니다.\n\n';
+                errorMsg += `오류: ${error.message}\n\n`;
+                errorMsg += '다음 사항을 확인해주세요:\n';
+                errorMsg += '1. 업체명이 입력되어 있는지 확인\n';
+                errorMsg += '2. 인터넷 연결 상태 확인\n';
+                errorMsg += '3. 잠시 후 다시 시도해주세요';
+                
+                alert(errorMsg);
             } finally {
                 // 버튼 복구
                 btn.disabled = false;
