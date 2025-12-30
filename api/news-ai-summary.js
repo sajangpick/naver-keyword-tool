@@ -218,7 +218,7 @@ ${url ? `원문 링크: ${url}` : '원문 링크: (정보 없음)'}
         }
       ],
       temperature: 0.7,
-      max_tokens: 2500
+      max_completion_tokens: 2500
     });
 
     // 토큰 사용량 추적 (데모 모드일 때는 우회)

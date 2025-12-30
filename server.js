@@ -1891,7 +1891,7 @@ async function callChatGPTForBlog(prompt) {
             content: prompt,
           },
         ],
-        max_tokens: 1500,
+        max_completion_tokens: 1500,
         temperature: 0.7,
       },
       {
@@ -1932,7 +1932,7 @@ async function callChatGPTForReview(prompt) {
             content: prompt,
           },
         ],
-        max_tokens: 1500,
+        max_completion_tokens: 1500,
         temperature: 0.3,
       },
       {
@@ -2127,7 +2127,7 @@ JSON 객체로만 응답하며 key는 plan_summary, plan_outline, script, tips�
           { role: "user", content: promptContext },
         ],
         temperature: 0.6,
-        max_tokens: 900,
+        max_completion_tokens: 900,
         response_format: { type: "json_object" },
       },
       {
@@ -2341,7 +2341,7 @@ app.post("/api/chat", async (req, res) => {
             content: message,
           },
         ],
-        max_tokens: 1500,
+        max_completion_tokens: 1500,
         temperature: 0.7,
       },
       {
