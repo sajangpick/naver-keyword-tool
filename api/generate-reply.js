@@ -171,6 +171,7 @@ ${promotionPrompt}
       { role: 'user', content: userPrompt }
     ],
     temperature: 0.7,
+    max_completion_tokens: 500,
   });
 
   // 토큰 사용량 추적 (데모 모드일 때는 우회)
@@ -329,6 +330,7 @@ ${selectedPromoPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
       { role: 'user', content: userPrompt }
     ],
     temperature: 0.7,
+    max_completion_tokens: 500,
   });
 
   // 토큰 사용량 추적 (데모 모드일 때는 우회)

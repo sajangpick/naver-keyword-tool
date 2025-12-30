@@ -113,6 +113,7 @@ module.exports = async (req, res) => {
         }
       ],
       temperature: 0.8,
+      max_completion_tokens: 2000,
       response_format: { type: 'json_object' }
     });
 
